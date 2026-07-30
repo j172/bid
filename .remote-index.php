@@ -160,7 +160,18 @@ $ch = curl_init($target);
 curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_HEADER => true,
-    CURLOPT_FOLLOWLOCATION => true,
+    // Must NOT follow redirects here: with this on, curl transparently
+    // chases a 3xx from Node (e.g. every redirect()-guarded page — any
+    // non-admin hitting /admin/listings/new, or an anonymous visitor
+    // hitting /my-bids) and CURLINFO_HEADER_SIZE then covers *all* hops'
+    // headers concatenated together. The forwarding loop below assumes a
+    // single header block, so two "HTTP/1.1 ..." status lines get run
+    // through it at once, producing a malformed response the browser
+    // errors on. Passing the 3xx straight through lets the browser do its
+    // own redirect, which is what a Next.js redirect() needs anyway (its
+    // own follow-up request needs to actually reach the browser to update
+    // the URL bar/cookies correctly).
+    CURLOPT_FOLLOWLOCATION => false,
     CURLOPT_CUSTOMREQUEST => $method,
     CURLOPT_HTTPHEADER => $headers,
     CURLOPT_POSTFIELDS => in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE']) ? $body : null,
