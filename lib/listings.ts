@@ -130,6 +130,46 @@ export async function getClosedListings(): Promise<ClosedListingSummary[]> {
   return rows as ClosedListingSummary[];
 }
 
+export interface BidHistoryEntry {
+  listingId: number;
+  listingTitle: string;
+  /** This bid's own amount at the time it was placed — not necessarily the listing's current price. */
+  bidAmount: number;
+  bidAt: Date;
+  listingStatus: string;
+  listingCurrentPrice: number;
+  isLeading: boolean;
+}
+
+// One row per bid this user has ever placed (most recent first) — a
+// listing they've bid on multiple times appears multiple times, each
+// showing what the listing looks like *now*, so the user can tell active
+// bids (still open, isLeading tells them if they're winning) from settled
+// ones (closed, isLeading tells them if they won) at a glance.
+export async function getBidHistoryForUser(userId: number): Promise<BidHistoryEntry[]> {
+  await closeExpiredListings();
+  const db = await getDb();
+  const [rows] = await db.query(
+    `SELECT
+       l.id AS listingId,
+       l.title AS listingTitle,
+       b.amount AS bidAmount,
+       b.created_at AS bidAt,
+       l.status AS listingStatus,
+       l.current_price AS listingCurrentPrice,
+       (l.leader_user_id = ?) AS isLeading
+     FROM bids b
+     JOIN listings l ON l.id = b.listing_id
+     WHERE b.user_id = ?
+     ORDER BY b.created_at DESC`,
+    [userId, userId],
+  );
+  return (rows as (Omit<BidHistoryEntry, "isLeading"> & { isLeading: number })[]).map((row) => ({
+    ...row,
+    isLeading: Boolean(row.isLeading),
+  }));
+}
+
 export interface ListingStatusSnapshot {
   currentPrice: number;
   endsAt: Date;
@@ -165,7 +205,7 @@ export async function placeBid(listingId: number, userId: number, maxAmount: num
     await connection.beginTransaction();
 
     const [rows] = await connection.query(
-      "SELECT current_price, status, leader_max_amount, leader_user_id, ends_at, buy_it_now_price FROM listings WHERE id = ? FOR UPDATE",
+      "SELECT current_price, status, leader_max_amount, leader_user_id, ends_at, buy_it_now_price, created_by FROM listings WHERE id = ? FOR UPDATE",
       [listingId],
     );
     const listing = (
@@ -176,11 +216,16 @@ export async function placeBid(listingId: number, userId: number, maxAmount: num
         leader_user_id: number | null;
         ends_at: Date;
         buy_it_now_price: number;
+        created_by: number;
       }[]
     )[0];
     if (!listing) {
       await connection.rollback();
       return { ok: false, error: "找不到這個商品" };
+    }
+    if (listing.created_by === userId) {
+      await connection.rollback();
+      return { ok: false, error: "不能對自己上架的商品出價" };
     }
 
     const result = resolveProxyBid(
@@ -246,13 +291,17 @@ export async function buyNow(listingId: number, userId: number): Promise<BuyNowO
     await connection.beginTransaction();
 
     const [rows] = await connection.query(
-      "SELECT status, buy_it_now_price FROM listings WHERE id = ? FOR UPDATE",
+      "SELECT status, buy_it_now_price, created_by FROM listings WHERE id = ? FOR UPDATE",
       [listingId],
     );
-    const listing = (rows as { status: string; buy_it_now_price: number }[])[0];
+    const listing = (rows as { status: string; buy_it_now_price: number; created_by: number }[])[0];
     if (!listing) {
       await connection.rollback();
       return { ok: false, error: "找不到這個商品" };
+    }
+    if (listing.created_by === userId) {
+      await connection.rollback();
+      return { ok: false, error: "不能買斷自己上架的商品" };
     }
 
     const result = resolveBuyNow({ status: listing.status, buyItNowPrice: listing.buy_it_now_price });

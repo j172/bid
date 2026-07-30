@@ -255,6 +255,23 @@ describe("resolveProxyBid — auto-triggered buyout when the resolved price reac
     });
   });
 
+  it("triggers off the winner's actual cap, not the increment-suppressed visible price, when a weak prior leader lets a huge new max win cheaply", () => {
+    // prior leader's max is tiny (5); a new bidder's max (5000) trounces it, but the increment formula only
+    // raises the visible price to 5+10=15 -- far below BIN (1000). The new leader's real cap (5000) still
+    // reaches/exceeds BIN, so this must close at 1000, not stay open at a visible price of 15.
+    const result = resolveProxyBid(
+      { status: "open", currentPrice: 1, leaderMaxAmount: 5, buyItNowPrice: 1000 },
+      5000,
+    );
+    expect(result).toEqual({
+      ok: true,
+      currentPrice: 1000,
+      leaderMaxAmount: 5000,
+      youAreLeading: true,
+      closedViaBuyItNow: true,
+    });
+  });
+
   it("does not trigger when the resolved price stays below the buy-it-now price", () => {
     const result = resolveProxyBid(
       { status: "open", currentPrice: 1000, leaderMaxAmount: null, buyItNowPrice: 5000 },

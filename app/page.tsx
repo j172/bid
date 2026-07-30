@@ -38,6 +38,12 @@ export default async function HomePage() {
       )}
       <p>
         <a href="/listings">瀏覽競標中商品</a>
+        {user && (
+          <>
+            {" "}
+            / <a href="/my-bids">我的出價紀錄</a>
+          </>
+        )}
         {user?.role === "admin" && (
           <>
             {" "}

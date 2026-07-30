@@ -96,7 +96,13 @@ export function resolveProxyBid(state: ProxyBidState, maxAmount: number): ProxyB
     youAreLeading = false;
   }
 
-  const closedViaBuyItNow = currentPrice >= state.buyItNowPrice;
+  // Checked against the winner's actual (private) cap, not the
+  // increment-capped visible currentPrice: a weak previous leader can
+  // suppress the visible price far below a new leader's real max (e.g.
+  // old leader's max 5, new bidder's max 5000 -> visible only rises to
+  // 15), but the spec's trigger is "a proxy bid's cap reaches/exceeds
+  // the BIN price" (User Story 13), not "the visible price does."
+  const closedViaBuyItNow = leaderMaxAmount >= state.buyItNowPrice;
   if (closedViaBuyItNow) {
     currentPrice = state.buyItNowPrice;
   }
