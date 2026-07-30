@@ -6,6 +6,7 @@ import {
   type BuyNowOutcome,
   type ProxyBidOutcome,
 } from "@/lib/bidding/domain";
+import { notifyAuctionEnded, notifyOutbid } from "@/lib/notifications";
 
 export interface Listing {
   id: number;
@@ -126,7 +127,7 @@ export async function placeBid(listingId: number, userId: number, maxAmount: num
     await connection.beginTransaction();
 
     const [rows] = await connection.query(
-      "SELECT current_price, status, leader_max_amount, ends_at, buy_it_now_price FROM listings WHERE id = ? FOR UPDATE",
+      "SELECT current_price, status, leader_max_amount, leader_user_id, ends_at, buy_it_now_price FROM listings WHERE id = ? FOR UPDATE",
       [listingId],
     );
     const listing = (
@@ -134,6 +135,7 @@ export async function placeBid(listingId: number, userId: number, maxAmount: num
         current_price: number;
         status: string;
         leader_max_amount: number | null;
+        leader_user_id: number | null;
         ends_at: Date;
         buy_it_now_price: number;
       }[]
@@ -176,6 +178,15 @@ export async function placeBid(listingId: number, userId: number, maxAmount: num
     );
 
     await connection.commit();
+
+    // Fired without awaiting — a DB lookup + email round-trip must never
+    // delay this function's return (see lib/notifications.ts).
+    if (result.closedViaBuyItNow) {
+      notifyAuctionEnded(listingId);
+    } else if (result.youAreLeading && listing.leader_user_id !== null && listing.leader_user_id !== userId) {
+      notifyOutbid(listingId, listing.leader_user_id);
+    }
+
     return result;
   } catch (error) {
     await connection.rollback();
@@ -223,6 +234,10 @@ export async function buyNow(listingId: number, userId: number): Promise<BuyNowO
     );
 
     await connection.commit();
+
+    // Fired without awaiting — see the equivalent note in placeBid().
+    notifyAuctionEnded(listingId);
+
     return result;
   } catch (error) {
     await connection.rollback();
