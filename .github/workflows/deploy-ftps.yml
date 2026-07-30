@@ -1,0 +1,101 @@
+name: Deploy prebuilt via FTPS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build app
+        run: npm run build
+
+      - name: Package prebuilt bundle
+        run: |
+          test -d .next
+          tar -czf .prebuilt-next.tgz .next
+
+      - name: Upload prebuilt bundle and handler to server (FTPS)
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER != '' && secrets.FTP_SERVER || '103.21.221.12' }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME != '' && secrets.FTP_USERNAME || 'j172@j172.tw' }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          FTP_SERVER_CLEAN="$(printf '%s' "$FTP_SERVER" | tr -d '\r\n' | xargs)"
+          FTP_USERNAME_CLEAN="$(printf '%s' "$FTP_USERNAME" | tr -d '\r\n' | xargs)"
+          FTP_PASSWORD_CLEAN="$(printf '%s' "$FTP_PASSWORD" | tr -d '\r\n')"
+
+          if [ -z "$FTP_SERVER_CLEAN" ] || [ -z "$FTP_USERNAME_CLEAN" ] || [ -z "$FTP_PASSWORD_CLEAN" ]; then
+            echo "Missing one of required deployment values: FTP_SERVER / FTP_USERNAME / FTP_PASSWORD"
+            exit 1
+          fi
+
+          curl --fail --show-error --ssl-reqd --ftp-pasv --insecure \
+            --user "${FTP_USERNAME_CLEAN}:${FTP_PASSWORD_CLEAN}" \
+            --upload-file ".prebuilt-next.tgz" \
+            --url "ftp://${FTP_SERVER_CLEAN}:21/bid_app/.prebuilt-next.tgz"
+
+          curl --fail --show-error --ssl-reqd --ftp-pasv --insecure \
+            --user "${FTP_USERNAME_CLEAN}:${FTP_PASSWORD_CLEAN}" \
+            --upload-file "ecosystem.config.cjs" \
+            --url "ftp://${FTP_SERVER_CLEAN}:21/bid_app/ecosystem.config.cjs"
+
+          curl --fail --show-error --ssl-reqd --ftp-pasv --insecure \
+            --user "${FTP_USERNAME_CLEAN}:${FTP_PASSWORD_CLEAN}" \
+            --upload-file ".remote-index.php" \
+            --url "ftp://${FTP_SERVER_CLEAN}:21/bid.j172.tw/index.php"
+
+      - name: Trigger apply and wait for completion
+        env:
+          OPS_KEY: ${{ secrets.OPS_KEY != '' && secrets.OPS_KEY || 'bid-ops-20260730-deploy' }}
+        run: |
+          set -euo pipefail
+          OPS_KEY_CLEAN="$(printf '%s' "$OPS_KEY" | tr -d '\r\n')"
+
+          curl --fail --show-error --silent --insecure \
+            --resolve "bid.j172.tw:443:103.21.221.12" \
+            "https://bid.j172.tw/__ops/apply?key=$OPS_KEY_CLEAN&cb=$(date +%s)"
+
+          for ATTEMPT in $(seq 1 30); do
+            STATUS="$(curl --fail --show-error --silent --insecure \
+              --resolve "bid.j172.tw:443:103.21.221.12" \
+              "https://bid.j172.tw/__ops/status?key=$OPS_KEY_CLEAN&cb=$(date +%s)")"
+
+            echo "$STATUS"
+
+            if printf '%s' "$STATUS" | grep -Fq '[DONE]'; then
+              exit 0
+            fi
+
+            if printf '%s' "$STATUS" | grep -Eiq '\[FAIL\]|\[ROLLBACK\]'; then
+              echo "apply status indicates failure"
+              exit 1
+            fi
+
+            echo "Waiting for apply completion ($ATTEMPT/30)..."
+            sleep 2
+          done
+
+          echo "Timed out waiting for [DONE]"
+          exit 1
+
+      - name: Verify live site
+        run: |
+          set -euo pipefail
+          curl --fail --show-error --silent --location \
+            --resolve "bid.j172.tw:443:103.21.221.12" \
+            "https://bid.j172.tw/api/health?verify=$(date +%s)" | grep -q '"ok":true'
