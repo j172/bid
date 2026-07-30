@@ -102,6 +102,21 @@ export async function destroySession(): Promise<void> {
   cookieStore.delete(SESSION_COOKIE);
 }
 
+export interface UserSummary {
+  id: number;
+  email: string;
+  role: Role;
+  createdAt: Date;
+}
+
+export async function listUsers(): Promise<UserSummary[]> {
+  const db = await getDb();
+  const [rows] = await db.query(
+    "SELECT id, email, role, created_at AS createdAt FROM users ORDER BY created_at DESC",
+  );
+  return rows as UserSummary[];
+}
+
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;

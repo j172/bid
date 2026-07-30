@@ -1,4 +1,12 @@
 export default function StatusBadge({ status, isLeading }: { status: string; isLeading?: boolean }) {
+  if (status === "cancelled") {
+    return (
+      <span className="inline-block rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+        已下架
+      </span>
+    );
+  }
+
   if (status !== "open") {
     return (
       <span className="inline-block rounded-full bg-ended-bg px-2.5 py-0.5 text-xs font-medium text-ended">

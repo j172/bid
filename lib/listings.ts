@@ -72,6 +72,73 @@ export async function deleteListing(id: number): Promise<void> {
   await db.query("DELETE FROM listings WHERE id = ?", [id]);
 }
 
+export type CancelListingOutcome = { ok: true } | { ok: false; error: string };
+
+// Admin-only "take this down" action — distinct from closeExpiredListings'
+// natural close and from a BIN sale: only allowed while the listing has
+// never received a single bid (leader_max_amount is still null), so it can
+// never retroactively invalidate a real bidder's win. Uses a distinct
+// 'cancelled' status (not 'closed') so it never shows up alongside real
+// settled sales on the admin closed-listings page.
+export async function cancelListing(listingId: number): Promise<CancelListingOutcome> {
+  const db = await getDb();
+  const [result] = await db.query(
+    "UPDATE listings SET status = 'cancelled' WHERE id = ? AND status = 'open' AND leader_max_amount IS NULL",
+    [listingId],
+  );
+  const affectedRows = (result as { affectedRows: number }).affectedRows;
+  if (affectedRows === 0) {
+    return { ok: false, error: "無法下架：商品不存在、已結標，或已經有人出價" };
+  }
+  return { ok: true };
+}
+
+export interface OpenListingForAdmin {
+  id: number;
+  title: string;
+  currentPrice: number;
+  endsAt: Date;
+  hasBids: boolean;
+}
+
+// Admin's open-listings management view: enough to decide whether each one
+// can still be cancelled (only while hasBids is false — see
+// cancelListing's comment) without pulling photos it doesn't need to show.
+export async function getOpenListingsForAdmin(): Promise<OpenListingForAdmin[]> {
+  await closeExpiredListings();
+  const db = await getDb();
+  const [rows] = await db.query(
+    `SELECT id, title, current_price AS currentPrice, ends_at AS endsAt, (leader_max_amount IS NOT NULL) AS hasBids
+     FROM listings
+     WHERE status = 'open'
+     ORDER BY ends_at ASC`,
+  );
+  return (rows as (Omit<OpenListingForAdmin, "hasBids"> & { hasBids: number })[]).map((row) => ({
+    ...row,
+    hasBids: Boolean(row.hasBids),
+  }));
+}
+
+export interface OverviewStats {
+  openCount: number;
+  closedCount: number;
+  userCount: number;
+  totalGmv: number;
+}
+
+export async function getOverviewStats(): Promise<OverviewStats> {
+  await closeExpiredListings();
+  const db = await getDb();
+  const [rows] = await db.query(
+    `SELECT
+       (SELECT COUNT(*) FROM listings WHERE status = 'open') AS openCount,
+       (SELECT COUNT(*) FROM listings WHERE status = 'closed') AS closedCount,
+       (SELECT COUNT(*) FROM users) AS userCount,
+       (SELECT COALESCE(SUM(current_price), 0) FROM listings WHERE status = 'closed') AS totalGmv`,
+  );
+  return (rows as OverviewStats[])[0];
+}
+
 // Closes any listing whose end time has passed without being bought out
 // first. Deliberately just a status flip: current_price and leader_user_id
 // are already correct at every moment (placeBid/buyNow keep them in sync

@@ -1,6 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
 import { getClosedListings } from "@/lib/listings";
 
 export const dynamic = "force-dynamic";
@@ -9,15 +7,10 @@ const th = "border-b border-border px-4 py-3 text-left text-sm font-semibold tex
 const td = "border-b border-border px-4 py-3 text-sm";
 
 export default async function ClosedListingsPage() {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "admin") {
-    redirect("/");
-  }
-
   const listings = await getClosedListings();
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
+    <main>
       <h1 className="text-2xl font-bold">已結標商品結算</h1>
 
       {listings.length === 0 ? (

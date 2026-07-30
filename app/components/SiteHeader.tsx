@@ -22,14 +22,9 @@ export default async function SiteHeader() {
             </Link>
           )}
           {user?.role === "admin" && (
-            <>
-              <Link href="/admin/listings/new" className="hover:text-gold-light">
-                建立商品
-              </Link>
-              <Link href="/admin/listings/closed" className="hover:text-gold-light">
-                已結標結算
-              </Link>
-            </>
+            <Link href="/z04urru6" className="hover:text-gold-light">
+              後台
+            </Link>
           )}
         </nav>
 
