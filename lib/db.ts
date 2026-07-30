@@ -112,6 +112,12 @@ async function ensureAccountColumns(db: mysql.Pool): Promise<void> {
   await ensureColumn(db, "users", "deleted_at", "DATETIME NULL");
   await ensureColumn(db, "listings", "settled_at", "DATETIME NULL");
   await ensureColumn(db, "users", "suspended_at", "DATETIME NULL");
+  // 'expired' | 'buy_now' | 'auto_bin', set at the moment each closing path
+  // fires (see closeExpiredListings/buyNow/placeBid in lib/listings.ts).
+  // NULL on listings that closed before this column existed — displayed as
+  // "未知" rather than guessed at, since guessing from current_price alone
+  // can't distinguish an explicit buy-now click from an auto-triggered one.
+  await ensureColumn(db, "listings", "close_reason", "VARCHAR(20) NULL");
 }
 
 // buy_it_now_price started out NOT NULL (every listing required one);

@@ -364,7 +364,7 @@ export type DeleteAccountOutcome = { ok: true } | { ok: false; error: string };
 
 // Anonymizes rather than hard-deletes: bids/listings still reference this
 // user_id (no FK cascade), and past auction records (who won what) need to
-// stay intact for history/audit — see getClosedListings' deleted-account
+// stay intact for history/audit — see listClosedListings' deleted-account
 // display handling. The email is overwritten (not just flagged) so the
 // original address frees up for re-registration.
 export async function deleteAccount(userId: number): Promise<DeleteAccountOutcome> {

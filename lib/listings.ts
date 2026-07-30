@@ -151,7 +151,9 @@ export async function getOverviewStats(): Promise<OverviewStats> {
 // access.
 export async function closeExpiredListings(): Promise<void> {
   const db = await getDb();
-  await db.query("UPDATE listings SET status = 'closed' WHERE status = 'open' AND ends_at <= NOW()");
+  await db.query(
+    "UPDATE listings SET status = 'closed', close_reason = 'expired' WHERE status = 'open' AND ends_at <= NOW()",
+  );
 }
 
 export async function listOpenListings(): Promise<ListingWithPhotos[]> {
@@ -182,30 +184,137 @@ export interface ClosedListingSummary {
   id: number;
   title: string;
   finalPrice: number;
+  endsAt: Date;
+  /** null: closed before this was tracked, shown as "未知" rather than guessed at. */
+  closeReason: "expired" | "buy_now" | "auto_bin" | null;
+  bidCount: number;
   /** null: no winner (zero bids). "（帳號已刪除）": winner existed but deleted their account. */
   winnerEmail: string | null;
   settled: boolean;
 }
 
-export async function getClosedListings(): Promise<ClosedListingSummary[]> {
+export const CLOSE_REASON_LABELS: Record<"expired" | "buy_now" | "auto_bin", string> = {
+  expired: "競標到期",
+  buy_now: "一鍵買斷",
+  auto_bin: "出價自動觸發買斷",
+};
+
+export type ClosedListingStatusFilter = "all" | "settled" | "unsettled" | "no_winner";
+export type ClosedListingSort = "ends_desc" | "price_desc";
+
+export interface ListClosedListingsOptions {
+  search?: string;
+  winnerEmail?: string;
+  status?: ClosedListingStatusFilter;
+  sort?: ClosedListingSort;
+  page?: number;
+  /** CSV export needs every matching row, not just one page. */
+  all?: boolean;
+}
+
+export const CLOSED_LISTINGS_PAGE_SIZE = 50;
+
+const CLOSED_LISTINGS_SORT_CLAUSES: Record<ClosedListingSort, string> = {
+  ends_desc: "l.ends_at DESC",
+  price_desc: "l.current_price DESC",
+};
+
+function closedListingsWhereClause(options: ListClosedListingsOptions): { where: string; params: string[] } {
+  const conditions = ["l.status = 'closed'"];
+  const params: string[] = [];
+
+  const search = options.search?.trim();
+  if (search) {
+    conditions.push("l.title LIKE ?");
+    params.push(`%${search}%`);
+  }
+  const winnerEmail = options.winnerEmail?.trim();
+  if (winnerEmail) {
+    conditions.push("u.email LIKE ?");
+    params.push(`%${winnerEmail}%`);
+  }
+  switch (options.status) {
+    case "settled":
+      conditions.push("l.settled_at IS NOT NULL");
+      break;
+    case "unsettled":
+      conditions.push("l.leader_user_id IS NOT NULL AND l.settled_at IS NULL");
+      break;
+    case "no_winner":
+      conditions.push("l.leader_user_id IS NULL");
+      break;
+    case "all":
+    default:
+      break;
+  }
+
+  return { where: `WHERE ${conditions.join(" AND ")}`, params };
+}
+
+// Admin's closed-listings/settlement view: search by title/winner email,
+// filter by settlement status, sort, and paginate (or return every matching
+// row via `all` for CSV export — see app/api/admin/listings/closed/export).
+export async function listClosedListings(
+  options: ListClosedListingsOptions = {},
+): Promise<{ listings: ClosedListingSummary[]; total: number }> {
   await closeExpiredListings();
   const db = await getDb();
+  const { where, params } = closedListingsWhereClause(options);
+
+  const [countRows] = await db.query(
+    `SELECT COUNT(*) AS cnt FROM listings l LEFT JOIN users u ON u.id = l.leader_user_id ${where}`,
+    params,
+  );
+  const total = (countRows as { cnt: number }[])[0].cnt;
+
+  const orderBy = CLOSED_LISTINGS_SORT_CLAUSES[options.sort ?? "ends_desc"];
+  const page = Math.max(1, options.page ?? 1);
+  const offset = (page - 1) * CLOSED_LISTINGS_PAGE_SIZE;
+  const limitClause = options.all ? "" : `LIMIT ${CLOSED_LISTINGS_PAGE_SIZE} OFFSET ${offset}`;
+
   const [rows] = await db.query(
     `SELECT
-       l.id AS id, l.title AS title, l.current_price AS finalPrice,
+       l.id AS id, l.title AS title, l.current_price AS finalPrice, l.ends_at AS endsAt, l.close_reason AS closeReason,
        CASE WHEN l.leader_user_id IS NULL THEN NULL
             WHEN u.deleted_at IS NOT NULL THEN '（帳號已刪除）'
             ELSE u.email END AS winnerEmail,
-       (l.settled_at IS NOT NULL) AS settled
+       (l.settled_at IS NOT NULL) AS settled,
+       (SELECT COUNT(*) FROM bids WHERE listing_id = l.id) AS bidCount
      FROM listings l
      LEFT JOIN users u ON u.id = l.leader_user_id
-     WHERE l.status = 'closed'
-     ORDER BY l.ends_at DESC`,
+     ${where}
+     ORDER BY ${orderBy}
+     ${limitClause}`,
+    params,
   );
-  return (rows as (Omit<ClosedListingSummary, "settled"> & { settled: number })[]).map((row) => ({
+  const listings = (rows as (Omit<ClosedListingSummary, "settled"> & { settled: number })[]).map((row) => ({
     ...row,
     settled: Boolean(row.settled),
   }));
+  return { listings, total };
+}
+
+export interface BidderEntry {
+  email: string;
+  amount: number;
+  bidAt: Date;
+}
+
+// Powers the closed-listings page's expandable "查看出價者" section — every
+// bid on this listing (not just the winner's), oldest first.
+export async function getBiddersForListing(listingId: number): Promise<BidderEntry[]> {
+  const db = await getDb();
+  const [rows] = await db.query(
+    `SELECT
+       CASE WHEN u.deleted_at IS NOT NULL THEN '（帳號已刪除）' ELSE u.email END AS email,
+       b.amount AS amount, b.created_at AS bidAt
+     FROM bids b
+     JOIN users u ON u.id = b.user_id
+     WHERE b.listing_id = ?
+     ORDER BY b.created_at ASC`,
+    [listingId],
+  );
+  return rows as BidderEntry[];
 }
 
 // Admin confirms the offline payment/delivery is done — releases the
@@ -214,6 +323,14 @@ export async function getClosedListings(): Promise<ClosedListingSummary[]> {
 export async function markListingSettled(listingId: number): Promise<void> {
   const db = await getDb();
   await db.query("UPDATE listings SET settled_at = NOW() WHERE id = ? AND status = 'closed'", [listingId]);
+}
+
+// Reverses markListingSettled — lets an admin correct an accidental
+// "settled" click, putting the winner back under deleteAccount's
+// unsettled-win block until it's confirmed again.
+export async function unsettleListing(listingId: number): Promise<void> {
+  const db = await getDb();
+  await db.query("UPDATE listings SET settled_at = NULL WHERE id = ? AND status = 'closed'", [listingId]);
 }
 
 // Used by deleteAccount (lib/auth.ts) to decide whether an account can be
@@ -381,10 +498,11 @@ export async function placeBid(listingId: number, userId: number, maxAmount: num
     // A buyout closing this transaction makes extending the deadline moot.
     const newEndsAt = result.closedViaBuyItNow ? listing.ends_at : extendEndTimeIfNeeded(listing.ends_at, new Date());
     const newStatus = result.closedViaBuyItNow ? "closed" : listing.status;
+    const newCloseReason = result.closedViaBuyItNow ? "auto_bin" : null;
 
     await connection.query(
-      "UPDATE listings SET current_price = ?, leader_max_amount = ?, ends_at = ?, status = ? WHERE id = ?",
-      [result.currentPrice, result.leaderMaxAmount, newEndsAt, newStatus, listingId],
+      "UPDATE listings SET current_price = ?, leader_max_amount = ?, ends_at = ?, status = ?, close_reason = COALESCE(?, close_reason) WHERE id = ?",
+      [result.currentPrice, result.leaderMaxAmount, newEndsAt, newStatus, newCloseReason, listingId],
     );
     // leader_user_id only changes when the leader actually changes — this
     // bidder's own row still gets recorded in bid history either way.
@@ -448,7 +566,7 @@ export async function buyNow(listingId: number, userId: number): Promise<BuyNowO
 
     await connection.query(
       `UPDATE listings
-       SET status = 'closed', current_price = ?, leader_user_id = ?, leader_max_amount = ?
+       SET status = 'closed', close_reason = 'buy_now', current_price = ?, leader_user_id = ?, leader_max_amount = ?
        WHERE id = ?`,
       [result.finalPrice, userId, result.finalPrice, listingId],
     );
