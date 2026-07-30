@@ -1,9 +1,33 @@
-import { readFileSync } from "fs";
-import { join } from "path";
 import mysql from "mysql2/promise";
 
 let pool: mysql.Pool | undefined;
 let ready: Promise<void> | undefined;
+
+// Kept in sync with db/init.sql (which exists for reference / manual runs).
+// Inlined here — rather than read from disk at runtime — because the deploy
+// pipeline only ships the compiled .next output, not the repo's plain files.
+const SCHEMA_SQL = `
+CREATE TABLE IF NOT EXISTS users (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  email VARCHAR(255) NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  password_salt VARCHAR(255) NOT NULL,
+  role VARCHAR(20) NOT NULL DEFAULT 'user',
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_users_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS sessions (
+  id VARCHAR(64) NOT NULL,
+  user_id BIGINT NOT NULL,
+  expires_at DATETIME NOT NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_sessions_user (user_id),
+  KEY idx_sessions_expires (expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+`;
 
 function createPool(): mysql.Pool {
   return mysql.createPool({
@@ -19,8 +43,7 @@ function createPool(): mysql.Pool {
 }
 
 async function ensureSchema(db: mysql.Pool): Promise<void> {
-  const sql = readFileSync(join(process.cwd(), "db", "init.sql"), "utf-8");
-  await db.query(sql);
+  await db.query(SCHEMA_SQL);
 }
 
 export async function getDb(): Promise<mysql.Pool> {
