@@ -32,17 +32,23 @@ jobs:
           FTP_SERVER: ${{ secrets.FTP_SERVER != '' && secrets.FTP_SERVER || '103.21.221.12' }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME != '' && secrets.FTP_USERNAME || 'j172@j172.tw' }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          OPS_KEY: ${{ secrets.OPS_KEY }}
         run: |
           set -euo pipefail
 
           FTP_SERVER_CLEAN="$(printf '%s' "$FTP_SERVER" | tr -d '\r\n' | xargs)"
           FTP_USERNAME_CLEAN="$(printf '%s' "$FTP_USERNAME" | tr -d '\r\n' | xargs)"
           FTP_PASSWORD_CLEAN="$(printf '%s' "$FTP_PASSWORD" | tr -d '\r\n')"
+          OPS_KEY_CLEAN="$(printf '%s' "$OPS_KEY" | tr -d '\r\n')"
 
-          if [ -z "$FTP_SERVER_CLEAN" ] || [ -z "$FTP_USERNAME_CLEAN" ] || [ -z "$FTP_PASSWORD_CLEAN" ]; then
-            echo "Missing one of required deployment values: FTP_SERVER / FTP_USERNAME / FTP_PASSWORD"
+          if [ -z "$FTP_SERVER_CLEAN" ] || [ -z "$FTP_USERNAME_CLEAN" ] || [ -z "$FTP_PASSWORD_CLEAN" ] || [ -z "$OPS_KEY_CLEAN" ]; then
+            echo "Missing one of required deployment values: FTP_SERVER / FTP_USERNAME / FTP_PASSWORD / OPS_KEY"
             exit 1
           fi
+
+          umask 077
+          printf '%s' "$OPS_KEY_CLEAN" > .ops-key
+          trap 'rm -f .ops-key' EXIT
 
           curl --fail --show-error --ssl-reqd --ftp-pasv --insecure \
             --user "${FTP_USERNAME_CLEAN}:${FTP_PASSWORD_CLEAN}" \
@@ -59,9 +65,14 @@ jobs:
             --upload-file ".remote-index.php" \
             --url "ftp://${FTP_SERVER_CLEAN}:21/bid.j172.tw/index.php"
 
+          curl --fail --show-error --ssl-reqd --ftp-pasv --insecure \
+            --user "${FTP_USERNAME_CLEAN}:${FTP_PASSWORD_CLEAN}" \
+            --upload-file ".ops-key" \
+            --url "ftp://${FTP_SERVER_CLEAN}:21/bid.j172.tw/.ops-key"
+
       - name: Trigger apply and wait for completion
         env:
-          OPS_KEY: ${{ secrets.OPS_KEY != '' && secrets.OPS_KEY || 'bid-ops-20260730-deploy' }}
+          OPS_KEY: ${{ secrets.OPS_KEY }}
         run: |
           set -euo pipefail
           OPS_KEY_CLEAN="$(printf '%s' "$OPS_KEY" | tr -d '\r\n')"

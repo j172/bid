@@ -14,3 +14,4 @@ tsconfig.tsbuildinfo
 # local deploy scratch
 /.prebuilt-next.tgz
 /.prebuilt-public.tgz
+/.ops-key

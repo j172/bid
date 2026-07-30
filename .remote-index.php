@@ -8,9 +8,12 @@ $appPort = 3001;
 $nodeBin = '/home/tw123457/.nvm/versions/node/v20.20.2/bin/node';
 $pm2Bin = '/home/tw123457/.nvm/versions/node/v20.20.2/lib/node_modules/pm2/bin/pm2';
 
-$opsKey = 'bid-ops-20260730-deploy';
+// Not hardcoded/committed: this file is public (tracked in a public GitHub
+// repo), so the key lives in a sibling file that's uploaded separately by
+// the deploy workflow from a GitHub secret and never committed.
+$opsKey = trim((string) @file_get_contents(__DIR__ . '/.ops-key'));
 if (str_starts_with($path, '/__ops/')) {
-    if (($_GET['key'] ?? '') !== $opsKey) {
+    if ($opsKey === '' || ($_GET['key'] ?? '') !== $opsKey) {
         http_response_code(403);
         header('Content-Type: text/plain; charset=utf-8');
         echo 'Forbidden';
