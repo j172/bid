@@ -1,10 +1,12 @@
 import { getDb } from "@/lib/db";
+import { validateBid, type BidValidationResult } from "@/lib/bidding/domain";
 
 export interface Listing {
   id: number;
   title: string;
   description: string;
   starting_price: number;
+  current_price: number;
   buy_it_now_price: number;
   ends_at: Date;
   status: string;
@@ -32,9 +34,17 @@ export async function insertListing(input: NewListingInput): Promise<number> {
   const db = await getDb();
   const [result] = await db.query(
     `INSERT INTO listings
-       (title, description, starting_price, buy_it_now_price, ends_at, status, created_by, created_at)
-     VALUES (?, ?, ?, ?, ?, 'open', ?, NOW())`,
-    [input.title, input.description, input.startingPrice, input.buyItNowPrice, input.endsAt, input.createdBy],
+       (title, description, starting_price, current_price, buy_it_now_price, ends_at, status, created_by, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, 'open', ?, NOW())`,
+    [
+      input.title,
+      input.description,
+      input.startingPrice,
+      input.startingPrice,
+      input.buyItNowPrice,
+      input.endsAt,
+      input.createdBy,
+    ],
   );
   return (result as { insertId: number }).insertId;
 }
@@ -75,6 +85,47 @@ export async function getListingById(id: number): Promise<ListingWithPhotos | nu
   if (!listing) return null;
 
   return { ...listing, photos: await getPhotoFileNames(listing.id) };
+}
+
+// Locks the listing row for the duration of the read-validate-write so two
+// concurrent bids can't both read the same current_price and both succeed.
+export async function placeBid(listingId: number, userId: number, bidAmount: number): Promise<BidValidationResult> {
+  const db = await getDb();
+  const connection = await db.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const [rows] = await connection.query(
+      "SELECT current_price, status FROM listings WHERE id = ? FOR UPDATE",
+      [listingId],
+    );
+    const listing = (rows as { current_price: number; status: string }[])[0];
+    if (!listing) {
+      await connection.rollback();
+      return { ok: false, error: "找不到這個商品" };
+    }
+
+    const result = validateBid({ status: listing.status, currentPrice: listing.current_price, bidAmount });
+    if (!result.ok) {
+      await connection.rollback();
+      return result;
+    }
+
+    await connection.query("UPDATE listings SET current_price = ? WHERE id = ?", [result.newPrice, listingId]);
+    await connection.query(
+      "INSERT INTO bids (listing_id, user_id, amount, created_at) VALUES (?, ?, ?, NOW())",
+      [listingId, userId, result.newPrice],
+    );
+
+    await connection.commit();
+    return result;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 }
 
 async function getPhotoFileNames(listingId: number): Promise<string[]> {

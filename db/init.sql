@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS listings (
   title VARCHAR(255) NOT NULL,
   description TEXT NOT NULL,
   starting_price BIGINT NOT NULL,
+  current_price BIGINT NOT NULL,
   buy_it_now_price BIGINT NOT NULL,
   ends_at DATETIME NOT NULL,
   status VARCHAR(20) NOT NULL DEFAULT 'open',
@@ -41,4 +42,15 @@ CREATE TABLE IF NOT EXISTS listing_photos (
   created_at DATETIME NOT NULL,
   PRIMARY KEY (id),
   KEY idx_listing_photos_listing (listing_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS bids (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  listing_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  amount BIGINT NOT NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_bids_listing_amount (listing_id, amount),
+  KEY idx_bids_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -26,7 +26,7 @@ export default async function ListingsPage() {
                 style={{ maxWidth: 200, display: "block", margin: "0.5rem 0" }}
               />
             )}
-            <p>目前價格：{listing.starting_price}</p>
+            <p>目前價格：{listing.current_price}</p>
             <p>買斷價：{listing.buy_it_now_price}</p>
             <p>{formatRemaining(listing.ends_at)}</p>
           </li>

@@ -51,7 +51,33 @@ CREATE TABLE IF NOT EXISTS listing_photos (
   PRIMARY KEY (id),
   KEY idx_listing_photos_listing (listing_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS bids (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  listing_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  amount BIGINT NOT NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_bids_listing_amount (listing_id, amount),
+  KEY idx_bids_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
+
+// listings predates the current_price column (added for bidding); existing
+// rows on already-deployed databases need it added and backfilled rather
+// than assumed to exist via CREATE TABLE IF NOT EXISTS.
+async function ensureCurrentPriceColumn(db: mysql.Pool): Promise<void> {
+  const [rows] = await db.query(
+    `SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'listings' AND COLUMN_NAME = 'current_price'`,
+  );
+  const count = (rows as { cnt: number }[])[0].cnt;
+  if (count === 0) {
+    await db.query("ALTER TABLE listings ADD COLUMN current_price BIGINT NOT NULL DEFAULT 0");
+  }
+  await db.query("UPDATE listings SET current_price = starting_price WHERE current_price = 0");
+}
 
 function createPool(): mysql.Pool {
   return mysql.createPool({
@@ -68,6 +94,7 @@ function createPool(): mysql.Pool {
 
 async function ensureSchema(db: mysql.Pool): Promise<void> {
   await db.query(SCHEMA_SQL);
+  await ensureCurrentPriceColumn(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {
