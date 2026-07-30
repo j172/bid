@@ -96,6 +96,6 @@ jobs:
       - name: Verify live site
         run: |
           set -euo pipefail
-          curl --fail --show-error --silent --location \
+          curl --fail --show-error --silent --insecure --location \
             --resolve "bid.j172.tw:443:103.21.221.12" \
             "https://bid.j172.tw/api/health?verify=$(date +%s)" | grep -q '"ok":true'
