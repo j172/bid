@@ -144,6 +144,16 @@ $headers[] = 'Host: ' . ($_SERVER['HTTP_HOST'] ?? 'bid.j172.tw');
 $headers[] = 'X-Forwarded-Host: ' . ($_SERVER['HTTP_HOST'] ?? 'bid.j172.tw');
 $headers[] = 'X-Forwarded-Proto: https';
 $headers[] = 'X-Forwarded-For: ' . ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
+// Content-Type/Content-Length land in $_SERVER as CONTENT_TYPE/CONTENT_LENGTH,
+// not HTTP_CONTENT_TYPE, so the HTTP_-prefix loop above never picks them up.
+// Without Content-Type (and its multipart boundary) forwarded, Node has no
+// way to parse a multipart/form-data body at all.
+if (!empty($_SERVER['CONTENT_TYPE'])) {
+    $headers[] = 'Content-Type: ' . $_SERVER['CONTENT_TYPE'];
+}
+if (!empty($_SERVER['CONTENT_LENGTH'])) {
+    $headers[] = 'Content-Length: ' . $_SERVER['CONTENT_LENGTH'];
+}
 $body = file_get_contents('php://input');
 
 $ch = curl_init($target);

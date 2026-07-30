@@ -67,6 +67,11 @@ jobs:
 
           curl --fail --show-error --ssl-reqd --ftp-pasv --insecure \
             --user "${FTP_USERNAME_CLEAN}:${FTP_PASSWORD_CLEAN}" \
+            --upload-file ".remote-htaccess" \
+            --url "ftp://${FTP_SERVER_CLEAN}:21/bid.j172.tw/.htaccess"
+
+          curl --fail --show-error --ssl-reqd --ftp-pasv --insecure \
+            --user "${FTP_USERNAME_CLEAN}:${FTP_PASSWORD_CLEAN}" \
             --upload-file ".ops-key" \
             --url "ftp://${FTP_SERVER_CLEAN}:21/bid.j172.tw/.ops-key"
 
