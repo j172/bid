@@ -27,11 +27,16 @@ export default function BuyNowButton({ listingId, buyItNowPrice }: { listingId: 
   }
 
   return (
-    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-      <button type="button" onClick={handleBuyNow} disabled={submitting}>
+    <div className="flex items-center gap-3">
+      <button
+        type="button"
+        onClick={handleBuyNow}
+        disabled={submitting}
+        className="rounded-md border-2 border-header px-4 py-2 font-medium text-header transition hover:bg-header hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+      >
         {submitting ? "處理中..." : `一鍵買斷（${buyItNowPrice}）`}
       </button>
-      {error && <span style={{ color: "red" }}>{error}</span>}
+      {error && <span className="text-sm text-ended">{error}</span>}
     </div>
   );
 }

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import SiteHeader from "./components/SiteHeader";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "拍賣競標網站",
@@ -9,7 +11,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="zh-Hant">
-      <body>{children}</body>
+      <body className="min-h-screen font-sans text-ink">
+        <SiteHeader />
+        {children}
+      </body>
     </html>
   );
 }

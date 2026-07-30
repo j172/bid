@@ -1,0 +1,30 @@
+export default function StatusBadge({ status, isLeading }: { status: string; isLeading?: boolean }) {
+  if (status !== "open") {
+    return (
+      <span className="inline-block rounded-full bg-ended-bg px-2.5 py-0.5 text-xs font-medium text-ended">
+        已結標
+      </span>
+    );
+  }
+
+  if (isLeading === true) {
+    return (
+      <span className="inline-block rounded-full bg-leading-bg px-2.5 py-0.5 text-xs font-medium text-leading">
+        目前領先
+      </span>
+    );
+  }
+  if (isLeading === false) {
+    return (
+      <span className="inline-block rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+        已被超越
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-block rounded-full bg-gold-light px-2.5 py-0.5 text-xs font-medium text-gold-dark">
+      競標中
+    </span>
+  );
+}

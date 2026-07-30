@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Button from "../../components/Button";
 
 export default function BidForm({ listingId, minimumNextBid }: { listingId: number; minimumNextBid: number }) {
   const router = useRouter();
@@ -37,8 +38,8 @@ export default function BidForm({ listingId, minimumNextBid }: { listingId: numb
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-      <label>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
         你願意出的最高價（至少 {minimumNextBid}，系統只會自動幫你加價到剛好贏過對手，不會直接扣到這個金額）
         <input
           type="number"
@@ -47,14 +48,15 @@ export default function BidForm({ listingId, minimumNextBid }: { listingId: numb
           value={maxAmount}
           onChange={(e) => setMaxAmount(Number(e.target.value))}
           required
+          className="w-full rounded-md border border-border px-3 py-2 focus:border-gold focus:outline-none"
         />
       </label>
-      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-        <button type="submit" disabled={submitting}>
+      <div className="flex items-center gap-3">
+        <Button type="submit" disabled={submitting}>
           {submitting ? "送出中..." : "出價"}
-        </button>
-        {error && <span style={{ color: "red" }}>{error}</span>}
-        {notice && <span>{notice}</span>}
+        </Button>
+        {error && <span className="text-sm text-ended">{error}</span>}
+        {notice && <span className="text-sm text-ink-light">{notice}</span>}
       </div>
     </form>
   );

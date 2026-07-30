@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { formatRemaining } from "@/lib/format";
 import { isPollableStatus, LISTING_STATUS_POLL_INTERVAL_MS, parseListingStatusResponse } from "@/lib/listingStatus";
+import StatusBadge from "../../components/StatusBadge";
 
 // Renders the three fields that can change after the page has already
 // loaded (current price via new bids, remaining time via anti-snipe
@@ -73,10 +74,12 @@ export default function LiveListingStatus({
   }, [endsAt]);
 
   return (
-    <>
-      <li>目前價格：{currentPrice}</li>
-      <li>{remainingLabel}</li>
-      <li>狀態：{status === "open" ? "競標中" : "已結標"}</li>
-    </>
+    <div className="flex flex-col gap-1">
+      <div className="flex items-baseline gap-2">
+        <span className="text-3xl font-bold text-gold">{currentPrice}</span>
+        <StatusBadge status={status} />
+      </div>
+      <p className="text-sm text-ink-light">{remainingLabel}</p>
+    </div>
   );
 }

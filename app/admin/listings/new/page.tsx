@@ -11,9 +11,11 @@ export default async function NewListingPage() {
   }
 
   return (
-    <main style={{ fontFamily: "sans-serif", padding: "2rem", maxWidth: 480, margin: "0 auto" }}>
-      <h1>建立商品</h1>
-      <NewListingForm />
+    <main className="mx-auto max-w-xl px-4 py-10 sm:px-6">
+      <h1 className="text-2xl font-bold">建立商品</h1>
+      <div className="mt-6 rounded-lg border border-border bg-surface p-6 shadow-sm">
+        <NewListingForm />
+      </div>
     </main>
   );
 }

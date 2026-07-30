@@ -1,6 +1,5 @@
+import Link from "next/link";
 import { getDb } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
-import LogoutButton from "./LogoutButton";
 
 export const dynamic = "force-dynamic";
 
@@ -16,40 +15,24 @@ async function checkDb(): Promise<{ ok: boolean; error?: string }> {
 
 export default async function HomePage() {
   const db = await checkDb();
-  const user = await getCurrentUser();
 
   return (
-    <main style={{ fontFamily: "sans-serif", padding: "2rem", maxWidth: 640, margin: "0 auto" }}>
-      <h1>拍賣競標網站</h1>
-      <p>單一賣家英式拍賣競標網站 — 專案骨架已部署。</p>
-      <ul>
-        <li>App server: 運作中</li>
-        <li>MySQL: {db.ok ? "已連線" : `連線失敗（${db.error}）`}</li>
-      </ul>
-      <hr />
-      {user ? (
-        <p>
-          已登入：{user.email}（{user.role}） <LogoutButton />
-        </p>
-      ) : (
-        <p>
-          尚未登入 — <a href="/login">登入</a> / <a href="/register">註冊</a>
-        </p>
-      )}
-      <p>
-        <a href="/listings">瀏覽競標中商品</a>
-        {user && (
-          <>
-            {" "}
-            / <a href="/my-bids">我的出價紀錄</a>
-          </>
-        )}
-        {user?.role === "admin" && (
-          <>
-            {" "}
-            / <a href="/admin/listings/new">建立商品</a> / <a href="/admin/listings/closed">已結標結算</a>
-          </>
-        )}
+    <main>
+      <section className="bg-header text-white">
+        <div className="mx-auto max-w-6xl px-4 py-20 text-center sm:px-6">
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">拍賣競標網站</h1>
+          <p className="mt-4 text-lg text-gray-300">單一賣家英式拍賣 — 出價、代理出價、一鍵買斷，通通支援。</p>
+          <Link
+            href="/listings"
+            className="mt-8 inline-block rounded-md bg-gold px-6 py-3 font-medium text-white hover:bg-gold-dark"
+          >
+            瀏覽競標中商品
+          </Link>
+        </div>
+      </section>
+
+      <p className="mx-auto max-w-6xl px-4 py-3 text-center text-xs text-gray-400 sm:px-6">
+        App server 運作中 · MySQL {db.ok ? "已連線" : `連線失敗（${db.error}）`}
       </p>
     </main>
   );

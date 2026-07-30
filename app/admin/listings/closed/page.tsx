@@ -1,8 +1,12 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getClosedListings } from "@/lib/listings";
 
 export const dynamic = "force-dynamic";
+
+const th = "border-b border-border px-4 py-3 text-left text-sm font-semibold text-ink-light";
+const td = "border-b border-border px-4 py-3 text-sm";
 
 export default async function ClosedListingsPage() {
   const user = await getCurrentUser();
@@ -13,31 +17,37 @@ export default async function ClosedListingsPage() {
   const listings = await getClosedListings();
 
   return (
-    <main style={{ fontFamily: "sans-serif", padding: "2rem", maxWidth: 720, margin: "0 auto" }}>
-      <h1>已結標商品結算</h1>
-      {listings.length === 0 && <p>目前沒有已結標的商品。</p>}
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr>
-            <th style={{ textAlign: "left", borderBottom: "1px solid #ccc", padding: "0.5rem" }}>商品</th>
-            <th style={{ textAlign: "left", borderBottom: "1px solid #ccc", padding: "0.5rem" }}>得標者</th>
-            <th style={{ textAlign: "left", borderBottom: "1px solid #ccc", padding: "0.5rem" }}>成交價</th>
-          </tr>
-        </thead>
-        <tbody>
-          {listings.map((listing) => (
-            <tr key={listing.id}>
-              <td style={{ padding: "0.5rem", borderBottom: "1px solid #eee" }}>
-                <a href={`/listings/${listing.id}`}>{listing.title}</a>
-              </td>
-              <td style={{ padding: "0.5rem", borderBottom: "1px solid #eee" }}>
-                {listing.winnerEmail ?? "無人得標"}
-              </td>
-              <td style={{ padding: "0.5rem", borderBottom: "1px solid #eee" }}>{listing.finalPrice}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
+      <h1 className="text-2xl font-bold">已結標商品結算</h1>
+
+      {listings.length === 0 ? (
+        <p className="mt-6 text-ink-light">目前沒有已結標的商品。</p>
+      ) : (
+        <div className="mt-6 overflow-x-auto rounded-lg border border-border bg-surface shadow-sm">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                <th className={th}>商品</th>
+                <th className={th}>得標者</th>
+                <th className={th}>成交價</th>
+              </tr>
+            </thead>
+            <tbody>
+              {listings.map((listing) => (
+                <tr key={listing.id}>
+                  <td className={td}>
+                    <Link href={`/listings/${listing.id}`} className="font-medium text-gold hover:underline">
+                      {listing.title}
+                    </Link>
+                  </td>
+                  <td className={td}>{listing.winnerEmail ?? "無人得標"}</td>
+                  <td className={`${td} font-semibold`}>{listing.finalPrice}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </main>
   );
 }
