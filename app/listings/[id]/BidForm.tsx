@@ -28,7 +28,11 @@ export default function BidForm({ listingId, minimumNextBid }: { listingId: numb
       setError(data.error ?? "出價失敗");
       return;
     }
-    setNotice(data.youAreLeading ? "你目前是最高出價者！" : "已送出，但目前有人出價更高，你並未領先。");
+    if (data.closedViaBuyItNow) {
+      setNotice(data.youAreLeading ? "你的出價達到買斷價，直接得標！" : "出價已達買斷價，商品已由他人得標。");
+    } else {
+      setNotice(data.youAreLeading ? "你目前是最高出價者！" : "已送出，但目前有人出價更高，你並未領先。");
+    }
     router.refresh();
   }
 

@@ -4,6 +4,7 @@ import { getMinimumNextBid } from "@/lib/bidding/domain";
 import { getListingById } from "@/lib/listings";
 import { listingPhotoUrl } from "@/lib/uploads";
 import BidForm from "./BidForm";
+import BuyNowButton from "./BuyNowButton";
 import LiveListingStatus from "./LiveListingStatus";
 
 export const dynamic = "force-dynamic";
@@ -50,10 +51,13 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       </ul>
       {isOpen &&
         (user ? (
-          <BidForm listingId={listing.id} minimumNextBid={minimumNextBid} />
+          <>
+            <BidForm listingId={listing.id} minimumNextBid={minimumNextBid} />
+            <BuyNowButton listingId={listing.id} buyItNowPrice={listing.buy_it_now_price} />
+          </>
         ) : (
           <p>
-            <a href="/login">登入</a>後才能出價
+            <a href="/login">登入</a>後才能出價或買斷
           </p>
         ))}
     </main>

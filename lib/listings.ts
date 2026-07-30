@@ -1,5 +1,11 @@
 import { getDb } from "@/lib/db";
-import { extendEndTimeIfNeeded, resolveProxyBid, type ProxyBidOutcome } from "@/lib/bidding/domain";
+import {
+  extendEndTimeIfNeeded,
+  resolveBuyNow,
+  resolveProxyBid,
+  type BuyNowOutcome,
+  type ProxyBidOutcome,
+} from "@/lib/bidding/domain";
 
 export interface Listing {
   id: number;
@@ -120,17 +126,30 @@ export async function placeBid(listingId: number, userId: number, maxAmount: num
     await connection.beginTransaction();
 
     const [rows] = await connection.query(
-      "SELECT current_price, status, leader_max_amount, ends_at FROM listings WHERE id = ? FOR UPDATE",
+      "SELECT current_price, status, leader_max_amount, ends_at, buy_it_now_price FROM listings WHERE id = ? FOR UPDATE",
       [listingId],
     );
-    const listing = (rows as { current_price: number; status: string; leader_max_amount: number | null; ends_at: Date }[])[0];
+    const listing = (
+      rows as {
+        current_price: number;
+        status: string;
+        leader_max_amount: number | null;
+        ends_at: Date;
+        buy_it_now_price: number;
+      }[]
+    )[0];
     if (!listing) {
       await connection.rollback();
       return { ok: false, error: "找不到這個商品" };
     }
 
     const result = resolveProxyBid(
-      { status: listing.status, currentPrice: listing.current_price, leaderMaxAmount: listing.leader_max_amount },
+      {
+        status: listing.status,
+        currentPrice: listing.current_price,
+        leaderMaxAmount: listing.leader_max_amount,
+        buyItNowPrice: listing.buy_it_now_price,
+      },
       maxAmount,
     );
     if (!result.ok) {
@@ -138,11 +157,13 @@ export async function placeBid(listingId: number, userId: number, maxAmount: num
       return result;
     }
 
-    const newEndsAt = extendEndTimeIfNeeded(listing.ends_at, new Date());
+    // A buyout closing this transaction makes extending the deadline moot.
+    const newEndsAt = result.closedViaBuyItNow ? listing.ends_at : extendEndTimeIfNeeded(listing.ends_at, new Date());
+    const newStatus = result.closedViaBuyItNow ? "closed" : listing.status;
 
     await connection.query(
-      "UPDATE listings SET current_price = ?, leader_max_amount = ?, ends_at = ? WHERE id = ?",
-      [result.currentPrice, result.leaderMaxAmount, newEndsAt, listingId],
+      "UPDATE listings SET current_price = ?, leader_max_amount = ?, ends_at = ?, status = ? WHERE id = ?",
+      [result.currentPrice, result.leaderMaxAmount, newEndsAt, newStatus, listingId],
     );
     // leader_user_id only changes when the leader actually changes — this
     // bidder's own row still gets recorded in bid history either way.
@@ -152,6 +173,53 @@ export async function placeBid(listingId: number, userId: number, maxAmount: num
     await connection.query(
       "INSERT INTO bids (listing_id, user_id, amount, max_amount, created_at) VALUES (?, ?, ?, ?, NOW())",
       [listingId, userId, result.currentPrice, maxAmount],
+    );
+
+    await connection.commit();
+    return result;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+// The explicit "Buy It Now" trigger: works identically whether or not bids
+// already exist, always sells at the listing's buy_it_now_price, and
+// atomically closes the listing so no further bids/buyouts can land.
+export async function buyNow(listingId: number, userId: number): Promise<BuyNowOutcome> {
+  const db = await getDb();
+  const connection = await db.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const [rows] = await connection.query(
+      "SELECT status, buy_it_now_price FROM listings WHERE id = ? FOR UPDATE",
+      [listingId],
+    );
+    const listing = (rows as { status: string; buy_it_now_price: number }[])[0];
+    if (!listing) {
+      await connection.rollback();
+      return { ok: false, error: "找不到這個商品" };
+    }
+
+    const result = resolveBuyNow({ status: listing.status, buyItNowPrice: listing.buy_it_now_price });
+    if (!result.ok) {
+      await connection.rollback();
+      return result;
+    }
+
+    await connection.query(
+      `UPDATE listings
+       SET status = 'closed', current_price = ?, leader_user_id = ?, leader_max_amount = ?
+       WHERE id = ?`,
+      [result.finalPrice, userId, result.finalPrice, listingId],
+    );
+    await connection.query(
+      "INSERT INTO bids (listing_id, user_id, amount, max_amount, created_at) VALUES (?, ?, ?, ?, NOW())",
+      [listingId, userId, result.finalPrice, result.finalPrice],
     );
 
     await connection.commit();

@@ -35,16 +35,20 @@ export interface ProxyBidState {
   currentPrice: number;
   /** The existing leader's private max, or null if no one has bid yet. */
   leaderMaxAmount: number | null;
+  buyItNowPrice: number;
 }
 
 export interface ProxyBidResult {
   ok: true;
-  /** The new visible price, shown to everyone. */
+  /** The new visible price, shown to everyone. Capped at buyItNowPrice. */
   currentPrice: number;
   /** The new leader's private max — never shown to anyone but them. */
   leaderMaxAmount: number;
   /** Whether the bidder who just submitted this max is now the leader. */
   youAreLeading: boolean;
+  /** True if this resolution reached/exceeded the buy-it-now price — the
+   * listing should close now, sold at buyItNowPrice to whoever is leading. */
+  closedViaBuyItNow: boolean;
 }
 
 export type ProxyBidOutcome = ProxyBidResult | { ok: false; error: string };
@@ -56,6 +60,11 @@ export type ProxyBidOutcome = ProxyBidResult | { ok: false; error: string };
 // nets a visible price strictly between the two maxes (or exactly at the
 // lower one, on a tie) — never the challenger's full max when they lose,
 // and never less than what's needed to have beaten the prior state.
+//
+// If the resolved price would reach or exceed buyItNowPrice, it's capped
+// there instead and flagged closedViaBuyItNow — the running price must
+// never be recorded above the buy-it-now price (see resolveBuyNow for the
+// separate, explicit "click Buy Now" trigger).
 export function resolveProxyBid(state: ProxyBidState, maxAmount: number): ProxyBidOutcome {
   if (state.status !== "open") {
     return { ok: false, error: "這個商品已經結標，無法出價" };
@@ -69,17 +78,42 @@ export function resolveProxyBid(state: ProxyBidState, maxAmount: number): ProxyB
     return { ok: false, error: `出價必須至少為 ${minimumNextBid}` };
   }
 
+  let currentPrice: number;
+  let leaderMaxAmount: number;
+  let youAreLeading: boolean;
+
   if (state.leaderMaxAmount === null) {
-    return { ok: true, currentPrice: maxAmount, leaderMaxAmount: maxAmount, youAreLeading: true };
+    currentPrice = maxAmount;
+    leaderMaxAmount = maxAmount;
+    youAreLeading = true;
+  } else if (maxAmount > state.leaderMaxAmount) {
+    currentPrice = Math.min(maxAmount, state.leaderMaxAmount + getBidIncrement(state.leaderMaxAmount));
+    leaderMaxAmount = maxAmount;
+    youAreLeading = true;
+  } else {
+    currentPrice = Math.min(state.leaderMaxAmount, maxAmount + getBidIncrement(maxAmount));
+    leaderMaxAmount = state.leaderMaxAmount;
+    youAreLeading = false;
   }
 
-  if (maxAmount > state.leaderMaxAmount) {
-    const newPrice = Math.min(maxAmount, state.leaderMaxAmount + getBidIncrement(state.leaderMaxAmount));
-    return { ok: true, currentPrice: newPrice, leaderMaxAmount: maxAmount, youAreLeading: true };
+  const closedViaBuyItNow = currentPrice >= state.buyItNowPrice;
+  if (closedViaBuyItNow) {
+    currentPrice = state.buyItNowPrice;
   }
 
-  const newPrice = Math.min(state.leaderMaxAmount, maxAmount + getBidIncrement(maxAmount));
-  return { ok: true, currentPrice: newPrice, leaderMaxAmount: state.leaderMaxAmount, youAreLeading: false };
+  return { ok: true, currentPrice, leaderMaxAmount, youAreLeading, closedViaBuyItNow };
+}
+
+export type BuyNowOutcome = { ok: true; finalPrice: number } | { ok: false; error: string };
+
+// The explicit "click Buy Now" trigger — the only requirement is that the
+// listing is still open; it works identically whether or not bids exist,
+// and always sells at the listing's buy-it-now price.
+export function resolveBuyNow(state: { status: string; buyItNowPrice: number }): BuyNowOutcome {
+  if (state.status !== "open") {
+    return { ok: false, error: "這個商品已經結標" };
+  }
+  return { ok: true, finalPrice: state.buyItNowPrice };
 }
 
 // Anti-sniping: a bid landing inside this trailing window before the

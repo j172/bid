@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { placeBid } from "@/lib/listings";
+import { buyNow } from "@/lib/listings";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser();
@@ -14,19 +14,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ ok: false, error: "找不到這個商品" }, { status: 404 });
   }
 
-  const body = await request.json().catch(() => null);
-  const maxAmount = Number(body?.maxAmount);
-
-  const result = await placeBid(listingId, user.id, maxAmount);
+  const result = await buyNow(listingId, user.id);
   if (!result.ok) {
     const status = result.error === "找不到這個商品" ? 404 : 400;
     return NextResponse.json({ ok: false, error: result.error }, { status });
   }
 
-  return NextResponse.json({
-    ok: true,
-    currentPrice: result.currentPrice,
-    youAreLeading: result.youAreLeading,
-    closedViaBuyItNow: result.closedViaBuyItNow,
-  });
+  return NextResponse.json({ ok: true, finalPrice: result.finalPrice });
 }

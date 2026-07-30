@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { ANTI_SNIPE_WINDOW_MS, extendEndTimeIfNeeded, getBidIncrement, getMinimumNextBid, resolveProxyBid } from "./domain";
+import {
+  ANTI_SNIPE_WINDOW_MS,
+  extendEndTimeIfNeeded,
+  getBidIncrement,
+  getMinimumNextBid,
+  resolveBuyNow,
+  resolveProxyBid,
+} from "./domain";
+
+// A buy-it-now price high enough to be irrelevant to tests that aren't
+// specifically about the buy-it-now threshold.
+const NO_BIN = 999_999;
 
 describe("getBidIncrement", () => {
   it("returns the smallest tier's increment for low prices", () => {
@@ -31,49 +42,86 @@ describe("getMinimumNextBid", () => {
 
 describe("resolveProxyBid — no existing leader (first bid on a listing)", () => {
   it("accepts a max that meets the minimum exactly, becoming leader at that price", () => {
-    expect(resolveProxyBid({ status: "open", currentPrice: 1000, leaderMaxAmount: null }, 1100)).toEqual({
+    expect(
+      resolveProxyBid({ status: "open", currentPrice: 1000, leaderMaxAmount: null, buyItNowPrice: NO_BIN }, 1100),
+    ).toEqual({
       ok: true,
       currentPrice: 1100,
       leaderMaxAmount: 1100,
       youAreLeading: true,
+      closedViaBuyItNow: false,
     });
   });
 
   it("reveals the full max as the visible price when there's no one to shield behind", () => {
-    const result = resolveProxyBid({ status: "open", currentPrice: 1000, leaderMaxAmount: null }, 5000);
-    expect(result).toEqual({ ok: true, currentPrice: 5000, leaderMaxAmount: 5000, youAreLeading: true });
+    const result = resolveProxyBid(
+      { status: "open", currentPrice: 1000, leaderMaxAmount: null, buyItNowPrice: NO_BIN },
+      5000,
+    );
+    expect(result).toEqual({
+      ok: true,
+      currentPrice: 5000,
+      leaderMaxAmount: 5000,
+      youAreLeading: true,
+      closedViaBuyItNow: false,
+    });
   });
 
   it("rejects a max below the minimum with a message naming the required minimum", () => {
-    const result = resolveProxyBid({ status: "open", currentPrice: 1000, leaderMaxAmount: null }, 1050);
+    const result = resolveProxyBid(
+      { status: "open", currentPrice: 1000, leaderMaxAmount: null, buyItNowPrice: NO_BIN },
+      1050,
+    );
     expect(result.ok).toBe(false);
     expect(!result.ok && result.error).toContain("1100");
   });
 
   it("rejects any bid on a listing that isn't open", () => {
-    const result = resolveProxyBid({ status: "closed", currentPrice: 1000, leaderMaxAmount: null }, 5000);
+    const result = resolveProxyBid(
+      { status: "closed", currentPrice: 1000, leaderMaxAmount: null, buyItNowPrice: NO_BIN },
+      5000,
+    );
     expect(result.ok).toBe(false);
   });
 
   it("rejects non-finite or non-positive max amounts", () => {
-    expect(resolveProxyBid({ status: "open", currentPrice: 1000, leaderMaxAmount: null }, NaN).ok).toBe(false);
-    expect(resolveProxyBid({ status: "open", currentPrice: 1000, leaderMaxAmount: null }, -5).ok).toBe(false);
-    expect(resolveProxyBid({ status: "open", currentPrice: 1000, leaderMaxAmount: null }, 0).ok).toBe(false);
+    const base = { status: "open", currentPrice: 1000, leaderMaxAmount: null, buyItNowPrice: NO_BIN } as const;
+    expect(resolveProxyBid(base, NaN).ok).toBe(false);
+    expect(resolveProxyBid(base, -5).ok).toBe(false);
+    expect(resolveProxyBid(base, 0).ok).toBe(false);
   });
 });
 
 describe("resolveProxyBid — challenger's max is higher than the current leader's", () => {
   it("makes the challenger the new leader, at one increment above the old leader's max (capped at the challenger's own max)", () => {
     // old leader's max 1100 (tier increment 100) -> new price should be 1200, capped at challenger's 5000
-    const result = resolveProxyBid({ status: "open", currentPrice: 1100, leaderMaxAmount: 1100 }, 5000);
-    expect(result).toEqual({ ok: true, currentPrice: 1200, leaderMaxAmount: 5000, youAreLeading: true });
+    const result = resolveProxyBid(
+      { status: "open", currentPrice: 1100, leaderMaxAmount: 1100, buyItNowPrice: NO_BIN },
+      5000,
+    );
+    expect(result).toEqual({
+      ok: true,
+      currentPrice: 1200,
+      leaderMaxAmount: 5000,
+      youAreLeading: true,
+      closedViaBuyItNow: false,
+    });
   });
 
   it("caps the new visible price at the challenger's own max if one increment above the old leader would exceed it", () => {
     // old leader's max 5000 (revealed headroom from a prior round), increment(5000) is 250 -> 5250 would be
     // needed to fully reflect it, but the challenger's max is only 5100
-    const result = resolveProxyBid({ status: "open", currentPrice: 1200, leaderMaxAmount: 5000 }, 5100);
-    expect(result).toEqual({ ok: true, currentPrice: 5100, leaderMaxAmount: 5100, youAreLeading: true });
+    const result = resolveProxyBid(
+      { status: "open", currentPrice: 1200, leaderMaxAmount: 5000, buyItNowPrice: NO_BIN },
+      5100,
+    );
+    expect(result).toEqual({
+      ok: true,
+      currentPrice: 5100,
+      leaderMaxAmount: 5100,
+      youAreLeading: true,
+      closedViaBuyItNow: false,
+    });
   });
 });
 
@@ -81,38 +129,163 @@ describe("resolveProxyBid — challenger's max is lower than or equal to the cur
   it("keeps the existing leader in the lead, raising the visible price to just beat the challenger", () => {
     // leader's max 5000; challenger's max 1300 (>= the 1200 minimum, tier increment 100) -> visible rises to
     // 1400, capped at leader's 5000
-    const result = resolveProxyBid({ status: "open", currentPrice: 1100, leaderMaxAmount: 5000 }, 1300);
-    expect(result).toEqual({ ok: true, currentPrice: 1400, leaderMaxAmount: 5000, youAreLeading: false });
+    const result = resolveProxyBid(
+      { status: "open", currentPrice: 1100, leaderMaxAmount: 5000, buyItNowPrice: NO_BIN },
+      1300,
+    );
+    expect(result).toEqual({
+      ok: true,
+      currentPrice: 1400,
+      leaderMaxAmount: 5000,
+      youAreLeading: false,
+      closedViaBuyItNow: false,
+    });
   });
 
   it("caps the visible price at the leader's own max even if that's less than a full increment above the challenger", () => {
     // leader's max only 980 (headroom from a prior round); challenger's max 950 clears the 950 minimum for a
     // currentPrice of 900 (tier increment 50) -> 950+50=1000 would be needed, but leader can't exceed 980
-    const result = resolveProxyBid({ status: "open", currentPrice: 900, leaderMaxAmount: 980 }, 950);
-    expect(result).toEqual({ ok: true, currentPrice: 980, leaderMaxAmount: 980, youAreLeading: false });
+    const result = resolveProxyBid(
+      { status: "open", currentPrice: 900, leaderMaxAmount: 980, buyItNowPrice: NO_BIN },
+      950,
+    );
+    expect(result).toEqual({
+      ok: true,
+      currentPrice: 980,
+      leaderMaxAmount: 980,
+      youAreLeading: false,
+      closedViaBuyItNow: false,
+    });
   });
 
   it("resolves a tie (equal maxes) in favor of the existing leader, at their shared max", () => {
-    const result = resolveProxyBid({ status: "open", currentPrice: 1100, leaderMaxAmount: 5000 }, 5000);
-    expect(result).toEqual({ ok: true, currentPrice: 5000, leaderMaxAmount: 5000, youAreLeading: false });
+    const result = resolveProxyBid(
+      { status: "open", currentPrice: 1100, leaderMaxAmount: 5000, buyItNowPrice: NO_BIN },
+      5000,
+    );
+    expect(result).toEqual({
+      ok: true,
+      currentPrice: 5000,
+      leaderMaxAmount: 5000,
+      youAreLeading: false,
+      closedViaBuyItNow: false,
+    });
   });
 
   it("never reveals the challenger's max as the visible price", () => {
     // challenger's max 3000 (tier increment 100) -> visible rises to 3100, not the full 3000 they were willing to pay
-    const result = resolveProxyBid({ status: "open", currentPrice: 1100, leaderMaxAmount: 5000 }, 3000);
-    expect(result).toEqual({ ok: true, currentPrice: 3100, leaderMaxAmount: 5000, youAreLeading: false });
+    const result = resolveProxyBid(
+      { status: "open", currentPrice: 1100, leaderMaxAmount: 5000, buyItNowPrice: NO_BIN },
+      3000,
+    );
+    expect(result).toEqual({
+      ok: true,
+      currentPrice: 3100,
+      leaderMaxAmount: 5000,
+      youAreLeading: false,
+      closedViaBuyItNow: false,
+    });
   });
 });
 
 describe("resolveProxyBid — validation still applies once a leader exists", () => {
   it("rejects a challenger's max below the minimum next bid over the current visible price", () => {
     // currentPrice 1100 -> minimum next bid is 1200; 1150 falls short regardless of the leader's max
-    const result = resolveProxyBid({ status: "open", currentPrice: 1100, leaderMaxAmount: 5000 }, 1150);
+    const result = resolveProxyBid(
+      { status: "open", currentPrice: 1100, leaderMaxAmount: 5000, buyItNowPrice: NO_BIN },
+      1150,
+    );
     expect(result.ok).toBe(false);
   });
 
   it("rejects a bid on a closed listing even with an existing leader", () => {
-    const result = resolveProxyBid({ status: "closed", currentPrice: 1100, leaderMaxAmount: 5000 }, 6000);
+    const result = resolveProxyBid(
+      { status: "closed", currentPrice: 1100, leaderMaxAmount: 5000, buyItNowPrice: NO_BIN },
+      6000,
+    );
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("resolveProxyBid — auto-triggered buyout when the resolved price reaches the buy-it-now price", () => {
+  it("caps the price at buyItNowPrice and flags closedViaBuyItNow when a new leader's resolved price would reach it", () => {
+    // no existing leader; first bid's max (6000) itself reaches/exceeds the BIN price (5000)
+    const result = resolveProxyBid(
+      { status: "open", currentPrice: 1000, leaderMaxAmount: null, buyItNowPrice: 5000 },
+      6000,
+    );
+    expect(result).toEqual({
+      ok: true,
+      currentPrice: 5000,
+      leaderMaxAmount: 6000,
+      youAreLeading: true,
+      closedViaBuyItNow: true,
+    });
+  });
+
+  it("caps at buyItNowPrice when a challenger overtakes the leader and the resolved price would reach it", () => {
+    // old leader's max 5000, increment 250 -> would resolve to 5250, but BIN is 5100 -> capped there, closed
+    const result = resolveProxyBid(
+      { status: "open", currentPrice: 1200, leaderMaxAmount: 5000, buyItNowPrice: 5100 },
+      6000,
+    );
+    expect(result).toEqual({
+      ok: true,
+      currentPrice: 5100,
+      leaderMaxAmount: 6000,
+      youAreLeading: true,
+      closedViaBuyItNow: true,
+    });
+  });
+
+  it("caps at buyItNowPrice even when the existing leader (not the challenger) is the one who ends up winning", () => {
+    // leader's own max (6000) comfortably exceeds BIN (5100); a challenger at 5000 (still <= leader's max, so the
+    // leader stays in front) pushes the visible price to min(6000, 5000+250)=5250, which reaches/exceeds BIN ->
+    // closes with the EXISTING leader winning at 5100, not the challenger
+    const result = resolveProxyBid(
+      { status: "open", currentPrice: 1100, leaderMaxAmount: 6000, buyItNowPrice: 5100 },
+      5000,
+    );
+    expect(result).toEqual({
+      ok: true,
+      currentPrice: 5100,
+      leaderMaxAmount: 6000,
+      youAreLeading: false,
+      closedViaBuyItNow: true,
+    });
+  });
+
+  it("does not trigger when the resolved price stays below the buy-it-now price", () => {
+    const result = resolveProxyBid(
+      { status: "open", currentPrice: 1000, leaderMaxAmount: null, buyItNowPrice: 5000 },
+      1200,
+    );
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.closedViaBuyItNow).toBe(false);
+  });
+
+  it("triggers exactly at the buy-it-now price, not only when strictly exceeding it", () => {
+    const result = resolveProxyBid(
+      { status: "open", currentPrice: 1000, leaderMaxAmount: null, buyItNowPrice: 5000 },
+      5000,
+    );
+    expect(result).toEqual({
+      ok: true,
+      currentPrice: 5000,
+      leaderMaxAmount: 5000,
+      youAreLeading: true,
+      closedViaBuyItNow: true,
+    });
+  });
+});
+
+describe("resolveBuyNow", () => {
+  it("succeeds on an open listing regardless of any prior bids, selling at the buy-it-now price", () => {
+    expect(resolveBuyNow({ status: "open", buyItNowPrice: 5000 })).toEqual({ ok: true, finalPrice: 5000 });
+  });
+
+  it("rejects a listing that isn't open", () => {
+    const result = resolveBuyNow({ status: "closed", buyItNowPrice: 5000 });
     expect(result.ok).toBe(false);
   });
 });
