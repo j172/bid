@@ -111,6 +111,7 @@ async function ensureAccountColumns(db: mysql.Pool): Promise<void> {
   await ensureColumn(db, "users", "address", "VARCHAR(200) NULL");
   await ensureColumn(db, "users", "deleted_at", "DATETIME NULL");
   await ensureColumn(db, "listings", "settled_at", "DATETIME NULL");
+  await ensureColumn(db, "users", "suspended_at", "DATETIME NULL");
 }
 
 // buy_it_now_price started out NOT NULL (every listing required one);

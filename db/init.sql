@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   phone VARCHAR(20) NULL,
   address VARCHAR(200) NULL,
   deleted_at DATETIME NULL,
+  suspended_at DATETIME NULL,
   created_at DATETIME NOT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_users_email (email)

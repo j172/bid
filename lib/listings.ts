@@ -243,6 +243,29 @@ export async function findBlockingObligation(userId: number): Promise<string | n
   return null;
 }
 
+export interface ListingCreatedByUser {
+  id: number;
+  title: string;
+  status: string;
+  currentPrice: number;
+  endsAt: Date;
+}
+
+// Only admins can create listings (see app/api/admin/listings/route.ts), so
+// this is normally empty for a plain user — it's here for the admin user
+// detail page in case the viewed account currently is, or previously was,
+// an admin.
+export async function getListingsCreatedByUser(userId: number): Promise<ListingCreatedByUser[]> {
+  await closeExpiredListings();
+  const db = await getDb();
+  const [rows] = await db.query(
+    `SELECT id, title, status, current_price AS currentPrice, ends_at AS endsAt
+     FROM listings WHERE created_by = ? ORDER BY created_at DESC`,
+    [userId],
+  );
+  return rows as ListingCreatedByUser[];
+}
+
 export interface BidHistoryEntry {
   listingId: number;
   listingTitle: string;

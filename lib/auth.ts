@@ -66,6 +66,7 @@ interface UserRow {
   password_hash: string;
   password_salt: string;
   role: Role;
+  suspended_at: Date | null;
 }
 
 export async function findUserByEmail(email: string): Promise<UserRow | null> {
@@ -108,19 +109,203 @@ export async function destroySession(): Promise<void> {
   cookieStore.delete(SESSION_COOKIE);
 }
 
+export type AccountStatus = "active" | "suspended" | "deleted";
+
 export interface UserSummary {
   id: number;
   email: string;
+  displayName: string | null;
   role: Role;
+  status: AccountStatus;
+  createdAt: Date;
+  bidCount: number;
+  totalWon: number;
+}
+
+export interface ListUsersOptions {
+  search?: string;
+  role?: Role;
+  /** "all" excludes deleted accounts by default — see the admin users list's default filter. */
+  status?: "all" | AccountStatus;
+  sort?: "created_desc" | "created_asc" | "bid_count_desc" | "gmv_desc";
+  page?: number;
+}
+
+export const USERS_PAGE_SIZE = 50;
+
+const SORT_CLAUSES: Record<NonNullable<ListUsersOptions["sort"]>, string> = {
+  created_desc: "u.created_at DESC",
+  created_asc: "u.created_at ASC",
+  bid_count_desc: "bidCount DESC",
+  gmv_desc: "totalWon DESC",
+};
+
+// Powers the admin users list: search + role/status filters + sortable
+// activity aggregates (bid count, total won amount) + pagination. Bid count
+// and total-won are computed via correlated subqueries (rather than a JOIN)
+// to avoid fan-out duplicating rows across the many-bids-per-user relation
+// — same style as getOverviewStats in lib/listings.ts.
+export async function listUsers(options: ListUsersOptions = {}): Promise<{ users: UserSummary[]; total: number }> {
+  const db = await getDb();
+  const conditions: string[] = [];
+  const params: (string | number)[] = [];
+
+  const search = options.search?.trim();
+  if (search) {
+    conditions.push("(u.email LIKE ? OR u.display_name LIKE ? OR u.phone LIKE ?)");
+    const like = `%${search}%`;
+    params.push(like, like, like);
+  }
+  if (options.role) {
+    conditions.push("u.role = ?");
+    params.push(options.role);
+  }
+  switch (options.status) {
+    case "active":
+      conditions.push("u.deleted_at IS NULL AND u.suspended_at IS NULL");
+      break;
+    case "suspended":
+      conditions.push("u.deleted_at IS NULL AND u.suspended_at IS NOT NULL");
+      break;
+    case "deleted":
+      conditions.push("u.deleted_at IS NOT NULL");
+      break;
+    case "all":
+    default:
+      conditions.push("u.deleted_at IS NULL");
+      break;
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const orderBy = SORT_CLAUSES[options.sort ?? "created_desc"];
+  const page = Math.max(1, options.page ?? 1);
+  const offset = (page - 1) * USERS_PAGE_SIZE;
+
+  const [countRows] = await db.query(`SELECT COUNT(*) AS cnt FROM users u ${whereClause}`, params);
+  const total = (countRows as { cnt: number }[])[0].cnt;
+
+  const [rows] = await db.query(
+    `SELECT
+       u.id, u.email, u.display_name AS displayName, u.role, u.created_at AS createdAt,
+       CASE WHEN u.deleted_at IS NOT NULL THEN 'deleted'
+            WHEN u.suspended_at IS NOT NULL THEN 'suspended'
+            ELSE 'active' END AS status,
+       (SELECT COUNT(*) FROM bids WHERE user_id = u.id) AS bidCount,
+       (SELECT COALESCE(SUM(current_price), 0) FROM listings WHERE leader_user_id = u.id AND status = 'closed') AS totalWon
+     FROM users u
+     ${whereClause}
+     ORDER BY ${orderBy}
+     LIMIT ${USERS_PAGE_SIZE} OFFSET ${offset}`,
+    params,
+  );
+  return { users: rows as UserSummary[], total };
+}
+
+export interface UserDetail {
+  id: number;
+  email: string;
+  displayName: string | null;
+  phone: string | null;
+  address: string | null;
+  role: Role;
+  status: AccountStatus;
   createdAt: Date;
 }
 
-export async function listUsers(): Promise<UserSummary[]> {
+export async function getUserDetail(userId: number): Promise<UserDetail | null> {
   const db = await getDb();
   const [rows] = await db.query(
-    "SELECT id, email, role, created_at AS createdAt FROM users ORDER BY created_at DESC",
+    `SELECT
+       id, email, display_name AS displayName, phone, address, role, created_at AS createdAt,
+       CASE WHEN deleted_at IS NOT NULL THEN 'deleted'
+            WHEN suspended_at IS NOT NULL THEN 'suspended'
+            ELSE 'active' END AS status
+     FROM users WHERE id = ? LIMIT 1`,
+    [userId],
   );
-  return rows as UserSummary[];
+  return (rows as UserDetail[])[0] ?? null;
+}
+
+export type RoleChangeOutcome = { ok: true } | { ok: false; error: string };
+
+// Promoting to admin has no restrictions; demoting to a plain user is
+// blocked in two cases: acting on your own account (so an admin can never
+// lock themselves out by mistake) and demoting the last remaining
+// operational admin (deleted/suspended admins don't count — they can't log
+// in anyway, so they're not "operational" for this purpose).
+export async function setUserRole(targetUserId: number, newRole: Role, actingUserId: number): Promise<RoleChangeOutcome> {
+  const db = await getDb();
+
+  if (newRole === "user") {
+    if (targetUserId === actingUserId) {
+      return { ok: false, error: "不能將自己降級" };
+    }
+    const [rows] = await db.query("SELECT role FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1", [
+      targetUserId,
+    ]);
+    const target = (rows as { role: Role }[])[0];
+    if (!target) {
+      return { ok: false, error: "找不到這個使用者" };
+    }
+    if (target.role === "admin") {
+      const [countRows] = await db.query(
+        "SELECT COUNT(*) AS cnt FROM users WHERE role = 'admin' AND deleted_at IS NULL AND suspended_at IS NULL",
+      );
+      if ((countRows as { cnt: number }[])[0].cnt <= 1) {
+        return { ok: false, error: "無法降級：這是系統中唯一的管理員" };
+      }
+    }
+  }
+
+  const [result] = await db.query("UPDATE users SET role = ? WHERE id = ? AND deleted_at IS NULL", [
+    newRole,
+    targetUserId,
+  ]);
+  if ((result as { affectedRows: number }).affectedRows === 0) {
+    return { ok: false, error: "找不到這個使用者" };
+  }
+  return { ok: true };
+}
+
+export type SuspendOutcome = { ok: true } | { ok: false; error: string };
+
+// Suspension blocks login (see findUserByEmail's caller in the login route,
+// and getCurrentUser's suspended_at check) but never blocks on a leading
+// bid/listing — unlike deleteAccount, it's meant as an instantly-reversible
+// administrative kill switch, not a permanent removal. The same self- and
+// last-admin protections as setUserRole apply, since suspending an admin is
+// operationally equivalent to demoting them (they can't use the backend
+// either way).
+export async function suspendUser(targetUserId: number, actingUserId: number): Promise<SuspendOutcome> {
+  if (targetUserId === actingUserId) {
+    return { ok: false, error: "不能停權自己" };
+  }
+  const db = await getDb();
+  const [rows] = await db.query(
+    "SELECT role, suspended_at FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1",
+    [targetUserId],
+  );
+  const target = (rows as { role: Role; suspended_at: Date | null }[])[0];
+  if (!target) {
+    return { ok: false, error: "找不到這個使用者" };
+  }
+  if (target.role === "admin" && target.suspended_at === null) {
+    const [countRows] = await db.query(
+      "SELECT COUNT(*) AS cnt FROM users WHERE role = 'admin' AND deleted_at IS NULL AND suspended_at IS NULL",
+    );
+    if ((countRows as { cnt: number }[])[0].cnt <= 1) {
+      return { ok: false, error: "無法停權：這是系統中唯一的管理員" };
+    }
+  }
+
+  await db.query("UPDATE users SET suspended_at = NOW() WHERE id = ?", [targetUserId]);
+  await db.query("DELETE FROM sessions WHERE user_id = ?", [targetUserId]);
+  return { ok: true };
+}
+
+export async function unsuspendUser(targetUserId: number): Promise<void> {
+  const db = await getDb();
+  await db.query("UPDATE users SET suspended_at = NULL WHERE id = ?", [targetUserId]);
 }
 
 export interface AccountProfile {
@@ -213,7 +398,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     `SELECT u.id, u.email, u.role
      FROM sessions s
      JOIN users u ON u.id = s.user_id
-     WHERE s.id = ? AND s.expires_at > NOW()
+     WHERE s.id = ? AND s.expires_at > NOW() AND u.suspended_at IS NULL
      LIMIT 1`,
     [token],
   );
