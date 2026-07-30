@@ -41,7 +41,7 @@ export default async function HomePage() {
         {user?.role === "admin" && (
           <>
             {" "}
-            / <a href="/admin/listings/new">建立商品</a>
+            / <a href="/admin/listings/new">建立商品</a> / <a href="/admin/listings/closed">已結標結算</a>
           </>
         )}
       </p>

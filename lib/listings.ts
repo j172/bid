@@ -72,7 +72,22 @@ export async function deleteListing(id: number): Promise<void> {
   await db.query("DELETE FROM listings WHERE id = ?", [id]);
 }
 
+// Closes any listing whose end time has passed without being bought out
+// first. Deliberately just a status flip: current_price and leader_user_id
+// are already correct at every moment (placeBid/buyNow keep them in sync
+// live), so the highest bid at the instant this runs — or the starting
+// price and no leader, if the listing never got a single bid — is exactly
+// the right final price/winner. Called at the top of every read/write path
+// below rather than run on a schedule, since there's no background worker
+// in this deployment; cheap enough (single indexed UPDATE) to run on every
+// access.
+export async function closeExpiredListings(): Promise<void> {
+  const db = await getDb();
+  await db.query("UPDATE listings SET status = 'closed' WHERE status = 'open' AND ends_at <= NOW()");
+}
+
 export async function listOpenListings(): Promise<ListingWithPhotos[]> {
+  await closeExpiredListings();
   const db = await getDb();
   const [rows] = await db.query("SELECT * FROM listings WHERE status = 'open' ORDER BY ends_at ASC");
   const listings = rows as Listing[];
@@ -85,6 +100,7 @@ export async function listOpenListings(): Promise<ListingWithPhotos[]> {
 }
 
 export async function getListingById(id: number): Promise<ListingWithPhotos | null> {
+  await closeExpiredListings();
   const db = await getDb();
   const [rows] = await db.query("SELECT * FROM listings WHERE id = ? LIMIT 1", [id]);
   const list = rows as Listing[];
@@ -92,6 +108,26 @@ export async function getListingById(id: number): Promise<ListingWithPhotos | nu
   if (!listing) return null;
 
   return { ...listing, photos: await getPhotoFileNames(listing.id) };
+}
+
+export interface ClosedListingSummary {
+  id: number;
+  title: string;
+  finalPrice: number;
+  winnerEmail: string | null;
+}
+
+export async function getClosedListings(): Promise<ClosedListingSummary[]> {
+  await closeExpiredListings();
+  const db = await getDb();
+  const [rows] = await db.query(
+    `SELECT l.id AS id, l.title AS title, l.current_price AS finalPrice, u.email AS winnerEmail
+     FROM listings l
+     LEFT JOIN users u ON u.id = l.leader_user_id
+     WHERE l.status = 'closed'
+     ORDER BY l.ends_at DESC`,
+  );
+  return rows as ClosedListingSummary[];
 }
 
 export interface ListingStatusSnapshot {
@@ -105,6 +141,7 @@ export interface ListingStatusSnapshot {
 // change after page load (current_price via bids, ends_at via anti-snipe,
 // status once the auction closes) — no photo lookups needed on every poll.
 export async function getListingStatus(id: number): Promise<ListingStatusSnapshot | null> {
+  await closeExpiredListings();
   const db = await getDb();
   const [rows] = await db.query("SELECT current_price, ends_at, status FROM listings WHERE id = ? LIMIT 1", [id]);
   const list = rows as { current_price: number; ends_at: Date; status: string }[];
@@ -120,6 +157,7 @@ export async function getListingStatus(id: number): Promise<ListingStatusSnapsho
 // leader's max is deliberately never returned to callers, only the
 // resulting visible current_price.
 export async function placeBid(listingId: number, userId: number, maxAmount: number): Promise<ProxyBidOutcome> {
+  await closeExpiredListings();
   const db = await getDb();
   const connection = await db.getConnection();
 
@@ -200,6 +238,7 @@ export async function placeBid(listingId: number, userId: number, maxAmount: num
 // already exist, always sells at the listing's buy_it_now_price, and
 // atomically closes the listing so no further bids/buyouts can land.
 export async function buyNow(listingId: number, userId: number): Promise<BuyNowOutcome> {
+  await closeExpiredListings();
   const db = await getDb();
   const connection = await db.getConnection();
 
