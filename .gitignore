@@ -18,3 +18,6 @@ tsconfig.tsbuildinfo
 
 # runtime-uploaded listing photos (live only on the server)
 /uploads/
+
+# background-agent worktrees (each is its own separate checkout/.git)
+/.claude/worktrees/

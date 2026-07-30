@@ -1,5 +1,5 @@
 import { getDb } from "@/lib/db";
-import { validateBid, type BidValidationResult } from "@/lib/bidding/domain";
+import { resolveProxyBid, type ProxyBidOutcome } from "@/lib/bidding/domain";
 
 export interface Listing {
   id: number;
@@ -88,8 +88,11 @@ export async function getListingById(id: number): Promise<ListingWithPhotos | nu
 }
 
 // Locks the listing row for the duration of the read-validate-write so two
-// concurrent bids can't both read the same current_price and both succeed.
-export async function placeBid(listingId: number, userId: number, bidAmount: number): Promise<BidValidationResult> {
+// concurrent bids can't both read the same state and both succeed. Every
+// bid is a private max (proxy bidding, see lib/bidding/domain.ts) — the
+// leader's max is deliberately never returned to callers, only the
+// resulting visible current_price.
+export async function placeBid(listingId: number, userId: number, maxAmount: number): Promise<ProxyBidOutcome> {
   const db = await getDb();
   const connection = await db.getConnection();
 
@@ -97,25 +100,36 @@ export async function placeBid(listingId: number, userId: number, bidAmount: num
     await connection.beginTransaction();
 
     const [rows] = await connection.query(
-      "SELECT current_price, status FROM listings WHERE id = ? FOR UPDATE",
+      "SELECT current_price, status, leader_max_amount FROM listings WHERE id = ? FOR UPDATE",
       [listingId],
     );
-    const listing = (rows as { current_price: number; status: string }[])[0];
+    const listing = (rows as { current_price: number; status: string; leader_max_amount: number | null }[])[0];
     if (!listing) {
       await connection.rollback();
       return { ok: false, error: "找不到這個商品" };
     }
 
-    const result = validateBid({ status: listing.status, currentPrice: listing.current_price, bidAmount });
+    const result = resolveProxyBid(
+      { status: listing.status, currentPrice: listing.current_price, leaderMaxAmount: listing.leader_max_amount },
+      maxAmount,
+    );
     if (!result.ok) {
       await connection.rollback();
       return result;
     }
 
-    await connection.query("UPDATE listings SET current_price = ? WHERE id = ?", [result.newPrice, listingId]);
     await connection.query(
-      "INSERT INTO bids (listing_id, user_id, amount, created_at) VALUES (?, ?, ?, NOW())",
-      [listingId, userId, result.newPrice],
+      "UPDATE listings SET current_price = ?, leader_max_amount = ? WHERE id = ?",
+      [result.currentPrice, result.leaderMaxAmount, listingId],
+    );
+    // leader_user_id only changes when the leader actually changes — this
+    // bidder's own row still gets recorded in bid history either way.
+    if (result.youAreLeading) {
+      await connection.query("UPDATE listings SET leader_user_id = ? WHERE id = ?", [userId, listingId]);
+    }
+    await connection.query(
+      "INSERT INTO bids (listing_id, user_id, amount, max_amount, created_at) VALUES (?, ?, ?, ?, NOW())",
+      [listingId, userId, result.currentPrice, maxAmount],
     );
 
     await connection.commit();

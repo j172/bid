@@ -15,13 +15,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const body = await request.json().catch(() => null);
-  const amount = Number(body?.amount);
+  const maxAmount = Number(body?.maxAmount);
 
-  const result = await placeBid(listingId, user.id, amount);
+  const result = await placeBid(listingId, user.id, maxAmount);
   if (!result.ok) {
     const status = result.error === "找不到這個商品" ? 404 : 400;
     return NextResponse.json({ ok: false, error: result.error }, { status });
   }
 
-  return NextResponse.json({ ok: true, currentPrice: result.newPrice });
+  return NextResponse.json({ ok: true, currentPrice: result.currentPrice, youAreLeading: result.youAreLeading });
 }

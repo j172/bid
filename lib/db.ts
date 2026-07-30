@@ -64,19 +64,36 @@ CREATE TABLE IF NOT EXISTS bids (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
 
-// listings predates the current_price column (added for bidding); existing
-// rows on already-deployed databases need it added and backfilled rather
-// than assumed to exist via CREATE TABLE IF NOT EXISTS.
-async function ensureCurrentPriceColumn(db: mysql.Pool): Promise<void> {
+// Columns added after their table's initial CREATE TABLE IF NOT EXISTS;
+// existing rows on already-deployed databases need them added explicitly
+// rather than assumed to exist.
+async function ensureColumn(db: mysql.Pool, table: string, column: string, definition: string): Promise<boolean> {
   const [rows] = await db.query(
     `SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS
-     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'listings' AND COLUMN_NAME = 'current_price'`,
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+    [table, column],
   );
   const count = (rows as { cnt: number }[])[0].cnt;
   if (count === 0) {
-    await db.query("ALTER TABLE listings ADD COLUMN current_price BIGINT NOT NULL DEFAULT 0");
+    await db.query(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+    return true;
   }
-  await db.query("UPDATE listings SET current_price = starting_price WHERE current_price = 0");
+  return false;
+}
+
+async function ensureBiddingColumns(db: mysql.Pool): Promise<void> {
+  const currentPriceAdded = await ensureColumn(db, "listings", "current_price", "BIGINT NOT NULL DEFAULT 0");
+  if (currentPriceAdded) {
+    await db.query("UPDATE listings SET current_price = starting_price WHERE current_price = 0");
+  }
+
+  await ensureColumn(db, "listings", "leader_user_id", "BIGINT NULL");
+  await ensureColumn(db, "listings", "leader_max_amount", "BIGINT NULL");
+
+  const maxAmountAdded = await ensureColumn(db, "bids", "max_amount", "BIGINT NOT NULL DEFAULT 0");
+  if (maxAmountAdded) {
+    await db.query("UPDATE bids SET max_amount = amount WHERE max_amount = 0");
+  }
 }
 
 function createPool(): mysql.Pool {
@@ -94,7 +111,7 @@ function createPool(): mysql.Pool {
 
 async function ensureSchema(db: mysql.Pool): Promise<void> {
   await db.query(SCHEMA_SQL);
-  await ensureCurrentPriceColumn(db);
+  await ensureBiddingColumns(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {

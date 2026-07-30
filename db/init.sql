@@ -30,6 +30,8 @@ CREATE TABLE IF NOT EXISTS listings (
   status VARCHAR(20) NOT NULL DEFAULT 'open',
   created_by BIGINT NOT NULL,
   created_at DATETIME NOT NULL,
+  leader_user_id BIGINT NULL,
+  leader_max_amount BIGINT NULL,
   PRIMARY KEY (id),
   KEY idx_listings_status_ends (status, ends_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -49,6 +51,7 @@ CREATE TABLE IF NOT EXISTS bids (
   listing_id BIGINT NOT NULL,
   user_id BIGINT NOT NULL,
   amount BIGINT NOT NULL,
+  max_amount BIGINT NOT NULL,
   created_at DATETIME NOT NULL,
   PRIMARY KEY (id),
   KEY idx_bids_listing_amount (listing_id, amount),

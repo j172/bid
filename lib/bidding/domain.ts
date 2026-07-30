@@ -29,27 +29,55 @@ export function getMinimumNextBid(currentPrice: number): number {
   return currentPrice + getBidIncrement(currentPrice);
 }
 
-export interface BidValidationInput {
+export interface ProxyBidState {
   /** The listing's current status, e.g. "open" or "closed". */
   status: string;
   currentPrice: number;
-  bidAmount: number;
+  /** The existing leader's private max, or null if no one has bid yet. */
+  leaderMaxAmount: number | null;
 }
 
-export type BidValidationResult = { ok: true; newPrice: number } | { ok: false; error: string };
+export interface ProxyBidResult {
+  ok: true;
+  /** The new visible price, shown to everyone. */
+  currentPrice: number;
+  /** The new leader's private max — never shown to anyone but them. */
+  leaderMaxAmount: number;
+  /** Whether the bidder who just submitted this max is now the leader. */
+  youAreLeading: boolean;
+}
 
-export function validateBid(input: BidValidationInput): BidValidationResult {
-  if (input.status !== "open") {
+export type ProxyBidOutcome = ProxyBidResult | { ok: false; error: string };
+
+// Standard proxy ("eBay-style") auction resolution. Every bid is a private
+// max; only the resulting visible price is ever shown. A lone/first bid
+// reveals its own max as the visible price (no competing max to shield
+// behind). Once a leader exists, resolving a new max against it always
+// nets a visible price strictly between the two maxes (or exactly at the
+// lower one, on a tie) — never the challenger's full max when they lose,
+// and never less than what's needed to have beaten the prior state.
+export function resolveProxyBid(state: ProxyBidState, maxAmount: number): ProxyBidOutcome {
+  if (state.status !== "open") {
     return { ok: false, error: "這個商品已經結標，無法出價" };
   }
-  if (!Number.isFinite(input.bidAmount) || input.bidAmount <= 0) {
+  if (!Number.isFinite(maxAmount) || maxAmount <= 0) {
     return { ok: false, error: "出價金額不正確" };
   }
 
-  const minimumNextBid = getMinimumNextBid(input.currentPrice);
-  if (input.bidAmount < minimumNextBid) {
+  const minimumNextBid = getMinimumNextBid(state.currentPrice);
+  if (maxAmount < minimumNextBid) {
     return { ok: false, error: `出價必須至少為 ${minimumNextBid}` };
   }
 
-  return { ok: true, newPrice: input.bidAmount };
+  if (state.leaderMaxAmount === null) {
+    return { ok: true, currentPrice: maxAmount, leaderMaxAmount: maxAmount, youAreLeading: true };
+  }
+
+  if (maxAmount > state.leaderMaxAmount) {
+    const newPrice = Math.min(maxAmount, state.leaderMaxAmount + getBidIncrement(state.leaderMaxAmount));
+    return { ok: true, currentPrice: newPrice, leaderMaxAmount: maxAmount, youAreLeading: true };
+  }
+
+  const newPrice = Math.min(state.leaderMaxAmount, maxAmount + getBidIncrement(maxAmount));
+  return { ok: true, currentPrice: newPrice, leaderMaxAmount: state.leaderMaxAmount, youAreLeading: false };
 }
