@@ -87,6 +87,26 @@ export async function getListingById(id: number): Promise<ListingWithPhotos | nu
   return { ...listing, photos: await getPhotoFileNames(listing.id) };
 }
 
+export interface ListingStatusSnapshot {
+  currentPrice: number;
+  endsAt: Date;
+  status: string;
+}
+
+// Lightweight read for the live-status poll (see
+// app/api/listings/[id]/status/route.ts): just the three columns that can
+// change after page load (current_price via bids, ends_at via anti-snipe,
+// status once the auction closes) — no photo lookups needed on every poll.
+export async function getListingStatus(id: number): Promise<ListingStatusSnapshot | null> {
+  const db = await getDb();
+  const [rows] = await db.query("SELECT current_price, ends_at, status FROM listings WHERE id = ? LIMIT 1", [id]);
+  const list = rows as { current_price: number; ends_at: Date; status: string }[];
+  const listing = list[0];
+  if (!listing) return null;
+
+  return { currentPrice: listing.current_price, endsAt: listing.ends_at, status: listing.status };
+}
+
 // Locks the listing row for the duration of the read-validate-write so two
 // concurrent bids can't both read the same state and both succeed. Every
 // bid is a private max (proxy bidding, see lib/bidding/domain.ts) — the
