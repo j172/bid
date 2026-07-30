@@ -4,6 +4,10 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash VARCHAR(255) NOT NULL,
   password_salt VARCHAR(255) NOT NULL,
   role VARCHAR(20) NOT NULL DEFAULT 'user',
+  display_name VARCHAR(50) NULL,
+  phone VARCHAR(20) NULL,
+  address VARCHAR(200) NULL,
+  deleted_at DATETIME NULL,
   created_at DATETIME NOT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_users_email (email)
@@ -32,6 +36,7 @@ CREATE TABLE IF NOT EXISTS listings (
   created_at DATETIME NOT NULL,
   leader_user_id BIGINT NULL,
   leader_max_amount BIGINT NULL,
+  settled_at DATETIME NULL,
   PRIMARY KEY (id),
   KEY idx_listings_status_ends (status, ends_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

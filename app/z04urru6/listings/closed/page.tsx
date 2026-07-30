@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getClosedListings } from "@/lib/listings";
+import SettleButton from "./SettleButton";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,7 @@ export default async function ClosedListingsPage() {
                 <th className={th}>商品</th>
                 <th className={th}>得標者</th>
                 <th className={th}>成交價</th>
+                <th className={th}>交易狀態</th>
               </tr>
             </thead>
             <tbody>
@@ -35,6 +37,15 @@ export default async function ClosedListingsPage() {
                   </td>
                   <td className={td}>{listing.winnerEmail ?? "無人得標"}</td>
                   <td className={`${td} font-semibold`}>{listing.finalPrice}</td>
+                  <td className={td}>
+                    {listing.winnerEmail === null ? (
+                      "—"
+                    ) : listing.settled ? (
+                      <span className="text-sm text-leading">已完成交易</span>
+                    ) : (
+                      <SettleButton listingId={listing.id} />
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

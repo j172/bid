@@ -181,20 +181,65 @@ export interface ClosedListingSummary {
   id: number;
   title: string;
   finalPrice: number;
+  /** null: no winner (zero bids). "（帳號已刪除）": winner existed but deleted their account. */
   winnerEmail: string | null;
+  settled: boolean;
 }
 
 export async function getClosedListings(): Promise<ClosedListingSummary[]> {
   await closeExpiredListings();
   const db = await getDb();
   const [rows] = await db.query(
-    `SELECT l.id AS id, l.title AS title, l.current_price AS finalPrice, u.email AS winnerEmail
+    `SELECT
+       l.id AS id, l.title AS title, l.current_price AS finalPrice,
+       CASE WHEN l.leader_user_id IS NULL THEN NULL
+            WHEN u.deleted_at IS NOT NULL THEN '（帳號已刪除）'
+            ELSE u.email END AS winnerEmail,
+       (l.settled_at IS NOT NULL) AS settled
      FROM listings l
      LEFT JOIN users u ON u.id = l.leader_user_id
      WHERE l.status = 'closed'
      ORDER BY l.ends_at DESC`,
   );
-  return rows as ClosedListingSummary[];
+  return (rows as (Omit<ClosedListingSummary, "settled"> & { settled: number })[]).map((row) => ({
+    ...row,
+    settled: Boolean(row.settled),
+  }));
+}
+
+// Admin confirms the offline payment/delivery is done — releases the
+// winner from deleteAccount's "unsettled win" block (see
+// findBlockingObligation). Idempotent: settling twice is harmless.
+export async function markListingSettled(listingId: number): Promise<void> {
+  const db = await getDb();
+  await db.query("UPDATE listings SET settled_at = NOW() WHERE id = ? AND status = 'closed'", [listingId]);
+}
+
+// Used by deleteAccount (lib/auth.ts) to decide whether an account can be
+// removed: never while leading an open auction (their withdrawal would
+// hand a stranger's win to nobody), and never while holding an unsettled
+// closed win (the admin still needs their contact details to complete the
+// offline transaction).
+export async function findBlockingObligation(userId: number): Promise<string | null> {
+  const db = await getDb();
+
+  const [openRows] = await db.query(
+    "SELECT 1 FROM listings WHERE status = 'open' AND leader_user_id = ? LIMIT 1",
+    [userId],
+  );
+  if ((openRows as unknown[]).length > 0) {
+    return "你目前正在領先某個開放中的商品，請等到不再領先才能刪除帳號";
+  }
+
+  const [unsettledRows] = await db.query(
+    "SELECT 1 FROM listings WHERE status = 'closed' AND leader_user_id = ? AND settled_at IS NULL LIMIT 1",
+    [userId],
+  );
+  if ((unsettledRows as unknown[]).length > 0) {
+    return "你有已得標但尚未完成交易的商品，請等待管理員確認交易完成後再刪除帳號";
+  }
+
+  return null;
 }
 
 export interface BidHistoryEntry {

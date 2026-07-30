@@ -31,7 +31,9 @@ export default async function SiteHeader() {
         <div className="flex items-center gap-3 text-sm">
           {user ? (
             <>
-              <span className="hidden text-gray-300 sm:inline">{user.email}</span>
+              <Link href="/account" className="hidden hover:text-gold-light sm:inline">
+                {user.email}
+              </Link>
               <LogoutButton />
             </>
           ) : (

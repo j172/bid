@@ -13,6 +13,10 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash VARCHAR(255) NOT NULL,
   password_salt VARCHAR(255) NOT NULL,
   role VARCHAR(20) NOT NULL DEFAULT 'user',
+  display_name VARCHAR(50) NULL,
+  phone VARCHAR(20) NULL,
+  address VARCHAR(200) NULL,
+  deleted_at DATETIME NULL,
   created_at DATETIME NOT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_users_email (email)
@@ -38,6 +42,7 @@ CREATE TABLE IF NOT EXISTS listings (
   status VARCHAR(20) NOT NULL DEFAULT 'open',
   created_by BIGINT NOT NULL,
   created_at DATETIME NOT NULL,
+  settled_at DATETIME NULL,
   PRIMARY KEY (id),
   KEY idx_listings_status_ends (status, ends_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -96,6 +101,18 @@ async function ensureBiddingColumns(db: mysql.Pool): Promise<void> {
   }
 }
 
+// display_name/phone/address are required at the application layer (see
+// lib/profile.ts) for every *new* registration, but stay NULL-able at the
+// DB level so already-deployed rows (accounts created before this ticket)
+// don't need a synthetic backfill value.
+async function ensureAccountColumns(db: mysql.Pool): Promise<void> {
+  await ensureColumn(db, "users", "display_name", "VARCHAR(50) NULL");
+  await ensureColumn(db, "users", "phone", "VARCHAR(20) NULL");
+  await ensureColumn(db, "users", "address", "VARCHAR(200) NULL");
+  await ensureColumn(db, "users", "deleted_at", "DATETIME NULL");
+  await ensureColumn(db, "listings", "settled_at", "DATETIME NULL");
+}
+
 function createPool(): mysql.Pool {
   return mysql.createPool({
     host: process.env.MYSQL_HOST,
@@ -112,6 +129,7 @@ function createPool(): mysql.Pool {
 async function ensureSchema(db: mysql.Pool): Promise<void> {
   await db.query(SCHEMA_SQL);
   await ensureBiddingColumns(db);
+  await ensureAccountColumns(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {

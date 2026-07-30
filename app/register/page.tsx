@@ -11,6 +11,9 @@ export default function RegisterPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -22,7 +25,7 @@ export default function RegisterPage() {
     const response = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, displayName, phone, address }),
     });
     const data = await response.json();
 
@@ -58,6 +61,40 @@ export default function RegisterPage() {
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              className={inputClass}
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+            顯示名稱
+            <input
+              type="text"
+              required
+              maxLength={50}
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              className={inputClass}
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+            聯絡電話（僅數字、- 和空格，7-15 碼）
+            <input
+              type="tel"
+              required
+              maxLength={20}
+              pattern="[0-9\- ]{7,20}"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className={inputClass}
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+            地址
+            <input
+              type="text"
+              required
+              maxLength={200}
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
               className={inputClass}
             />
           </label>

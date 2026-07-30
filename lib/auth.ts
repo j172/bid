@@ -1,6 +1,7 @@
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import { getDb } from "@/lib/db";
+import { findBlockingObligation } from "@/lib/listings";
 
 const SESSION_COOKIE = "session";
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -40,15 +41,20 @@ function roleForEmail(email: string): Role {
   return adminEmail !== "" && email.trim().toLowerCase() === adminEmail ? "admin" : "user";
 }
 
-export async function createUser(email: string, password: string): Promise<CurrentUser> {
+export async function createUser(
+  email: string,
+  password: string,
+  profile: { displayName: string; phone: string; address: string },
+): Promise<CurrentUser> {
   const db = await getDb();
   const normalizedEmail = email.trim().toLowerCase();
   const { hash, salt } = await hashPassword(password);
   const role = roleForEmail(normalizedEmail);
 
   const [result] = await db.query(
-    "INSERT INTO users (email, password_hash, password_salt, role, created_at) VALUES (?, ?, ?, ?, NOW())",
-    [normalizedEmail, hash, salt, role],
+    `INSERT INTO users (email, password_hash, password_salt, role, display_name, phone, address, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+    [normalizedEmail, hash, salt, role, profile.displayName.trim(), profile.phone.trim(), profile.address.trim()],
   );
   const insertId = (result as { insertId: number }).insertId;
   return { id: insertId, email: normalizedEmail, role };
@@ -115,6 +121,86 @@ export async function listUsers(): Promise<UserSummary[]> {
     "SELECT id, email, role, created_at AS createdAt FROM users ORDER BY created_at DESC",
   );
   return rows as UserSummary[];
+}
+
+export interface AccountProfile {
+  email: string;
+  displayName: string;
+  phone: string;
+  address: string;
+}
+
+export async function getAccountProfile(userId: number): Promise<AccountProfile | null> {
+  const db = await getDb();
+  const [rows] = await db.query(
+    "SELECT email, display_name AS displayName, phone, address FROM users WHERE id = ? LIMIT 1",
+    [userId],
+  );
+  const list = rows as AccountProfile[];
+  return list[0] ?? null;
+}
+
+export async function updateProfile(
+  userId: number,
+  profile: { displayName: string; phone: string; address: string },
+): Promise<void> {
+  const db = await getDb();
+  await db.query("UPDATE users SET display_name = ?, phone = ?, address = ? WHERE id = ?", [
+    profile.displayName.trim(),
+    profile.phone.trim(),
+    profile.address.trim(),
+    userId,
+  ]);
+}
+
+export type ChangePasswordOutcome = { ok: true } | { ok: false; error: string };
+
+export async function changePassword(
+  userId: number,
+  oldPassword: string,
+  newPassword: string,
+): Promise<ChangePasswordOutcome> {
+  const db = await getDb();
+  const [rows] = await db.query("SELECT password_hash, password_salt FROM users WHERE id = ? LIMIT 1", [userId]);
+  const row = (rows as { password_hash: string; password_salt: string }[])[0];
+  if (!row || !(await verifyPassword(oldPassword, row.password_hash, row.password_salt))) {
+    return { ok: false, error: "舊密碼不正確" };
+  }
+  if (newPassword.length < 8) {
+    return { ok: false, error: "新密碼至少需要 8 個字元" };
+  }
+
+  const { hash, salt } = await hashPassword(newPassword);
+  await db.query("UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?", [hash, salt, userId]);
+  return { ok: true };
+}
+
+export type DeleteAccountOutcome = { ok: true } | { ok: false; error: string };
+
+// Anonymizes rather than hard-deletes: bids/listings still reference this
+// user_id (no FK cascade), and past auction records (who won what) need to
+// stay intact for history/audit — see getClosedListings' deleted-account
+// display handling. The email is overwritten (not just flagged) so the
+// original address frees up for re-registration.
+export async function deleteAccount(userId: number): Promise<DeleteAccountOutcome> {
+  const blockingReason = await findBlockingObligation(userId);
+  if (blockingReason) {
+    return { ok: false, error: blockingReason };
+  }
+
+  const db = await getDb();
+  const unusablePassword = randomBytes(32).toString("hex");
+  await db.query(
+    `UPDATE users
+     SET email = CONCAT('deleted-', id, '@deleted.invalid'),
+         password_hash = ?, password_salt = ?,
+         display_name = NULL, phone = NULL, address = NULL,
+         deleted_at = NOW()
+     WHERE id = ?`,
+    [unusablePassword, unusablePassword, userId],
+  );
+  await db.query("DELETE FROM sessions WHERE user_id = ?", [userId]);
+  return { ok: true };
 }
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
