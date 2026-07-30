@@ -3,8 +3,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { getMinimumNextBid } from "@/lib/bidding/domain";
 import { getListingById } from "@/lib/listings";
 import { listingPhotoUrl } from "@/lib/uploads";
-import { formatRemaining } from "@/lib/format";
 import BidForm from "./BidForm";
+import LiveListingStatus from "./LiveListingStatus";
 
 export const dynamic = "force-dynamic";
 
@@ -40,10 +40,13 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       </div>
       <p style={{ whiteSpace: "pre-wrap" }}>{listing.description}</p>
       <ul>
-        <li>目前價格：{listing.current_price}</li>
         <li>買斷價：{listing.buy_it_now_price}</li>
-        <li>{formatRemaining(listing.ends_at)}</li>
-        <li>狀態：{isOpen ? "競標中" : "已結標"}</li>
+        <LiveListingStatus
+          listingId={listing.id}
+          initialCurrentPrice={listing.current_price}
+          initialEndsAt={listing.ends_at.toISOString()}
+          initialStatus={listing.status}
+        />
       </ul>
       {isOpen &&
         (user ? (
