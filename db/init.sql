@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS listings (
   description TEXT NOT NULL,
   starting_price BIGINT NOT NULL,
   current_price BIGINT NOT NULL,
-  buy_it_now_price BIGINT NOT NULL,
+  buy_it_now_price BIGINT NULL,
   ends_at DATETIME NOT NULL,
   status VARCHAR(20) NOT NULL DEFAULT 'open',
   created_by BIGINT NOT NULL,

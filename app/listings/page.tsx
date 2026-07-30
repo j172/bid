@@ -34,7 +34,9 @@ export default async function ListingsPage() {
             <div className="p-4">
               <h2 className="truncate font-semibold">{listing.title}</h2>
               <p className="mt-2 text-lg font-bold text-gold">{listing.current_price}</p>
-              <p className="text-xs text-ink-light">買斷價 {listing.buy_it_now_price}</p>
+              {listing.buy_it_now_price !== null && (
+                <p className="text-xs text-ink-light">買斷價 {listing.buy_it_now_price}</p>
+              )}
               <p className="mt-1 text-xs text-ink-light">{formatRemaining(listing.ends_at)}</p>
             </div>
           </Link>

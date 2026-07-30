@@ -296,6 +296,31 @@ describe("resolveProxyBid — auto-triggered buyout when the resolved price reac
   });
 });
 
+describe("resolveProxyBid — no buy-it-now price (buyItNowPrice: null)", () => {
+  it("never auto-triggers closedViaBuyItNow, even at a very high resolved price", () => {
+    const result = resolveProxyBid(
+      { status: "open", currentPrice: 1000, leaderMaxAmount: null, buyItNowPrice: null },
+      1_000_000,
+    );
+    expect(result).toEqual({
+      ok: true,
+      currentPrice: 1_000_000,
+      leaderMaxAmount: 1_000_000,
+      youAreLeading: true,
+      closedViaBuyItNow: false,
+    });
+  });
+
+  it("never auto-triggers even when a challenger overtakes an existing leader at a huge max", () => {
+    const result = resolveProxyBid(
+      { status: "open", currentPrice: 1100, leaderMaxAmount: 5000, buyItNowPrice: null },
+      1_000_000,
+    );
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.closedViaBuyItNow).toBe(false);
+  });
+});
+
 describe("resolveBuyNow", () => {
   it("succeeds on an open listing regardless of any prior bids, selling at the buy-it-now price", () => {
     expect(resolveBuyNow({ status: "open", buyItNowPrice: 5000 })).toEqual({ ok: true, finalPrice: 5000 });
@@ -303,6 +328,11 @@ describe("resolveBuyNow", () => {
 
   it("rejects a listing that isn't open", () => {
     const result = resolveBuyNow({ status: "closed", buyItNowPrice: 5000 });
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects a listing that has no buy-it-now price", () => {
+    const result = resolveBuyNow({ status: "open", buyItNowPrice: null });
     expect(result.ok).toBe(false);
   });
 });

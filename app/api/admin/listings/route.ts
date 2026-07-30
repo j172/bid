@@ -16,7 +16,8 @@ export async function POST(request: Request) {
   const title = String(form.get("title") ?? "").trim();
   const description = String(form.get("description") ?? "").trim();
   const startingPrice = Number(form.get("startingPrice"));
-  const buyItNowPrice = Number(form.get("buyItNowPrice"));
+  const buyItNowPriceRaw = String(form.get("buyItNowPrice") ?? "").trim();
+  const buyItNowPrice = buyItNowPriceRaw === "" ? null : Number(buyItNowPriceRaw);
   const endsAtRaw = String(form.get("endsAt") ?? "");
   const photos = form.getAll("photos").filter((entry): entry is File => entry instanceof File && entry.size > 0);
 
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
   if (!Number.isFinite(startingPrice) || startingPrice <= 0) {
     return NextResponse.json({ ok: false, error: "起標價必須是正數" }, { status: 400 });
   }
-  if (!Number.isFinite(buyItNowPrice) || buyItNowPrice <= startingPrice) {
+  if (buyItNowPrice !== null && (!Number.isFinite(buyItNowPrice) || buyItNowPrice <= startingPrice)) {
     return NextResponse.json({ ok: false, error: "買斷價必須大於起標價" }, { status: 400 });
   }
   const endsAt = new Date(endsAtRaw);

@@ -68,13 +68,17 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
               initialEndsAt={listing.ends_at.toISOString()}
               initialStatus={listing.status}
             />
-            <p className="mt-3 text-sm text-ink-light">買斷價 {listing.buy_it_now_price}</p>
+            {listing.buy_it_now_price !== null && (
+              <p className="mt-3 text-sm text-ink-light">買斷價 {listing.buy_it_now_price}</p>
+            )}
 
             {isOpen &&
               (user ? (
                 <div className="mt-6 flex flex-col gap-4 border-t border-border pt-6">
                   <BidForm listingId={listing.id} minimumNextBid={minimumNextBid} />
-                  <BuyNowButton listingId={listing.id} buyItNowPrice={listing.buy_it_now_price} />
+                  {listing.buy_it_now_price !== null && (
+                    <BuyNowButton listingId={listing.id} buyItNowPrice={listing.buy_it_now_price} />
+                  )}
                 </div>
               ) : (
                 <p className="mt-6 border-t border-border pt-6 text-sm text-ink-light">

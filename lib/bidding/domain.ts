@@ -35,7 +35,8 @@ export interface ProxyBidState {
   currentPrice: number;
   /** The existing leader's private max, or null if no one has bid yet. */
   leaderMaxAmount: number | null;
-  buyItNowPrice: number;
+  /** Null when the listing has no buy-it-now price (BIN is optional). */
+  buyItNowPrice: number | null;
 }
 
 export interface ProxyBidResult {
@@ -102,9 +103,12 @@ export function resolveProxyBid(state: ProxyBidState, maxAmount: number): ProxyB
   // old leader's max 5, new bidder's max 5000 -> visible only rises to
   // 15), but the spec's trigger is "a proxy bid's cap reaches/exceeds
   // the BIN price" (User Story 13), not "the visible price does."
-  const closedViaBuyItNow = leaderMaxAmount >= state.buyItNowPrice;
-  if (closedViaBuyItNow) {
-    currentPrice = state.buyItNowPrice;
+  // A null buyItNowPrice means the listing has no BIN at all, so this
+  // trigger can never fire.
+  const buyItNowPrice = state.buyItNowPrice;
+  const closedViaBuyItNow = buyItNowPrice !== null && leaderMaxAmount >= buyItNowPrice;
+  if (closedViaBuyItNow && buyItNowPrice !== null) {
+    currentPrice = buyItNowPrice;
   }
 
   return { ok: true, currentPrice, leaderMaxAmount, youAreLeading, closedViaBuyItNow };
@@ -114,10 +118,14 @@ export type BuyNowOutcome = { ok: true; finalPrice: number } | { ok: false; erro
 
 // The explicit "click Buy Now" trigger — the only requirement is that the
 // listing is still open; it works identically whether or not bids exist,
-// and always sells at the listing's buy-it-now price.
-export function resolveBuyNow(state: { status: string; buyItNowPrice: number }): BuyNowOutcome {
+// and always sells at the listing's buy-it-now price. Listings without a
+// buy-it-now price (buyItNowPrice: null) never offer this action at all.
+export function resolveBuyNow(state: { status: string; buyItNowPrice: number | null }): BuyNowOutcome {
   if (state.status !== "open") {
     return { ok: false, error: "這個商品已經結標" };
+  }
+  if (state.buyItNowPrice === null) {
+    return { ok: false, error: "這個商品沒有提供買斷價" };
   }
   return { ok: true, finalPrice: state.buyItNowPrice };
 }

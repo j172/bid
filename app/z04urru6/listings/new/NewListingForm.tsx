@@ -43,8 +43,8 @@ export default function NewListingForm() {
         <input name="startingPrice" type="number" min={1} step={1} required className={inputClass} />
       </label>
       <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-        買斷價（必須大於起標價）
-        <input name="buyItNowPrice" type="number" min={1} step={1} required className={inputClass} />
+        買斷價（選填，若填寫必須大於起標價；留空則此商品不提供一鍵買斷）
+        <input name="buyItNowPrice" type="number" min={1} step={1} className={inputClass} />
       </label>
       <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
         結標時間

@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS listings (
   title VARCHAR(255) NOT NULL,
   description TEXT NOT NULL,
   starting_price BIGINT NOT NULL,
-  buy_it_now_price BIGINT NOT NULL,
+  buy_it_now_price BIGINT NULL,
   ends_at DATETIME NOT NULL,
   status VARCHAR(20) NOT NULL DEFAULT 'open',
   created_by BIGINT NOT NULL,
@@ -113,6 +113,16 @@ async function ensureAccountColumns(db: mysql.Pool): Promise<void> {
   await ensureColumn(db, "listings", "settled_at", "DATETIME NULL");
 }
 
+// buy_it_now_price started out NOT NULL (every listing required one);
+// making it optional needs the already-deployed column relaxed, not just
+// added — ensureColumn only handles brand-new columns. MODIFY COLUMN is
+// idempotent (re-running it once already nullable is a no-op), so this is
+// safe to call unconditionally on every boot rather than probing
+// information_schema.IS_NULLABLE first.
+async function ensureBuyItNowNullable(db: mysql.Pool): Promise<void> {
+  await db.query("ALTER TABLE listings MODIFY COLUMN buy_it_now_price BIGINT NULL");
+}
+
 function createPool(): mysql.Pool {
   return mysql.createPool({
     host: process.env.MYSQL_HOST,
@@ -130,6 +140,7 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await db.query(SCHEMA_SQL);
   await ensureBiddingColumns(db);
   await ensureAccountColumns(db);
+  await ensureBuyItNowNullable(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {

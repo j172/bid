@@ -14,7 +14,8 @@ export interface Listing {
   description: string;
   starting_price: number;
   current_price: number;
-  buy_it_now_price: number;
+  /** Null when the listing has no buy-it-now price (BIN is optional). */
+  buy_it_now_price: number | null;
   ends_at: Date;
   status: string;
   created_by: number;
@@ -29,7 +30,7 @@ export interface NewListingInput {
   title: string;
   description: string;
   startingPrice: number;
-  buyItNowPrice: number;
+  buyItNowPrice: number | null;
   endsAt: Date;
   createdBy: number;
 }
@@ -327,7 +328,7 @@ export async function placeBid(listingId: number, userId: number, maxAmount: num
         leader_max_amount: number | null;
         leader_user_id: number | null;
         ends_at: Date;
-        buy_it_now_price: number;
+        buy_it_now_price: number | null;
         created_by: number;
       }[]
     )[0];
@@ -406,7 +407,7 @@ export async function buyNow(listingId: number, userId: number): Promise<BuyNowO
       "SELECT status, buy_it_now_price, created_by FROM listings WHERE id = ? FOR UPDATE",
       [listingId],
     );
-    const listing = (rows as { status: string; buy_it_now_price: number; created_by: number }[])[0];
+    const listing = (rows as { status: string; buy_it_now_price: number | null; created_by: number }[])[0];
     if (!listing) {
       await connection.rollback();
       return { ok: false, error: "找不到這個商品" };
