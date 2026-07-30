@@ -36,6 +36,15 @@ export default async function HomePage() {
           尚未登入 — <a href="/login">登入</a> / <a href="/register">註冊</a>
         </p>
       )}
+      <p>
+        <a href="/listings">瀏覽競標中商品</a>
+        {user?.role === "admin" && (
+          <>
+            {" "}
+            / <a href="/admin/listings/new">建立商品</a>
+          </>
+        )}
+      </p>
     </main>
   );
 }
