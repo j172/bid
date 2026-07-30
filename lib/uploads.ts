@@ -15,8 +15,14 @@ export function isAllowedPhotoType(type: string): boolean {
   return type in ALLOWED_EXTENSIONS;
 }
 
+// Deliberately outside public/: `next start` appears to snapshot the public
+// folder's contents at process boot, so files written there at runtime
+// 404 until the next restart. These are served instead by
+// app/uploads/[...path]/route.ts, which reads the filesystem per request.
+export const UPLOADS_ROOT = join(process.cwd(), "uploads");
+
 export async function saveListingPhotos(listingId: number, photos: File[]): Promise<string[]> {
-  const dir = join(process.cwd(), "public", "uploads", "listings", String(listingId));
+  const dir = join(UPLOADS_ROOT, "listings", String(listingId));
   await mkdir(dir, { recursive: true });
 
   const fileNames: string[] = [];

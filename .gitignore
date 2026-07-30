@@ -17,4 +17,4 @@ tsconfig.tsbuildinfo
 /.ops-key
 
 # runtime-uploaded listing photos (live only on the server)
-/public/uploads/
+/uploads/
