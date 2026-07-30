@@ -6,7 +6,8 @@ export async function GET() {
   let dbError: string | undefined;
 
   try {
-    const [rows] = await getDb().query("SELECT 1 AS ok");
+    const db = await getDb();
+    const [rows] = await db.query("SELECT 1 AS ok");
     dbOk = Array.isArray(rows) && rows.length === 1;
   } catch (error) {
     dbError = error instanceof Error ? error.message : String(error);

@@ -1,10 +1,13 @@
 import { getDb } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
+import LogoutButton from "./LogoutButton";
 
 export const dynamic = "force-dynamic";
 
 async function checkDb(): Promise<{ ok: boolean; error?: string }> {
   try {
-    await getDb().query("SELECT 1");
+    const db = await getDb();
+    await db.query("SELECT 1");
     return { ok: true };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error) };
@@ -13,6 +16,7 @@ async function checkDb(): Promise<{ ok: boolean; error?: string }> {
 
 export default async function HomePage() {
   const db = await checkDb();
+  const user = await getCurrentUser();
 
   return (
     <main style={{ fontFamily: "sans-serif", padding: "2rem", maxWidth: 640, margin: "0 auto" }}>
@@ -22,6 +26,16 @@ export default async function HomePage() {
         <li>App server: 運作中</li>
         <li>MySQL: {db.ok ? "已連線" : `連線失敗（${db.error}）`}</li>
       </ul>
+      <hr />
+      {user ? (
+        <p>
+          已登入：{user.email}（{user.role}） <LogoutButton />
+        </p>
+      ) : (
+        <p>
+          尚未登入 — <a href="/login">登入</a> / <a href="/register">註冊</a>
+        </p>
+      )}
     </main>
   );
 }
