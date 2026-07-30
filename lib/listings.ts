@@ -1,5 +1,5 @@
 import { getDb } from "@/lib/db";
-import { resolveProxyBid, type ProxyBidOutcome } from "@/lib/bidding/domain";
+import { extendEndTimeIfNeeded, resolveProxyBid, type ProxyBidOutcome } from "@/lib/bidding/domain";
 
 export interface Listing {
   id: number;
@@ -100,10 +100,10 @@ export async function placeBid(listingId: number, userId: number, maxAmount: num
     await connection.beginTransaction();
 
     const [rows] = await connection.query(
-      "SELECT current_price, status, leader_max_amount FROM listings WHERE id = ? FOR UPDATE",
+      "SELECT current_price, status, leader_max_amount, ends_at FROM listings WHERE id = ? FOR UPDATE",
       [listingId],
     );
-    const listing = (rows as { current_price: number; status: string; leader_max_amount: number | null }[])[0];
+    const listing = (rows as { current_price: number; status: string; leader_max_amount: number | null; ends_at: Date }[])[0];
     if (!listing) {
       await connection.rollback();
       return { ok: false, error: "找不到這個商品" };
@@ -118,9 +118,11 @@ export async function placeBid(listingId: number, userId: number, maxAmount: num
       return result;
     }
 
+    const newEndsAt = extendEndTimeIfNeeded(listing.ends_at, new Date());
+
     await connection.query(
-      "UPDATE listings SET current_price = ?, leader_max_amount = ? WHERE id = ?",
-      [result.currentPrice, result.leaderMaxAmount, listingId],
+      "UPDATE listings SET current_price = ?, leader_max_amount = ?, ends_at = ? WHERE id = ?",
+      [result.currentPrice, result.leaderMaxAmount, newEndsAt, listingId],
     );
     // leader_user_id only changes when the leader actually changes — this
     // bidder's own row still gets recorded in bid history either way.

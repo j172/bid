@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getBidIncrement, getMinimumNextBid, resolveProxyBid } from "./domain";
+import { ANTI_SNIPE_WINDOW_MS, extendEndTimeIfNeeded, getBidIncrement, getMinimumNextBid, resolveProxyBid } from "./domain";
 
 describe("getBidIncrement", () => {
   it("returns the smallest tier's increment for low prices", () => {
@@ -114,5 +114,43 @@ describe("resolveProxyBid — validation still applies once a leader exists", ()
   it("rejects a bid on a closed listing even with an existing leader", () => {
     const result = resolveProxyBid({ status: "closed", currentPrice: 1100, leaderMaxAmount: 5000 }, 6000);
     expect(result.ok).toBe(false);
+  });
+});
+
+describe("extendEndTimeIfNeeded", () => {
+  const endsAt = new Date("2026-01-01T12:00:00Z");
+
+  it("extends the end time when the bid lands inside the trailing window", () => {
+    const bidTime = new Date(endsAt.getTime() - 60_000); // 1 minute before the deadline
+    const result = extendEndTimeIfNeeded(endsAt, bidTime);
+    expect(result.getTime()).toBe(bidTime.getTime() + ANTI_SNIPE_WINDOW_MS);
+  });
+
+  it("extends when the bid lands exactly at the start of the trailing window", () => {
+    const bidTime = new Date(endsAt.getTime() - ANTI_SNIPE_WINDOW_MS);
+    const result = extendEndTimeIfNeeded(endsAt, bidTime);
+    expect(result.getTime()).toBe(bidTime.getTime() + ANTI_SNIPE_WINDOW_MS);
+  });
+
+  it("does not change the end time for a bid well outside the trailing window", () => {
+    const bidTime = new Date(endsAt.getTime() - ANTI_SNIPE_WINDOW_MS - 60_000); // one minute earlier than the window
+    const result = extendEndTimeIfNeeded(endsAt, bidTime);
+    expect(result.getTime()).toBe(endsAt.getTime());
+  });
+
+  it("does not extend for a bid at or after the end time (already past the deadline)", () => {
+    expect(extendEndTimeIfNeeded(endsAt, endsAt).getTime()).toBe(endsAt.getTime());
+    expect(extendEndTimeIfNeeded(endsAt, new Date(endsAt.getTime() + 1000)).getTime()).toBe(endsAt.getTime());
+  });
+
+  it("chains: a second late bid extends again from the already-extended end time", () => {
+    const firstBidTime = new Date(endsAt.getTime() - 60_000);
+    const extendedOnce = extendEndTimeIfNeeded(endsAt, firstBidTime);
+
+    const secondBidTime = new Date(extendedOnce.getTime() - 30_000); // still inside the window relative to the new deadline
+    const extendedTwice = extendEndTimeIfNeeded(extendedOnce, secondBidTime);
+
+    expect(extendedTwice.getTime()).toBe(secondBidTime.getTime() + ANTI_SNIPE_WINDOW_MS);
+    expect(extendedTwice.getTime()).toBeGreaterThan(extendedOnce.getTime());
   });
 });

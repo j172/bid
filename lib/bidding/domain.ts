@@ -81,3 +81,17 @@ export function resolveProxyBid(state: ProxyBidState, maxAmount: number): ProxyB
   const newPrice = Math.min(state.leaderMaxAmount, maxAmount + getBidIncrement(maxAmount));
   return { ok: true, currentPrice: newPrice, leaderMaxAmount: state.leaderMaxAmount, youAreLeading: false };
 }
+
+// Anti-sniping: a bid landing inside this trailing window before the
+// current end time pushes the end time back by the same window. Applying
+// it repeatedly (each call re-reads the listing's latest end_time) is what
+// makes it chain on repeated late bids.
+export const ANTI_SNIPE_WINDOW_MS = 5 * 60 * 1000;
+
+export function extendEndTimeIfNeeded(endsAt: Date, bidTime: Date): Date {
+  const remainingMs = endsAt.getTime() - bidTime.getTime();
+  if (remainingMs > 0 && remainingMs <= ANTI_SNIPE_WINDOW_MS) {
+    return new Date(bidTime.getTime() + ANTI_SNIPE_WINDOW_MS);
+  }
+  return endsAt;
+}
