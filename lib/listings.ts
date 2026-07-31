@@ -340,17 +340,44 @@ export async function closeExpiredListings(): Promise<void> {
   );
 }
 
-export async function listOpenListings(type?: ListingType): Promise<ListingWithPhotos[]> {
+export interface ListingCardExtras {
+  /** Auction only — the current leader's raw (unmasked) display name; null if no bids yet or the leader never set one. */
+  leaderDisplayName: string | null;
+  /** Auction only. */
+  bidCount: number;
+  /** Fixed-price only. */
+  purchaseCount: number;
+}
+
+// Powers the public listings grid's cards (see app/listings/page.tsx) —
+// beyond the base listing row, each card also shows who's currently
+// leading (masked — see lib/mask.ts) and how much activity the listing has
+// had, via a LEFT JOIN + correlated subqueries rather than a per-row loop.
+export async function listOpenListings(type?: ListingType): Promise<(ListingWithPhotos & ListingCardExtras)[]> {
   await closeExpiredListings();
   const db = await getDb();
-  const [rows] = type
-    ? await db.query("SELECT * FROM listings WHERE status = 'open' AND listing_type = ? ORDER BY ends_at IS NULL, ends_at ASC", [
-        type,
-      ])
-    : await db.query("SELECT * FROM listings WHERE status = 'open' ORDER BY ends_at IS NULL, ends_at ASC");
-  const listings = rows as Listing[];
 
-  const results: ListingWithPhotos[] = [];
+  const conditions = ["l.status = 'open'"];
+  const params: string[] = [];
+  if (type) {
+    conditions.push("l.listing_type = ?");
+    params.push(type);
+  }
+
+  const [rows] = await db.query(
+    `SELECT
+       l.*, u.display_name AS leaderDisplayName,
+       (SELECT COUNT(*) FROM bids WHERE listing_id = l.id) AS bidCount,
+       (SELECT COUNT(*) FROM purchases WHERE listing_id = l.id) AS purchaseCount
+     FROM listings l
+     LEFT JOIN users u ON u.id = l.leader_user_id
+     WHERE ${conditions.join(" AND ")}
+     ORDER BY l.ends_at IS NULL, l.ends_at ASC`,
+    params,
+  );
+  const listings = rows as (Listing & ListingCardExtras)[];
+
+  const results: (ListingWithPhotos & ListingCardExtras)[] = [];
   for (const listing of listings) {
     results.push({ ...listing, photos: await getPhotoFileNames(listing.id) });
   }

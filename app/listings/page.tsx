@@ -2,8 +2,11 @@ import Link from "next/link";
 import { listOpenListings, type ListingType } from "@/lib/listings";
 import { listingPhotoUrl } from "@/lib/uploads";
 import { formatRemaining } from "@/lib/format";
+import { maskDisplayName } from "@/lib/mask";
 
 export const dynamic = "force-dynamic";
+
+const DESCRIPTION_SNIPPET_LENGTH = 30;
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -12,6 +15,15 @@ const TYPE_TABS: { value: ListingType | ""; label: string }[] = [
   { value: "auction", label: "競標商品" },
   { value: "fixed_price", label: "一般商品" },
 ];
+
+const TYPE_BADGE_LABEL: Record<ListingType, string> = { auction: "競標商品", fixed_price: "一般商品" };
+
+function descriptionSnippet(description: string): string {
+  const trimmed = description.trim();
+  return trimmed.length > DESCRIPTION_SNIPPET_LENGTH
+    ? `${trimmed.slice(0, DESCRIPTION_SNIPPET_LENGTH)}…`
+    : trimmed;
+}
 
 export default async function ListingsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams;
@@ -60,13 +72,19 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
               )}
             </div>
             <div className="p-4">
-              <h2 className="truncate font-semibold">{listing.title}</h2>
+              <span className="inline-block rounded-full bg-gold-light px-2 py-0.5 text-xs font-medium text-gold-dark">
+                {TYPE_BADGE_LABEL[listing.listing_type]}
+              </span>
+              <h2 className="mt-2 truncate font-semibold">{listing.title}</h2>
+              <p className="mt-1 line-clamp-2 text-xs text-ink-light">{descriptionSnippet(listing.description)}</p>
+
               {listing.listing_type === "fixed_price" ? (
                 <>
                   <p className="mt-2 text-lg font-bold text-gold">{listing.price}</p>
                   <p className="mt-1 text-xs text-ink-light">
                     {listing.stock_remaining === 0 ? "已售罄" : `剩餘 ${listing.stock_remaining} 件`}
                   </p>
+                  <p className="mt-1 text-xs text-ink-light">總購買次數 {listing.purchaseCount}</p>
                 </>
               ) : (
                 <>
@@ -75,6 +93,10 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
                     <p className="text-xs text-ink-light">買斷價 {listing.buy_it_now_price}</p>
                   )}
                   <p className="mt-1 text-xs text-ink-light">{listing.ends_at && formatRemaining(listing.ends_at)}</p>
+                  <p className="mt-1 text-xs text-ink-light">
+                    {listing.bidCount === 0 ? "尚無人出價" : `目前領先：${maskDisplayName(listing.leaderDisplayName)}`}
+                  </p>
+                  <p className="text-xs text-ink-light">總出價次數 {listing.bidCount}</p>
                 </>
               )}
             </div>
