@@ -158,26 +158,84 @@ export interface OpenListingForAdmin {
   canCancel: boolean;
 }
 
+export type OpenListingsSort =
+  | "ends_asc"
+  | "price_desc"
+  | "price_asc"
+  | "stock_asc"
+  | "stock_desc"
+  | "created_desc"
+  | "created_asc";
+
+export interface ListOpenListingsForAdminOptions {
+  search?: string;
+  /** The closest thing this system has to a "category" — see ListingType. */
+  type?: ListingType;
+  sort?: OpenListingsSort;
+  page?: number;
+}
+
+export const OPEN_LISTINGS_PAGE_SIZE = 50;
+
+const OPEN_LISTINGS_SORT_CLAUSES: Record<OpenListingsSort, string> = {
+  ends_asc: "ends_at IS NULL, ends_at ASC",
+  price_desc: "current_price DESC",
+  price_asc: "current_price ASC",
+  // stock_remaining is NULL for auction listings — pushed to the end
+  // regardless of direction, since a stock sort isn't meaningful for them.
+  stock_asc: "stock_remaining IS NULL, stock_remaining ASC",
+  stock_desc: "stock_remaining IS NULL, stock_remaining DESC",
+  created_desc: "created_at DESC",
+  created_asc: "created_at ASC",
+};
+
 // Admin's open-listings management view: enough to decide whether each one
 // can still be cancelled (see cancelListing's per-type rules) without
-// pulling photos it doesn't need to show.
-export async function getOpenListingsForAdmin(): Promise<OpenListingForAdmin[]> {
+// pulling photos it doesn't need to show. Search by title, filter by
+// listing type, sort, and paginate.
+export async function getOpenListingsForAdmin(
+  options: ListOpenListingsForAdminOptions = {},
+): Promise<{ listings: OpenListingForAdmin[]; total: number }> {
   await closeExpiredListings();
   const db = await getDb();
+
+  const conditions = ["status = 'open'"];
+  const params: string[] = [];
+  const search = options.search?.trim();
+  if (search) {
+    conditions.push("title LIKE ?");
+    params.push(`%${search}%`);
+  }
+  if (options.type) {
+    conditions.push("listing_type = ?");
+    params.push(options.type);
+  }
+  const where = `WHERE ${conditions.join(" AND ")}`;
+
+  const [countRows] = await db.query(`SELECT COUNT(*) AS cnt FROM listings ${where}`, params);
+  const total = (countRows as { cnt: number }[])[0].cnt;
+
+  const orderBy = OPEN_LISTINGS_SORT_CLAUSES[options.sort ?? "ends_asc"];
+  const page = Math.max(1, options.page ?? 1);
+  const offset = (page - 1) * OPEN_LISTINGS_PAGE_SIZE;
+
   const [rows] = await db.query(
     `SELECT
        id, title, listing_type AS listingType, current_price AS currentPrice, ends_at AS endsAt,
        (leader_max_amount IS NOT NULL) AS hasBids,
        stock_quantity AS stockQuantity, stock_remaining AS stockRemaining
      FROM listings
-     WHERE status = 'open'
-     ORDER BY ends_at IS NULL, ends_at ASC`,
+     ${where}
+     ORDER BY ${orderBy}
+     LIMIT ${OPEN_LISTINGS_PAGE_SIZE} OFFSET ${offset}`,
+    params,
   );
-  return (rows as (Omit<OpenListingForAdmin, "hasBids" | "canCancel"> & { hasBids: number })[]).map((row) => ({
+  const listings = (rows as (Omit<OpenListingForAdmin, "hasBids" | "canCancel"> & { hasBids: number })[]).map((row) => ({
     ...row,
     hasBids: Boolean(row.hasBids),
     canCancel: row.listingType === "fixed_price" || !row.hasBids,
   }));
+  return { listings, total };
 }
 
 export interface OverviewStats {
