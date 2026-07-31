@@ -769,8 +769,8 @@ export interface OrderSummary {
   unitPrice: number;
   totalAmount: number;
   createdAt: Date;
-  /** null: buyer deleted their account. */
-  buyerEmail: string | null;
+  /** Every purchase has a real buyer (unlike a listing, which can have no winner) — "（帳號已刪除）" replaces the email if they later deleted their account. */
+  buyerEmail: string;
   settled: boolean;
   settlementAccount: string | null;
   settlementAmount: number | null;
@@ -875,6 +875,21 @@ export async function markOrderSettled(orderId: number, account: string, amount:
 export async function unsettleOrder(orderId: number): Promise<void> {
   const db = await getDb();
   await db.query("UPDATE purchases SET settled_at = NULL WHERE id = ?", [orderId]);
+}
+
+// Powers the orders page's expandable "買家資料" section — the fixed_price
+// equivalent of getWinnerProfileForListing.
+export async function getBuyerProfileForOrder(orderId: number): Promise<WinnerProfile | null> {
+  const db = await getDb();
+  const [rows] = await db.query(
+    `SELECT u.display_name AS displayName, u.phone AS phone, u.address AS address
+     FROM purchases p
+     JOIN users u ON u.id = p.buyer_id
+     WHERE p.id = ?
+     LIMIT 1`,
+    [orderId],
+  );
+  return (rows as WinnerProfile[])[0] ?? null;
 }
 
 async function getPhotoFileNames(listingId: number): Promise<string[]> {

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { getOrdersForAdmin, ORDERS_PAGE_SIZE, type ListOrdersOptions } from "@/lib/listings";
+import SettlementExpand from "../listings/closed/SettlementExpand";
+import BuyerExpand from "./BuyerExpand";
 import OrderSettleModal from "./OrderSettleModal";
 import OrderUnsettleButton from "./OrderUnsettleButton";
 
@@ -115,13 +117,19 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                       {order.listingTitle}
                     </Link>
                   </td>
-                  <td className={td}>{order.buyerEmail ?? "（帳號已刪除）"}</td>
+                  <td className={td}>
+                    <BuyerExpand orderId={order.id} email={order.buyerEmail} />
+                  </td>
                   <td className={td}>{order.quantity}</td>
                   <td className={`${td} font-semibold`}>{order.totalAmount}</td>
                   <td className={td}>{formatDate(order.createdAt)}</td>
                   <td className={td}>
                     {order.settled ? (
-                      <span className="text-sm text-leading">已完成交易</span>
+                      order.settlementAccount !== null && order.settlementAmount !== null ? (
+                        <SettlementExpand account={order.settlementAccount} amount={order.settlementAmount} />
+                      ) : (
+                        <span className="text-sm text-leading">已完成交易</span>
+                      )
                     ) : (
                       <span className="text-sm text-ink-light">尚未完成</span>
                     )}
