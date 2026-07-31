@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getOpenListingsForAdmin } from "@/lib/listings";
 import { formatRemaining } from "@/lib/format";
 import CancelButton from "./CancelButton";
+import EditListingModal from "./EditListingModal";
 
 export const dynamic = "force-dynamic";
 
@@ -49,11 +50,14 @@ export default async function AdminOpenListingsPage() {
                       : listing.endsAt && formatRemaining(listing.endsAt)}
                   </td>
                   <td className={`${td} text-right`}>
-                    {listing.canCancel ? (
-                      <CancelButton listingId={listing.id} />
-                    ) : (
-                      <span className="text-xs text-ink-light">已有出價，無法下架</span>
-                    )}
+                    <div className="flex items-center justify-end gap-2">
+                      {listing.listingType === "fixed_price" && <EditListingModal listingId={listing.id} />}
+                      {listing.canCancel ? (
+                        <CancelButton listingId={listing.id} />
+                      ) : (
+                        <span className="text-xs text-ink-light">已有出價，無法下架</span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

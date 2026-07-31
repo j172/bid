@@ -100,6 +100,16 @@ export async function addListingPhotos(listingId: number, fileNames: string[]): 
   }
 }
 
+// Used when editing a listing's photos: the caller sends the complete
+// desired final order (a mix of kept-existing and newly-uploaded file
+// names) rather than an incremental diff, so this just replaces the whole
+// set — simpler and avoids sort_order drift from partial updates.
+export async function replaceListingPhotos(listingId: number, orderedFileNames: string[]): Promise<void> {
+  const db = await getDb();
+  await db.query("DELETE FROM listing_photos WHERE listing_id = ?", [listingId]);
+  await addListingPhotos(listingId, orderedFileNames);
+}
+
 export async function deleteListing(id: number): Promise<void> {
   const db = await getDb();
   await db.query("DELETE FROM listing_photos WHERE listing_id = ?", [id]);
@@ -689,6 +699,75 @@ export async function buyNow(listingId: number, userId: number): Promise<BuyNowO
   }
 }
 
+export type UpdateFixedPriceListingOutcome = { ok: true } | { ok: false; error: string };
+
+// Admin edit — fixed_price listings only (auction listings have live
+// bidding state that makes editing starting_price/ends_at dangerous, so
+// they stay uneditable), and only while still 'open' (matches
+// cancelListing's and purchaseListing's own guards). stock_quantity is
+// recomputed from actual purchase history + the new stock_remaining
+// (rather than taken as separate input) so the "剩餘 X / Y" display never
+// goes inconsistent regardless of how many times a listing gets restocked.
+export async function updateFixedPriceListing(
+  listingId: number,
+  input: { title: string; description: string; price: number; stockRemaining: number },
+): Promise<UpdateFixedPriceListingOutcome> {
+  const db = await getDb();
+  const connection = await db.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const [rows] = await connection.query("SELECT listing_type, status FROM listings WHERE id = ? FOR UPDATE", [
+      listingId,
+    ]);
+    const listing = (rows as { listing_type: ListingType; status: string }[])[0];
+    if (!listing) {
+      await connection.rollback();
+      return { ok: false, error: "找不到這個商品" };
+    }
+    if (listing.listing_type !== "fixed_price") {
+      await connection.rollback();
+      return { ok: false, error: "這個商品不支援編輯" };
+    }
+    if (listing.status !== "open") {
+      await connection.rollback();
+      return { ok: false, error: "已下架的商品無法編輯" };
+    }
+
+    const [soldRows] = await connection.query(
+      "SELECT COALESCE(SUM(quantity), 0) AS sold FROM purchases WHERE listing_id = ?",
+      [listingId],
+    );
+    const sold = (soldRows as { sold: number }[])[0].sold;
+
+    await connection.query(
+      `UPDATE listings
+       SET title = ?, description = ?, price = ?, current_price = ?, starting_price = ?,
+           stock_quantity = ?, stock_remaining = ?
+       WHERE id = ?`,
+      [
+        input.title,
+        input.description,
+        input.price,
+        input.price,
+        input.price,
+        sold + input.stockRemaining,
+        input.stockRemaining,
+        listingId,
+      ],
+    );
+
+    await connection.commit();
+    return { ok: true };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
 // Fixed-price ("一般商品") purchase: unlike placeBid/buyNow, this never
 // closes the listing itself — any number of independent buyers can keep
 // purchasing from the remaining stock (see resolvePurchase's comment). The
@@ -892,7 +971,7 @@ export async function getBuyerProfileForOrder(orderId: number): Promise<WinnerPr
   return (rows as WinnerProfile[])[0] ?? null;
 }
 
-async function getPhotoFileNames(listingId: number): Promise<string[]> {
+export async function getPhotoFileNames(listingId: number): Promise<string[]> {
   const db = await getDb();
   const [rows] = await db.query(
     "SELECT file_name FROM listing_photos WHERE listing_id = ? ORDER BY sort_order ASC",

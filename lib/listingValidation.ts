@@ -58,3 +58,13 @@ export function validateStockQuantity(value: number): FieldValidationResult {
   }
   return { ok: true };
 }
+
+// Unlike validateStockQuantity (creation, must start above zero), editing a
+// listing's remaining stock down to exactly 0 is a valid way to mark it
+// temporarily sold out without deleting or cancelling it.
+export function validateStockRemaining(value: number): FieldValidationResult {
+  if (!Number.isFinite(value) || !Number.isInteger(value) || value < 0) {
+    return { ok: false, error: "庫存數量必須是不小於 0 的整數" };
+  }
+  return { ok: true };
+}

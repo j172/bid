@@ -1,5 +1,5 @@
 import { randomBytes } from "crypto";
-import { mkdir, writeFile } from "fs/promises";
+import { mkdir, unlink, writeFile } from "fs/promises";
 import { join } from "path";
 import { MAX_PHOTO_BYTES } from "@/lib/photoLimits";
 
@@ -30,7 +30,7 @@ export async function saveListingPhotos(listingId: number, photos: File[]): Prom
       throw new Error(`不支援的圖片格式：${photo.type || "unknown"}`);
     }
     if (photo.size > MAX_PHOTO_BYTES) {
-      throw new Error("圖片檔案過大（上限 8MB）");
+      throw new Error(`圖片檔案過大（上限 ${MAX_PHOTO_BYTES / 1024 / 1024}MB）`);
     }
 
     const extension = ALLOWED_EXTENSIONS[photo.type];
@@ -45,4 +45,14 @@ export async function saveListingPhotos(listingId: number, photos: File[]): Prom
 
 export function listingPhotoUrl(listingId: number, fileName: string): string {
   return `/uploads/listings/${listingId}/${fileName}`;
+}
+
+// Used when editing a listing's photos — removes files no longer kept in
+// the new photo order. Best-effort: a file that's already gone (or never
+// existed) is not an error worth failing the edit over.
+export async function deleteListingPhotoFiles(listingId: number, fileNames: string[]): Promise<void> {
+  const dir = join(UPLOADS_ROOT, "listings", String(listingId));
+  for (const fileName of fileNames) {
+    await unlink(join(dir, fileName)).catch(() => {});
+  }
 }

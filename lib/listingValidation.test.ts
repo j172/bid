@@ -8,6 +8,7 @@ import {
   validateEndsAt,
   validatePrice,
   validateStockQuantity,
+  validateStockRemaining,
   validateTitle,
 } from "./listingValidation";
 
@@ -103,5 +104,21 @@ describe("validateStockQuantity", () => {
     expect(validateStockQuantity(0).ok).toBe(false);
     expect(validateStockQuantity(-1).ok).toBe(false);
     expect(validateStockQuantity(1.5).ok).toBe(false);
+  });
+});
+
+describe("validateStockRemaining", () => {
+  it("accepts a positive integer", () => {
+    expect(validateStockRemaining(10)).toEqual({ ok: true });
+  });
+
+  it("accepts exactly zero (marks a listing temporarily sold out)", () => {
+    expect(validateStockRemaining(0)).toEqual({ ok: true });
+  });
+
+  it("rejects non-finite, negative, or non-integer values", () => {
+    expect(validateStockRemaining(NaN).ok).toBe(false);
+    expect(validateStockRemaining(-1).ok).toBe(false);
+    expect(validateStockRemaining(1.5).ok).toBe(false);
   });
 });
