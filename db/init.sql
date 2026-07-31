@@ -39,6 +39,8 @@ CREATE TABLE IF NOT EXISTS listings (
   leader_max_amount BIGINT NULL,
   settled_at DATETIME NULL,
   close_reason VARCHAR(20) NULL,
+  settlement_account VARCHAR(30) NULL,
+  settlement_amount BIGINT NULL,
   PRIMARY KEY (id),
   KEY idx_listings_status_ends (status, ends_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

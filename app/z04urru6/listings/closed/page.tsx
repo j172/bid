@@ -5,9 +5,11 @@ import {
   listClosedListings,
   type ListClosedListingsOptions,
 } from "@/lib/listings";
-import SettleButton from "./SettleButton";
+import SettleModal from "./SettleModal";
 import UnsettleButton from "./UnsettleButton";
 import BiddersExpand from "./BiddersExpand";
+import WinnerExpand from "./WinnerExpand";
+import SettlementExpand from "./SettlementExpand";
 
 export const dynamic = "force-dynamic";
 
@@ -129,7 +131,13 @@ export default async function ClosedListingsPage({ searchParams }: { searchParam
                       {listing.title}
                     </Link>
                   </td>
-                  <td className={td}>{listing.winnerEmail ?? "無人得標"}</td>
+                  <td className={td}>
+                    {listing.winnerEmail === null ? (
+                      "無人得標"
+                    ) : (
+                      <WinnerExpand listingId={listing.id} email={listing.winnerEmail} />
+                    )}
+                  </td>
                   <td className={`${td} font-semibold`}>{listing.finalPrice}</td>
                   <td className={td}>{formatDate(listing.endsAt)}</td>
                   <td className={td}>{listing.closeReason ? CLOSE_REASON_LABELS[listing.closeReason] : "未知"}</td>
@@ -140,7 +148,11 @@ export default async function ClosedListingsPage({ searchParams }: { searchParam
                     {listing.winnerEmail === null ? (
                       "—"
                     ) : listing.settled ? (
-                      <span className="text-sm text-leading">已完成交易</span>
+                      listing.settlementAccount !== null && listing.settlementAmount !== null ? (
+                        <SettlementExpand account={listing.settlementAccount} amount={listing.settlementAmount} />
+                      ) : (
+                        <span className="text-sm text-leading">已完成交易</span>
+                      )
                     ) : (
                       <span className="text-sm text-ink-light">尚未完成</span>
                     )}
@@ -151,7 +163,12 @@ export default async function ClosedListingsPage({ searchParams }: { searchParam
                     ) : listing.settled ? (
                       <UnsettleButton listingId={listing.id} />
                     ) : (
-                      <SettleButton listingId={listing.id} />
+                      <SettleModal
+                        listingId={listing.id}
+                        finalPrice={listing.finalPrice}
+                        previousAccount={listing.settlementAccount}
+                        previousAmount={listing.settlementAmount}
+                      />
                     )}
                   </td>
                 </tr>

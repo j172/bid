@@ -118,6 +118,12 @@ async function ensureAccountColumns(db: mysql.Pool): Promise<void> {
   // "未知" rather than guessed at, since guessing from current_price alone
   // can't distinguish an explicit buy-now click from an auto-triggered one.
   await ensureColumn(db, "listings", "close_reason", "VARCHAR(20) NULL");
+  // Recorded when an admin marks a listing settled (see markListingSettled
+  // in lib/listings.ts). Deliberately NOT cleared by unsettleListing — kept
+  // around so the settle modal can pre-fill the last-entered values if the
+  // admin unsettles to fix a typo and re-settles.
+  await ensureColumn(db, "listings", "settlement_account", "VARCHAR(30) NULL");
+  await ensureColumn(db, "listings", "settlement_amount", "BIGINT NULL");
 }
 
 // buy_it_now_price started out NOT NULL (every listing required one);

@@ -191,6 +191,9 @@ export interface ClosedListingSummary {
   /** null: no winner (zero bids). "（帳號已刪除）": winner existed but deleted their account. */
   winnerEmail: string | null;
   settled: boolean;
+  /** Set when markListingSettled is called; preserved across unsettleListing so the settle form can pre-fill it. */
+  settlementAccount: string | null;
+  settlementAmount: number | null;
 }
 
 export const CLOSE_REASON_LABELS: Record<"expired" | "buy_now" | "auto_bin", string> = {
@@ -279,6 +282,7 @@ export async function listClosedListings(
             WHEN u.deleted_at IS NOT NULL THEN '（帳號已刪除）'
             ELSE u.email END AS winnerEmail,
        (l.settled_at IS NOT NULL) AS settled,
+       l.settlement_account AS settlementAccount, l.settlement_amount AS settlementAmount,
        (SELECT COUNT(*) FROM bids WHERE listing_id = l.id) AS bidCount
      FROM listings l
      LEFT JOIN users u ON u.id = l.leader_user_id
@@ -319,18 +323,45 @@ export async function getBiddersForListing(listingId: number): Promise<BidderEnt
 
 // Admin confirms the offline payment/delivery is done — releases the
 // winner from deleteAccount's "unsettled win" block (see
-// findBlockingObligation). Idempotent: settling twice is harmless.
-export async function markListingSettled(listingId: number): Promise<void> {
+// findBlockingObligation). Records the remittance account/amount the admin
+// entered (validated by lib/settlement.ts before this is called). Idempotent:
+// settling twice just overwrites the previously recorded values.
+export async function markListingSettled(listingId: number, account: string, amount: number): Promise<void> {
   const db = await getDb();
-  await db.query("UPDATE listings SET settled_at = NOW() WHERE id = ? AND status = 'closed'", [listingId]);
+  await db.query(
+    "UPDATE listings SET settled_at = NOW(), settlement_account = ?, settlement_amount = ? WHERE id = ? AND status = 'closed'",
+    [account, amount, listingId],
+  );
 }
 
 // Reverses markListingSettled — lets an admin correct an accidental
 // "settled" click, putting the winner back under deleteAccount's
-// unsettled-win block until it's confirmed again.
+// unsettled-win block until it's confirmed again. Deliberately leaves
+// settlement_account/settlement_amount in place (not cleared) so the settle
+// form can pre-fill the last-entered values on re-settle.
 export async function unsettleListing(listingId: number): Promise<void> {
   const db = await getDb();
   await db.query("UPDATE listings SET settled_at = NULL WHERE id = ? AND status = 'closed'", [listingId]);
+}
+
+export interface WinnerProfile {
+  displayName: string | null;
+  phone: string | null;
+  address: string | null;
+}
+
+// Powers the closed-listings page's expandable "得標者資料" section.
+export async function getWinnerProfileForListing(listingId: number): Promise<WinnerProfile | null> {
+  const db = await getDb();
+  const [rows] = await db.query(
+    `SELECT u.display_name AS displayName, u.phone AS phone, u.address AS address
+     FROM listings l
+     JOIN users u ON u.id = l.leader_user_id
+     WHERE l.id = ?
+     LIMIT 1`,
+    [listingId],
+  );
+  return (rows as WinnerProfile[])[0] ?? null;
 }
 
 // Used by deleteAccount (lib/auth.ts) to decide whether an account can be
