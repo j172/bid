@@ -23,27 +23,14 @@ if (str_starts_with($path, '/__ops/')) {
     $logFile = $appDir . '/.apply.log';
     $lockFile = $appDir . '/.apply.lock';
 
-    if ($path === '/__ops/apply') {
-        $artifact = $appDir . '/.prebuilt-next.tgz';
-        if (!is_file($artifact)) {
-            header('Content-Type: text/plain; charset=utf-8');
-            echo "Artifact missing: {$artifact}\n";
-            exit;
-        }
-
-        if (is_file($lockFile) && (time() - (int) @filemtime($lockFile)) > 1800) {
-            @unlink($lockFile);
-        }
-        if (is_file($lockFile)) {
-            header('Content-Type: text/plain; charset=utf-8');
-            echo "Apply already running.\n";
-            if (is_file($logFile)) {
-                echo file_get_contents($logFile);
-            }
-            exit;
-        }
-        @file_put_contents($lockFile, (string) time(), LOCK_EX);
-
+    // Shared by /__ops/apply (manual/CI-triggered) and /__ops/pm2-ensure-running
+    // (cron-triggered watchdog, see below) — re-extracts the last deployed
+    // artifact, swaps it in, restarts pm2, health-probes, and rolls back on
+    // failure. Reusing this tested path for the watchdog rather than a bespoke
+    // "just pm2 start" matches the same pattern already proven on the health
+    // project, where this host has been observed silently killing long-running
+    // background processes roughly once a day.
+    $buildApplyCommand = static function () use ($appDir, $appPort, $nodeBin, $pm2Bin): string {
         $script = "cd {$appDir} "
             . "&& { "
             . "echo '[START] '$(date) > .apply.log; "
@@ -69,7 +56,30 @@ if (str_starts_with($path, '/__ops/')) {
             . "}; "
             . "rm -f .apply.lock";
 
-        @exec("nohup /bin/sh -lc " . escapeshellarg($script) . " >/dev/null 2>&1 &");
+        return "nohup /bin/sh -lc " . escapeshellarg($script) . " >/dev/null 2>&1 &";
+    };
+
+    if ($path === '/__ops/apply') {
+        $artifact = $appDir . '/.prebuilt-next.tgz';
+        if (!is_file($artifact)) {
+            header('Content-Type: text/plain; charset=utf-8');
+            echo "Artifact missing: {$artifact}\n";
+            exit;
+        }
+
+        if (is_file($lockFile) && (time() - (int) @filemtime($lockFile)) > 1800) {
+            @unlink($lockFile);
+        }
+        if (is_file($lockFile)) {
+            header('Content-Type: text/plain; charset=utf-8');
+            echo "Apply already running.\n";
+            if (is_file($logFile)) {
+                echo file_get_contents($logFile);
+            }
+            exit;
+        }
+        @file_put_contents($lockFile, (string) time(), LOCK_EX);
+        @exec($buildApplyCommand());
 
         header('Content-Type: text/plain; charset=utf-8');
         echo "Apply triggered. Check /__ops/status?key=...\n";
@@ -86,6 +96,48 @@ if (str_starts_with($path, '/__ops/')) {
     if ($path === '/__ops/pm2-status') {
         header('Content-Type: text/plain; charset=utf-8');
         echo shell_exec(escapeshellarg($nodeBin) . ' ' . escapeshellarg($pm2Bin) . ' describe bid-web 2>&1');
+        exit;
+    }
+
+    // Meant to be hit by an external cron job (see the deploy workflow /
+    // ops docs) so bid-web recovers from this host's periodic process kills
+    // without anyone noticing a 502 first — see $buildApplyCommand's comment.
+    if ($path === '/__ops/pm2-ensure-running') {
+        header('Content-Type: text/plain; charset=utf-8');
+        $jlist = shell_exec(escapeshellarg($nodeBin) . ' ' . escapeshellarg($pm2Bin) . ' jlist 2>/dev/null');
+        $procs = json_decode($jlist ?: '[]', true);
+        if (!is_array($procs)) {
+            $procs = [];
+        }
+        $isOnline = false;
+        foreach ($procs as $proc) {
+            if (($proc['name'] ?? '') === 'bid-web' && ($proc['pm2_env']['status'] ?? '') === 'online') {
+                $isOnline = true;
+                break;
+            }
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $watchdogLog = $appDir . '/.pm2-watchdog.log';
+
+        if ($isOnline) {
+            echo "[{$now}] bid-web is online. No action taken.\n";
+            exit;
+        }
+
+        if (is_file($lockFile) && (time() - (int) @filemtime($lockFile)) > 1800) {
+            @unlink($lockFile);
+        }
+        if (is_file($lockFile)) {
+            echo "[{$now}] bid-web is not online, but an apply is already running — leaving it alone.\n";
+            exit;
+        }
+
+        @file_put_contents($watchdogLog, "[{$now}] bid-web was not online (this host periodically kills long-running background processes) — restarting via apply.\n", FILE_APPEND);
+        @file_put_contents($lockFile, (string) time(), LOCK_EX);
+        @exec($buildApplyCommand());
+
+        echo "[{$now}] bid-web was not online. Restart triggered — check /__ops/status?key=...\n";
         exit;
     }
 
