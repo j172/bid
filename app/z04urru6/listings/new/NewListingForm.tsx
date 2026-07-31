@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "../../../components/Button";
+import { convertPhotoToWebp } from "@/lib/convertPhotoToWebp";
 import { DESCRIPTION_MAX, ENDS_AT_MAX_DAYS, PRICE_MAX, TITLE_MAX } from "@/lib/listingValidation";
 import { MAX_PHOTO_BYTES, MAX_PHOTO_COUNT } from "@/lib/photoLimits";
 
@@ -37,18 +38,22 @@ export default function NewListingForm() {
     };
   }, [photoPreviews]);
 
-  function handleFilesSelected(event: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFilesSelected(event: React.ChangeEvent<HTMLInputElement>) {
     const selected = Array.from(event.target.files ?? []);
     event.target.value = ""; // allow re-selecting the same file after removing it
 
     setPhotoError(null);
-    const oversized = selected.find((file) => file.size > MAX_PHOTO_BYTES);
+    // Converted client-side (see convertPhotoToWebp's comment for why) before
+    // the size check, so the 5MB limit applies to what actually gets uploaded.
+    const converted = await Promise.all(selected.map((file) => convertPhotoToWebp(file)));
+
+    const oversized = converted.find((file) => file.size > MAX_PHOTO_BYTES);
     if (oversized) {
       setPhotoError(`「${oversized.name}」超過單檔 ${MAX_PHOTO_BYTES / 1024 / 1024}MB 上限`);
       return;
     }
     setPhotos((current) => {
-      const combined = [...current, ...selected];
+      const combined = [...current, ...converted];
       if (combined.length > MAX_PHOTO_COUNT) {
         setPhotoError(`照片最多 ${MAX_PHOTO_COUNT} 張`);
         return current;
