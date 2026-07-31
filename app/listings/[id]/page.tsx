@@ -4,9 +4,11 @@ import { getCurrentUser } from "@/lib/auth";
 import { getMinimumNextBid } from "@/lib/bidding/domain";
 import { getListingById } from "@/lib/listings";
 import { listingPhotoUrl } from "@/lib/uploads";
+import StatusBadge from "../../components/StatusBadge";
 import BidForm from "./BidForm";
 import BuyNowButton from "./BuyNowButton";
 import LiveListingStatus from "./LiveListingStatus";
+import PurchaseForm from "./PurchaseForm";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +26,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
   const user = await getCurrentUser();
   const isOpen = listing.status === "open";
+  const isFixedPrice = listing.listing_type === "fixed_price";
   const minimumNextBid = getMinimumNextBid(listing.current_price);
 
   return (
@@ -62,22 +65,42 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
           </div>
 
           <div className="rounded-lg border border-border bg-surface p-6 shadow-sm">
-            <LiveListingStatus
-              listingId={listing.id}
-              initialCurrentPrice={listing.current_price}
-              initialEndsAt={listing.ends_at.toISOString()}
-              initialStatus={listing.status}
-            />
-            {listing.buy_it_now_price !== null && (
-              <p className="mt-3 text-sm text-ink-light">買斷價 {listing.buy_it_now_price}</p>
+            {isFixedPrice ? (
+              <div className="flex flex-col gap-1">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-gold">{listing.price}</span>
+                  <StatusBadge status={listing.status} />
+                </div>
+                <p className="text-sm text-ink-light">
+                  {listing.stock_remaining === 0 ? "已售罄" : `剩餘 ${listing.stock_remaining} 件`}
+                </p>
+              </div>
+            ) : (
+              <>
+                <LiveListingStatus
+                  listingId={listing.id}
+                  initialCurrentPrice={listing.current_price}
+                  initialEndsAt={listing.ends_at!.toISOString()}
+                  initialStatus={listing.status}
+                />
+                {listing.buy_it_now_price !== null && (
+                  <p className="mt-3 text-sm text-ink-light">買斷價 {listing.buy_it_now_price}</p>
+                )}
+              </>
             )}
 
             {isOpen &&
               (user ? (
                 <div className="mt-6 flex flex-col gap-4 border-t border-border pt-6">
-                  <BidForm listingId={listing.id} minimumNextBid={minimumNextBid} />
-                  {listing.buy_it_now_price !== null && (
-                    <BuyNowButton listingId={listing.id} buyItNowPrice={listing.buy_it_now_price} />
+                  {isFixedPrice ? (
+                    <PurchaseForm listingId={listing.id} stockRemaining={listing.stock_remaining ?? 0} />
+                  ) : (
+                    <>
+                      <BidForm listingId={listing.id} minimumNextBid={minimumNextBid} />
+                      {listing.buy_it_now_price !== null && (
+                        <BuyNowButton listingId={listing.id} buyItNowPrice={listing.buy_it_now_price} />
+                      )}
+                    </>
                   )}
                 </div>
               ) : (
@@ -85,7 +108,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                   <Link href="/login" className="font-medium text-gold hover:underline">
                     登入
                   </Link>
-                  後才能出價或買斷
+                  {isFixedPrice ? "後才能購買" : "後才能出價或買斷"}
                 </p>
               ))}
           </div>

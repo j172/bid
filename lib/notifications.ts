@@ -52,3 +52,28 @@ export function notifyAuctionEnded(listingId: number): void {
     }
   })().catch((error) => console.error("notifyAuctionEnded failed:", error));
 }
+
+// Fixed-price ("一般商品") purchase confirmation — called from
+// purchaseListing (lib/listings.ts) with the newly-inserted purchase row's
+// id, so it looks up its own details rather than taking them as params.
+export function notifyPurchaseConfirmed(purchaseId: number): void {
+  void (async () => {
+    const db = await getDb();
+    const [rows] = await db.query(
+      `SELECT u.email AS email, l.title AS title, p.quantity AS quantity, p.total_amount AS totalAmount
+       FROM purchases p
+       JOIN users u ON u.id = p.buyer_id
+       JOIN listings l ON l.id = p.listing_id
+       WHERE p.id = ?`,
+      [purchaseId],
+    );
+    const row = (rows as { email: string; title: string; quantity: number; totalAmount: number }[])[0];
+    if (!row) return;
+
+    await sendEmail(
+      row.email,
+      "購買成功",
+      `<p>你已購買「${row.title}」x ${row.quantity}，總金額 ${row.totalAmount}。管理員會與你聯繫後續付款與交付事宜。</p>`,
+    );
+  })().catch((error) => console.error("notifyPurchaseConfirmed failed:", error));
+}

@@ -29,6 +29,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           <Link href="/z04urru6/listings/closed" className={navLinkClass}>
             已結標結算
           </Link>
+          <Link href="/z04urru6/orders" className={navLinkClass}>
+            訂單管理
+          </Link>
           <Link href="/z04urru6/users" className={navLinkClass}>
             使用者列表
           </Link>

@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS listings (
   starting_price BIGINT NOT NULL,
   current_price BIGINT NOT NULL,
   buy_it_now_price BIGINT NULL,
-  ends_at DATETIME NOT NULL,
+  ends_at DATETIME NULL,
   status VARCHAR(20) NOT NULL DEFAULT 'open',
   created_by BIGINT NOT NULL,
   created_at DATETIME NOT NULL,
@@ -41,6 +41,10 @@ CREATE TABLE IF NOT EXISTS listings (
   close_reason VARCHAR(20) NULL,
   settlement_account VARCHAR(30) NULL,
   settlement_amount BIGINT NULL,
+  listing_type VARCHAR(20) NOT NULL DEFAULT 'auction',
+  price BIGINT NULL,
+  stock_quantity BIGINT NULL,
+  stock_remaining BIGINT NULL,
   PRIMARY KEY (id),
   KEY idx_listings_status_ends (status, ends_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -65,4 +69,20 @@ CREATE TABLE IF NOT EXISTS bids (
   PRIMARY KEY (id),
   KEY idx_bids_listing_amount (listing_id, amount),
   KEY idx_bids_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS purchases (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  listing_id BIGINT NOT NULL,
+  buyer_id BIGINT NOT NULL,
+  quantity BIGINT NOT NULL,
+  unit_price BIGINT NOT NULL,
+  total_amount BIGINT NOT NULL,
+  created_at DATETIME NOT NULL,
+  settled_at DATETIME NULL,
+  settlement_account VARCHAR(30) NULL,
+  settlement_amount BIGINT NULL,
+  PRIMARY KEY (id),
+  KEY idx_purchases_listing (listing_id),
+  KEY idx_purchases_buyer (buyer_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

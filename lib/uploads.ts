@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto";
 import { mkdir, writeFile } from "fs/promises";
 import { join } from "path";
+import { MAX_PHOTO_BYTES } from "@/lib/photoLimits";
 
 const ALLOWED_EXTENSIONS: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -8,8 +9,6 @@ const ALLOWED_EXTENSIONS: Record<string, string> = {
   "image/webp": "webp",
   "image/gif": "gif",
 };
-
-const MAX_PHOTO_BYTES = 8 * 1024 * 1024; // 8MB per photo
 
 export function isAllowedPhotoType(type: string): boolean {
   return type in ALLOWED_EXTENSIONS;

@@ -67,6 +67,22 @@ CREATE TABLE IF NOT EXISTS bids (
   KEY idx_bids_listing_amount (listing_id, amount),
   KEY idx_bids_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS purchases (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  listing_id BIGINT NOT NULL,
+  buyer_id BIGINT NOT NULL,
+  quantity BIGINT NOT NULL,
+  unit_price BIGINT NOT NULL,
+  total_amount BIGINT NOT NULL,
+  created_at DATETIME NOT NULL,
+  settled_at DATETIME NULL,
+  settlement_account VARCHAR(30) NULL,
+  settlement_amount BIGINT NULL,
+  PRIMARY KEY (id),
+  KEY idx_purchases_listing (listing_id),
+  KEY idx_purchases_buyer (buyer_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
 
 // Columns added after their table's initial CREATE TABLE IF NOT EXISTS;
@@ -124,6 +140,16 @@ async function ensureAccountColumns(db: mysql.Pool): Promise<void> {
   // admin unsettles to fix a typo and re-settles.
   await ensureColumn(db, "listings", "settlement_account", "VARCHAR(30) NULL");
   await ensureColumn(db, "listings", "settlement_amount", "BIGINT NULL");
+  // 'auction' (default, existing proxy-bidding behavior) | 'fixed_price'
+  // (一般商品: no bidding, fixed unit price, multi-unit stock — see
+  // lib/purchase.ts and purchaseListing in lib/listings.ts). price/
+  // stock_quantity/stock_remaining are NULL for auction listings; ends_at
+  // is NULL for fixed_price listings (no time limit — see
+  // ensureEndsAtNullable below).
+  await ensureColumn(db, "listings", "listing_type", "VARCHAR(20) NOT NULL DEFAULT 'auction'");
+  await ensureColumn(db, "listings", "price", "BIGINT NULL");
+  await ensureColumn(db, "listings", "stock_quantity", "BIGINT NULL");
+  await ensureColumn(db, "listings", "stock_remaining", "BIGINT NULL");
 }
 
 // buy_it_now_price started out NOT NULL (every listing required one);
@@ -134,6 +160,13 @@ async function ensureAccountColumns(db: mysql.Pool): Promise<void> {
 // information_schema.IS_NULLABLE first.
 async function ensureBuyItNowNullable(db: mysql.Pool): Promise<void> {
   await db.query("ALTER TABLE listings MODIFY COLUMN buy_it_now_price BIGINT NULL");
+}
+
+// ends_at started out NOT NULL (every listing had a deadline); fixed_price
+// listings (see ensureAccountColumns) have no time limit, so the
+// already-deployed column needs relaxing the same way buy_it_now_price did.
+async function ensureEndsAtNullable(db: mysql.Pool): Promise<void> {
+  await db.query("ALTER TABLE listings MODIFY COLUMN ends_at DATETIME NULL");
 }
 
 function createPool(): mysql.Pool {
@@ -154,6 +187,7 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensureBiddingColumns(db);
   await ensureAccountColumns(db);
   await ensureBuyItNowNullable(db);
+  await ensureEndsAtNullable(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {

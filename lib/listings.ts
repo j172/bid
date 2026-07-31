@@ -6,17 +6,28 @@ import {
   type BuyNowOutcome,
   type ProxyBidOutcome,
 } from "@/lib/bidding/domain";
-import { notifyAuctionEnded, notifyOutbid } from "@/lib/notifications";
+import { resolvePurchase, type PurchaseOutcome } from "@/lib/purchase";
+import { notifyAuctionEnded, notifyOutbid, notifyPurchaseConfirmed } from "@/lib/notifications";
+
+export type ListingType = "auction" | "fixed_price";
 
 export interface Listing {
   id: number;
   title: string;
   description: string;
+  listing_type: ListingType;
   starting_price: number;
   current_price: number;
-  /** Null when the listing has no buy-it-now price (BIN is optional). */
+  /** Null when the listing has no buy-it-now price (BIN is optional). Only meaningful for 'auction' listings. */
   buy_it_now_price: number | null;
-  ends_at: Date;
+  /** Unit price for 'fixed_price' listings; null for 'auction' listings. */
+  price: number | null;
+  /** Total stock at creation; null for 'auction' listings. */
+  stock_quantity: number | null;
+  /** Stock left to purchase; null for 'auction' listings. */
+  stock_remaining: number | null;
+  /** Null for 'fixed_price' listings (no time limit) — required for 'auction' listings. */
+  ends_at: Date | null;
   status: string;
   created_by: number;
   created_at: Date;
@@ -26,24 +37,46 @@ export interface ListingWithPhotos extends Listing {
   photos: string[];
 }
 
-export interface NewListingInput {
-  title: string;
-  description: string;
-  startingPrice: number;
-  buyItNowPrice: number | null;
-  endsAt: Date;
-  createdBy: number;
-}
+export type NewListingInput =
+  | {
+      listingType: "auction";
+      title: string;
+      description: string;
+      startingPrice: number;
+      buyItNowPrice: number | null;
+      endsAt: Date;
+      createdBy: number;
+    }
+  | {
+      listingType: "fixed_price";
+      title: string;
+      description: string;
+      price: number;
+      stockQuantity: number;
+      createdBy: number;
+    };
 
 // Split from photo storage: the listing's id (used as its photo directory
 // name) only exists after this insert, so callers must insert the listing,
 // then save photos to disk under that id, then call addListingPhotos.
 export async function insertListing(input: NewListingInput): Promise<number> {
   const db = await getDb();
+
+  if (input.listingType === "fixed_price") {
+    const [result] = await db.query(
+      `INSERT INTO listings
+         (title, description, listing_type, starting_price, current_price, price, stock_quantity, stock_remaining,
+          ends_at, status, created_by, created_at)
+       VALUES (?, ?, 'fixed_price', ?, ?, ?, ?, ?, NULL, 'open', ?, NOW())`,
+      [input.title, input.description, input.price, input.price, input.price, input.stockQuantity, input.stockQuantity, input.createdBy],
+    );
+    return (result as { insertId: number }).insertId;
+  }
+
   const [result] = await db.query(
     `INSERT INTO listings
-       (title, description, starting_price, current_price, buy_it_now_price, ends_at, status, created_by, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, 'open', ?, NOW())`,
+       (title, description, listing_type, starting_price, current_price, buy_it_now_price, ends_at, status, created_by, created_at)
+     VALUES (?, ?, 'auction', ?, ?, ?, ?, 'open', ?, NOW())`,
     [
       input.title,
       input.description,
@@ -76,15 +109,21 @@ export async function deleteListing(id: number): Promise<void> {
 export type CancelListingOutcome = { ok: true } | { ok: false; error: string };
 
 // Admin-only "take this down" action — distinct from closeExpiredListings'
-// natural close and from a BIN sale: only allowed while the listing has
-// never received a single bid (leader_max_amount is still null), so it can
-// never retroactively invalidate a real bidder's win. Uses a distinct
+// natural close and from a BIN sale. For auction listings, only allowed
+// while the listing has never received a single bid (leader_max_amount is
+// still null), so it can never retroactively invalidate a real bidder's
+// win. Fixed-price listings work differently: any number of independent
+// buyers can have already purchased units (there's no single "winner" to
+// invalidate), so admins can delist them at any time — past purchases stay
+// fully valid and trackable on the orders page regardless. Uses a distinct
 // 'cancelled' status (not 'closed') so it never shows up alongside real
-// settled sales on the admin closed-listings page.
+// settled auction sales on the admin closed-listings page.
 export async function cancelListing(listingId: number): Promise<CancelListingOutcome> {
   const db = await getDb();
   const [result] = await db.query(
-    "UPDATE listings SET status = 'cancelled' WHERE id = ? AND status = 'open' AND leader_max_amount IS NULL",
+    `UPDATE listings
+     SET status = 'cancelled'
+     WHERE id = ? AND status = 'open' AND (listing_type = 'fixed_price' OR leader_max_amount IS NULL)`,
     [listingId],
   );
   const affectedRows = (result as { affectedRows: number }).affectedRows;
@@ -97,26 +136,37 @@ export async function cancelListing(listingId: number): Promise<CancelListingOut
 export interface OpenListingForAdmin {
   id: number;
   title: string;
+  listingType: ListingType;
   currentPrice: number;
-  endsAt: Date;
+  /** Null for fixed_price listings (no time limit). */
+  endsAt: Date | null;
   hasBids: boolean;
+  /** Null for auction listings. */
+  stockQuantity: number | null;
+  stockRemaining: number | null;
+  /** Whether cancelListing would currently succeed — see its comment for the per-type rules. */
+  canCancel: boolean;
 }
 
 // Admin's open-listings management view: enough to decide whether each one
-// can still be cancelled (only while hasBids is false — see
-// cancelListing's comment) without pulling photos it doesn't need to show.
+// can still be cancelled (see cancelListing's per-type rules) without
+// pulling photos it doesn't need to show.
 export async function getOpenListingsForAdmin(): Promise<OpenListingForAdmin[]> {
   await closeExpiredListings();
   const db = await getDb();
   const [rows] = await db.query(
-    `SELECT id, title, current_price AS currentPrice, ends_at AS endsAt, (leader_max_amount IS NOT NULL) AS hasBids
+    `SELECT
+       id, title, listing_type AS listingType, current_price AS currentPrice, ends_at AS endsAt,
+       (leader_max_amount IS NOT NULL) AS hasBids,
+       stock_quantity AS stockQuantity, stock_remaining AS stockRemaining
      FROM listings
      WHERE status = 'open'
-     ORDER BY ends_at ASC`,
+     ORDER BY ends_at IS NULL, ends_at ASC`,
   );
-  return (rows as (Omit<OpenListingForAdmin, "hasBids"> & { hasBids: number })[]).map((row) => ({
+  return (rows as (Omit<OpenListingForAdmin, "hasBids" | "canCancel"> & { hasBids: number })[]).map((row) => ({
     ...row,
     hasBids: Boolean(row.hasBids),
+    canCancel: row.listingType === "fixed_price" || !row.hasBids,
   }));
 }
 
@@ -127,6 +177,11 @@ export interface OverviewStats {
   totalGmv: number;
 }
 
+// totalGmv combines settled auction sales (listings.current_price where
+// status = 'closed') with fixed_price purchase revenue (purchases.
+// total_amount) — fixed_price listings never transition to 'closed'
+// themselves (see cancelListing's comment), so their sales would otherwise
+// be invisible to this stat.
 export async function getOverviewStats(): Promise<OverviewStats> {
   await closeExpiredListings();
   const db = await getDb();
@@ -135,7 +190,8 @@ export async function getOverviewStats(): Promise<OverviewStats> {
        (SELECT COUNT(*) FROM listings WHERE status = 'open') AS openCount,
        (SELECT COUNT(*) FROM listings WHERE status = 'closed') AS closedCount,
        (SELECT COUNT(*) FROM users) AS userCount,
-       (SELECT COALESCE(SUM(current_price), 0) FROM listings WHERE status = 'closed') AS totalGmv`,
+       (SELECT COALESCE(SUM(current_price), 0) FROM listings WHERE status = 'closed')
+         + (SELECT COALESCE(SUM(total_amount), 0) FROM purchases) AS totalGmv`,
   );
   return (rows as OverviewStats[])[0];
 }
@@ -156,10 +212,14 @@ export async function closeExpiredListings(): Promise<void> {
   );
 }
 
-export async function listOpenListings(): Promise<ListingWithPhotos[]> {
+export async function listOpenListings(type?: ListingType): Promise<ListingWithPhotos[]> {
   await closeExpiredListings();
   const db = await getDb();
-  const [rows] = await db.query("SELECT * FROM listings WHERE status = 'open' ORDER BY ends_at ASC");
+  const [rows] = type
+    ? await db.query("SELECT * FROM listings WHERE status = 'open' AND listing_type = ? ORDER BY ends_at IS NULL, ends_at ASC", [
+        type,
+      ])
+    : await db.query("SELECT * FROM listings WHERE status = 'open' ORDER BY ends_at IS NULL, ends_at ASC");
   const listings = rows as Listing[];
 
   const results: ListingWithPhotos[] = [];
@@ -366,9 +426,10 @@ export async function getWinnerProfileForListing(listingId: number): Promise<Win
 
 // Used by deleteAccount (lib/auth.ts) to decide whether an account can be
 // removed: never while leading an open auction (their withdrawal would
-// hand a stranger's win to nobody), and never while holding an unsettled
-// closed win (the admin still needs their contact details to complete the
-// offline transaction).
+// hand a stranger's win to nobody), never while holding an unsettled
+// closed win, and never while holding an unsettled fixed_price purchase
+// (the admin still needs their contact details to complete the offline
+// transaction in all three cases).
 export async function findBlockingObligation(userId: number): Promise<string | null> {
   const db = await getDb();
 
@@ -388,6 +449,14 @@ export async function findBlockingObligation(userId: number): Promise<string | n
     return "你有已得標但尚未完成交易的商品，請等待管理員確認交易完成後再刪除帳號";
   }
 
+  const [unsettledOrderRows] = await db.query(
+    "SELECT 1 FROM purchases WHERE buyer_id = ? AND settled_at IS NULL LIMIT 1",
+    [userId],
+  );
+  if ((unsettledOrderRows as unknown[]).length > 0) {
+    return "你有已購買但尚未完成交易的商品，請等待管理員確認交易完成後再刪除帳號";
+  }
+
   return null;
 }
 
@@ -396,7 +465,7 @@ export interface ListingCreatedByUser {
   title: string;
   status: string;
   currentPrice: number;
-  endsAt: Date;
+  endsAt: Date | null;
 }
 
 // Only admins can create listings (see app/api/admin/listings/route.ts), so
@@ -618,6 +687,194 @@ export async function buyNow(listingId: number, userId: number): Promise<BuyNowO
   } finally {
     connection.release();
   }
+}
+
+// Fixed-price ("一般商品") purchase: unlike placeBid/buyNow, this never
+// closes the listing itself — any number of independent buyers can keep
+// purchasing from the remaining stock (see resolvePurchase's comment). The
+// listing only leaves "open" via cancelListing (admin action).
+export async function purchaseListing(listingId: number, buyerId: number, quantity: number): Promise<PurchaseOutcome> {
+  const db = await getDb();
+  const connection = await db.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const [rows] = await connection.query(
+      "SELECT status, listing_type, price, stock_remaining, created_by FROM listings WHERE id = ? FOR UPDATE",
+      [listingId],
+    );
+    const listing = (
+      rows as {
+        status: string;
+        listing_type: ListingType;
+        price: number | null;
+        stock_remaining: number | null;
+        created_by: number;
+      }[]
+    )[0];
+    if (!listing) {
+      await connection.rollback();
+      return { ok: false, error: "找不到這個商品" };
+    }
+    if (listing.listing_type !== "fixed_price") {
+      await connection.rollback();
+      return { ok: false, error: "這個商品不支援直接購買" };
+    }
+    if (listing.created_by === buyerId) {
+      await connection.rollback();
+      return { ok: false, error: "不能購買自己上架的商品" };
+    }
+
+    const result = resolvePurchase(
+      { status: listing.status, stockRemaining: listing.stock_remaining ?? 0 },
+      quantity,
+    );
+    if (!result.ok) {
+      await connection.rollback();
+      return result;
+    }
+
+    const unitPrice = listing.price as number;
+    const totalAmount = unitPrice * quantity;
+
+    await connection.query("UPDATE listings SET stock_remaining = stock_remaining - ? WHERE id = ?", [
+      quantity,
+      listingId,
+    ]);
+    const [insertResult] = await connection.query(
+      "INSERT INTO purchases (listing_id, buyer_id, quantity, unit_price, total_amount, created_at) VALUES (?, ?, ?, ?, ?, NOW())",
+      [listingId, buyerId, quantity, unitPrice, totalAmount],
+    );
+
+    await connection.commit();
+
+    // Fired without awaiting — see the equivalent note in placeBid().
+    notifyPurchaseConfirmed((insertResult as { insertId: number }).insertId);
+
+    return result;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+export interface OrderSummary {
+  id: number;
+  listingId: number;
+  listingTitle: string;
+  quantity: number;
+  unitPrice: number;
+  totalAmount: number;
+  createdAt: Date;
+  /** null: buyer deleted their account. */
+  buyerEmail: string | null;
+  settled: boolean;
+  settlementAccount: string | null;
+  settlementAmount: number | null;
+}
+
+export type OrderStatusFilter = "all" | "settled" | "unsettled";
+export type OrderSort = "created_desc" | "amount_desc";
+
+export interface ListOrdersOptions {
+  search?: string;
+  buyerEmail?: string;
+  status?: OrderStatusFilter;
+  sort?: OrderSort;
+  page?: number;
+}
+
+export const ORDERS_PAGE_SIZE = 50;
+
+const ORDER_SORT_CLAUSES: Record<OrderSort, string> = {
+  created_desc: "p.created_at DESC",
+  amount_desc: "p.total_amount DESC",
+};
+
+// Admin's order-management view for fixed_price purchases — the equivalent
+// of listClosedListings, but per-purchase rather than per-listing since a
+// single fixed_price listing can be bought by many different buyers.
+export async function getOrdersForAdmin(
+  options: ListOrdersOptions = {},
+): Promise<{ orders: OrderSummary[]; total: number }> {
+  const db = await getDb();
+  const conditions: string[] = [];
+  const params: string[] = [];
+
+  const search = options.search?.trim();
+  if (search) {
+    conditions.push("l.title LIKE ?");
+    params.push(`%${search}%`);
+  }
+  const buyerEmail = options.buyerEmail?.trim();
+  if (buyerEmail) {
+    conditions.push("u.email LIKE ?");
+    params.push(`%${buyerEmail}%`);
+  }
+  switch (options.status) {
+    case "settled":
+      conditions.push("p.settled_at IS NOT NULL");
+      break;
+    case "unsettled":
+      conditions.push("p.settled_at IS NULL");
+      break;
+    case "all":
+    default:
+      break;
+  }
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  const [countRows] = await db.query(
+    `SELECT COUNT(*) AS cnt FROM purchases p
+     JOIN listings l ON l.id = p.listing_id
+     LEFT JOIN users u ON u.id = p.buyer_id
+     ${where}`,
+    params,
+  );
+  const total = (countRows as { cnt: number }[])[0].cnt;
+
+  const orderBy = ORDER_SORT_CLAUSES[options.sort ?? "created_desc"];
+  const page = Math.max(1, options.page ?? 1);
+  const offset = (page - 1) * ORDERS_PAGE_SIZE;
+
+  const [rows] = await db.query(
+    `SELECT
+       p.id AS id, p.listing_id AS listingId, l.title AS listingTitle,
+       p.quantity AS quantity, p.unit_price AS unitPrice, p.total_amount AS totalAmount, p.created_at AS createdAt,
+       CASE WHEN u.deleted_at IS NOT NULL THEN '（帳號已刪除）' ELSE u.email END AS buyerEmail,
+       (p.settled_at IS NOT NULL) AS settled,
+       p.settlement_account AS settlementAccount, p.settlement_amount AS settlementAmount
+     FROM purchases p
+     JOIN listings l ON l.id = p.listing_id
+     LEFT JOIN users u ON u.id = p.buyer_id
+     ${where}
+     ORDER BY ${orderBy}
+     LIMIT ${ORDERS_PAGE_SIZE} OFFSET ${offset}`,
+    params,
+  );
+  const orders = (rows as (Omit<OrderSummary, "settled"> & { settled: number })[]).map((row) => ({
+    ...row,
+    settled: Boolean(row.settled),
+  }));
+  return { orders, total };
+}
+
+// Mirrors markListingSettled/unsettleListing (see their comments) but for
+// individual purchases rather than whole listings.
+export async function markOrderSettled(orderId: number, account: string, amount: number): Promise<void> {
+  const db = await getDb();
+  await db.query(
+    "UPDATE purchases SET settled_at = NOW(), settlement_account = ?, settlement_amount = ? WHERE id = ?",
+    [account, amount, orderId],
+  );
+}
+
+export async function unsettleOrder(orderId: number): Promise<void> {
+  const db = await getDb();
+  await db.query("UPDATE purchases SET settled_at = NULL WHERE id = ?", [orderId]);
 }
 
 async function getPhotoFileNames(listingId: number): Promise<string[]> {
