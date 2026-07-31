@@ -143,6 +143,66 @@ export async function cancelListing(listingId: number): Promise<CancelListingOut
   return { ok: true };
 }
 
+export type RelistOutcome =
+  | { ok: true; newListingId: number; photoFileNames: string[] }
+  | { ok: false; error: string };
+
+// Admin-only "sell it again" action for a closed auction listing that got
+// zero bids — a listing with a real winner must never be touched by this
+// (see getClosedListings' winnerEmail). Creates a brand-new, independent
+// listing (same title/description/photos, fresh price/end-time from the
+// admin's input) rather than reopening the old one, so the original stays
+// exactly as-is in the closed-listings history. Returns the old listing's
+// photo file names rather than copying them itself — actual file I/O stays
+// at the API route layer (see app/api/admin/listings/[id]/relist), matching
+// how listing creation already splits DB insert from saveListingPhotos.
+export async function relistClosedListing(
+  listingId: number,
+  input: { startingPrice: number; buyItNowPrice: number | null; endsAt: Date },
+): Promise<RelistOutcome> {
+  const db = await getDb();
+
+  const [rows] = await db.query(
+    "SELECT title, description, listing_type, status, leader_user_id, created_by FROM listings WHERE id = ? LIMIT 1",
+    [listingId],
+  );
+  const listing = (
+    rows as {
+      title: string;
+      description: string;
+      listing_type: ListingType;
+      status: string;
+      leader_user_id: number | null;
+      created_by: number;
+    }[]
+  )[0];
+  if (!listing) {
+    return { ok: false, error: "找不到這個商品" };
+  }
+  if (listing.listing_type !== "auction") {
+    return { ok: false, error: "這個商品不支援重新上架" };
+  }
+  if (listing.status !== "closed") {
+    return { ok: false, error: "只有已結標的商品可以重新上架" };
+  }
+  if (listing.leader_user_id !== null) {
+    return { ok: false, error: "已有得標者的商品無法重新上架" };
+  }
+
+  const newListingId = await insertListing({
+    listingType: "auction",
+    title: listing.title,
+    description: listing.description,
+    startingPrice: input.startingPrice,
+    buyItNowPrice: input.buyItNowPrice,
+    endsAt: input.endsAt,
+    createdBy: listing.created_by,
+  });
+
+  const photoFileNames = await getPhotoFileNames(listingId);
+  return { ok: true, newListingId, photoFileNames };
+}
+
 export interface OpenListingForAdmin {
   id: number;
   title: string;

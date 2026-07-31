@@ -3,8 +3,10 @@ import { getCurrentUser } from "@/lib/auth";
 import { getListingById } from "@/lib/listings";
 import { listingPhotoUrl } from "@/lib/uploads";
 
-// Powers the admin edit modal — fetches the current field values and photo
-// URLs to pre-fill the form (see EditListingModal.tsx).
+// Powers the admin edit modal (fixed_price listings — see
+// EditListingModal.tsx) and the relist modal (closed auction listings with
+// no winner — see RelistModal.tsx): fetches the current field values and
+// photo URLs to pre-fill whichever form is asking.
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser();
   if (!user || user.role !== "admin") {
@@ -29,6 +31,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       description: listing.description,
       price: listing.price,
       stockRemaining: listing.stock_remaining,
+      startingPrice: listing.starting_price,
+      buyItNowPrice: listing.buy_it_now_price,
       photos: listing.photos.map((fileName) => ({ fileName, url: listingPhotoUrl(listing.id, fileName) })),
     },
   });

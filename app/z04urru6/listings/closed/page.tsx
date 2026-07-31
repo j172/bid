@@ -10,6 +10,7 @@ import UnsettleButton from "./UnsettleButton";
 import BiddersExpand from "./BiddersExpand";
 import WinnerExpand from "./WinnerExpand";
 import SettlementExpand from "./SettlementExpand";
+import RelistModal from "./RelistModal";
 
 export const dynamic = "force-dynamic";
 
@@ -159,7 +160,7 @@ export default async function ClosedListingsPage({ searchParams }: { searchParam
                   </td>
                   <td className={td}>
                     {listing.winnerEmail === null ? (
-                      "—"
+                      <RelistModal listingId={listing.id} />
                     ) : listing.settled ? (
                       <UnsettleButton listingId={listing.id} />
                     ) : (

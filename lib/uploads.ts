@@ -1,5 +1,5 @@
 import { randomBytes } from "crypto";
-import { mkdir, unlink, writeFile } from "fs/promises";
+import { copyFile, mkdir, unlink, writeFile } from "fs/promises";
 import { join } from "path";
 import { MAX_PHOTO_BYTES } from "@/lib/photoLimits";
 
@@ -54,5 +54,18 @@ export async function deleteListingPhotoFiles(listingId: number, fileNames: stri
   const dir = join(UPLOADS_ROOT, "listings", String(listingId));
   for (const fileName of fileNames) {
     await unlink(join(dir, fileName)).catch(() => {});
+  }
+}
+
+// Used by relistClosedListing (lib/listings.ts) so a re-listed auction
+// doesn't force the admin to re-upload photos that already exist on disk
+// under the original listing's own directory — same file names, copied
+// into the new listing's directory.
+export async function copyListingPhotos(fromListingId: number, toListingId: number, fileNames: string[]): Promise<void> {
+  const fromDir = join(UPLOADS_ROOT, "listings", String(fromListingId));
+  const toDir = join(UPLOADS_ROOT, "listings", String(toListingId));
+  await mkdir(toDir, { recursive: true });
+  for (const fileName of fileNames) {
+    await copyFile(join(fromDir, fileName), join(toDir, fileName));
   }
 }
