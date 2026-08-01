@@ -1,6 +1,8 @@
 // Pure bidding domain logic: no HTTP, no database. Callable and testable as
 // plain functions/state transitions (see domain.test.ts).
 
+import type { ErrorCode } from "@/lib/errorCodes";
+
 export interface IncrementTier {
   /** Exclusive upper bound of current price for this tier; Infinity for the last tier. */
   upTo: number;
@@ -52,7 +54,9 @@ export interface ProxyBidResult {
   closedViaBuyItNow: boolean;
 }
 
-export type ProxyBidOutcome = ProxyBidResult | { ok: false; error: string };
+export type ProxyBidOutcome =
+  | ProxyBidResult
+  | { ok: false; errorCode: ErrorCode; minimumNextBid?: number };
 
 // Standard proxy ("eBay-style") auction resolution. Every bid is a private
 // max; only the resulting visible price is ever shown. A lone/first bid
@@ -68,15 +72,15 @@ export type ProxyBidOutcome = ProxyBidResult | { ok: false; error: string };
 // separate, explicit "click Buy Now" trigger).
 export function resolveProxyBid(state: ProxyBidState, maxAmount: number): ProxyBidOutcome {
   if (state.status !== "open") {
-    return { ok: false, error: "這個商品已經結標，無法出價" };
+    return { ok: false, errorCode: "LISTING_NOT_OPEN" };
   }
   if (!Number.isFinite(maxAmount) || maxAmount <= 0) {
-    return { ok: false, error: "出價金額不正確" };
+    return { ok: false, errorCode: "INVALID_BID_AMOUNT" };
   }
 
   const minimumNextBid = getMinimumNextBid(state.currentPrice);
   if (maxAmount < minimumNextBid) {
-    return { ok: false, error: `出價必須至少為 ${minimumNextBid}` };
+    return { ok: false, errorCode: "BID_TOO_LOW", minimumNextBid };
   }
 
   let currentPrice: number;
@@ -114,7 +118,7 @@ export function resolveProxyBid(state: ProxyBidState, maxAmount: number): ProxyB
   return { ok: true, currentPrice, leaderMaxAmount, youAreLeading, closedViaBuyItNow };
 }
 
-export type BuyNowOutcome = { ok: true; finalPrice: number } | { ok: false; error: string };
+export type BuyNowOutcome = { ok: true; finalPrice: number } | { ok: false; errorCode: ErrorCode };
 
 // The explicit "click Buy Now" trigger — the only requirement is that the
 // listing is still open; it works identically whether or not bids exist,
@@ -122,10 +126,10 @@ export type BuyNowOutcome = { ok: true; finalPrice: number } | { ok: false; erro
 // buy-it-now price (buyItNowPrice: null) never offer this action at all.
 export function resolveBuyNow(state: { status: string; buyItNowPrice: number | null }): BuyNowOutcome {
   if (state.status !== "open") {
-    return { ok: false, error: "這個商品已經結標" };
+    return { ok: false, errorCode: "LISTING_NOT_OPEN" };
   }
   if (state.buyItNowPrice === null) {
-    return { ok: false, error: "這個商品沒有提供買斷價" };
+    return { ok: false, errorCode: "NO_BUY_IT_NOW_PRICE" };
   }
   return { ok: true, finalPrice: state.buyItNowPrice };
 }

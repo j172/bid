@@ -1,14 +1,16 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
-import Button from "../components/Button";
+import Button from "@/app/components/Button";
+import { Link, useRouter } from "@/i18n/navigation";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-gold focus:outline-none";
 
 export default function LoginPage() {
   const router = useRouter();
+  const t = useTranslations("login");
+  const tErrors = useTranslations("errors");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +30,7 @@ export default function LoginPage() {
 
     setSubmitting(false);
     if (!data.ok) {
-      setError(data.error ?? "登入失敗");
+      setError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
       return;
     }
     router.push("/");
@@ -38,10 +40,10 @@ export default function LoginPage() {
   return (
     <main className="mx-auto max-w-md px-4 py-16 sm:px-6">
       <div className="rounded-lg border border-border bg-surface p-8 shadow-sm">
-        <h1 className="text-2xl font-bold">登入</h1>
+        <h1 className="text-2xl font-bold">{t("title")}</h1>
         <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
           <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-            Email
+            {t("email")}
             <input
               type="email"
               required
@@ -51,7 +53,7 @@ export default function LoginPage() {
             />
           </label>
           <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-            密碼
+            {t("password")}
             <input
               type="password"
               required
@@ -62,13 +64,13 @@ export default function LoginPage() {
           </label>
           {error && <p className="text-sm text-ended">{error}</p>}
           <Button type="submit" disabled={submitting}>
-            {submitting ? "登入中..." : "登入"}
+            {submitting ? t("submitting") : t("submit")}
           </Button>
         </form>
         <p className="mt-4 text-sm text-ink-light">
-          還沒有帳號？{" "}
+          {t("noAccount")}{" "}
           <Link href="/register" className="font-medium text-gold hover:underline">
-            註冊
+            {t("registerLink")}
           </Link>
         </p>
       </div>

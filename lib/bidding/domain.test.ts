@@ -67,13 +67,12 @@ describe("resolveProxyBid — no existing leader (first bid on a listing)", () =
     });
   });
 
-  it("rejects a max below the minimum with a message naming the required minimum", () => {
+  it("rejects a max below the minimum, reporting the required minimum for the client to interpolate", () => {
     const result = resolveProxyBid(
       { status: "open", currentPrice: 1000, leaderMaxAmount: null, buyItNowPrice: NO_BIN },
       1050,
     );
-    expect(result.ok).toBe(false);
-    expect(!result.ok && result.error).toContain("1100");
+    expect(result).toEqual({ ok: false, errorCode: "BID_TOO_LOW", minimumNextBid: 1100 });
   });
 
   it("rejects any bid on a listing that isn't open", () => {

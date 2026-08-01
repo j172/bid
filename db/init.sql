@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
   address VARCHAR(200) NULL,
   deleted_at DATETIME NULL,
   suspended_at DATETIME NULL,
+  locale VARCHAR(10) NOT NULL DEFAULT 'zh-TW',
   created_at DATETIME NOT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_users_email (email)

@@ -1,11 +1,14 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
-import Button from "../components/Button";
+import Button from "@/app/components/Button";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-gold focus:outline-none";
 
 export default function ChangePasswordForm() {
+  const t = useTranslations("changePasswordForm");
+  const tErrors = useTranslations("errors");
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -27,18 +30,18 @@ export default function ChangePasswordForm() {
 
     setSubmitting(false);
     if (!data.ok) {
-      setError(data.error ?? "修改密碼失敗");
+      setError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
       return;
     }
     setOldPassword("");
     setNewPassword("");
-    setNotice("密碼已更新");
+    setNotice(t("saved"));
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-        舊密碼
+        {t("oldPassword")}
         <input
           type="password"
           required
@@ -48,7 +51,7 @@ export default function ChangePasswordForm() {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-        新密碼（至少 8 個字元）
+        {t("newPassword")}
         <input
           type="password"
           required
@@ -60,7 +63,7 @@ export default function ChangePasswordForm() {
       </label>
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={submitting}>
-          {submitting ? "更新中..." : "修改密碼"}
+          {submitting ? t("submitting") : t("submit")}
         </Button>
         {error && <span className="text-sm text-ended">{error}</span>}
         {notice && <span className="text-sm text-leading">{notice}</span>}

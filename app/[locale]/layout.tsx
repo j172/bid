@@ -1,0 +1,53 @@
+import type { Metadata } from "next";
+import { hasLocale } from "next-intl";
+import { NextIntlClientProvider } from "next-intl";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { notFound } from "next/navigation";
+import type { ReactNode } from "react";
+import { routing } from "@/i18n/routing";
+import SiteHeader from "./components/SiteHeader";
+import "../globals.css";
+
+// The public site's own independent root layout (its own <html>/<body>) —
+// see app/z04urru6/layout.tsx for the admin backend's separate root. There's
+// deliberately no shared top-level app/layout.tsx: next-intl's routing (see
+// middleware.ts) only ever sends requests for the public site into this
+// [locale]-prefixed tree.
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "home" });
+  return { title: t("title") };
+}
+
+export default async function LocaleLayout({
+  children,
+  params,
+}: {
+  children: ReactNode;
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  if (!hasLocale(routing.locales, locale)) {
+    notFound();
+  }
+  setRequestLocale(locale);
+
+  return (
+    <html lang={locale}>
+      <body className="min-h-screen font-sans text-ink">
+        <NextIntlClientProvider>
+          <SiteHeader />
+          {children}
+        </NextIntlClientProvider>
+      </body>
+    </html>
+  );
+}

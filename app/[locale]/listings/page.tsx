@@ -1,22 +1,15 @@
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { listOpenListings, type ListingType } from "@/lib/listings";
 import { listingPhotoUrl } from "@/lib/uploads";
 import { formatRemaining } from "@/lib/format";
 import { maskDisplayName } from "@/lib/mask";
+import { Link } from "@/i18n/navigation";
 
 export const dynamic = "force-dynamic";
 
 const DESCRIPTION_SNIPPET_LENGTH = 30;
 
 type SearchParams = Record<string, string | string[] | undefined>;
-
-const TYPE_TABS: { value: ListingType | ""; label: string }[] = [
-  { value: "", label: "全部" },
-  { value: "auction", label: "競標商品" },
-  { value: "fixed_price", label: "一般商品" },
-];
-
-const TYPE_BADGE_LABEL: Record<ListingType, string> = { auction: "競標商品", fixed_price: "一般商品" };
 
 function descriptionSnippet(description: string): string {
   const trimmed = description.trim();
@@ -31,10 +24,24 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   const type = (Array.isArray(typeParam) ? typeParam[0] : typeParam) as ListingType | undefined;
 
   const listings = await listOpenListings(type);
+  const t = await getTranslations("listings");
+  const tFormat = await getTranslations("format");
+  const anonymousBuyer = await getTranslations("mask").then((tMask) => tMask("anonymousBuyer"));
+
+  const TYPE_TABS: { value: ListingType | ""; label: string }[] = [
+    { value: "", label: t("tabAll") },
+    { value: "auction", label: t("tabAuction") },
+    { value: "fixed_price", label: t("tabFixedPrice") },
+  ];
+
+  const TYPE_BADGE_LABEL: Record<ListingType, string> = {
+    auction: t("badgeAuction"),
+    fixed_price: t("badgeFixedPrice"),
+  };
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-bold">競標中商品</h1>
+      <h1 className="text-2xl font-bold">{t("title")}</h1>
 
       <div className="mt-4 flex gap-2">
         {TYPE_TABS.map((tab) => (
@@ -52,7 +59,7 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
         ))}
       </div>
 
-      {listings.length === 0 && <p className="mt-6 text-ink-light">目前沒有開放中的商品。</p>}
+      {listings.length === 0 && <p className="mt-6 text-ink-light">{t("noListings")}</p>}
 
       <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {listings.map((listing) => (
@@ -82,21 +89,27 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
                 <>
                   <p className="mt-2 text-lg font-bold text-gold">{listing.price}</p>
                   <p className="mt-1 text-xs text-ink-light">
-                    {listing.stock_remaining === 0 ? "已售罄" : `剩餘 ${listing.stock_remaining} 件`}
+                    {listing.stock_remaining === 0
+                      ? t("soldOut")
+                      : t("remainingUnits", { count: listing.stock_remaining ?? 0 })}
                   </p>
-                  <p className="mt-1 text-xs text-ink-light">總購買次數 {listing.purchaseCount}</p>
+                  <p className="mt-1 text-xs text-ink-light">{t("totalPurchases", { count: listing.purchaseCount })}</p>
                 </>
               ) : (
                 <>
                   <p className="mt-2 text-lg font-bold text-gold">{listing.current_price}</p>
                   {listing.buy_it_now_price !== null && (
-                    <p className="text-xs text-ink-light">買斷價 {listing.buy_it_now_price}</p>
+                    <p className="text-xs text-ink-light">{t("buyItNowPrice", { price: listing.buy_it_now_price })}</p>
                   )}
-                  <p className="mt-1 text-xs text-ink-light">{listing.ends_at && formatRemaining(listing.ends_at)}</p>
                   <p className="mt-1 text-xs text-ink-light">
-                    {listing.bidCount === 0 ? "尚無人出價" : `目前領先：${maskDisplayName(listing.leaderDisplayName)}`}
+                    {listing.ends_at && formatRemaining(listing.ends_at, tFormat)}
                   </p>
-                  <p className="text-xs text-ink-light">總出價次數 {listing.bidCount}</p>
+                  <p className="mt-1 text-xs text-ink-light">
+                    {listing.bidCount === 0
+                      ? t("noBidsYet")
+                      : t("currentLeader", { name: maskDisplayName(listing.leaderDisplayName, anonymousBuyer) })}
+                  </p>
+                  <p className="text-xs text-ink-light">{t("totalBids", { count: listing.bidCount })}</p>
                 </>
               )}
             </div>

@@ -8,10 +8,10 @@ export async function POST(request: Request) {
 
   const user = await findUserByEmail(email);
   if (!user || !(await verifyPassword(password, user.password_hash, user.password_salt))) {
-    return NextResponse.json({ ok: false, error: "email 或密碼錯誤" }, { status: 401 });
+    return NextResponse.json({ ok: false, errorCode: "EMAIL_OR_PASSWORD_INCORRECT" }, { status: 401 });
   }
   if (user.suspended_at !== null) {
-    return NextResponse.json({ ok: false, error: "此帳號已被停權，請聯繫網站管理員" }, { status: 403 });
+    return NextResponse.json({ ok: false, errorCode: "ACCOUNT_SUSPENDED" }, { status: 403 });
   }
 
   await createSession(user.id);

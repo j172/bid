@@ -3,22 +3,24 @@
 // buyers can purchase from concurrently — unlike auction listings, there is
 // no single "winner". See lib/bidding/domain.ts for the auction equivalent.
 
+import type { ErrorCode } from "@/lib/errorCodes";
+
 export interface PurchaseState {
   status: string;
   stockRemaining: number;
 }
 
-export type PurchaseOutcome = { ok: true } | { ok: false; error: string };
+export type PurchaseOutcome = { ok: true } | { ok: false; errorCode: ErrorCode };
 
 export function resolvePurchase(state: PurchaseState, quantity: number): PurchaseOutcome {
   if (state.status !== "open") {
-    return { ok: false, error: "這個商品已經下架" };
+    return { ok: false, errorCode: "LISTING_NOT_OPEN" };
   }
   if (!Number.isFinite(quantity) || !Number.isInteger(quantity) || quantity <= 0) {
-    return { ok: false, error: "購買數量必須是正整數" };
+    return { ok: false, errorCode: "INVALID_QUANTITY" };
   }
   if (quantity > state.stockRemaining) {
-    return { ok: false, error: "庫存不足" };
+    return { ok: false, errorCode: "INSUFFICIENT_STOCK" };
   }
   return { ok: true };
 }

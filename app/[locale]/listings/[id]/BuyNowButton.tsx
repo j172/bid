@@ -1,15 +1,18 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import { useState } from "react";
 
 export default function BuyNowButton({ listingId, buyItNowPrice }: { listingId: number; buyItNowPrice: number }) {
   const router = useRouter();
+  const t = useTranslations("buyNowButton");
+  const tErrors = useTranslations("errors");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleBuyNow() {
-    if (!confirm(`確定要以買斷價 ${buyItNowPrice} 直接得標嗎？此動作無法撤銷。`)) {
+    if (!confirm(t("confirm", { price: buyItNowPrice }))) {
       return;
     }
     setSubmitting(true);
@@ -20,7 +23,7 @@ export default function BuyNowButton({ listingId, buyItNowPrice }: { listingId: 
 
     setSubmitting(false);
     if (!data.ok) {
-      setError(data.error ?? "買斷失敗");
+      setError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
       return;
     }
     router.refresh();
@@ -34,7 +37,7 @@ export default function BuyNowButton({ listingId, buyItNowPrice }: { listingId: 
         disabled={submitting}
         className="rounded-md border-2 border-header px-4 py-2 font-medium text-header transition hover:bg-header hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {submitting ? "處理中..." : `一鍵買斷（${buyItNowPrice}）`}
+        {submitting ? t("submitting") : t("button", { price: buyItNowPrice })}
       </button>
       {error && <span className="text-sm text-ended">{error}</span>}
     </div>

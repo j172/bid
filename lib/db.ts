@@ -150,6 +150,11 @@ async function ensureAccountColumns(db: mysql.Pool): Promise<void> {
   await ensureColumn(db, "listings", "price", "BIGINT NULL");
   await ensureColumn(db, "listings", "stock_quantity", "BIGINT NULL");
   await ensureColumn(db, "listings", "stock_remaining", "BIGINT NULL");
+  // Set at registration time from whichever locale the registration page was
+  // on (see app/api/auth/register/route.ts) — used to pick the language for
+  // that user's email notifications (see lib/notifications.ts). Existing
+  // rows default to 'zh-TW' (this site's original/default language).
+  await ensureColumn(db, "users", "locale", "VARCHAR(10) NOT NULL DEFAULT 'zh-TW'");
 }
 
 // buy_it_now_price started out NOT NULL (every listing required one);

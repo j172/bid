@@ -2,6 +2,7 @@ import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import { getDb } from "@/lib/db";
 import { findBlockingObligation } from "@/lib/listings";
+import type { ErrorCode } from "@/lib/errorCodes";
 
 const SESSION_COOKIE = "session";
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -45,6 +46,7 @@ export async function createUser(
   email: string,
   password: string,
   profile: { displayName: string; phone: string; address: string },
+  locale: string,
 ): Promise<CurrentUser> {
   const db = await getDb();
   const normalizedEmail = email.trim().toLowerCase();
@@ -52,9 +54,18 @@ export async function createUser(
   const role = roleForEmail(normalizedEmail);
 
   const [result] = await db.query(
-    `INSERT INTO users (email, password_hash, password_salt, role, display_name, phone, address, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
-    [normalizedEmail, hash, salt, role, profile.displayName.trim(), profile.phone.trim(), profile.address.trim()],
+    `INSERT INTO users (email, password_hash, password_salt, role, display_name, phone, address, locale, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+    [
+      normalizedEmail,
+      hash,
+      salt,
+      role,
+      profile.displayName.trim(),
+      profile.phone.trim(),
+      profile.address.trim(),
+      locale,
+    ],
   );
   const insertId = (result as { insertId: number }).insertId;
   return { id: insertId, email: normalizedEmail, role };
@@ -338,7 +349,7 @@ export async function updateProfile(
   ]);
 }
 
-export type ChangePasswordOutcome = { ok: true } | { ok: false; error: string };
+export type ChangePasswordOutcome = { ok: true } | { ok: false; errorCode: ErrorCode };
 
 export async function changePassword(
   userId: number,
@@ -349,10 +360,10 @@ export async function changePassword(
   const [rows] = await db.query("SELECT password_hash, password_salt FROM users WHERE id = ? LIMIT 1", [userId]);
   const row = (rows as { password_hash: string; password_salt: string }[])[0];
   if (!row || !(await verifyPassword(oldPassword, row.password_hash, row.password_salt))) {
-    return { ok: false, error: "舊密碼不正確" };
+    return { ok: false, errorCode: "WRONG_OLD_PASSWORD" };
   }
   if (newPassword.length < 8) {
-    return { ok: false, error: "新密碼至少需要 8 個字元" };
+    return { ok: false, errorCode: "NEW_PASSWORD_TOO_SHORT" };
   }
 
   const { hash, salt } = await hashPassword(newPassword);
@@ -360,7 +371,7 @@ export async function changePassword(
   return { ok: true };
 }
 
-export type DeleteAccountOutcome = { ok: true } | { ok: false; error: string };
+export type DeleteAccountOutcome = { ok: true } | { ok: false; errorCode: ErrorCode };
 
 // Anonymizes rather than hard-deletes: bids/listings still reference this
 // user_id (no FK cascade), and past auction records (who won what) need to
@@ -370,7 +381,7 @@ export type DeleteAccountOutcome = { ok: true } | { ok: false; error: string };
 export async function deleteAccount(userId: number): Promise<DeleteAccountOutcome> {
   const blockingReason = await findBlockingObligation(userId);
   if (blockingReason) {
-    return { ok: false, error: blockingReason };
+    return { ok: false, errorCode: blockingReason };
   }
 
   const db = await getDb();

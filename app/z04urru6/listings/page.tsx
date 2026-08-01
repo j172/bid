@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getOpenListingsForAdmin, OPEN_LISTINGS_PAGE_SIZE, type ListOpenListingsForAdminOptions } from "@/lib/listings";
-import { formatRemaining } from "@/lib/format";
+import { formatRemainingZhHant } from "@/lib/format";
 import CancelButton from "./CancelButton";
 import EditListingModal from "./EditListingModal";
 
@@ -113,7 +113,7 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
                       ? listing.stockRemaining === 0
                         ? "已售罄"
                         : `剩餘 ${listing.stockRemaining} / ${listing.stockQuantity}`
-                      : listing.endsAt && formatRemaining(listing.endsAt)}
+                      : listing.endsAt && formatRemainingZhHant(listing.endsAt)}
                   </td>
                   <td className={`${td} text-right`}>
                     <div className="flex items-center justify-end gap-2">

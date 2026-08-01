@@ -1,15 +1,18 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
+import { useRouter } from "@/i18n/navigation";
 
 export default function DeleteAccountButton() {
   const router = useRouter();
+  const t = useTranslations("deleteAccountButton");
+  const tErrors = useTranslations("errors");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleDelete() {
-    if (!confirm("確定要刪除帳戶嗎？此動作無法撤銷。")) {
+    if (!confirm(t("confirm"))) {
       return;
     }
     setSubmitting(true);
@@ -20,7 +23,7 @@ export default function DeleteAccountButton() {
 
     setSubmitting(false);
     if (!data.ok) {
-      setError(data.error ?? "刪除失敗");
+      setError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
       return;
     }
     router.push("/");
@@ -35,7 +38,7 @@ export default function DeleteAccountButton() {
         disabled={submitting}
         className="rounded-md border border-ended px-4 py-2 font-medium text-ended hover:bg-ended-bg disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {submitting ? "處理中..." : "刪除帳戶"}
+        {submitting ? t("submitting") : t("button")}
       </button>
       {error && <span className="text-sm text-ended">{error}</span>}
     </div>

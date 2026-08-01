@@ -1,0 +1,181 @@
+{
+  "nav": {
+    "siteName": "拍賣競標",
+    "browse": "瀏覽商品",
+    "myBids": "我的出價紀錄",
+    "admin": "後台",
+    "login": "登入",
+    "register": "註冊",
+    "logout": "登出"
+  },
+  "home": {
+    "title": "拍賣競標網站",
+    "subtitle": "單一賣家英式拍賣 — 出價、代理出價、一鍵買斷，通通支援。",
+    "browseButton": "瀏覽競標中商品",
+    "serverStatus": "App server 運作中 · MySQL {status}",
+    "dbConnected": "已連線",
+    "dbFailed": "連線失敗（{error}）"
+  },
+  "listings": {
+    "title": "競標中商品",
+    "tabAll": "全部",
+    "tabAuction": "競標商品",
+    "tabFixedPrice": "一般商品",
+    "noListings": "目前沒有開放中的商品。",
+    "badgeAuction": "競標商品",
+    "badgeFixedPrice": "一般商品",
+    "soldOut": "已售罄",
+    "remainingUnits": "剩餘 {count} 件",
+    "totalPurchases": "總購買次數 {count}",
+    "buyItNowPrice": "買斷價 {price}",
+    "noBidsYet": "尚無人出價",
+    "currentLeader": "目前領先：{name}",
+    "totalBids": "總出價次數 {count}"
+  },
+  "listingDetail": {
+    "soldOut": "已售罄",
+    "remainingUnits": "剩餘 {count} 件",
+    "buyItNowPrice": "買斷價 {price}",
+    "loginPrompt": "登入",
+    "loginToBuy": "後才能購買",
+    "loginToBidOrBuy": "後才能出價或買斷"
+  },
+  "bidForm": {
+    "label": "你願意出的最高價（至少 {minimum}，系統只會自動幫你加價到剛好贏過對手，不會直接扣到這個金額）",
+    "submit": "出價",
+    "submitting": "送出中...",
+    "defaultError": "出價失敗",
+    "closedViaBinLeading": "你的出價達到買斷價，直接得標！",
+    "closedViaBinNotLeading": "出價已達買斷價，商品已由他人得標。",
+    "leading": "你目前是最高出價者！",
+    "notLeading": "已送出，但目前有人出價更高，你並未領先。"
+  },
+  "buyNowButton": {
+    "confirm": "確定要以買斷價 {price} 直接得標嗎？此動作無法撤銷。",
+    "button": "一鍵買斷（{price}）",
+    "submitting": "處理中...",
+    "defaultError": "買斷失敗"
+  },
+  "purchaseForm": {
+    "soldOut": "已售罄",
+    "quantityLabel": "購買數量（剩餘 {count} 件）",
+    "confirm": "確定要購買 {count} 件嗎？",
+    "submit": "購買",
+    "submitting": "處理中...",
+    "defaultError": "購買失敗"
+  },
+  "statusBadge": {
+    "cancelled": "已下架",
+    "closed": "已結標",
+    "leading": "目前領先",
+    "outbid": "已被超越",
+    "bidding": "競標中"
+  },
+  "login": {
+    "title": "登入",
+    "email": "Email",
+    "password": "密碼",
+    "submit": "登入",
+    "submitting": "登入中...",
+    "defaultError": "登入失敗",
+    "noAccount": "還沒有帳號？",
+    "registerLink": "註冊"
+  },
+  "register": {
+    "title": "註冊",
+    "email": "Email",
+    "password": "密碼（至少 8 個字元）",
+    "displayName": "顯示名稱",
+    "phone": "聯絡電話（僅數字、- 和空格，7-15 碼）",
+    "address": "地址",
+    "submit": "註冊",
+    "submitting": "註冊中...",
+    "defaultError": "註冊失敗",
+    "haveAccount": "已經有帳號？",
+    "loginLink": "登入"
+  },
+  "account": {
+    "title": "帳戶設定",
+    "profileTitle": "個人資料",
+    "passwordTitle": "修改密碼",
+    "deleteTitle": "刪除帳戶",
+    "deleteWarning": "若你目前正在領先任何開放中的商品，或有已得標但尚未由管理員標記完成交易的商品，將無法刪除帳戶。"
+  },
+  "profileForm": {
+    "displayName": "顯示名稱",
+    "phone": "聯絡電話（僅數字、- 和空格，7-15 碼）",
+    "address": "地址",
+    "save": "儲存個人資料",
+    "saving": "儲存中...",
+    "saved": "已更新",
+    "defaultError": "更新失敗"
+  },
+  "changePasswordForm": {
+    "oldPassword": "舊密碼",
+    "newPassword": "新密碼（至少 8 個字元）",
+    "submit": "修改密碼",
+    "submitting": "更新中...",
+    "saved": "密碼已更新",
+    "defaultError": "修改密碼失敗"
+  },
+  "deleteAccountButton": {
+    "confirm": "確定要刪除帳戶嗎？此動作無法撤銷。",
+    "button": "刪除帳戶",
+    "submitting": "處理中...",
+    "defaultError": "刪除失敗"
+  },
+  "myBids": {
+    "title": "我的出價紀錄",
+    "noBids": "你還沒有出過價。",
+    "product": "商品",
+    "myBid": "我的出價",
+    "currentPrice": "目前價格",
+    "status": "狀態"
+  },
+  "mask": {
+    "anonymousBuyer": "匿名買家"
+  },
+  "format": {
+    "ended": "已結束",
+    "remainingPrefix": "剩餘",
+    "days": "{count} 天",
+    "hours": "{count} 小時",
+    "minutes": "{count} 分鐘",
+    "lessThanMinute": "不到 1 分鐘"
+  },
+  "languageSwitcher": {
+    "label": "語言",
+    "zh-TW": "正體中文",
+    "zh-CN": "简体中文",
+    "en": "English"
+  },
+  "errors": {
+    "NOT_FOUND": "找不到這個商品",
+    "MUST_LOGIN": "請先登入",
+    "CANNOT_ACT_ON_OWN_LISTING": "不能對自己上架的商品進行此操作",
+    "LISTING_NOT_OPEN": "這個商品目前無法進行此操作",
+    "INVALID_BID_AMOUNT": "出價金額不正確",
+    "BID_TOO_LOW": "出價必須至少為 {minimum}",
+    "NO_BUY_IT_NOW_PRICE": "這個商品沒有提供買斷價",
+    "INVALID_QUANTITY": "購買數量必須是正整數",
+    "INSUFFICIENT_STOCK": "庫存不足",
+    "LISTING_NOT_FIXED_PRICE": "這個商品不支援直接購買",
+    "DISPLAY_NAME_REQUIRED": "請輸入顯示名稱",
+    "DISPLAY_NAME_TOO_LONG": "顯示名稱不能超過 50 個字",
+    "PHONE_REQUIRED": "請輸入聯絡電話",
+    "PHONE_INVALID_FORMAT": "電話只能包含數字、- 和空格",
+    "PHONE_INVALID_LENGTH": "電話號碼位數需介於 7 到 15 碼之間",
+    "ADDRESS_REQUIRED": "請輸入地址",
+    "ADDRESS_TOO_LONG": "地址不能超過 200 個字",
+    "EMAIL_INVALID": "請輸入有效的 email",
+    "PASSWORD_TOO_SHORT": "密碼至少需要 8 個字元",
+    "EMAIL_ALREADY_REGISTERED": "這個 email 已經註冊過了",
+    "EMAIL_OR_PASSWORD_INCORRECT": "email 或密碼錯誤",
+    "ACCOUNT_SUSPENDED": "此帳號已被停權，請聯繫網站管理員",
+    "WRONG_OLD_PASSWORD": "舊密碼不正確",
+    "NEW_PASSWORD_TOO_SHORT": "新密碼至少需要 8 個字元",
+    "LEADING_OPEN_LISTING": "你目前正在領先某個開放中的商品，請等到不再領先才能刪除帳號",
+    "UNSETTLED_WIN": "你有已得標但尚未完成交易的商品，請等待管理員確認交易完成後再刪除帳號",
+    "UNSETTLED_PURCHASE": "你有已購買但尚未完成交易的商品，請等待管理員確認交易完成後再刪除帳號"
+  }
+}

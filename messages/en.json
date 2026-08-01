@@ -1,0 +1,181 @@
+{
+  "nav": {
+    "siteName": "Bid Auction",
+    "browse": "Browse Listings",
+    "myBids": "My Bid History",
+    "admin": "Admin",
+    "login": "Log In",
+    "register": "Sign Up",
+    "logout": "Log Out"
+  },
+  "home": {
+    "title": "Auction Bidding Site",
+    "subtitle": "Single-seller English auctions — bidding, proxy bids, and buy-it-now, all supported.",
+    "browseButton": "Browse Live Auctions",
+    "serverStatus": "App server running · MySQL {status}",
+    "dbConnected": "connected",
+    "dbFailed": "connection failed ({error})"
+  },
+  "listings": {
+    "title": "Live Auctions",
+    "tabAll": "All",
+    "tabAuction": "Auctions",
+    "tabFixedPrice": "Fixed Price",
+    "noListings": "There are no open listings right now.",
+    "badgeAuction": "Auction",
+    "badgeFixedPrice": "Fixed Price",
+    "soldOut": "Sold out",
+    "remainingUnits": "{count} left",
+    "totalPurchases": "{count} total purchases",
+    "buyItNowPrice": "Buy it now: {price}",
+    "noBidsYet": "No bids yet",
+    "currentLeader": "Currently leading: {name}",
+    "totalBids": "{count} total bids"
+  },
+  "listingDetail": {
+    "soldOut": "Sold out",
+    "remainingUnits": "{count} left",
+    "buyItNowPrice": "Buy it now: {price}",
+    "loginPrompt": "Log in",
+    "loginToBuy": " to purchase",
+    "loginToBidOrBuy": " to bid or buy it now"
+  },
+  "bidForm": {
+    "label": "Your maximum bid (at least {minimum} — the system only raises the price enough to beat the next bidder, never charging you your full max)",
+    "submit": "Place Bid",
+    "submitting": "Submitting...",
+    "defaultError": "Failed to place bid",
+    "closedViaBinLeading": "Your bid reached the buy-it-now price — you won it outright!",
+    "closedViaBinNotLeading": "The bid reached the buy-it-now price and the item has already been won by someone else.",
+    "leading": "You're currently the highest bidder!",
+    "notLeading": "Bid submitted, but someone else is currently bidding higher — you're not leading."
+  },
+  "buyNowButton": {
+    "confirm": "Buy it now for {price}? This cannot be undone.",
+    "button": "Buy It Now ({price})",
+    "submitting": "Processing...",
+    "defaultError": "Failed to buy now"
+  },
+  "purchaseForm": {
+    "soldOut": "Sold out",
+    "quantityLabel": "Quantity ({count} left)",
+    "confirm": "Buy {count}?",
+    "submit": "Buy Now",
+    "submitting": "Processing...",
+    "defaultError": "Purchase failed"
+  },
+  "statusBadge": {
+    "cancelled": "Delisted",
+    "closed": "Ended",
+    "leading": "Leading",
+    "outbid": "Outbid",
+    "bidding": "Live"
+  },
+  "login": {
+    "title": "Log In",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Log In",
+    "submitting": "Logging in...",
+    "defaultError": "Login failed",
+    "noAccount": "Don't have an account?",
+    "registerLink": "Sign up"
+  },
+  "register": {
+    "title": "Sign Up",
+    "email": "Email",
+    "password": "Password (at least 8 characters)",
+    "displayName": "Display Name",
+    "phone": "Phone number (digits, - and spaces only, 7-15 digits)",
+    "address": "Address",
+    "submit": "Sign Up",
+    "submitting": "Signing up...",
+    "defaultError": "Sign up failed",
+    "haveAccount": "Already have an account?",
+    "loginLink": "Log in"
+  },
+  "account": {
+    "title": "Account Settings",
+    "profileTitle": "Profile",
+    "passwordTitle": "Change Password",
+    "deleteTitle": "Delete Account",
+    "deleteWarning": "You can't delete your account while leading any open listing, or while holding a won item the admin hasn't yet marked as settled."
+  },
+  "profileForm": {
+    "displayName": "Display Name",
+    "phone": "Phone number (digits, - and spaces only, 7-15 digits)",
+    "address": "Address",
+    "save": "Save Profile",
+    "saving": "Saving...",
+    "saved": "Updated",
+    "defaultError": "Update failed"
+  },
+  "changePasswordForm": {
+    "oldPassword": "Current Password",
+    "newPassword": "New Password (at least 8 characters)",
+    "submit": "Change Password",
+    "submitting": "Updating...",
+    "saved": "Password updated",
+    "defaultError": "Failed to change password"
+  },
+  "deleteAccountButton": {
+    "confirm": "Delete your account? This cannot be undone.",
+    "button": "Delete Account",
+    "submitting": "Processing...",
+    "defaultError": "Failed to delete account"
+  },
+  "myBids": {
+    "title": "My Bid History",
+    "noBids": "You haven't placed any bids yet.",
+    "product": "Item",
+    "myBid": "My Bid",
+    "currentPrice": "Current Price",
+    "status": "Status"
+  },
+  "mask": {
+    "anonymousBuyer": "Anonymous buyer"
+  },
+  "format": {
+    "ended": "Ended",
+    "remainingPrefix": "",
+    "days": "{count}d",
+    "hours": "{count}h",
+    "minutes": "{count}m",
+    "lessThanMinute": "less than a minute left"
+  },
+  "languageSwitcher": {
+    "label": "Language",
+    "zh-TW": "正體中文",
+    "zh-CN": "简体中文",
+    "en": "English"
+  },
+  "errors": {
+    "NOT_FOUND": "Listing not found",
+    "MUST_LOGIN": "Please log in first",
+    "CANNOT_ACT_ON_OWN_LISTING": "You can't do this on your own listing",
+    "LISTING_NOT_OPEN": "This listing isn't available for that right now",
+    "INVALID_BID_AMOUNT": "Invalid bid amount",
+    "BID_TOO_LOW": "Your bid must be at least {minimum}",
+    "NO_BUY_IT_NOW_PRICE": "This listing has no buy-it-now price",
+    "INVALID_QUANTITY": "Quantity must be a positive whole number",
+    "INSUFFICIENT_STOCK": "Not enough stock left",
+    "LISTING_NOT_FIXED_PRICE": "This listing can't be purchased directly",
+    "DISPLAY_NAME_REQUIRED": "Please enter a display name",
+    "DISPLAY_NAME_TOO_LONG": "Display name can't exceed 50 characters",
+    "PHONE_REQUIRED": "Please enter a phone number",
+    "PHONE_INVALID_FORMAT": "Phone number can only contain digits, - and spaces",
+    "PHONE_INVALID_LENGTH": "Phone number must have between 7 and 15 digits",
+    "ADDRESS_REQUIRED": "Please enter an address",
+    "ADDRESS_TOO_LONG": "Address can't exceed 200 characters",
+    "EMAIL_INVALID": "Please enter a valid email",
+    "PASSWORD_TOO_SHORT": "Password must be at least 8 characters",
+    "EMAIL_ALREADY_REGISTERED": "This email is already registered",
+    "EMAIL_OR_PASSWORD_INCORRECT": "Incorrect email or password",
+    "ACCOUNT_SUSPENDED": "This account has been suspended — please contact the site admin",
+    "WRONG_OLD_PASSWORD": "Current password is incorrect",
+    "NEW_PASSWORD_TOO_SHORT": "New password must be at least 8 characters",
+    "LEADING_OPEN_LISTING": "You're currently leading an open listing — you can't delete your account until that's no longer the case",
+    "UNSETTLED_WIN": "You have a won item that hasn't been marked settled yet — please wait for the admin to confirm it before deleting your account",
+    "UNSETTLED_PURCHASE": "You have a purchase that hasn't been marked settled yet — please wait for the admin to confirm it before deleting your account"
+  }
+}

@@ -2,7 +2,10 @@
 
 import { useRouter } from "next/navigation";
 
-export default function LogoutButton() {
+// Untranslated copy of the public LogoutButton — see AdminSiteHeader's
+// comment for why the admin backend keeps its own separate copies rather
+// than sharing components with the translated public site.
+export default function AdminLogoutButton() {
   const router = useRouter();
 
   async function handleLogout() {

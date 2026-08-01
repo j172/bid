@@ -1,0 +1,181 @@
+{
+  "nav": {
+    "siteName": "拍卖竞标",
+    "browse": "浏览商品",
+    "myBids": "我的出价记录",
+    "admin": "后台",
+    "login": "登录",
+    "register": "注册",
+    "logout": "登出"
+  },
+  "home": {
+    "title": "拍卖竞标网站",
+    "subtitle": "单一卖家英式拍卖 — 出价、代理出价、一键买断，通通支持。",
+    "browseButton": "浏览竞标中商品",
+    "serverStatus": "App server 运作中 · MySQL {status}",
+    "dbConnected": "已连线",
+    "dbFailed": "连线失败（{error}）"
+  },
+  "listings": {
+    "title": "竞标中商品",
+    "tabAll": "全部",
+    "tabAuction": "竞标商品",
+    "tabFixedPrice": "一般商品",
+    "noListings": "目前没有开放中的商品。",
+    "badgeAuction": "竞标商品",
+    "badgeFixedPrice": "一般商品",
+    "soldOut": "已售罄",
+    "remainingUnits": "剩余 {count} 件",
+    "totalPurchases": "总购买次数 {count}",
+    "buyItNowPrice": "买断价 {price}",
+    "noBidsYet": "尚无人出价",
+    "currentLeader": "目前领先：{name}",
+    "totalBids": "总出价次数 {count}"
+  },
+  "listingDetail": {
+    "soldOut": "已售罄",
+    "remainingUnits": "剩余 {count} 件",
+    "buyItNowPrice": "买断价 {price}",
+    "loginPrompt": "登录",
+    "loginToBuy": "后才能购买",
+    "loginToBidOrBuy": "后才能出价或买断"
+  },
+  "bidForm": {
+    "label": "你愿意出的最高价（至少 {minimum}，系统只会自动帮你加价到刚好赢过对手，不会直接扣到这个金额）",
+    "submit": "出价",
+    "submitting": "送出中...",
+    "defaultError": "出价失败",
+    "closedViaBinLeading": "你的出价达到买断价，直接得标！",
+    "closedViaBinNotLeading": "出价已达买断价，商品已由他人得标。",
+    "leading": "你目前是最高出价者！",
+    "notLeading": "已送出，但目前有人出价更高，你并未领先。"
+  },
+  "buyNowButton": {
+    "confirm": "确定要以买断价 {price} 直接得标吗？此动作无法撤销。",
+    "button": "一键买断（{price}）",
+    "submitting": "处理中...",
+    "defaultError": "买断失败"
+  },
+  "purchaseForm": {
+    "soldOut": "已售罄",
+    "quantityLabel": "购买数量（剩余 {count} 件）",
+    "confirm": "确定要购买 {count} 件吗？",
+    "submit": "购买",
+    "submitting": "处理中...",
+    "defaultError": "购买失败"
+  },
+  "statusBadge": {
+    "cancelled": "已下架",
+    "closed": "已结标",
+    "leading": "目前领先",
+    "outbid": "已被超越",
+    "bidding": "竞标中"
+  },
+  "login": {
+    "title": "登录",
+    "email": "Email",
+    "password": "密码",
+    "submit": "登录",
+    "submitting": "登录中...",
+    "defaultError": "登录失败",
+    "noAccount": "还没有账号？",
+    "registerLink": "注册"
+  },
+  "register": {
+    "title": "注册",
+    "email": "Email",
+    "password": "密码（至少 8 个字符）",
+    "displayName": "显示名称",
+    "phone": "联系电话（仅数字、- 和空格，7-15 位）",
+    "address": "地址",
+    "submit": "注册",
+    "submitting": "注册中...",
+    "defaultError": "注册失败",
+    "haveAccount": "已经有账号？",
+    "loginLink": "登录"
+  },
+  "account": {
+    "title": "账户设置",
+    "profileTitle": "个人资料",
+    "passwordTitle": "修改密码",
+    "deleteTitle": "删除账户",
+    "deleteWarning": "若你目前正在领先任何开放中的商品，或有已得标但尚未由管理员标记完成交易的商品，将无法删除账户。"
+  },
+  "profileForm": {
+    "displayName": "显示名称",
+    "phone": "联系电话（仅数字、- 和空格，7-15 位）",
+    "address": "地址",
+    "save": "保存个人资料",
+    "saving": "保存中...",
+    "saved": "已更新",
+    "defaultError": "更新失败"
+  },
+  "changePasswordForm": {
+    "oldPassword": "旧密码",
+    "newPassword": "新密码（至少 8 个字符）",
+    "submit": "修改密码",
+    "submitting": "更新中...",
+    "saved": "密码已更新",
+    "defaultError": "修改密码失败"
+  },
+  "deleteAccountButton": {
+    "confirm": "确定要删除账户吗？此动作无法撤销。",
+    "button": "删除账户",
+    "submitting": "处理中...",
+    "defaultError": "删除失败"
+  },
+  "myBids": {
+    "title": "我的出价记录",
+    "noBids": "你还没有出过价。",
+    "product": "商品",
+    "myBid": "我的出价",
+    "currentPrice": "目前价格",
+    "status": "状态"
+  },
+  "mask": {
+    "anonymousBuyer": "匿名买家"
+  },
+  "format": {
+    "ended": "已结束",
+    "remainingPrefix": "剩余",
+    "days": "{count} 天",
+    "hours": "{count} 小时",
+    "minutes": "{count} 分钟",
+    "lessThanMinute": "不到 1 分钟"
+  },
+  "languageSwitcher": {
+    "label": "语言",
+    "zh-TW": "正體中文",
+    "zh-CN": "简体中文",
+    "en": "English"
+  },
+  "errors": {
+    "NOT_FOUND": "找不到这个商品",
+    "MUST_LOGIN": "请先登录",
+    "CANNOT_ACT_ON_OWN_LISTING": "不能对自己上架的商品进行此操作",
+    "LISTING_NOT_OPEN": "这个商品目前无法进行此操作",
+    "INVALID_BID_AMOUNT": "出价金额不正确",
+    "BID_TOO_LOW": "出价必须至少为 {minimum}",
+    "NO_BUY_IT_NOW_PRICE": "这个商品没有提供买断价",
+    "INVALID_QUANTITY": "购买数量必须是正整数",
+    "INSUFFICIENT_STOCK": "库存不足",
+    "LISTING_NOT_FIXED_PRICE": "这个商品不支持直接购买",
+    "DISPLAY_NAME_REQUIRED": "请输入显示名称",
+    "DISPLAY_NAME_TOO_LONG": "显示名称不能超过 50 个字",
+    "PHONE_REQUIRED": "请输入联系电话",
+    "PHONE_INVALID_FORMAT": "电话只能包含数字、- 和空格",
+    "PHONE_INVALID_LENGTH": "电话号码位数需介于 7 到 15 位之间",
+    "ADDRESS_REQUIRED": "请输入地址",
+    "ADDRESS_TOO_LONG": "地址不能超过 200 个字",
+    "EMAIL_INVALID": "请输入有效的 email",
+    "PASSWORD_TOO_SHORT": "密码至少需要 8 个字符",
+    "EMAIL_ALREADY_REGISTERED": "这个 email 已经注册过了",
+    "EMAIL_OR_PASSWORD_INCORRECT": "email 或密码错误",
+    "ACCOUNT_SUSPENDED": "此账号已被停权，请联系网站管理员",
+    "WRONG_OLD_PASSWORD": "旧密码不正确",
+    "NEW_PASSWORD_TOO_SHORT": "新密码至少需要 8 个字符",
+    "LEADING_OPEN_LISTING": "你目前正在领先某个开放中的商品，请等到不再领先才能删除账号",
+    "UNSETTLED_WIN": "你有已得标但尚未完成交易的商品，请等待管理员确认交易完成后再删除账号",
+    "UNSETTLED_PURCHASE": "你有已购买但尚未完成交易的商品，请等待管理员确认交易完成后再删除账号"
+  }
+}

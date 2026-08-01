@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { formatRemaining } from "@/lib/format";
 import { isPollableStatus, LISTING_STATUS_POLL_INTERVAL_MS, parseListingStatusResponse } from "@/lib/listingStatus";
@@ -26,10 +27,11 @@ export default function LiveListingStatus({
   initialEndsAt: string;
   initialStatus: string;
 }) {
+  const t = useTranslations("format");
   const [currentPrice, setCurrentPrice] = useState(initialCurrentPrice);
   const [endsAt, setEndsAt] = useState(initialEndsAt);
   const [status, setStatus] = useState(initialStatus);
-  const [remainingLabel, setRemainingLabel] = useState(() => formatRemaining(new Date(initialEndsAt)));
+  const [remainingLabel, setRemainingLabel] = useState(() => formatRemaining(new Date(initialEndsAt), t));
 
   // Poll the status endpoint on an interval, only while there's something
   // left to change. Stops (no interval set) as soon as status flips away
@@ -64,14 +66,14 @@ export default function LiveListingStatus({
   }, [listingId, status]);
 
   // The remaining-time label depends on Date.now(), not just on endsAt, so
-  // it needs its own re-render tick even between polls (otherwise "剩餘 5
-  // 分鐘" would only update every 4s server-fetch and drift/looking stale
-  // in between, or never flip to "已結束" promptly).
+  // it needs its own re-render tick even between polls (otherwise the label
+  // would only update every 4s server-fetch and drift/looking stale in
+  // between, or never flip to "ended" promptly).
   useEffect(() => {
-    setRemainingLabel(formatRemaining(new Date(endsAt)));
-    const tickId = setInterval(() => setRemainingLabel(formatRemaining(new Date(endsAt))), 30_000);
+    setRemainingLabel(formatRemaining(new Date(endsAt), t));
+    const tickId = setInterval(() => setRemainingLabel(formatRemaining(new Date(endsAt), t)), 30_000);
     return () => clearInterval(tickId);
-  }, [endsAt]);
+  }, [endsAt, t]);
 
   return (
     <div className="flex flex-col gap-1">

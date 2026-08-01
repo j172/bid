@@ -1,11 +1,14 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import { useState } from "react";
-import Button from "../../components/Button";
+import Button from "@/app/components/Button";
 
 export default function BidForm({ listingId, minimumNextBid }: { listingId: number; minimumNextBid: number }) {
   const router = useRouter();
+  const t = useTranslations("bidForm");
+  const tErrors = useTranslations("errors");
   const [maxAmount, setMaxAmount] = useState(minimumNextBid);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -26,13 +29,15 @@ export default function BidForm({ listingId, minimumNextBid }: { listingId: numb
 
     setSubmitting(false);
     if (!data.ok) {
-      setError(data.error ?? "出價失敗");
+      setError(
+        data.errorCode ? tErrors(data.errorCode, { minimum: data.minimumNextBid }) : t("defaultError"),
+      );
       return;
     }
     if (data.closedViaBuyItNow) {
-      setNotice(data.youAreLeading ? "你的出價達到買斷價，直接得標！" : "出價已達買斷價，商品已由他人得標。");
+      setNotice(data.youAreLeading ? t("closedViaBinLeading") : t("closedViaBinNotLeading"));
     } else {
-      setNotice(data.youAreLeading ? "你目前是最高出價者！" : "已送出，但目前有人出價更高，你並未領先。");
+      setNotice(data.youAreLeading ? t("leading") : t("notLeading"));
     }
     router.refresh();
   }
@@ -40,7 +45,7 @@ export default function BidForm({ listingId, minimumNextBid }: { listingId: numb
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
       <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-        你願意出的最高價（至少 {minimumNextBid}，系統只會自動幫你加價到剛好贏過對手，不會直接扣到這個金額）
+        {t("label", { minimum: minimumNextBid })}
         <input
           type="number"
           min={minimumNextBid}
@@ -53,7 +58,7 @@ export default function BidForm({ listingId, minimumNextBid }: { listingId: numb
       </label>
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={submitting}>
-          {submitting ? "送出中..." : "出價"}
+          {submitting ? t("submitting") : t("submit")}
         </Button>
         {error && <span className="text-sm text-ended">{error}</span>}
         {notice && <span className="text-sm text-ink-light">{notice}</span>}

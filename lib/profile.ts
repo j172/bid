@@ -2,13 +2,15 @@
 // address) — required at registration and editable later via /account.
 // No HTTP/DB involved, so it's directly unit-testable (see profile.test.ts).
 
+import type { ErrorCode } from "@/lib/errorCodes";
+
 export interface ProfileInput {
   displayName: string;
   phone: string;
   address: string;
 }
 
-export type ProfileValidationResult = { ok: true } | { ok: false; error: string };
+export type ProfileValidationResult = { ok: true } | { ok: false; errorCode: ErrorCode };
 
 const PHONE_DIGITS_MIN = 7;
 const PHONE_DIGITS_MAX = 15;
@@ -18,30 +20,30 @@ const ADDRESS_MAX = 200;
 export function validateProfile(input: ProfileInput): ProfileValidationResult {
   const displayName = input.displayName.trim();
   if (displayName.length === 0) {
-    return { ok: false, error: "請輸入顯示名稱" };
+    return { ok: false, errorCode: "DISPLAY_NAME_REQUIRED" };
   }
   if (displayName.length > DISPLAY_NAME_MAX) {
-    return { ok: false, error: `顯示名稱不能超過 ${DISPLAY_NAME_MAX} 個字` };
+    return { ok: false, errorCode: "DISPLAY_NAME_TOO_LONG" };
   }
 
   const phone = input.phone.trim();
   if (phone.length === 0) {
-    return { ok: false, error: "請輸入聯絡電話" };
+    return { ok: false, errorCode: "PHONE_REQUIRED" };
   }
   if (!/^[0-9\- ]+$/.test(phone)) {
-    return { ok: false, error: "電話只能包含數字、- 和空格" };
+    return { ok: false, errorCode: "PHONE_INVALID_FORMAT" };
   }
   const digitCount = phone.replace(/[^0-9]/g, "").length;
   if (digitCount < PHONE_DIGITS_MIN || digitCount > PHONE_DIGITS_MAX) {
-    return { ok: false, error: `電話號碼位數需介於 ${PHONE_DIGITS_MIN} 到 ${PHONE_DIGITS_MAX} 碼之間` };
+    return { ok: false, errorCode: "PHONE_INVALID_LENGTH" };
   }
 
   const address = input.address.trim();
   if (address.length === 0) {
-    return { ok: false, error: "請輸入地址" };
+    return { ok: false, errorCode: "ADDRESS_REQUIRED" };
   }
   if (address.length > ADDRESS_MAX) {
-    return { ok: false, error: `地址不能超過 ${ADDRESS_MAX} 個字` };
+    return { ok: false, errorCode: "ADDRESS_TOO_LONG" };
   }
 
   return { ok: true };

@@ -5,7 +5,7 @@ import { validateProfile } from "@/lib/profile";
 export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ ok: false, error: "請先登入" }, { status: 401 });
+    return NextResponse.json({ ok: false, errorCode: "MUST_LOGIN" }, { status: 401 });
   }
 
   const body = await request.json().catch(() => null);
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
 
   const result = validateProfile({ displayName, phone, address });
   if (!result.ok) {
-    return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
+    return NextResponse.json({ ok: false, errorCode: result.errorCode }, { status: 400 });
   }
 
   await updateProfile(user.id, { displayName, phone, address });

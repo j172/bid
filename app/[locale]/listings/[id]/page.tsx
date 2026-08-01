@@ -1,9 +1,10 @@
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getMinimumNextBid } from "@/lib/bidding/domain";
 import { getListingById } from "@/lib/listings";
 import { listingPhotoUrl } from "@/lib/uploads";
+import { Link } from "@/i18n/navigation";
 import StatusBadge from "../../components/StatusBadge";
 import BidForm from "./BidForm";
 import BuyNowButton from "./BuyNowButton";
@@ -28,6 +29,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
   const isOpen = listing.status === "open";
   const isFixedPrice = listing.listing_type === "fixed_price";
   const minimumNextBid = getMinimumNextBid(listing.current_price);
+  const t = await getTranslations("listingDetail");
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -72,7 +74,9 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                   <StatusBadge status={listing.status} />
                 </div>
                 <p className="text-sm text-ink-light">
-                  {listing.stock_remaining === 0 ? "已售罄" : `剩餘 ${listing.stock_remaining} 件`}
+                  {listing.stock_remaining === 0
+                    ? t("soldOut")
+                    : t("remainingUnits", { count: listing.stock_remaining ?? 0 })}
                 </p>
               </div>
             ) : (
@@ -84,7 +88,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                   initialStatus={listing.status}
                 />
                 {listing.buy_it_now_price !== null && (
-                  <p className="mt-3 text-sm text-ink-light">買斷價 {listing.buy_it_now_price}</p>
+                  <p className="mt-3 text-sm text-ink-light">{t("buyItNowPrice", { price: listing.buy_it_now_price })}</p>
                 )}
               </>
             )}
@@ -106,9 +110,9 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
               ) : (
                 <p className="mt-6 border-t border-border pt-6 text-sm text-ink-light">
                   <Link href="/login" className="font-medium text-gold hover:underline">
-                    登入
+                    {t("loginPrompt")}
                   </Link>
-                  {isFixedPrice ? "後才能購買" : "後才能出價或買斷"}
+                  {isFixedPrice ? t("loginToBuy") : t("loginToBidOrBuy")}
                 </p>
               ))}
           </div>

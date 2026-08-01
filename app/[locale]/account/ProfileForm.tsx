@@ -1,8 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
-import Button from "../components/Button";
+import Button from "@/app/components/Button";
+import { useRouter } from "@/i18n/navigation";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-gold focus:outline-none";
 
@@ -16,6 +17,8 @@ export default function ProfileForm({
   initialAddress: string;
 }) {
   const router = useRouter();
+  const t = useTranslations("profileForm");
+  const tErrors = useTranslations("errors");
   const [displayName, setDisplayName] = useState(initialDisplayName);
   const [phone, setPhone] = useState(initialPhone);
   const [address, setAddress] = useState(initialAddress);
@@ -38,17 +41,17 @@ export default function ProfileForm({
 
     setSubmitting(false);
     if (!data.ok) {
-      setError(data.error ?? "更新失敗");
+      setError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
       return;
     }
-    setNotice("已更新");
+    setNotice(t("saved"));
     router.refresh();
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-        顯示名稱
+        {t("displayName")}
         <input
           type="text"
           required
@@ -59,7 +62,7 @@ export default function ProfileForm({
         />
       </label>
       <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-        聯絡電話（僅數字、- 和空格，7-15 碼）
+        {t("phone")}
         <input
           type="tel"
           required
@@ -71,7 +74,7 @@ export default function ProfileForm({
         />
       </label>
       <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-        地址
+        {t("address")}
         <input
           type="text"
           required
@@ -83,7 +86,7 @@ export default function ProfileForm({
       </label>
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={submitting}>
-          {submitting ? "儲存中..." : "儲存個人資料"}
+          {submitting ? t("saving") : t("save")}
         </Button>
         {error && <span className="text-sm text-ended">{error}</span>}
         {notice && <span className="text-sm text-leading">{notice}</span>}

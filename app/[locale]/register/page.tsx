@@ -1,14 +1,17 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
-import Button from "../components/Button";
+import Button from "@/app/components/Button";
+import { Link, useRouter } from "@/i18n/navigation";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-gold focus:outline-none";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations("register");
+  const tErrors = useTranslations("errors");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -25,13 +28,13 @@ export default function RegisterPage() {
     const response = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, displayName, phone, address }),
+      body: JSON.stringify({ email, password, displayName, phone, address, locale }),
     });
     const data = await response.json();
 
     setSubmitting(false);
     if (!data.ok) {
-      setError(data.error ?? "註冊失敗");
+      setError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
       return;
     }
     router.push("/");
@@ -41,10 +44,10 @@ export default function RegisterPage() {
   return (
     <main className="mx-auto max-w-md px-4 py-16 sm:px-6">
       <div className="rounded-lg border border-border bg-surface p-8 shadow-sm">
-        <h1 className="text-2xl font-bold">註冊</h1>
+        <h1 className="text-2xl font-bold">{t("title")}</h1>
         <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
           <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-            Email
+            {t("email")}
             <input
               type="email"
               required
@@ -54,7 +57,7 @@ export default function RegisterPage() {
             />
           </label>
           <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-            密碼（至少 8 個字元）
+            {t("password")}
             <input
               type="password"
               required
@@ -65,7 +68,7 @@ export default function RegisterPage() {
             />
           </label>
           <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-            顯示名稱
+            {t("displayName")}
             <input
               type="text"
               required
@@ -76,7 +79,7 @@ export default function RegisterPage() {
             />
           </label>
           <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-            聯絡電話（僅數字、- 和空格，7-15 碼）
+            {t("phone")}
             <input
               type="tel"
               required
@@ -88,7 +91,7 @@ export default function RegisterPage() {
             />
           </label>
           <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-            地址
+            {t("address")}
             <input
               type="text"
               required
@@ -100,13 +103,13 @@ export default function RegisterPage() {
           </label>
           {error && <p className="text-sm text-ended">{error}</p>}
           <Button type="submit" disabled={submitting}>
-            {submitting ? "註冊中..." : "註冊"}
+            {submitting ? t("submitting") : t("submit")}
           </Button>
         </form>
         <p className="mt-4 text-sm text-ink-light">
-          已經有帳號？{" "}
+          {t("haveAccount")}{" "}
           <Link href="/login" className="font-medium text-gold hover:underline">
-            登入
+            {t("loginLink")}
           </Link>
         </p>
       </div>

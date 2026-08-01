@@ -8,6 +8,7 @@ import {
 } from "@/lib/bidding/domain";
 import { resolvePurchase, type PurchaseOutcome } from "@/lib/purchase";
 import { notifyAuctionEnded, notifyOutbid, notifyPurchaseConfirmed } from "@/lib/notifications";
+import type { ErrorCode } from "@/lib/errorCodes";
 
 export type ListingType = "auction" | "fixed_price";
 
@@ -585,7 +586,7 @@ export async function getWinnerProfileForListing(listingId: number): Promise<Win
 // closed win, and never while holding an unsettled fixed_price purchase
 // (the admin still needs their contact details to complete the offline
 // transaction in all three cases).
-export async function findBlockingObligation(userId: number): Promise<string | null> {
+export async function findBlockingObligation(userId: number): Promise<ErrorCode | null> {
   const db = await getDb();
 
   const [openRows] = await db.query(
@@ -593,7 +594,7 @@ export async function findBlockingObligation(userId: number): Promise<string | n
     [userId],
   );
   if ((openRows as unknown[]).length > 0) {
-    return "你目前正在領先某個開放中的商品，請等到不再領先才能刪除帳號";
+    return "LEADING_OPEN_LISTING";
   }
 
   const [unsettledRows] = await db.query(
@@ -601,7 +602,7 @@ export async function findBlockingObligation(userId: number): Promise<string | n
     [userId],
   );
   if ((unsettledRows as unknown[]).length > 0) {
-    return "你有已得標但尚未完成交易的商品，請等待管理員確認交易完成後再刪除帳號";
+    return "UNSETTLED_WIN";
   }
 
   const [unsettledOrderRows] = await db.query(
@@ -609,7 +610,7 @@ export async function findBlockingObligation(userId: number): Promise<string | n
     [userId],
   );
   if ((unsettledOrderRows as unknown[]).length > 0) {
-    return "你有已購買但尚未完成交易的商品，請等待管理員確認交易完成後再刪除帳號";
+    return "UNSETTLED_PURCHASE";
   }
 
   return null;
@@ -729,11 +730,11 @@ export async function placeBid(listingId: number, userId: number, maxAmount: num
     )[0];
     if (!listing) {
       await connection.rollback();
-      return { ok: false, error: "找不到這個商品" };
+      return { ok: false, errorCode: "NOT_FOUND" };
     }
     if (listing.created_by === userId) {
       await connection.rollback();
-      return { ok: false, error: "不能對自己上架的商品出價" };
+      return { ok: false, errorCode: "CANNOT_ACT_ON_OWN_LISTING" };
     }
 
     const result = resolveProxyBid(
@@ -806,11 +807,11 @@ export async function buyNow(listingId: number, userId: number): Promise<BuyNowO
     const listing = (rows as { status: string; buy_it_now_price: number | null; created_by: number }[])[0];
     if (!listing) {
       await connection.rollback();
-      return { ok: false, error: "找不到這個商品" };
+      return { ok: false, errorCode: "NOT_FOUND" };
     }
     if (listing.created_by === userId) {
       await connection.rollback();
-      return { ok: false, error: "不能買斷自己上架的商品" };
+      return { ok: false, errorCode: "CANNOT_ACT_ON_OWN_LISTING" };
     }
 
     const result = resolveBuyNow({ status: listing.status, buyItNowPrice: listing.buy_it_now_price });
@@ -939,15 +940,15 @@ export async function purchaseListing(listingId: number, buyerId: number, quanti
     )[0];
     if (!listing) {
       await connection.rollback();
-      return { ok: false, error: "找不到這個商品" };
+      return { ok: false, errorCode: "NOT_FOUND" };
     }
     if (listing.listing_type !== "fixed_price") {
       await connection.rollback();
-      return { ok: false, error: "這個商品不支援直接購買" };
+      return { ok: false, errorCode: "LISTING_NOT_FIXED_PRICE" };
     }
     if (listing.created_by === buyerId) {
       await connection.rollback();
-      return { ok: false, error: "不能購買自己上架的商品" };
+      return { ok: false, errorCode: "CANNOT_ACT_ON_OWN_LISTING" };
     }
 
     const result = resolvePurchase(

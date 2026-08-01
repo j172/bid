@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { PendingActionItems } from "@/lib/dashboard";
-import { formatRemaining } from "@/lib/format";
+import { formatRemainingZhHant } from "@/lib/format";
 
 const cardClass = "rounded-lg border border-border bg-surface p-4 shadow-sm";
 const emptyClass = "text-sm text-ink-light";
@@ -33,7 +33,7 @@ export default function PendingActions({ items }: { items: PendingActionItems })
                 <Link href={`/listings/${listing.id}`} className="text-gold hover:underline">
                   {listing.title}
                 </Link>{" "}
-                <span className="text-ink-light">{formatRemaining(listing.endsAt)}</span>
+                <span className="text-ink-light">{formatRemainingZhHant(listing.endsAt)}</span>
               </li>
             ))}
           </ul>
