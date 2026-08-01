@@ -13,7 +13,7 @@ export default function LanguageSwitcher() {
   const router = useRouter();
 
   return (
-    <label className="flex items-center gap-1.5 text-xs text-gray-300">
+    <label className="flex items-center gap-1.5 text-xs text-ink-light">
       <span className="hidden sm:inline">{t("label")}</span>
       <select
         aria-label={t("label")}
@@ -24,7 +24,7 @@ export default function LanguageSwitcher() {
           // current route (see next-intl's LocaleSwitcher example).
           router.replace({ pathname, params }, { locale: e.target.value })
         }
-        className="rounded-md border border-white/30 bg-header px-2 py-1 text-white"
+        className="rounded-md border border-border bg-white px-2 py-1 text-ink"
       >
         {routing.locales.map((value) => (
           <option key={value} value={value} className="text-ink">

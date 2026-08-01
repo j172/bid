@@ -10,53 +10,56 @@ export default async function SiteHeader() {
   const t = await getTranslations("nav");
 
   return (
-    <header className="sticky top-0 z-20 border-b border-slate-800 bg-header text-white shadow-lg">
-      <div className="border-b border-slate-700/80 bg-header-soft">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2 text-xs text-slate-300 sm:px-6">
+    <header className="sticky top-0 z-30 border-b border-border bg-white/95 text-ink shadow-sm backdrop-blur">
+      <div className="border-b border-border bg-slate-50">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2 text-xs text-ink-light sm:px-6">
           <p>{t("topbarNotice")}</p>
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
-            <Link href="/account" className="hover:text-white">
+            <Link href="/account" className="font-medium text-ink hover:text-brand-blue">
               {t("account")}
             </Link>
           </div>
         </div>
       </div>
 
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2 text-xl font-black tracking-tight text-white">
-          <span className="rounded-md bg-gold px-2 py-0.5 text-sm">BID</span>
+      <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-4 sm:px-6">
+        <Link href="/" className="mr-2 flex items-center gap-2 shrink-0 text-lg font-black tracking-tight sm:text-xl">
+          <span className="rounded-md bg-header px-2 py-1 text-xs font-bold text-white">BID</span>
           {t("siteName")}
         </Link>
 
-        <details className="relative lg:hidden">
-          <summary className="list-none rounded-md border border-slate-600 px-3 py-1.5 text-sm font-semibold text-white hover:border-slate-300">
+        <details className="relative lg:hidden ml-auto">
+          <summary className="list-none rounded-md border border-border px-3 py-1.5 text-sm font-semibold text-ink hover:border-brand-blue">
             {t("menu")}
           </summary>
-          <div className="absolute right-0 top-10 z-30 w-56 rounded-lg border border-slate-700 bg-header-soft p-2 shadow-xl">
-            <nav className="flex flex-col text-sm text-slate-100">
-              <Link href="/" className="rounded-md px-3 py-2 hover:bg-slate-800">
+          <div className="absolute right-0 top-10 z-30 w-60 rounded-lg border border-border bg-white p-2 shadow-xl">
+            <nav className="flex flex-col text-sm text-ink">
+              <Link href="/" className="rounded-md px-3 py-2 hover:bg-slate-100">
                 {t("home")}
               </Link>
-              <Link href="/listings" className="rounded-md px-3 py-2 hover:bg-slate-800">
+              <Link href="/listings" className="rounded-md px-3 py-2 hover:bg-slate-100">
                 {t("browse")}
               </Link>
+              <Link href="/contact" className="rounded-md px-3 py-2 hover:bg-slate-100">
+                聯絡我們
+              </Link>
               {user && (
-                <Link href="/my-bids" className="rounded-md px-3 py-2 hover:bg-slate-800">
+                <Link href="/my-bids" className="rounded-md px-3 py-2 hover:bg-slate-100">
                   {t("myBids")}
                 </Link>
               )}
               {user?.role === "admin" && (
-                <NextLink href="/z04urru6" className="rounded-md px-3 py-2 hover:bg-slate-800">
+                <NextLink href="/z04urru6" className="rounded-md px-3 py-2 hover:bg-slate-100">
                   {t("admin")}
                 </NextLink>
               )}
               {!user && (
                 <>
-                  <Link href="/login" className="rounded-md px-3 py-2 hover:bg-slate-800">
+                  <Link href="/login" className="rounded-md px-3 py-2 hover:bg-slate-100">
                     {t("login")}
                   </Link>
-                  <Link href="/register" className="rounded-md px-3 py-2 hover:bg-slate-800">
+                  <Link href="/register" className="rounded-md px-3 py-2 hover:bg-slate-100">
                     {t("register")}
                   </Link>
                 </>
@@ -66,47 +69,57 @@ export default async function SiteHeader() {
         </details>
 
         <div className="hidden min-w-0 flex-1 items-center gap-3 lg:flex">
-          <div className="rounded-md bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-100">{t("allCategories")}</div>
-          <nav className="flex min-w-0 flex-wrap items-center gap-4 text-sm text-slate-100">
-            <Link href="/" className="hover:text-gold-light">
+          <button type="button" className="inline-flex shrink-0 items-center gap-2 rounded-md bg-header px-3 py-2 text-xs font-semibold text-white">
+            {t("allCategories")}
+            <span aria-hidden>▾</span>
+          </button>
+
+          <nav className="flex min-w-0 flex-wrap items-center gap-4 text-sm text-ink">
+            <Link href="/" className="font-medium hover:text-brand-blue">
               {t("home")}
             </Link>
-            <Link href="/listings" className="hover:text-gold-light">
+            <Link href="/listings" className="font-medium hover:text-brand-blue">
               {t("browse")}
             </Link>
+            <Link href="/contact" className="font-medium hover:text-brand-blue">
+              聯絡
+            </Link>
             {user && (
-              <Link href="/my-bids" className="hover:text-gold-light">
+              <Link href="/my-bids" className="font-medium hover:text-brand-blue">
                 {t("myBids")}
               </Link>
             )}
             {user?.role === "admin" && (
-              // Plain next/link, not the locale-aware Link above: /z04urru6 lives
-              // entirely outside the [locale]-routed tree (see middleware.ts's
-              // matcher), so it must never get a locale prefix like /zh-CN/z04urru6.
-              <NextLink href="/z04urru6" className="hover:text-gold-light">
+              <NextLink href="/z04urru6" className="font-medium hover:text-brand-blue">
                 {t("admin")}
               </NextLink>
             )}
           </nav>
         </div>
 
-        <div className="hidden items-center gap-2 text-sm lg:flex">
-          <Link href="/listings" className="rounded-md border border-slate-600 px-3 py-1.5 hover:border-slate-300">
-            {t("explore")}
+        <div className="hidden items-center gap-2 lg:flex">
+          <Link href="/wishlist" aria-label="Wishlist" className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-white text-ink hover:border-brand-blue hover:text-brand-blue">
+            <span aria-hidden>♡</span>
+            <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-header px-1 text-[10px] text-white">0</span>
           </Link>
+          <Link href="/cart" aria-label="Cart" className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-white text-ink hover:border-brand-blue hover:text-brand-blue">
+            <span aria-hidden>🛒</span>
+            <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-header px-1 text-[10px] text-white">0</span>
+          </Link>
+
           {user ? (
             <>
-              <Link href="/account" className="hidden max-w-40 truncate rounded-md bg-slate-800 px-3 py-1.5 sm:inline">
+              <Link href="/account" className="hidden max-w-44 truncate rounded-md border border-border px-3 py-2 text-sm font-medium hover:border-brand-blue sm:inline">
                 {user.email}
               </Link>
               <LogoutButton />
             </>
           ) : (
             <>
-              <Link href="/login" className="rounded-md border border-slate-600 px-3 py-1.5 hover:border-slate-300">
+              <Link href="/login" className="rounded-md border border-border px-3 py-2 text-sm font-medium hover:border-brand-blue">
                 {t("login")}
               </Link>
-              <Link href="/register" className="rounded-md bg-gold px-3 py-1.5 font-semibold text-white hover:bg-gold-dark">
+              <Link href="/register" className="rounded-md bg-header px-3 py-2 text-sm font-semibold text-white hover:bg-header-soft">
                 {t("register")}
               </Link>
             </>
