@@ -6,6 +6,7 @@ import { listingPhotoUrl } from "@/lib/uploads";
 import { formatRemaining } from "@/lib/format";
 import { Link } from "@/i18n/navigation";
 import ProgressiveImage from "@/app/components/ProgressiveImage";
+import HeroSection from "./components/HeroSection";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,15 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const topFixed = listings.filter((item) => item.listing_type === "fixed_price").slice(0, 4);
   const homeEagerCount = perfMode === "aggressive" ? 3 : 2;
   const perfSuffix = perfMode === "aggressive" ? "&perf=aggressive" : "";
+  const heroCards = featured.map((item) => ({
+    id: item.id,
+    title: item.title,
+    subtitle:
+      item.listing_type === "auction"
+        ? tListings("buyItNowPrice", { price: item.buy_it_now_price ?? item.current_price })
+        : tListings("remainingUnits", { count: item.stock_remaining ?? 0 }),
+    photo: item.photos[0],
+  }));
 
   if (featured[0]?.photos[0]) {
     preload(listingPhotoUrl(featured[0].id, featured[0].photos[0]), {
@@ -53,52 +63,16 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
   return (
     <main className="pb-8">
-      <section className="bg-header text-white">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-14 sm:px-6 lg:grid-cols-2 lg:items-center">
-          <div>
-            <p className="inline-flex rounded-full bg-brand-blue/20 px-3 py-1 text-xs font-semibold text-blue-100">{t("heroBadge")}</p>
-            <h1 className="mt-5 text-4xl font-black leading-tight sm:text-5xl">{t("title")}</h1>
-            <p className="mt-4 max-w-xl text-base text-slate-300 sm:text-lg">{t("subtitle")}</p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href={perfMode === "aggressive" ? "/listings?perf=aggressive" : "/listings"} className="rounded-md bg-gold px-6 py-3 font-semibold text-white hover:bg-gold-dark">
-                {t("browseButton")}
-              </Link>
-              <Link href={`/listings?type=auction${perfSuffix}`} className="rounded-md border border-slate-500 px-6 py-3 font-semibold text-white hover:border-slate-200">
-                {t("auctionCta")}
-              </Link>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            {featured.map((item, index) => (
-              <Link
-                key={item.id}
-                href={`/listings/${item.id}`}
-                className="group overflow-hidden rounded-xl border border-slate-700 bg-slate-900/80 p-3"
-              >
-                <div className="aspect-square overflow-hidden rounded-lg bg-slate-800">
-                  {item.photos[0] && (
-                    <ProgressiveImage
-                      src={listingPhotoUrl(item.id, item.photos[0])}
-                      alt={item.title}
-                      eager={index === 0}
-                      fetchPriority={index === 0 ? "high" : "auto"}
-                      sizes="(max-width: 1024px) 50vw, 24vw"
-                      className="h-full w-full object-cover transition group-hover:scale-105"
-                    />
-                  )}
-                </div>
-                <p className="mt-3 truncate text-sm font-semibold text-white">{item.title}</p>
-                <p className="mt-1 text-xs text-slate-300">
-                  {item.listing_type === "auction"
-                    ? tListings("buyItNowPrice", { price: item.buy_it_now_price ?? item.current_price })
-                    : tListings("remainingUnits", { count: item.stock_remaining ?? 0 })}
-                </p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      <HeroSection
+        badge={t("heroBadge")}
+        title={t("title")}
+        subtitle={t("subtitle")}
+        browseLabel={t("browseButton")}
+        auctionLabel={t("auctionCta")}
+        browseHref={perfMode === "aggressive" ? "/listings?perf=aggressive" : "/listings"}
+        auctionHref={`/listings?type=auction${perfSuffix}`}
+        cards={heroCards}
+      />
 
       <p className="mx-auto max-w-6xl px-4 py-3 text-center text-xs text-ink-light sm:px-6">
         {t("serverStatus", { status })}
