@@ -114,7 +114,7 @@ export default async function SiteHeader() {
               <select
                 name="type"
                 defaultValue=""
-                className="w-32 shrink-0 border-r border-slate-200 bg-slate-50 px-3 text-xs font-medium text-ink focus:outline-none"
+                className="h-full w-32 shrink-0 border-r border-slate-200 bg-slate-50 px-3 text-xs font-medium text-ink focus:outline-none"
               >
                 <option value="">{t("searchAll")}</option>
                 <option value="auction">{t("searchAuction")}</option>
@@ -124,10 +124,10 @@ export default async function SiteHeader() {
                 type="search"
                 name="q"
                 placeholder="搜尋商品、品牌或關鍵字..."
-                className="min-w-0 flex-1 px-4 text-sm text-ink placeholder:text-ink-light focus:outline-none"
+                className="h-full min-w-0 flex-1 px-4 text-sm text-ink placeholder:text-ink-light focus:outline-none"
               />
             </div>
-            <button type="submit" className="absolute right-1.5 top-1.5 inline-flex h-9 items-center rounded-full bg-slate-950 px-4 text-xs font-semibold text-white hover:bg-slate-800">
+            <button type="submit" className="absolute right-[5px] top-[5px] inline-flex h-[38px] items-center rounded-full bg-slate-950 px-4 text-xs font-semibold leading-none text-white hover:bg-slate-800">
               Search
             </button>
           </form>

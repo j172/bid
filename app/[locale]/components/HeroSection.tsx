@@ -115,7 +115,7 @@ export default function HeroSection({
 
             {activeCard ? (
               <>
-                <div className="relative z-10 max-w-xl">
+                <div className="relative z-10 max-w-[33rem]">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100 backdrop-blur-sm">
                       TOP {activeIndex + 1}
@@ -125,11 +125,11 @@ export default function HeroSection({
                     </span>
                   </div>
 
-                  <h1 className="mt-5 max-w-xl text-3xl font-black leading-[1.05] text-white sm:text-5xl lg:text-6xl">
+                  <h1 className="mt-5 max-w-[31rem] text-3xl font-black leading-[1.02] text-white sm:text-5xl lg:text-6xl">
                     {activeCard.title}
                   </h1>
 
-                  <p className="mt-4 max-w-lg text-base leading-7 text-blue-100 sm:text-lg">
+                  <p className="mt-4 max-w-[29rem] text-base leading-[1.65] text-blue-100 sm:text-lg">
                     {activeCard.bidCount === 0
                       ? tListings("noBidsYet")
                       : tListings("totalBids", { count: activeCard.bidCount })}
@@ -254,10 +254,10 @@ export default function HeroSection({
                   }`}
                 />
                 <div className="relative">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-blue">高價競標</p>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.145em] text-brand-blue drop-shadow-[0_1px_0_rgba(255,255,255,0.72)]">高價競標</p>
                   <h2 className="mt-2 line-clamp-2 text-xl font-extrabold leading-tight text-ink">{item.title}</h2>
-                  <div className="mt-4 rounded-2xl border border-amber-200/70 bg-gradient-to-r from-amber-50 via-white to-yellow-50 px-4 py-3 shadow-sm ring-1 ring-white/70">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-amber-700">{tDetail("specCurrentPrice")}</p>
+                  <div className="mt-4 rounded-2xl border border-amber-200/70 bg-gradient-to-r from-amber-50 via-white to-yellow-50 px-4 py-3 shadow-[0_8px_20px_rgba(217,119,6,0.12)] ring-1 ring-white/70">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-700 drop-shadow-[0_1px_0_rgba(255,255,255,0.78)]">{tDetail("specCurrentPrice")}</p>
                     <div className="mt-1 flex items-end gap-2">
                       <span className="text-sm font-semibold text-amber-700">NT$</span>
                       <span className="text-3xl font-black leading-none text-amber-900 sm:text-[2rem]">
@@ -266,7 +266,7 @@ export default function HeroSection({
                     </div>
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <span className="rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-sm font-medium text-ink-light shadow-sm">
+                    <span className="rounded-full border border-slate-200 bg-white/85 px-3 py-1.5 text-sm font-medium tracking-[0.01em] text-ink-light shadow-[0_4px_10px_rgba(15,23,42,0.08)]">
                       {formatRemainingFromNow(item.endsAt, nowMs, tFormat)}
                     </span>
                   </div>
