@@ -5,21 +5,9 @@ import { Editor } from "@tinymce/tinymce-react";
 import type { Editor as TinyMCEEditor } from "tinymce";
 import { convertPhotoToWebp } from "@/lib/convertPhotoToWebp";
 import { DESCRIPTION_IMAGE_MAX_BYTES, DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
+import { COLOR_MAP } from "@/lib/editorColorMap";
 import { DESCRIPTION_MAX, descriptionPlainTextLength } from "@/lib/listingValidation";
-
-// Fixed brand palette (mirrors the --color-* tokens in app/globals.css) so
-// seller-authored descriptions can't introduce colors that clash with the
-// site's own design — free-form colors baked into stored HTML can't be
-// swept up by a future CSS-only redesign.
-const COLOR_MAP = [
-  "010F1C", "文字黑",
-  "5A6270", "淺灰",
-  "0989FF", "品牌藍",
-  "0672D8", "深藍",
-  "15803D", "綠（強調）",
-  "B91C1C", "紅（強調）",
-  "FFFFFF", "白",
-];
+import { extractYouTubeId } from "@/lib/youtubeEmbed";
 
 export interface DescriptionEditorHandle {
   // Called at form-submit time: swaps every locally-buffered image's blob:
@@ -76,12 +64,59 @@ const DescriptionEditor = forwardRef<DescriptionEditorHandle, DescriptionEditorP
           menubar: false,
           branding: false,
           promotion: false,
-          plugins: "lists link image table",
+          language: "zh-TW",
+          // Native statusbar would show its own word/char count, duplicating
+          // (and disagreeing with, since it counts differently) the custom
+          // counter already rendered below tied to DESCRIPTION_MAX.
+          statusbar: false,
+          plugins: "lists link image table fullscreen searchreplace code",
           toolbar:
-            "undo redo | blocks fontsize | bold italic underline | forecolor backcolor | " +
-            "alignleft aligncenter alignright | bullist numlist | link image table | removeformat",
+            "undo redo | blocks fontsize | bold italic underline strikethrough | forecolor backcolor | " +
+            "alignleft aligncenter alignright alignjustify | bullist numlist | blockquote hr | " +
+            "subscript superscript codeformat | link image insertyoutube table | removeformat | " +
+            "searchreplace fullscreen code",
           block_formats: "段落=p; 標題=h2; 副標題=h3",
           color_map: COLOR_MAP,
+          setup: (editor) => {
+            editor.ui.registry.addButton("insertyoutube", {
+              icon: "embed",
+              tooltip: "插入 YouTube 影片",
+              onAction: () => {
+                editor.windowManager.open({
+                  title: "插入 YouTube 影片",
+                  body: {
+                    type: "panel",
+                    items: [
+                      {
+                        type: "input",
+                        name: "url",
+                        label: "YouTube 網址",
+                        placeholder: "https://www.youtube.com/watch?v=...",
+                      },
+                    ],
+                  },
+                  initialData: { url: "" },
+                  buttons: [
+                    { type: "cancel", text: "取消" },
+                    { type: "submit", text: "插入", primary: true },
+                  ],
+                  onSubmit: (api) => {
+                    const videoId = extractYouTubeId(String(api.getData().url));
+                    if (!videoId) {
+                      editor.notificationManager.open({ text: "請輸入有效的 YouTube 網址", type: "error" });
+                      return;
+                    }
+                    editor.insertContent(
+                      `<iframe src="https://www.youtube-nocookie.com/embed/${videoId}" width="560" height="315" ` +
+                        `allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ` +
+                        `allowfullscreen title="YouTube video player" frameborder="0"></iframe>`,
+                    );
+                    api.close();
+                  },
+                });
+              },
+            });
+          },
           // Images are never uploaded to a server endpoint here — the handler
           // below intercepts every insert, converts it client-side, and hands
           // back a local blob: URL for display. The real file only leaves the

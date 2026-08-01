@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Editor } from "@tinymce/tinymce-react";
+import { COLOR_MAP } from "@/lib/editorColorMap";
+import { extractYouTubeId } from "@/lib/youtubeEmbed";
 
 type Status = "idle" | "testing" | "sending";
 
@@ -107,9 +109,63 @@ export default function NewsletterComposer() {
           init={{
             height: 480,
             menubar: false,
-            plugins: ["link", "image", "lists", "table", "code"],
+            language: "zh-TW",
+            plugins: ["link", "image", "lists", "table", "code", "fullscreen", "wordcount"],
             toolbar:
-              "undo redo | blocks | bold italic underline | bullist numlist | link image table | code",
+              "undo redo | blocks fontsize | bold italic underline | forecolor backcolor | " +
+              "alignleft aligncenter alignright alignjustify | bullist numlist | blockquote hr | " +
+              "link image insertyoutube table | code fullscreen",
+            color_map: COLOR_MAP,
+            setup: (editor) => {
+              editor.ui.registry.addButton("insertyoutube", {
+                icon: "embed",
+                tooltip: "插入 YouTube 影片（縮圖連結）",
+                onAction: () => {
+                  editor.windowManager.open({
+                    title: "插入 YouTube 影片",
+                    body: {
+                      type: "panel",
+                      items: [
+                        {
+                          type: "input",
+                          name: "url",
+                          label: "YouTube 網址",
+                          placeholder: "https://www.youtube.com/watch?v=...",
+                        },
+                      ],
+                    },
+                    initialData: { url: "" },
+                    buttons: [
+                      { type: "cancel", text: "取消" },
+                      { type: "submit", text: "插入", primary: true },
+                    ],
+                    onSubmit: (api) => {
+                      const videoId = extractYouTubeId(String(api.getData().url));
+                      if (!videoId) {
+                        editor.notificationManager.open({ text: "請輸入有效的 YouTube 網址", type: "error" });
+                        return;
+                      }
+                      // Email clients strip <iframe>, so this inserts a clickable
+                      // thumbnail (the standard email-marketing pattern for video)
+                      // instead of the iframe embed DescriptionEditor uses.
+                      editor.insertContent(
+                        `<a href="https://www.youtube.com/watch?v=${videoId}" target="_blank" rel="noopener noreferrer" ` +
+                          `style="display:inline-block;position:relative;text-decoration:none;">` +
+                          `<img src="https://img.youtube.com/vi/${videoId}/hqdefault.jpg" width="480" height="360" ` +
+                          `alt="YouTube 影片預覽" style="display:block;border:0;max-width:100%;height:auto;" />` +
+                          `<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:68px;` +
+                          `height:48px;background:rgba(0,0,0,0.7);border-radius:8px;display:flex;align-items:center;` +
+                          `justify-content:center;">` +
+                          `<span style="width:0;height:0;border-top:12px solid transparent;border-bottom:12px solid ` +
+                          `transparent;border-left:20px solid #fff;margin-left:4px;"></span>` +
+                          `</span></a>`,
+                      );
+                      api.close();
+                    },
+                  });
+                },
+              });
+            },
           }}
         />
       </div>

@@ -18,9 +18,15 @@ const ALLOWED_TAGS = [
   "a", "img",
   "table", "thead", "tbody", "tr", "td", "th",
   "span", "div",
+  "blockquote", "hr", "sub", "sup", "code",
+  // Only ever emitted by the editor's YouTube-only "insert video" dialog —
+  // src is further restricted to youtube-nocookie.com via allowedIframeHostnames.
+  "iframe",
 ];
 
 const ALLOWED_ATTR = ["href", "target", "rel", "src", "alt", "width", "height", "colspan", "rowspan", "style"];
+
+const ALLOWED_IFRAME_ATTR = ["src", "width", "height", "allow", "allowfullscreen", "title", "frameborder"];
 
 // Matches the brand-restricted color_map wired into the TinyMCE toolbar
 // (DescriptionEditor.tsx) — re-checked here because the client's color
@@ -42,9 +48,11 @@ function filterStyleAttribute(tagName: string, attribs: Record<string, string>) 
 export function sanitizeDescriptionHtml(html: string): string {
   return sanitizeHtml(html, {
     allowedTags: ALLOWED_TAGS,
-    allowedAttributes: { "*": ALLOWED_ATTR },
+    allowedAttributes: { "*": ALLOWED_ATTR, iframe: ALLOWED_IFRAME_ATTR },
     // img src values are our own /uploads/... paths — no data: needed.
-    allowedSchemesByTag: { img: ["http", "https"] },
+    allowedSchemesByTag: { img: ["http", "https"], iframe: ["https"] },
+    // The only iframe src the editor's video dialog ever produces.
+    allowedIframeHostnames: ["www.youtube-nocookie.com"],
     transformTags: {
       // Both the tag-specific and "*" transforms run (specific first), so
       // style-filtering only needs to live in the wildcard entry.
