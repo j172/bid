@@ -49,6 +49,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
   const featured = listings.slice(0, 3);
   const newArrivals = listings.slice(0, 8);
+  const bestMixed = listings.slice(0, 6);
   const topAuctions = listings.filter((item) => item.listing_type === "auction").slice(0, 4);
   const topFixed = listings.filter((item) => item.listing_type === "fixed_price").slice(0, 4);
   const categoryItems: CategoryItem[] = [
@@ -286,10 +287,57 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       </section>
 
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <article className="rounded-xl border border-border bg-white p-5 shadow-sm">
-            <h3 className="text-xl font-bold">{t("bestAuction")}</h3>
-            <div className="mt-4 space-y-3">
+        <div className="flex items-end justify-between">
+          <h2 className="text-2xl font-bold">Best Sellers</h2>
+          <Link href="/listings" className="text-sm font-semibold text-brand-blue hover:text-header">
+            {t("viewAll")}
+          </Link>
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {bestMixed.map((item, index) => (
+            <article key={`best-${item.id}`} className="group rounded-2xl border border-border bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+              <Link href={`/listings/${item.id}`} className="block">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
+                  {item.photos[0] && (
+                    <ProgressiveImage
+                      src={listingPhotoUrl(item.id, item.photos[0])}
+                      alt={item.title}
+                      eager={index < 2}
+                      fetchPriority={index < 2 ? "high" : "auto"}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="h-full w-full object-cover transition group-hover:scale-105"
+                    />
+                  )}
+                  <span className="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-1 text-[11px] font-bold text-brand-blue shadow-sm">
+                    {item.listing_type === "auction" ? "HOT BIDDING" : "BEST PRICE"}
+                  </span>
+                </div>
+              </Link>
+
+              <h3 className="mt-3 truncate text-sm font-semibold text-ink">{item.title}</h3>
+              <div className="mt-2 flex items-end gap-2">
+                <p className="text-lg font-black text-ink">{item.listing_type === "auction" ? item.current_price : item.price}</p>
+                <p className="text-xs text-ink-light line-through">
+                  {Math.ceil(Number(item.listing_type === "auction" ? item.current_price : item.price) * 1.18)}
+                </p>
+              </div>
+
+              <div className="mt-3 flex items-center gap-2 text-[11px]">
+                <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold text-ink">Quick View</span>
+                <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold text-ink">Add To Wishlist</span>
+                <Link href={`/listings/${item.id}`} className="rounded-md bg-header px-2 py-1 font-semibold text-white">
+                  Add To Cart
+                </Link>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <article className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+            <h3 className="text-lg font-black">{t("bestAuction")}</h3>
+            <div className="mt-3 space-y-2">
               {topAuctions.map((item) => (
                 <Link key={item.id} href={`/listings/${item.id}`} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 hover:bg-slate-100">
                   <div className="min-w-0">
@@ -302,9 +350,9 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             </div>
           </article>
 
-          <article className="rounded-xl border border-border bg-white p-5 shadow-sm">
-            <h3 className="text-xl font-bold">{t("bestFixed")}</h3>
-            <div className="mt-4 space-y-3">
+          <article className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+            <h3 className="text-lg font-black">{t("bestFixed")}</h3>
+            <div className="mt-3 space-y-2">
               {topFixed.map((item) => (
                 <Link key={item.id} href={`/listings/${item.id}`} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 hover:bg-slate-100">
                   <div className="min-w-0">
@@ -320,12 +368,35 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       </section>
 
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
-        <h2 className="text-2xl font-bold">{t("feedbackTitle")}</h2>
+        <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 p-7 text-white">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-200">Enhance your bidding experience</p>
+          <h2 className="mt-2 text-3xl font-black">Don’t Miss These Deals</h2>
+          <div className="mt-4 flex flex-wrap gap-3 text-sm">
+            <span className="rounded-md bg-white/15 px-3 py-1">06 Days</span>
+            <span className="rounded-md bg-white/15 px-3 py-1">03 Hours</span>
+            <span className="rounded-md bg-white/15 px-3 py-1">07 Minutes</span>
+            <span className="rounded-md bg-white/15 px-3 py-1">20 Seconds</span>
+          </div>
+          <Link href="/listings" className="mt-5 inline-flex rounded-md bg-white px-4 py-2 text-sm font-bold text-blue-800">
+            Check it Out
+          </Link>
+        </div>
+      </section>
+
+      <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
+        <h2 className="text-2xl font-bold">User Feedbacks</h2>
         <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
           {feedbacks.map((item) => (
-            <article key={item.role} className="rounded-xl border border-border bg-white p-5 shadow-sm">
-              <p className="text-sm leading-7 text-ink-light">“{item.quote}”</p>
-              <p className="mt-4 text-sm font-semibold text-ink">{item.role}</p>
+            <article key={item.role} className="rounded-2xl border border-border bg-white p-6 shadow-sm">
+              <p className="text-base leading-7 text-ink-light">“{item.quote}”</p>
+              <div className="mt-4 flex items-center gap-1 text-yellow-400">
+                <span>★</span>
+                <span>★</span>
+                <span>★</span>
+                <span>★</span>
+                <span>★</span>
+              </div>
+              <p className="mt-3 text-sm font-semibold text-ink">{item.role}</p>
             </article>
           ))}
         </div>
