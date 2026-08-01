@@ -104,6 +104,8 @@ export default function NewListingForm() {
         </span>
       </label>
 
+      <PhotoGalleryEditor items={photoItems} onChange={setPhotoItems} />
+
       <div className="flex flex-col gap-1 text-sm font-medium text-ink-light">
         描述
         <DescriptionEditor ref={descriptionEditorRef} value={description} onChange={setDescription} />
@@ -176,8 +178,6 @@ export default function NewListingForm() {
           </label>
         </>
       )}
-
-      <PhotoGalleryEditor items={photoItems} onChange={setPhotoItems} />
 
       {error && <p className="text-sm text-ended">{error}</p>}
       <Button type="submit" disabled={submitting || photoItems.length === 0}>

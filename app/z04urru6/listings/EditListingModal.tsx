@@ -123,6 +123,8 @@ export default function EditListingModal({ listingId }: { listingId: number }) {
                   </span>
                 </label>
 
+                <PhotoGalleryEditor items={photoItems} onChange={setPhotoItems} />
+
                 <div className="flex flex-col gap-1 text-sm font-medium text-ink-light">
                   描述
                   <DescriptionEditor ref={descriptionEditorRef} value={description} onChange={setDescription} />
@@ -154,8 +156,6 @@ export default function EditListingModal({ listingId }: { listingId: number }) {
                     className={inputClass}
                   />
                 </label>
-
-                <PhotoGalleryEditor items={photoItems} onChange={setPhotoItems} />
 
                 {error && <p className="text-sm text-ended">{error}</p>}
                 <div className="mt-2 flex justify-end gap-3">
