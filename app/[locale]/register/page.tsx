@@ -2,8 +2,8 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
-import Button from "@/app/components/Button";
 import { Link, useRouter } from "@/i18n/navigation";
+import AuthFormShell from "../components/AuthFormShell";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-gold focus:outline-none";
 
@@ -42,10 +42,22 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="mx-auto max-w-md px-4 py-16 sm:px-6">
-      <div className="rounded-lg border border-border bg-surface p-8 shadow-sm">
-        <h1 className="text-2xl font-bold">{t("title")}</h1>
-        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
+    <AuthFormShell
+      title={t("title")}
+      onSubmit={handleSubmit}
+      submitting={submitting}
+      submitLabel={t("submit")}
+      submittingLabel={t("submitting")}
+      error={error}
+      footer={
+        <p className="mt-4 text-sm text-ink-light">
+          {t("haveAccount")}{" "}
+          <Link href="/login" className="font-medium text-gold hover:underline">
+            {t("loginLink")}
+          </Link>
+        </p>
+      }
+    >
           <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
             {t("email")}
             <input
@@ -101,18 +113,6 @@ export default function RegisterPage() {
               className={inputClass}
             />
           </label>
-          {error && <p className="text-sm text-ended">{error}</p>}
-          <Button type="submit" disabled={submitting}>
-            {submitting ? t("submitting") : t("submit")}
-          </Button>
-        </form>
-        <p className="mt-4 text-sm text-ink-light">
-          {t("haveAccount")}{" "}
-          <Link href="/login" className="font-medium text-gold hover:underline">
-            {t("loginLink")}
-          </Link>
-        </p>
-      </div>
-    </main>
+    </AuthFormShell>
   );
 }
