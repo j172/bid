@@ -1,0 +1,50 @@
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* Semantic tokens */
+  --color-text-primary: #010f1c;
+  --color-text-secondary: #5a6270;
+  --color-bg-header: #0a1f52;
+  --color-bg-header-soft: #12306b;
+  --color-bg-surface: #ffffff;
+  --color-bg-surface-muted: #f5f7ff;
+  --color-border-primary: #e3e8f4;
+
+  --color-interactive-primary: #0989ff;
+  --color-interactive-primary-active: #0672d8;
+  --color-interactive-primary-subtle: #e6f3ff;
+
+  --color-feedback-success: #15803d;
+  --color-feedback-success-subtle: #dcfce7;
+  --color-feedback-error: #b91c1c;
+  --color-feedback-error-subtle: #fee2e2;
+
+  /* Backward-compatible aliases during migration */
+  --color-ink: var(--color-text-primary);
+  --color-ink-light: var(--color-text-secondary);
+  --color-header: var(--color-bg-header);
+  --color-header-soft: var(--color-bg-header-soft);
+  --color-surface: var(--color-bg-surface);
+  --color-surface-muted: var(--color-bg-surface-muted);
+  --color-border: var(--color-border-primary);
+
+  --color-gold: var(--color-interactive-primary);
+  --color-gold-dark: var(--color-interactive-primary-active);
+  --color-gold-light: var(--color-interactive-primary-subtle);
+
+  --color-brand-blue: var(--color-interactive-primary);
+  --color-brand-blue-dark: var(--color-interactive-primary-active);
+  --color-brand-chip: var(--color-interactive-primary-subtle);
+
+  --color-leading: var(--color-feedback-success);
+  --color-leading-bg: var(--color-feedback-success-subtle);
+  --color-ended: var(--color-feedback-error);
+  --color-ended-bg: var(--color-feedback-error-subtle);
+}
+
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-interactive-primary);
+    outline-offset: 2px;
+  }
+}
