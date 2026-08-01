@@ -12,6 +12,8 @@ export const dynamic = "force-dynamic";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
+type CategoryItem = { key: "auction" | "fixed_price"; count: number };
+
 function perfModeFromSearchParams(params: SearchParams): "balanced" | "aggressive" {
   const modeParam = params.perf;
   const mode = Array.isArray(modeParam) ? modeParam[0] : modeParam;
@@ -42,6 +44,14 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const newArrivals = listings.slice(0, 8);
   const topAuctions = listings.filter((item) => item.listing_type === "auction").slice(0, 4);
   const topFixed = listings.filter((item) => item.listing_type === "fixed_price").slice(0, 4);
+  const categoryItems: CategoryItem[] = [
+    { key: "auction", count: listings.filter((item) => item.listing_type === "auction").length },
+    { key: "fixed_price", count: listings.filter((item) => item.listing_type === "fixed_price").length },
+  ];
+  const feedbacks = [
+    { quote: t("feedbackQuoteOne"), role: t("feedbackRoleOne") },
+    { quote: t("feedbackQuoteTwo"), role: t("feedbackRoleTwo") },
+  ];
   const homeEagerCount = perfMode === "aggressive" ? 3 : 2;
   const perfSuffix = perfMode === "aggressive" ? "&perf=aggressive" : "";
   const heroCards = featured.map((item) => ({
@@ -92,6 +102,25 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             <p className="text-xs font-semibold uppercase tracking-wide text-gold">{t("serviceSupport")}</p>
             <p className="mt-2 text-sm text-ink-light">{t("serviceSupportDesc")}</p>
           </article>
+        </div>
+      </section>
+
+      <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
+        <div className="flex items-end justify-between">
+          <h2 className="text-2xl font-bold">{t("browseByCategory")}</h2>
+        </div>
+        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {categoryItems.map((cat) => {
+            const label = cat.key === "auction" ? t("categoryAuction") : t("categoryFixedPrice");
+            const href = cat.key === "auction" ? "/listings?type=auction" : "/listings?type=fixed_price";
+            return (
+              <Link key={cat.key} href={href} className="rounded-xl border border-border bg-white p-5 shadow-sm hover:shadow-md">
+                <p className="text-xs font-semibold uppercase tracking-wide text-gold">{label}</p>
+                <p className="mt-2 text-2xl font-black text-ink">{cat.count}</p>
+                <p className="mt-1 text-sm text-ink-light">{t("viewAll")}</p>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -187,6 +216,18 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               ))}
             </div>
           </article>
+        </div>
+      </section>
+
+      <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
+        <h2 className="text-2xl font-bold">{t("feedbackTitle")}</h2>
+        <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+          {feedbacks.map((item) => (
+            <article key={item.role} className="rounded-xl border border-border bg-white p-5 shadow-sm">
+              <p className="text-sm leading-7 text-ink-light">“{item.quote}”</p>
+              <p className="mt-4 text-sm font-semibold text-ink">{item.role}</p>
+            </article>
+          ))}
         </div>
       </section>
     </main>
