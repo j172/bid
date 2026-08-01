@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCurrentUser, listUsers, USERS_PAGE_SIZE, type ListUsersOptions } from "@/lib/auth";
 import RoleToggleButton from "./RoleToggleButton";
 import SuspendToggleButton from "./SuspendToggleButton";
+import AdminPageIntro from "../AdminPageIntro";
 
 export const dynamic = "force-dynamic";
 
@@ -44,9 +45,9 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
 
   return (
     <main>
-      <h1 className="text-2xl font-bold">使用者列表</h1>
+      <AdminPageIntro title="使用者列表" description="管理帳號角色、停權狀態與使用者活躍度。" />
 
-      <form className="mt-6 flex flex-wrap items-end gap-3 rounded-lg border border-border bg-surface p-4" method="GET">
+      <form className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm" method="GET">
         <label className="flex flex-col gap-1 text-xs text-ink-light">
           搜尋
           <input
@@ -94,7 +95,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
             <option value="gmv_desc">總成交額（高→低）</option>
           </select>
         </label>
-        <button type="submit" className="rounded-md bg-header px-4 py-1.5 text-sm font-medium text-white hover:opacity-90">
+        <button type="submit" className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue-dark">
           套用
         </button>
       </form>
@@ -102,7 +103,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
       {users.length === 0 ? (
         <p className="mt-6 text-ink-light">找不到符合條件的使用者。</p>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-lg border border-border bg-surface shadow-sm">
+        <div className="mt-6 overflow-x-auto rounded-2xl border border-border bg-surface shadow-sm">
           <table className="w-full border-collapse">
             <thead>
               <tr>
@@ -118,7 +119,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
             </thead>
             <tbody>
               {users.map((user) => (
-                <tr key={user.id}>
+                <tr key={user.id} className="transition hover:bg-surface-muted/80">
                   <td className={td}>
                     <Link href={`/z04urru6/users/${user.id}`} className="font-medium text-gold hover:underline">
                       {user.email}
@@ -152,7 +153,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
       )}
 
       {totalPages > 1 && (
-        <div className="mt-4 flex items-center gap-3 text-sm">
+        <div className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-2 text-sm shadow-sm">
           {page > 1 && (
             <Link
               href={`/z04urru6/users?${buildQuery(params, { page: String(page - 1) })}`}

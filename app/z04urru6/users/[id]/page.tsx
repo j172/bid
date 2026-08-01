@@ -5,6 +5,7 @@ import { getBidHistoryForUser, getListingsCreatedByUser } from "@/lib/listings";
 import StatusBadge from "../../../components/StatusBadge";
 import RoleToggleButton from "../RoleToggleButton";
 import SuspendToggleButton from "../SuspendToggleButton";
+import AdminPageIntro from "../../AdminPageIntro";
 
 export const dynamic = "force-dynamic";
 
@@ -34,14 +35,14 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
 
   return (
     <main>
-      <Link href="/z04urru6/users" className="text-sm text-gold hover:underline">
-        ← 回使用者列表
-      </Link>
-
-      <h1 className="mt-3 text-2xl font-bold">{detail.displayName ?? detail.email}</h1>
+      <AdminPageIntro title={detail.displayName ?? detail.email} description="檢視使用者資料、權限與出價行為明細。">
+        <Link href="/z04urru6/users" className="text-sm text-brand-blue hover:underline">
+          ← 回使用者列表
+        </Link>
+      </AdminPageIntro>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-lg border border-border bg-surface p-6 shadow-sm">
+        <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
           <h2 className="text-lg font-semibold">個人資料</h2>
           <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
             <dt className="text-ink-light">Email</dt>
@@ -74,7 +75,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
           )}
         </div>
 
-        <div className="rounded-lg border border-border bg-surface p-6 shadow-sm">
+        <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
           <h2 className="text-lg font-semibold">上架紀錄</h2>
           {listings.length === 0 ? (
             <p className="mt-4 text-sm text-ink-light">這個帳號從未上架過商品。</p>
@@ -93,7 +94,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
         </div>
       </div>
 
-      <div className="mt-6 rounded-lg border border-border bg-surface p-6 shadow-sm">
+      <div className="mt-6 rounded-2xl border border-border bg-surface p-6 shadow-sm">
         <h2 className="text-lg font-semibold">出價紀錄</h2>
         {bids.length === 0 ? (
           <p className="mt-4 text-sm text-ink-light">這個帳號從未出過價。</p>
@@ -111,7 +112,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
               </thead>
               <tbody>
                 {bids.map((bid, index) => (
-                  <tr key={index}>
+                  <tr key={index} className="transition hover:bg-surface-muted/80">
                     <td className={td}>
                       <Link href={`/listings/${bid.listingId}`} className="font-medium text-gold hover:underline">
                         {bid.listingTitle}

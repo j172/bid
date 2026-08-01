@@ -4,6 +4,7 @@ import SettlementExpand from "../listings/closed/SettlementExpand";
 import BuyerExpand from "./BuyerExpand";
 import OrderSettleModal from "./OrderSettleModal";
 import OrderUnsettleButton from "./OrderUnsettleButton";
+import AdminPageIntro from "../AdminPageIntro";
 
 export const dynamic = "force-dynamic";
 
@@ -43,10 +44,9 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
 
   return (
     <main>
-      <h1 className="text-2xl font-bold">訂單管理</h1>
-      <p className="mt-2 text-sm text-ink-light">一般商品（不開放競標）的每一筆購買紀錄。</p>
+      <AdminPageIntro title="訂單管理" description="一般商品（不開放競標）的每一筆購買紀錄。" />
 
-      <form className="mt-6 flex flex-wrap items-end gap-3 rounded-lg border border-border bg-surface p-4" method="GET">
+      <form className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm" method="GET">
         <label className="flex flex-col gap-1 text-xs text-ink-light">
           商品標題
           <input
@@ -88,7 +88,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
             <option value="amount_desc">金額（高→低）</option>
           </select>
         </label>
-        <button type="submit" className="rounded-md bg-header px-4 py-1.5 text-sm font-medium text-white hover:opacity-90">
+        <button type="submit" className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue-dark">
           套用
         </button>
       </form>
@@ -96,7 +96,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
       {orders.length === 0 ? (
         <p className="mt-6 text-ink-light">找不到符合條件的訂單。</p>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-lg border border-border bg-surface shadow-sm">
+        <div className="mt-6 overflow-x-auto rounded-2xl border border-border bg-surface shadow-sm">
           <table className="w-full border-collapse">
             <thead>
               <tr>
@@ -111,7 +111,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
             </thead>
             <tbody>
               {orders.map((order) => (
-                <tr key={order.id}>
+                <tr key={order.id} className="transition hover:bg-surface-muted/80">
                   <td className={td}>
                     <Link href={`/listings/${order.listingId}`} className="font-medium text-gold hover:underline">
                       {order.listingTitle}
@@ -154,7 +154,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
       )}
 
       {totalPages > 1 && (
-        <div className="mt-4 flex items-center gap-3 text-sm">
+        <div className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-2 text-sm shadow-sm">
           {page > 1 && (
             <Link href={`/z04urru6/orders?${buildQuery(params, { page: String(page - 1) })}`} className="text-gold hover:underline">
               上一頁

@@ -15,7 +15,10 @@ export default function AdminLogoutButton() {
   }
 
   return (
-    <button onClick={handleLogout} className="rounded-md border border-white/30 px-3 py-1.5 hover:bg-white/10">
+    <button
+      onClick={handleLogout}
+      className="rounded-md border border-border bg-white px-3 py-1.5 text-sm hover:bg-surface-muted"
+    >
       登出
     </button>
   );

@@ -3,6 +3,7 @@ import { getOpenListingsForAdmin, OPEN_LISTINGS_PAGE_SIZE, type ListOpenListings
 import { formatRemainingZhHant } from "@/lib/format";
 import CancelButton from "./CancelButton";
 import EditListingModal from "./EditListingModal";
+import AdminPageIntro from "../AdminPageIntro";
 
 export const dynamic = "force-dynamic";
 
@@ -39,9 +40,9 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
 
   return (
     <main>
-      <h1 className="text-2xl font-bold">開放中商品</h1>
+      <AdminPageIntro title="開放中商品" description="管理可售商品、調整排序並快速處理下架操作。" />
 
-      <form className="mt-6 flex flex-wrap items-end gap-3 rounded-lg border border-border bg-surface p-4" method="GET">
+      <form className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm" method="GET">
         <label className="flex flex-col gap-1 text-xs text-ink-light">
           商品標題
           <input
@@ -79,7 +80,7 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
             <option value="created_asc">建立時間（舊→新）</option>
           </select>
         </label>
-        <button type="submit" className="rounded-md bg-header px-4 py-1.5 text-sm font-medium text-white hover:opacity-90">
+        <button type="submit" className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue-dark">
           套用
         </button>
       </form>
@@ -87,7 +88,7 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
       {listings.length === 0 ? (
         <p className="mt-6 text-ink-light">找不到符合條件的商品。</p>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-lg border border-border bg-surface shadow-sm">
+        <div className="mt-6 overflow-x-auto rounded-2xl border border-border bg-surface shadow-sm">
           <table className="w-full border-collapse">
             <thead>
               <tr>
@@ -100,7 +101,7 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
             </thead>
             <tbody>
               {listings.map((listing) => (
-                <tr key={listing.id}>
+                <tr key={listing.id} className="transition hover:bg-surface-muted/80">
                   <td className={td}>
                     <Link href={`/listings/${listing.id}`} className="font-medium text-gold hover:underline">
                       {listing.title}
@@ -133,7 +134,7 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
       )}
 
       {totalPages > 1 && (
-        <div className="mt-4 flex items-center gap-3 text-sm">
+        <div className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-2 text-sm shadow-sm">
           {page > 1 && (
             <Link href={`/z04urru6/listings?${buildQuery(params, { page: String(page - 1) })}`} className="text-gold hover:underline">
               上一頁

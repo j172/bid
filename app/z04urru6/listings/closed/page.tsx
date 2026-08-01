@@ -11,6 +11,7 @@ import BiddersExpand from "./BiddersExpand";
 import WinnerExpand from "./WinnerExpand";
 import SettlementExpand from "./SettlementExpand";
 import RelistModal from "./RelistModal";
+import AdminPageIntro from "../../AdminPageIntro";
 
 export const dynamic = "force-dynamic";
 
@@ -51,9 +52,9 @@ export default async function ClosedListingsPage({ searchParams }: { searchParam
 
   return (
     <main>
-      <h1 className="text-2xl font-bold">已結標商品結算</h1>
+      <AdminPageIntro title="已結標商品結算" description="追蹤得標與結算狀態，並支援流標商品快速重新上架。" />
 
-      <form className="mt-6 flex flex-wrap items-end gap-3 rounded-lg border border-border bg-surface p-4" method="GET">
+      <form className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm" method="GET">
         <label className="flex flex-col gap-1 text-xs text-ink-light">
           商品標題
           <input
@@ -96,12 +97,12 @@ export default async function ClosedListingsPage({ searchParams }: { searchParam
             <option value="price_desc">成交價（高→低）</option>
           </select>
         </label>
-        <button type="submit" className="rounded-md bg-header px-4 py-1.5 text-sm font-medium text-white hover:opacity-90">
+        <button type="submit" className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue-dark">
           套用
         </button>
         <a
           href={`/api/admin/listings/closed/export?${exportQuery}`}
-          className="rounded-md border border-gold px-4 py-1.5 text-sm font-medium text-gold hover:bg-gold-light"
+          className="rounded-lg border border-brand-blue px-4 py-2 text-sm font-medium text-brand-blue hover:bg-brand-chip"
         >
           匯出 CSV
         </a>
@@ -110,7 +111,7 @@ export default async function ClosedListingsPage({ searchParams }: { searchParam
       {listings.length === 0 ? (
         <p className="mt-6 text-ink-light">找不到符合條件的商品。</p>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-lg border border-border bg-surface shadow-sm">
+        <div className="mt-6 overflow-x-auto rounded-2xl border border-border bg-surface shadow-sm">
           <table className="w-full border-collapse">
             <thead>
               <tr>
@@ -126,7 +127,7 @@ export default async function ClosedListingsPage({ searchParams }: { searchParam
             </thead>
             <tbody>
               {listings.map((listing) => (
-                <tr key={listing.id}>
+                <tr key={listing.id} className="transition hover:bg-surface-muted/80">
                   <td className={td}>
                     <Link href={`/listings/${listing.id}`} className="font-medium text-gold hover:underline">
                       {listing.title}
@@ -180,7 +181,7 @@ export default async function ClosedListingsPage({ searchParams }: { searchParam
       )}
 
       {totalPages > 1 && (
-        <div className="mt-4 flex items-center gap-3 text-sm">
+        <div className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-2 text-sm shadow-sm">
           {page > 1 && (
             <Link
               href={`/z04urru6/listings/closed?${buildQuery(params, { page: String(page - 1) })}`}

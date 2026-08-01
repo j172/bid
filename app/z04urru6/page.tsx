@@ -13,10 +13,11 @@ import { GmvSplitBar, GmvTrendChart, NewUserTrendChart } from "./DashboardCharts
 import PendingActions from "./PendingActions";
 import Leaderboards from "./Leaderboards";
 import RecentActivity from "./RecentActivity";
+import AdminPageIntro from "./AdminPageIntro";
 
 export const dynamic = "force-dynamic";
 
-const cardClass = "rounded-lg border border-border bg-surface p-4 shadow-sm";
+const cardClass = "rounded-2xl border border-border bg-surface p-5 shadow-sm";
 
 export default async function AdminOverviewPage() {
   const [
@@ -51,12 +52,12 @@ export default async function AdminOverviewPage() {
   return (
     <main className="flex flex-col gap-8">
       <div>
-        <h1 className="text-2xl font-bold">後台總覽</h1>
+        <AdminPageIntro title="後台總覽" description="即時掌握商品、會員與成交狀況。" />
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
           {cards.map((card) => (
             <div key={card.label} className={cardClass}>
               <p className="text-sm text-ink-light">{card.label}</p>
-              <p className="mt-1 text-2xl font-bold text-gold">{card.value.toLocaleString()}</p>
+              <p className="mt-1 text-2xl font-bold text-brand-blue">{card.value.toLocaleString()}</p>
             </div>
           ))}
         </div>
