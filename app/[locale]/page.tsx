@@ -109,6 +109,26 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         cards={heroCards}
       />
 
+      <section className="mx-auto mt-5 max-w-6xl px-4 sm:px-6">
+        <div className="rounded-2xl border border-border bg-white px-4 py-3 shadow-sm">
+          <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+            <span className="rounded-full bg-header px-3 py-1 font-semibold text-white">熱門入口</span>
+            <Link href="/listings?type=auction" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-brand-blue hover:text-brand-blue">
+              🔥 即將結標
+            </Link>
+            <Link href="/listings?type=fixed_price&maxPrice=1000" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-brand-blue hover:text-brand-blue">
+              💡 千元好物
+            </Link>
+            <Link href="/listings?q=proxy" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-brand-blue hover:text-brand-blue">
+              ⚙️ 代理出價
+            </Link>
+            <Link href="/listings?sort=price_desc" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-brand-blue hover:text-brand-blue">
+              💎 高單價精選
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
         <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-border bg-white shadow-sm md:grid-cols-2 lg:grid-cols-4">
           <article className="flex items-center gap-3 border-b border-border px-5 py-4 md:border-r lg:border-b-0">
