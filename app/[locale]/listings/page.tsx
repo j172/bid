@@ -4,7 +4,7 @@ import { listingPhotoUrl } from "@/lib/uploads";
 import { formatRemaining } from "@/lib/format";
 import { maskDisplayName } from "@/lib/mask";
 import { Link } from "@/i18n/navigation";
-import ProgressiveImage from "@/app/components/ProgressiveImage";
+import ProductCard from "../components/ProductCard";
 
 export const dynamic = "force-dynamic";
 
@@ -105,65 +105,38 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
 
           <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {listings.map((listing, index) => (
-              <Link
+              <ProductCard
                 key={listing.id}
-                href={`/listings/${listing.id}`}
-                className="group overflow-hidden rounded-xl border border-border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <div className="relative aspect-square overflow-hidden bg-slate-100">
-                  {listing.photos[0] && (
-                    <ProgressiveImage
-                      src={listingPhotoUrl(listing.id, listing.photos[0])}
-                      alt={listing.title}
-                      eager={index < gridEagerCount}
-                      fetchPriority={index < 2 ? "high" : "auto"}
-                      sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                      className="h-full w-full object-cover transition group-hover:scale-105"
-                    />
-                  )}
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-900/60 via-slate-900/0 to-transparent opacity-0 transition group-hover:opacity-100" />
-                  <div className="absolute bottom-3 left-1/2 w-[calc(100%-1.5rem)] -translate-x-1/2 translate-y-3 rounded-md bg-white/95 px-3 py-2 text-center text-xs font-bold text-brand-blue opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
-                    {t("quickAction")}
-                  </div>
-                </div>
-                <div className="p-4">
-                  <span className="inline-block rounded-full bg-gold-light px-2 py-0.5 text-xs font-medium text-gold-dark">
-                    {TYPE_BADGE_LABEL[listing.listing_type]}
-                  </span>
-                  <h2 className="mt-2 truncate font-semibold">{listing.title}</h2>
-                  <p className="mt-1 line-clamp-2 text-xs text-ink-light">{descriptionSnippet(listing.description)}</p>
-
-                  {listing.listing_type === "fixed_price" ? (
-                    <>
-                      <p className="mt-2 text-lg font-black text-gold">{listing.price}</p>
-                      <p className="mt-1 text-xs text-ink-light">
-                        {listing.stock_remaining === 0
+                id={listing.id}
+                title={listing.title}
+                description={descriptionSnippet(listing.description)}
+                photo={listing.photos[0]}
+                typeBadgeLabel={TYPE_BADGE_LABEL[listing.listing_type]}
+                quickActionLabel={t("quickAction")}
+                viewDetailsLabel={t("viewDetails")}
+                priceText={listing.listing_type === "fixed_price" ? String(listing.price) : String(listing.current_price)}
+                detailLines={
+                  listing.listing_type === "fixed_price"
+                    ? [
+                        listing.stock_remaining === 0
                           ? t("soldOut")
-                          : t("remainingUnits", { count: listing.stock_remaining ?? 0 })}
-                      </p>
-                      <p className="mt-1 text-xs text-ink-light">{t("totalPurchases", { count: listing.purchaseCount })}</p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="mt-2 text-lg font-black text-gold">{listing.current_price}</p>
-                      {listing.buy_it_now_price !== null && (
-                        <p className="text-xs text-ink-light">{t("buyItNowPrice", { price: listing.buy_it_now_price })}</p>
-                      )}
-                      <p className="mt-1 text-xs text-ink-light">{listing.ends_at && formatRemaining(listing.ends_at, tFormat)}</p>
-                      <p className="mt-1 text-xs text-ink-light">
-                        {listing.bidCount === 0
+                          : t("remainingUnits", { count: listing.stock_remaining ?? 0 }),
+                        t("totalPurchases", { count: listing.purchaseCount }),
+                      ]
+                    : [
+                        ...(listing.buy_it_now_price !== null
+                          ? [t("buyItNowPrice", { price: listing.buy_it_now_price })]
+                          : []),
+                        listing.ends_at ? formatRemaining(listing.ends_at, tFormat) : t("timeless"),
+                        listing.bidCount === 0
                           ? t("noBidsYet")
-                          : t("currentLeader", { name: maskDisplayName(listing.leaderDisplayName, anonymousBuyer) })}
-                      </p>
-                      <p className="text-xs text-ink-light">{t("totalBids", { count: listing.bidCount })}</p>
-                    </>
-                  )}
-
-                  <p className="mt-3 inline-flex rounded-full bg-brand-chip px-2 py-0.5 text-xs font-semibold text-brand-blue">
-                    {t("viewDetails")}
-                  </p>
-                </div>
-              </Link>
+                          : t("currentLeader", { name: maskDisplayName(listing.leaderDisplayName, anonymousBuyer) }),
+                        t("totalBids", { count: listing.bidCount }),
+                      ]
+                }
+                eager={index < gridEagerCount}
+                highPriorityImage={index < 2}
+              />
             ))}
           </div>
         </section>
