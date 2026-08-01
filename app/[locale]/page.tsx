@@ -31,7 +31,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const tListings = await getTranslations("listings");
   const listings = await listOpenListings();
 
-  const featured = listings.slice(0, 3);
+  const heroRenderedAt = new Date().toISOString();
+  const endingSoonAuctions = listings.filter((item) => item.listing_type === "auction" && item.ends_at).slice(0, 5);
   const quickDeals = listings.slice(0, 3);
   const newArrivals = listings.slice(0, 8);
   const bestMixed = [...listings]
@@ -104,27 +105,23 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   ];
   const homeEagerCount = perfMode === "aggressive" ? 2 : 1;
   const perfSuffix = perfMode === "aggressive" ? "&perf=aggressive" : "";
-  const heroCards = featured.map((item) => ({
+  const heroCards = endingSoonAuctions.map((item) => ({
     id: item.id,
+    href: `/listings/${item.id}`,
     title: item.title,
-    subtitle:
-      item.listing_type === "auction"
-        ? tListings("buyItNowPrice", { price: item.buy_it_now_price ?? item.current_price })
-        : tListings("remainingUnits", { count: item.stock_remaining ?? 0 }),
-    photo: item.photos[0],
+    photoUrl: item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : undefined,
+    currentPrice: item.current_price,
+    buyItNowPrice: item.buy_it_now_price,
+    endsAt: item.ends_at!.toISOString(),
+    bidCount: item.bidCount,
   }));
 
   return (
     <main className="pb-8">
       <HeroSection
-        badge={t("heroBadge")}
-        title={t("title")}
-        subtitle={t("subtitle")}
-        browseLabel={t("browseButton")}
-        auctionLabel={t("auctionCta")}
-        browseHref={perfMode === "aggressive" ? "/listings?perf=aggressive" : "/listings"}
-        auctionHref={`/listings?type=auction${perfSuffix}`}
+        browseHref={`/listings?type=auction${perfSuffix}`}
         cards={heroCards}
+        renderedAt={heroRenderedAt}
       />
 
       <section className="mx-auto mt-5 max-w-6xl px-4 sm:px-6">

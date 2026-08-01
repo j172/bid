@@ -1,36 +1,110 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import ProgressiveImage from "@/app/components/ProgressiveImage";
-import { listingPhotoUrl } from "@/lib/uploads";
 
 interface HeroCardItem {
   id: number;
+  href: string;
   title: string;
-  subtitle: string;
-  photo?: string;
+  photoUrl?: string;
+  currentPrice: number;
+  buyItNowPrice: number | null;
+  endsAt: string;
+  bidCount: number;
 }
 
 interface HeroSectionProps {
-  badge: string;
-  title: string;
-  subtitle: string;
-  browseLabel: string;
-  auctionLabel: string;
   browseHref: string;
-  auctionHref: string;
   cards: HeroCardItem[];
+  renderedAt: string;
+}
+
+const AUTOPLAY_INTERVAL_MS = 5_000;
+const REMAINING_TICK_MS = 30_000;
+
+function formatRemainingFromNow(
+  endsAt: string,
+  nowMs: number,
+  t: (key: string, values?: Record<string, string | number>) => string,
+) {
+  const remainingMs = new Date(endsAt).getTime() - nowMs;
+  if (remainingMs <= 0) {
+    return t("ended");
+  }
+
+  const totalMinutes = Math.floor(remainingMs / 60_000);
+  const days = Math.floor(totalMinutes / (60 * 24));
+  const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+  const minutes = totalMinutes % 60;
+
+  const parts: string[] = [];
+  if (days > 0) parts.push(t("days", { count: days }));
+  if (hours > 0) parts.push(t("hours", { count: hours }));
+  if (days === 0 && minutes > 0) parts.push(t("minutes", { count: minutes }));
+
+  if (parts.length === 0) {
+    return t("lessThanMinute");
+  }
+
+  const prefix = t("remainingPrefix");
+  return prefix ? `${prefix} ${parts.join(" ")}` : parts.join(" ");
 }
 
 export default function HeroSection({
-  badge,
-  title,
-  subtitle,
-  browseLabel,
-  auctionLabel,
   browseHref,
-  auctionHref,
   cards,
+  renderedAt,
 }: HeroSectionProps) {
-  const [primary, promoA, promoB] = cards;
+  const locale = useLocale();
+  const tHome = useTranslations("home");
+  const tListings = useTranslations("listings");
+  const tDetail = useTranslations("listingDetail");
+  const tFormat = useTranslations("format");
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [nowMs, setNowMs] = useState(() => new Date(renderedAt).getTime());
+
+  useEffect(() => {
+    setActiveIndex((index) => (cards.length === 0 ? 0 : Math.min(index, cards.length - 1)));
+  }, [cards.length]);
+
+  useEffect(() => {
+    if (cards.length <= 1) return;
+
+    const intervalId = window.setInterval(() => {
+      setActiveIndex((index) => (index + 1) % cards.length);
+    }, AUTOPLAY_INTERVAL_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, [cards.length]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNowMs(Date.now());
+    }, REMAINING_TICK_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  const numberFormatter = useMemo(() => new Intl.NumberFormat(locale), [locale]);
+  const dateTimeFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        month: "numeric",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }),
+    [locale],
+  );
+
+  const activeCard = cards[activeIndex];
+  const previewCards = cards.length <= 1
+    ? []
+    : Array.from({ length: Math.min(2, cards.length - 1) }, (_, offset) => cards[(activeIndex + offset + 1) % cards.length]);
 
   return (
     <section className="bg-gradient-to-b from-[#eef4ff] via-[#f4f7fb] to-[#f8fafc]">
@@ -41,47 +115,137 @@ export default function HeroSection({
             <div className="pointer-events-none absolute -bottom-24 left-1/3 h-56 w-56 rounded-full bg-cyan-400/20 blur-2xl" />
             <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-white/5 to-transparent" />
 
-            <div className="max-w-lg">
-              <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100 backdrop-blur-sm">
-                {badge}
-              </span>
-              <h1 className="mt-5 max-w-xl text-4xl font-black leading-[1.05] text-white sm:text-5xl lg:text-6xl">{title}</h1>
-              <p className="mt-4 max-w-lg text-base leading-7 text-blue-100 sm:text-lg">{subtitle}</p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link href={browseHref} className="rounded-full bg-white px-6 py-3 text-sm font-bold text-blue-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-50">
-                  {browseLabel}
-                </Link>
-                <Link href={auctionHref} className="rounded-full border border-white/30 px-6 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-white/10">
-                  {auctionLabel}
-                </Link>
-              </div>
-            </div>
+            {activeCard ? (
+              <>
+                <div className="relative z-10 max-w-xl">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100 backdrop-blur-sm">
+                      TOP {activeIndex + 1}
+                    </span>
+                    <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-400/10 px-3 py-1 text-[11px] font-semibold text-cyan-100 backdrop-blur-sm">
+                      {formatRemainingFromNow(activeCard.endsAt, nowMs, tFormat)}
+                    </span>
+                  </div>
 
-            {primary?.photo && (
-              <div className="pointer-events-none absolute -bottom-7 right-0 w-[46%] min-w-[230px] max-w-[360px] px-4 lg:px-6">
-                <ProgressiveImage
-                  src={listingPhotoUrl(primary.id, primary.photo)}
-                  alt={primary.title}
-                  eager
-                  fetchPriority="high"
-                  sizes="(max-width: 1024px) 0vw, 30vw"
-                  className="h-auto w-full object-contain drop-shadow-2xl"
-                />
+                  <h1 className="mt-5 max-w-xl text-3xl font-black leading-[1.05] text-white sm:text-5xl lg:text-6xl">
+                    {activeCard.title}
+                  </h1>
+
+                  <p className="mt-4 max-w-lg text-base leading-7 text-blue-100 sm:text-lg">
+                    {activeCard.bidCount === 0
+                      ? tListings("noBidsYet")
+                      : tListings("totalBids", { count: activeCard.bidCount })}
+                  </p>
+
+                  <div className="mt-8 flex flex-wrap gap-3">
+                    <Link
+                      href={activeCard.href}
+                      className="rounded-full bg-white px-6 py-3 text-sm font-bold text-blue-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-50"
+                    >
+                      {tHome("promoAuctionCta")}
+                    </Link>
+                    <Link
+                      href={browseHref}
+                      className="rounded-full border border-white/30 px-6 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-white/10"
+                    >
+                      {tHome("browseButton")}
+                    </Link>
+                  </div>
+                </div>
+
+                {activeCard.photoUrl && (
+                  <div className="pointer-events-none absolute -bottom-7 right-0 w-[46%] min-w-[230px] max-w-[360px] px-4 lg:px-6">
+                    <ProgressiveImage
+                      src={activeCard.photoUrl}
+                      alt={activeCard.title}
+                      eager
+                      fetchPriority="high"
+                      sizes="(max-width: 1024px) 0vw, 30vw"
+                      className="h-auto w-full object-contain drop-shadow-2xl"
+                    />
+                  </div>
+                )}
+
+                <div className="relative z-10 mt-12 grid max-w-xl gap-2 text-xs text-blue-100 sm:grid-cols-3 sm:text-sm">
+                  <div className="rounded-xl border border-white/10 bg-white/12 px-4 py-3 backdrop-blur-sm">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-blue-200">{tDetail("specCurrentPrice")}</p>
+                    <p className="mt-1 text-base font-bold text-white">{numberFormatter.format(activeCard.currentPrice)}</p>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-white/12 px-4 py-3 backdrop-blur-sm">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-blue-200">{tDetail("specBuyNow")}</p>
+                    <p className="mt-1 text-base font-bold text-white">
+                      {activeCard.buyItNowPrice === null
+                        ? tDetail("specNotAvailable")
+                        : numberFormatter.format(activeCard.buyItNowPrice)}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-white/12 px-4 py-3 backdrop-blur-sm">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-blue-200">{tDetail("specEndTime")}</p>
+                    <p className="mt-1 text-base font-bold text-white">{dateTimeFormatter.format(new Date(activeCard.endsAt))}</p>
+                  </div>
+                </div>
+
+                {cards.length > 1 && (
+                  <div className="relative z-10 mt-6 flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      {cards.map((item, index) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          aria-label={`Go to slide ${index + 1}`}
+                          onClick={() => setActiveIndex(index)}
+                          className={`h-2.5 rounded-full transition ${
+                            index === activeIndex ? "w-8 bg-white" : "w-2.5 bg-white/35 hover:bg-white/60"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        aria-label="Previous slide"
+                        onClick={() => setActiveIndex((index) => (index - 1 + cards.length) % cards.length)}
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-lg text-white backdrop-blur-sm transition hover:bg-white/20"
+                      >
+                        ←
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Next slide"
+                        onClick={() => setActiveIndex((index) => (index + 1) % cards.length)}
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-lg text-white backdrop-blur-sm transition hover:bg-white/20"
+                      >
+                        →
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="relative z-10 max-w-xl">
+                <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100 backdrop-blur-sm">
+                  AUCTION
+                </span>
+                <h1 className="mt-5 text-4xl font-black leading-[1.05] text-white sm:text-5xl lg:text-6xl">
+                  {tListings("noListings")}
+                </h1>
+                <p className="mt-4 max-w-lg text-base leading-7 text-blue-100 sm:text-lg">
+                  {tHome("promoAuctionDesc")}
+                </p>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <Link href={browseHref} className="rounded-full bg-white px-6 py-3 text-sm font-bold text-blue-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-50">
+                    {tHome("browseButton")}
+                  </Link>
+                </div>
               </div>
             )}
-
-            <div className="mt-12 grid max-w-lg grid-cols-3 gap-2 text-xs text-blue-100 sm:text-sm">
-              <p className="rounded-xl border border-white/10 bg-white/12 px-3 py-2.5 text-center backdrop-blur-sm">{primary?.subtitle ?? ""}</p>
-              <p className="rounded-xl border border-white/10 bg-white/12 px-3 py-2.5 text-center backdrop-blur-sm">即時競標</p>
-              <p className="rounded-xl border border-white/10 bg-white/12 px-3 py-2.5 text-center backdrop-blur-sm">安全交易</p>
-            </div>
           </article>
 
           <div className="grid gap-4">
-            {[promoA, promoB].filter(Boolean).map((item, index) => (
+            {previewCards.map((item, index) => (
               <Link
-                key={item!.id}
-                href={`/listings/${item!.id}`}
+                key={item.id}
+                href={item.href}
                 className="group relative overflow-hidden rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
               >
                 <div
@@ -92,26 +256,26 @@ export default function HeroSection({
                   }`}
                 />
                 <div className="relative">
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-blue">{index === 0 ? "SPECIAL EDITION" : "LIMITED EDITION"}</p>
-                <h2 className="mt-2 line-clamp-2 text-xl font-extrabold leading-tight text-ink">{item!.title}</h2>
-                <p className="mt-2 text-sm text-ink-light">{item!.subtitle}</p>
-                <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1.5 text-sm font-semibold text-header shadow-sm">
-                  <span>Shop Now</span>
-                  <span aria-hidden>→</span>
-                </div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-blue">TOP {(activeIndex + index + 1) % cards.length + 1}</p>
+                  <h2 className="mt-2 line-clamp-2 text-xl font-extrabold leading-tight text-ink">{item.title}</h2>
+                  <p className="mt-2 text-sm text-ink-light">{formatRemainingFromNow(item.endsAt, nowMs, tFormat)}</p>
+                  <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1.5 text-sm font-semibold text-header shadow-sm">
+                    <span>{tListings("viewDetails")}</span>
+                    <span aria-hidden>→</span>
+                  </div>
 
-                {item!.photo && (
-                  <div className="mt-5 h-32 overflow-hidden rounded-2xl bg-slate-100">
+                  {item.photoUrl && (
+                  <div className="mt-5 aspect-video overflow-hidden rounded-2xl bg-slate-100">
                     <ProgressiveImage
-                      src={listingPhotoUrl(item!.id, item!.photo)}
-                      alt={item!.title}
+                      src={item.photoUrl}
+                      alt={item.title}
                       eager={false}
                       fetchPriority="auto"
                       sizes="(max-width: 1024px) 100vw, 22vw"
                       className="h-full w-full object-cover transition group-hover:scale-105"
                     />
                   </div>
-                )}
+                  )}
                 </div>
               </Link>
             ))}
