@@ -12,6 +12,11 @@ import "../globals.css";
 export const metadata: Metadata = {
   title: "後台管理",
   description: "拍賣競標網站後台管理",
+  icons: {
+    icon: "/images/hero-placeholder.png",
+    shortcut: "/images/hero-placeholder.png",
+    apple: "/images/hero-placeholder.png",
+  },
 };
 
 export const dynamic = "force-dynamic";

@@ -26,7 +26,14 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "home" });
-  return { title: t("title") };
+  return {
+    title: t("title"),
+    icons: {
+      icon: "/images/hero-placeholder.png",
+      shortcut: "/images/hero-placeholder.png",
+      apple: "/images/hero-placeholder.png",
+    },
+  };
 }
 
 export default async function LocaleLayout({

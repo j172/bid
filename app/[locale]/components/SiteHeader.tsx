@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { getCurrentUser } from "@/lib/auth";
 import { Link } from "@/i18n/navigation";
 import NextLink from "next/link";
+import Image from "next/image";
 import LanguageSwitcher from "./LanguageSwitcher";
 import LogoutButton from "./LogoutButton";
 
@@ -39,7 +40,16 @@ export default async function SiteHeader() {
 
       <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-4 sm:px-6">
         <Link href="/" className="mr-2 flex shrink-0 items-center gap-2 text-lg font-black tracking-tight sm:text-xl">
-          <span className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm">BID</span>
+          <span className="inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <Image
+              src="/images/hero-placeholder.png"
+              alt="Bid logo"
+              width={36}
+              height={36}
+              className="h-full w-full object-cover"
+              priority
+            />
+          </span>
           {t("siteName")}
         </Link>
 
