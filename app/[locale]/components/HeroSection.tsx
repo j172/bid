@@ -19,6 +19,7 @@ interface HeroCardItem {
 interface HeroSectionProps {
   browseHref: string;
   cards: HeroCardItem[];
+  topPriceCards: HeroCardItem[];
   renderedAt: string;
 }
 
@@ -56,6 +57,7 @@ function formatRemainingFromNow(
 export default function HeroSection({
   browseHref,
   cards,
+  topPriceCards,
   renderedAt,
 }: HeroSectionProps) {
   const locale = useLocale();
@@ -102,10 +104,6 @@ export default function HeroSection({
   );
 
   const activeCard = cards[activeIndex];
-  const previewCards = cards.length <= 1
-    ? []
-    : Array.from({ length: Math.min(2, cards.length - 1) }, (_, offset) => cards[(activeIndex + offset + 1) % cards.length]);
-
   return (
     <section className="bg-gradient-to-b from-[#eef4ff] via-[#f4f7fb] to-[#f8fafc]">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-12">
@@ -242,7 +240,7 @@ export default function HeroSection({
           </article>
 
           <div className="grid gap-4">
-            {previewCards.map((item, index) => (
+            {topPriceCards.map((item, index) => (
               <Link
                 key={item.id}
                 href={item.href}
@@ -256,25 +254,38 @@ export default function HeroSection({
                   }`}
                 />
                 <div className="relative">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-blue">TOP {(activeIndex + index + 1) % cards.length + 1}</p>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-blue">高價競標</p>
                   <h2 className="mt-2 line-clamp-2 text-xl font-extrabold leading-tight text-ink">{item.title}</h2>
-                  <p className="mt-2 text-sm text-ink-light">{formatRemainingFromNow(item.endsAt, nowMs, tFormat)}</p>
+                  <div className="mt-4 rounded-2xl border border-amber-200/70 bg-gradient-to-r from-amber-50 via-white to-yellow-50 px-4 py-3 shadow-sm ring-1 ring-white/70">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-amber-700">{tDetail("specCurrentPrice")}</p>
+                    <div className="mt-1 flex items-end gap-2">
+                      <span className="text-sm font-semibold text-amber-700">NT$</span>
+                      <span className="text-3xl font-black leading-none text-amber-900 sm:text-[2rem]">
+                        {numberFormatter.format(item.currentPrice)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className="rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-sm font-medium text-ink-light shadow-sm">
+                      {formatRemainingFromNow(item.endsAt, nowMs, tFormat)}
+                    </span>
+                  </div>
                   <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1.5 text-sm font-semibold text-header shadow-sm">
                     <span>{tListings("viewDetails")}</span>
                     <span aria-hidden>→</span>
                   </div>
 
                   {item.photoUrl && (
-                  <div className="mt-5 aspect-video overflow-hidden rounded-2xl bg-slate-100">
-                    <ProgressiveImage
-                      src={item.photoUrl}
-                      alt={item.title}
-                      eager={false}
-                      fetchPriority="auto"
-                      sizes="(max-width: 1024px) 100vw, 22vw"
-                      className="h-full w-full object-cover transition group-hover:scale-105"
-                    />
-                  </div>
+                    <div className="mt-5 aspect-[16/9] overflow-hidden rounded-2xl bg-slate-100">
+                      <ProgressiveImage
+                        src={item.photoUrl}
+                        alt={item.title}
+                        eager={false}
+                        fetchPriority="auto"
+                        sizes="(max-width: 1024px) 100vw, 22vw"
+                        className="h-full w-full object-cover transition group-hover:scale-105"
+                      />
+                    </div>
                   )}
                 </div>
               </Link>

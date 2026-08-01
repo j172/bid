@@ -33,6 +33,10 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
   const heroRenderedAt = new Date().toISOString();
   const endingSoonAuctions = listings.filter((item) => item.listing_type === "auction" && item.ends_at).slice(0, 5);
+  const topPriceAuctions = [...listings]
+    .filter((item) => item.listing_type === "auction" && item.ends_at)
+    .sort((a, b) => b.current_price - a.current_price || a.ends_at!.getTime() - b.ends_at!.getTime())
+    .slice(0, 2);
   const quickDeals = listings.slice(0, 3);
   const newArrivals = listings.slice(0, 8);
   const bestMixed = [...listings]
@@ -115,12 +119,23 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     endsAt: item.ends_at!.toISOString(),
     bidCount: item.bidCount,
   }));
+  const topPriceHeroCards = topPriceAuctions.map((item) => ({
+    id: item.id,
+    href: `/listings/${item.id}`,
+    title: item.title,
+    photoUrl: item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : undefined,
+    currentPrice: item.current_price,
+    buyItNowPrice: item.buy_it_now_price,
+    endsAt: item.ends_at!.toISOString(),
+    bidCount: item.bidCount,
+  }));
 
   return (
     <main className="pb-8">
       <HeroSection
         browseHref={`/listings?type=auction${perfSuffix}`}
         cards={heroCards}
+        topPriceCards={topPriceHeroCards}
         renderedAt={heroRenderedAt}
       />
 
