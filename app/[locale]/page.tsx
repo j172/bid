@@ -84,7 +84,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     { quote: t("feedbackQuoteOne"), role: t("feedbackRoleOne") },
     { quote: t("feedbackQuoteTwo"), role: t("feedbackRoleTwo") },
   ];
-  const homeEagerCount = perfMode === "aggressive" ? 3 : 2;
+  const homeEagerCount = perfMode === "aggressive" ? 2 : 1;
   const perfSuffix = perfMode === "aggressive" ? "&perf=aggressive" : "";
   const heroCards = featured.map((item) => ({
     id: item.id,
@@ -298,8 +298,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                     <ProgressiveImage
                       src={listingPhotoUrl(item.id, item.photos[0])}
                       alt={item.title}
-                      eager={index < 2}
-                      fetchPriority={index < 2 ? "high" : "auto"}
+                      eager={index < 1}
+                      fetchPriority={index < 1 ? "high" : "auto"}
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       className="h-full w-full object-cover transition group-hover:scale-105"
                     />
