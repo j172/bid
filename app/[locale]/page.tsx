@@ -203,6 +203,30 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           </Link>
         </div>
 
+        <div className="mt-4 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+          <Link href="/listings" className="rounded-full bg-header px-3 py-1 font-semibold text-white">
+            全部商品
+          </Link>
+          <Link
+            href="/listings?type=auction"
+            className="rounded-full border border-border bg-white px-3 py-1 font-medium text-ink transition hover:border-brand-blue hover:text-brand-blue"
+          >
+            熱門競標
+          </Link>
+          <Link
+            href="/listings?type=fixed_price"
+            className="rounded-full border border-border bg-white px-3 py-1 font-medium text-ink transition hover:border-brand-blue hover:text-brand-blue"
+          >
+            固定價精選
+          </Link>
+          <Link
+            href="/listings?sort=price_desc"
+            className="rounded-full border border-border bg-white px-3 py-1 font-medium text-ink transition hover:border-brand-blue hover:text-brand-blue"
+          >
+            高單價趨勢
+          </Link>
+        </div>
+
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {newArrivals.map((item, index) => (
             <Link
