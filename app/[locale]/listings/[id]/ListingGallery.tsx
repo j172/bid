@@ -53,7 +53,12 @@ export default function ListingGallery({ title, imageUrls }: ListingGalleryProps
   }, [lightboxOpen, moveSelection]);
 
   if (urls.length === 0) {
-    return <div className="aspect-video rounded-xl border border-border bg-surface-muted" />;
+    return (
+      <div className="aspect-video overflow-hidden rounded-xl border border-border bg-surface-muted">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/images/hero-placeholder.png" alt={title} className="h-full w-full object-contain p-8" />
+      </div>
+    );
   }
 
   return (

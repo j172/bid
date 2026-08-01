@@ -149,10 +149,6 @@ export default async function SiteHeader() {
         </div>
 
         <div className="hidden items-center gap-2 lg:flex">
-          <Link href="/wishlist" aria-label="Wishlist" className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-ink shadow-sm hover:border-brand-blue hover:text-brand-blue">
-            <span aria-hidden>♡</span>
-            <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-header px-1 text-[10px] text-white">0</span>
-          </Link>
           <Link href="/cart" aria-label="Cart" className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-ink shadow-sm hover:border-brand-blue hover:text-brand-blue">
             <span aria-hidden>🛒</span>
             <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-header px-1 text-[10px] text-white">0</span>

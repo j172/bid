@@ -297,16 +297,14 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                 className="group flex items-center gap-3 rounded-xl border border-border bg-slate-50 p-3 transition hover:-translate-y-0.5 hover:border-brand-blue/50 hover:bg-white"
               >
                 <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100">
-                  {item.photos[0] && (
-                    <ProgressiveImage
-                      src={listingPhotoUrl(item.id, item.photos[0])}
-                      alt={item.title}
-                      eager={index === 0}
-                      fetchPriority={index === 0 ? "high" : "auto"}
-                      sizes="80px"
-                      className="h-full w-full object-cover transition group-hover:scale-105"
-                    />
-                  )}
+                  <ProgressiveImage
+                    src={item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : "/images/hero-placeholder.png"}
+                    alt={item.title}
+                    eager={index === 0}
+                    fetchPriority={index === 0 ? "high" : "auto"}
+                    sizes="80px"
+                    className="h-full w-full object-cover transition group-hover:scale-105"
+                  />
                   <span className="absolute left-1 top-1 rounded bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold text-white">HOT</span>
                 </div>
 
@@ -399,19 +397,14 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             >
               <Link href={`/listings/${item.id}`} className="block">
                 <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
-                  {item.photos[0] && (
-                    <ProgressiveImage
-                      src={listingPhotoUrl(item.id, item.photos[0])}
-                      alt={item.title}
-                      eager={index < homeEagerCount}
-                      fetchPriority={index < homeEagerCount ? "high" : "auto"}
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      className="h-full w-full object-cover transition group-hover:scale-105"
-                    />
-                  )}
-                  <span className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-sm text-rose-500 opacity-0 shadow-sm transition group-hover:opacity-100">
-                    ♥
-                  </span>
+                  <ProgressiveImage
+                    src={item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : "/images/hero-placeholder.png"}
+                    alt={item.title}
+                    eager={index < homeEagerCount}
+                    fetchPriority={index < homeEagerCount ? "high" : "auto"}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="h-full w-full object-cover transition group-hover:scale-105"
+                  />
                   <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition group-hover:opacity-100" />
                   <span className="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-1 text-[11px] font-bold text-brand-blue shadow-sm">
                     {item.listing_type === "auction" ? "HOT BIDDING" : "BEST PRICE"}
@@ -431,7 +424,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               </div>
               <div className="mt-3 flex items-center gap-2 text-[11px]">
                 <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold text-ink">Quick View</span>
-                <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold text-ink">Add To Wishlist</span>
                 <Link href={`/listings/${item.id}`} className="rounded-md bg-header px-2 py-1 font-semibold text-white">
                   {item.listing_type === "fixed_price" ? "Add To Cart" : "Place Bid"}
                 </Link>
@@ -489,19 +481,14 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             <article key={`best-${item.id}`} className="group rounded-2xl border border-border bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-brand-blue/60 hover:shadow-md">
               <Link href={`/listings/${item.id}`} className="block">
                 <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
-                  {item.photos[0] && (
-                    <ProgressiveImage
-                      src={listingPhotoUrl(item.id, item.photos[0])}
-                      alt={item.title}
-                      eager={index < 1}
-                      fetchPriority={index < 1 ? "high" : "auto"}
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      className="h-full w-full object-cover transition group-hover:scale-105"
-                    />
-                  )}
-                  <span className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-sm text-rose-500 opacity-0 shadow-sm transition group-hover:opacity-100">
-                    ♥
-                  </span>
+                  <ProgressiveImage
+                    src={item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : "/images/hero-placeholder.png"}
+                    alt={item.title}
+                    eager={index < 1}
+                    fetchPriority={index < 1 ? "high" : "auto"}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="h-full w-full object-cover transition group-hover:scale-105"
+                  />
                   <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition group-hover:opacity-100" />
                   <span className="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-1 text-[11px] font-bold text-brand-blue shadow-sm">
                     {item.listing_type === "auction" ? "HOT BIDDING" : "BEST PRICE"}
@@ -523,7 +510,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
               <div className="mt-3 flex items-center gap-2 text-[11px]">
                 <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold text-ink">Quick View</span>
-                <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold text-ink">Add To Wishlist</span>
                 <Link href={`/listings/${item.id}`} className="rounded-md bg-header px-2 py-1 font-semibold text-white">
                   {item.listing_type === "fixed_price" ? "Add To Cart" : "Place Bid"}
                 </Link>

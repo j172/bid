@@ -279,11 +279,6 @@
     "empty": "Your cart is currently empty.",
     "cta": "Continue Shopping"
   },
-  "wishlistPage": {
-    "title": "Wishlist",
-    "empty": "Your wishlist is empty right now.",
-    "cta": "Browse Listings"
-  },
   "contactPage": {
     "title": "Contact",
     "subtitle": "Reach out to us for order help, listing questions, or partnership requests.",
