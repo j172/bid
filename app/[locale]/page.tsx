@@ -195,6 +195,31 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </div>
       </section>
 
+      <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-6">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <Link href="/listings?type=auction" className="rounded-2xl border border-border bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+            <p className="text-xs font-bold uppercase tracking-wide text-brand-blue">Collection</p>
+            <p className="mt-1 text-base font-black text-ink">Live Auctions</p>
+            <p className="mt-1 text-xs text-ink-light">即時出價商品</p>
+          </Link>
+          <Link href="/listings?type=fixed_price" className="rounded-2xl border border-border bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+            <p className="text-xs font-bold uppercase tracking-wide text-brand-blue">Collection</p>
+            <p className="mt-1 text-base font-black text-ink">Fixed Deals</p>
+            <p className="mt-1 text-xs text-ink-light">快速下單專區</p>
+          </Link>
+          <Link href="/listings?sort=price_desc" className="rounded-2xl border border-border bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+            <p className="text-xs font-bold uppercase tracking-wide text-brand-blue">Collection</p>
+            <p className="mt-1 text-base font-black text-ink">Premium Picks</p>
+            <p className="mt-1 text-xs text-ink-light">高單價精選</p>
+          </Link>
+          <Link href="/listings?q=proxy" className="rounded-2xl border border-border bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+            <p className="text-xs font-bold uppercase tracking-wide text-brand-blue">Collection</p>
+            <p className="mt-1 text-base font-black text-ink">Proxy Bidding</p>
+            <p className="mt-1 text-xs text-ink-light">自動守價商品</p>
+          </Link>
+        </div>
+      </section>
+
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
         <div className="flex items-end justify-between">
           <h2 className="text-2xl font-bold">{t("newArrivals")}</h2>
