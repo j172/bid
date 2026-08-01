@@ -6,16 +6,21 @@
   /* Auction-house palette: near-black header/nav, white surfaces, a warm
      gold accent for prices/primary actions (evokes a gavel/auction feel
      rather than a generic e-commerce blue), status colors for bidding state. */
-  --color-ink: #111827;
-  --color-ink-light: #374151;
-  --color-header: #14110f;
+  --color-ink: #0f172a;
+  --color-ink-light: #475569;
+  --color-header: #0b1220;
+  --color-header-soft: #121a2b;
   --color-surface: #ffffff;
   --color-surface-muted: #f9fafb;
-  --color-border: #e5e7eb;
+  --color-border: #e2e8f0;
 
-  --color-gold: #b45309;
-  --color-gold-dark: #92400e;
-  --color-gold-light: #fef3c7;
+  --color-gold: #f97316;
+  --color-gold-dark: #ea580c;
+  --color-gold-light: #ffedd5;
+
+  --color-brand-blue: #2563eb;
+  --color-brand-blue-dark: #1d4ed8;
+  --color-brand-chip: #dbeafe;
 
   --color-leading: #15803d;
   --color-leading-bg: #dcfce7;
@@ -26,4 +31,8 @@
 body {
   background-color: var(--color-surface-muted);
   color: var(--color-ink);
+}
+
+a {
+  text-decoration: none;
 }

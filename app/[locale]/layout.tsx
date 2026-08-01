@@ -6,6 +6,8 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { routing } from "@/i18n/routing";
 import SiteHeader from "./components/SiteHeader";
+import SiteFooter from "./components/SiteFooter";
+import WebVitalsReporter from "./components/WebVitalsReporter";
 import "../globals.css";
 
 // The public site's own independent root layout (its own <html>/<body>) —
@@ -44,8 +46,10 @@ export default async function LocaleLayout({
     <html lang={locale}>
       <body className="min-h-screen font-sans text-ink">
         <NextIntlClientProvider>
+          <WebVitalsReporter />
           <SiteHeader />
           {children}
+          <SiteFooter />
         </NextIntlClientProvider>
       </body>
     </html>
