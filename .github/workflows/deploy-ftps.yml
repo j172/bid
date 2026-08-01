@@ -153,8 +153,44 @@ jobs:
         run: |
           set -euo pipefail
           ORIGIN_IP="103.21.221.12"
+
+          # 1) Origin health (bypass CDN) must be OK
           curl --fail --show-error --silent --insecure --location \
             --connect-timeout 10 --max-time 20 --retry 2 --retry-delay 2 --retry-all-errors \
             --header "Host: bid.j172.tw" \
             --user-agent "bid-deploy-bot/1.0" \
             "https://${ORIGIN_IP}/api/health?verify=$(date +%s)" | grep -q '"ok":true'
+
+          # 2) Public domain health (through Cloudflare) must also be OK
+          PUBLIC_STATUS="$(curl --show-error --silent --location \
+            --connect-timeout 10 --max-time 20 --retry 2 --retry-delay 2 --retry-all-errors \
+            --output /tmp/public-health.txt --write-out '%{http_code}' \
+            "https://bid.j172.tw/api/health?verify=$(date +%s)")"
+
+          cat /tmp/public-health.txt
+
+          if [ "$PUBLIC_STATUS" != "200" ]; then
+            echo "Public health endpoint returned HTTP $PUBLIC_STATUS"
+            exit 1
+          fi
+
+          if ! grep -q '"ok":true' /tmp/public-health.txt; then
+            echo "Public health endpoint did not report ok=true"
+            exit 1
+          fi
+
+          # 3) Public homepage must not return challenge/SSL error page
+          HOMEPAGE_STATUS="$(curl --show-error --silent --location \
+            --connect-timeout 10 --max-time 20 --retry 2 --retry-delay 2 --retry-all-errors \
+            --output /tmp/public-home.txt --write-out '%{http_code}' \
+            "https://bid.j172.tw/?verify=$(date +%s)")"
+
+          if [ "$HOMEPAGE_STATUS" != "200" ]; then
+            echo "Public homepage returned HTTP $HOMEPAGE_STATUS"
+            exit 1
+          fi
+
+          if grep -Eiq 'SSL handshake failed|Error code 525|Please wait while your request is being verified' /tmp/public-home.txt; then
+            echo "Public homepage returned Cloudflare error/challenge page"
+            exit 1
+          fi
