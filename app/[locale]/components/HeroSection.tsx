@@ -9,7 +9,7 @@ interface HeroCardItem {
   id: number;
   href: string;
   title: string;
-  photoUrl?: string;
+  photoUrl: string;
   currentPrice: number;
   buyItNowPrice: number | null;
   endsAt: string;
@@ -151,18 +151,16 @@ export default function HeroSection({
                   </div>
                 </div>
 
-                {activeCard.photoUrl && (
-                  <div className="pointer-events-none absolute -bottom-7 right-0 w-[46%] min-w-[230px] max-w-[360px] px-4 lg:px-6">
-                    <ProgressiveImage
-                      src={activeCard.photoUrl}
-                      alt={activeCard.title}
-                      eager
-                      fetchPriority="high"
-                      sizes="(max-width: 1024px) 0vw, 30vw"
-                      className="h-auto w-full object-contain drop-shadow-2xl"
-                    />
-                  </div>
-                )}
+                <div className="pointer-events-none absolute -bottom-7 right-0 w-[46%] min-w-[230px] max-w-[360px] px-4 lg:px-6">
+                  <ProgressiveImage
+                    src={activeCard.photoUrl}
+                    alt={activeCard.title}
+                    eager
+                    fetchPriority="high"
+                    sizes="(max-width: 1024px) 0vw, 30vw"
+                    className="h-auto w-full object-contain drop-shadow-2xl"
+                  />
+                </div>
 
                 <div className="relative z-10 mt-12 grid max-w-xl gap-2 text-xs text-blue-100 sm:grid-cols-3 sm:text-sm">
                   <div className="rounded-xl border border-white/10 bg-white/12 px-4 py-3 backdrop-blur-sm">

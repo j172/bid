@@ -32,10 +32,12 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const listings = await listOpenListings();
 
   const heroRenderedAt = new Date().toISOString();
-  const endingSoonAuctions = [...listings]
-    .filter((item) => item.listing_type === "auction" && item.ends_at && Boolean(item.photos[0]))
-    .sort((a, b) => a.ends_at!.getTime() - b.ends_at!.getTime() || b.current_price - a.current_price)
-    .slice(0, 5);
+  const auctionsByEndingSoon = [...listings]
+    .filter((item) => item.listing_type === "auction" && item.ends_at)
+    .sort((a, b) => a.ends_at!.getTime() - b.ends_at!.getTime() || b.current_price - a.current_price);
+  const endingSoonWithPhoto = auctionsByEndingSoon.filter((item) => Boolean(item.photos[0]));
+  const endingSoonWithoutPhoto = auctionsByEndingSoon.filter((item) => !item.photos[0]);
+  const endingSoonAuctions = [...endingSoonWithPhoto, ...endingSoonWithoutPhoto].slice(0, 5);
   const topPriceAuctions = [...listings]
     .filter((item) => item.listing_type === "auction" && item.ends_at)
     .sort((a, b) => b.current_price - a.current_price || a.ends_at!.getTime() - b.ends_at!.getTime())
@@ -116,7 +118,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     id: item.id,
     href: `/listings/${item.id}`,
     title: item.title,
-    photoUrl: item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : undefined,
+    photoUrl: item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : "/images/hero-placeholder.png",
     currentPrice: item.current_price,
     buyItNowPrice: item.buy_it_now_price,
     endsAt: item.ends_at!.toISOString(),
@@ -126,7 +128,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     id: item.id,
     href: `/listings/${item.id}`,
     title: item.title,
-    photoUrl: item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : undefined,
+    photoUrl: item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : "/images/hero-placeholder.png",
     currentPrice: item.current_price,
     buyItNowPrice: item.buy_it_now_price,
     endsAt: item.ends_at!.toISOString(),
