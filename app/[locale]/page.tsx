@@ -270,6 +270,12 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                     className="h-full w-full object-cover transition group-hover:scale-105"
                   />
                 )}
+                <span className="absolute right-2 top-2 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold text-rose-600 shadow-sm">
+                  -12%
+                </span>
+                <span className="absolute bottom-2 right-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-sm text-rose-500 opacity-0 shadow-sm transition group-hover:opacity-100">
+                  ♥
+                </span>
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition group-hover:opacity-100" />
                 <span className="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-1 text-[11px] font-bold text-brand-blue shadow-sm">
                   {item.listing_type === "auction" ? "AUCTION" : "FIXED"}
@@ -301,6 +307,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
           <div className="rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 p-7 text-white lg:col-span-2">
+            <span className="inline-flex rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Flash Sale 40% Off</span>
             <p className="text-xs font-bold uppercase tracking-wider">{t("promoAuctionBadge")}</p>
             <h3 className="mt-2 text-3xl font-black">{t("promoAuctionTitle")}</h3>
             <p className="mt-3 max-w-xl text-sm text-blue-100">{t("promoAuctionDesc")}</p>
@@ -311,6 +318,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
           <div className="grid gap-5">
             <div className="rounded-2xl bg-gradient-to-r from-blue-700 to-slate-900 p-6 text-white">
+              <span className="inline-flex rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Limited Offer</span>
               <p className="text-xs font-bold uppercase tracking-wider">{t("promoFixedBadge")}</p>
               <h3 className="mt-2 text-2xl font-black">{t("promoFixedTitle")}</h3>
               <p className="mt-3 text-sm text-blue-100">{t("promoFixedDesc")}</p>
@@ -354,6 +362,9 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                       className="h-full w-full object-cover transition group-hover:scale-105"
                     />
                   )}
+                  <span className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-sm text-rose-500 opacity-0 shadow-sm transition group-hover:opacity-100">
+                    ♥
+                  </span>
                   <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition group-hover:opacity-100" />
                   <span className="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-1 text-[11px] font-bold text-brand-blue shadow-sm">
                     {item.listing_type === "auction" ? "HOT BIDDING" : "BEST PRICE"}
