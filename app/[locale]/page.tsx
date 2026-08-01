@@ -34,6 +34,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const listings = await listOpenListings();
 
   const featured = listings.slice(0, 3);
+  const quickDeals = listings.slice(0, 3);
   const newArrivals = listings.slice(0, 8);
   const bestMixed = listings.slice(0, 6);
   const topAuctions = listings.filter((item) => item.listing_type === "auction").slice(0, 4);
@@ -239,6 +240,55 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             <p className="mt-1 text-xs text-ink-light">自動守價商品</p>
             <p className="mt-3 text-[11px] font-bold text-amber-700">Explore now →</p>
           </Link>
+        </div>
+      </section>
+
+      <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
+        <div className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-rose-600">Daily Deals</p>
+              <h3 className="mt-1 text-xl font-black text-ink">今日精選快閃優惠</h3>
+            </div>
+            <Link href="/listings" className="text-sm font-semibold text-brand-blue hover:text-header">
+              Shop all deals →
+            </Link>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+            {quickDeals.map((item, index) => (
+              <Link
+                key={`deal-${item.id}`}
+                href={`/listings/${item.id}`}
+                className="group flex items-center gap-3 rounded-xl border border-border bg-slate-50 p-3 transition hover:-translate-y-0.5 hover:border-brand-blue/50 hover:bg-white"
+              >
+                <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                  {item.photos[0] && (
+                    <ProgressiveImage
+                      src={listingPhotoUrl(item.id, item.photos[0])}
+                      alt={item.title}
+                      eager={index === 0}
+                      fetchPriority={index === 0 ? "high" : "auto"}
+                      sizes="80px"
+                      className="h-full w-full object-cover transition group-hover:scale-105"
+                    />
+                  )}
+                  <span className="absolute left-1 top-1 rounded bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold text-white">HOT</span>
+                </div>
+
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-bold text-ink">{item.title}</p>
+                  <p className="mt-1 text-xs text-ink-light">{item.listing_type === "auction" ? "競標中" : "固定價優惠"}</p>
+                  <div className="mt-2 flex items-end gap-2">
+                    <p className="text-base font-black text-ink">{item.listing_type === "auction" ? item.current_price : item.price}</p>
+                    <p className="text-[11px] text-ink-light line-through">
+                      {Math.ceil(Number(item.listing_type === "auction" ? item.current_price : item.price) * 1.15)}
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 
