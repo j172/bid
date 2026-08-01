@@ -60,43 +60,49 @@ jobs:
           printf '%s' "$OPS_KEY_CLEAN" > .ops-key
           trap 'rm -f .ops-key' EXIT
 
-          curl --fail --show-error --ssl-reqd --ftp-pasv --insecure \
-            --connect-timeout 15 --max-time 180 --retry 2 --retry-delay 2 --retry-all-errors \
-            --user "${FTP_USERNAME_CLEAN}:${FTP_PASSWORD_CLEAN}" \
-            --upload-file ".prebuilt-next.tgz" \
-            --url "ftp://${FTP_SERVER_CLEAN}:21/bid_app/.prebuilt-next.tgz"
+          upload_with_retry() {
+            local file_path="$1"
+            local target_url="$2"
+            local attempts=3
+
+            if [ ! -f "$file_path" ]; then
+              echo "Skip missing file: $file_path"
+              return 0
+            fi
+
+            for attempt in $(seq 1 "$attempts"); do
+              echo "Uploading $file_path (attempt $attempt/$attempts)"
+              if curl --fail --show-error --ssl-reqd --ftp-pasv --insecure \
+                --connect-timeout 15 --max-time 240 --retry 2 --retry-delay 2 --retry-all-errors \
+                --user "${FTP_USERNAME_CLEAN}:${FTP_PASSWORD_CLEAN}" \
+                --upload-file "$file_path" \
+                --url "$target_url"; then
+                return 0
+              fi
+
+              if [ "$attempt" -lt "$attempts" ]; then
+                echo "Upload failed for $file_path, retrying..."
+                sleep 3
+              fi
+            done
+
+            echo "Upload failed after $attempts attempts: $file_path"
+            return 1
+          }
+
+          upload_with_retry ".prebuilt-next.tgz" "ftp://${FTP_SERVER_CLEAN}:21/bid_app/.prebuilt-next.tgz"
 
           if [ -f ".prebuilt-public.tgz" ]; then
-            curl --fail --show-error --ssl-reqd --ftp-pasv --insecure \
-              --connect-timeout 15 --max-time 180 --retry 2 --retry-delay 2 --retry-all-errors \
-              --user "${FTP_USERNAME_CLEAN}:${FTP_PASSWORD_CLEAN}" \
-              --upload-file ".prebuilt-public.tgz" \
-              --url "ftp://${FTP_SERVER_CLEAN}:21/bid_app/.prebuilt-public.tgz"
+            upload_with_retry ".prebuilt-public.tgz" "ftp://${FTP_SERVER_CLEAN}:21/bid_app/.prebuilt-public.tgz"
           fi
 
-          curl --fail --show-error --ssl-reqd --ftp-pasv --insecure \
-            --connect-timeout 15 --max-time 120 --retry 2 --retry-delay 2 --retry-all-errors \
-            --user "${FTP_USERNAME_CLEAN}:${FTP_PASSWORD_CLEAN}" \
-            --upload-file "ecosystem.config.cjs" \
-            --url "ftp://${FTP_SERVER_CLEAN}:21/bid_app/ecosystem.config.cjs"
+          upload_with_retry "ecosystem.config.cjs" "ftp://${FTP_SERVER_CLEAN}:21/bid_app/ecosystem.config.cjs"
 
-          curl --fail --show-error --ssl-reqd --ftp-pasv --insecure \
-            --connect-timeout 15 --max-time 120 --retry 2 --retry-delay 2 --retry-all-errors \
-            --user "${FTP_USERNAME_CLEAN}:${FTP_PASSWORD_CLEAN}" \
-            --upload-file ".remote-index.php" \
-            --url "ftp://${FTP_SERVER_CLEAN}:21/bid.j172.tw/index.php"
+          upload_with_retry ".remote-index.php" "ftp://${FTP_SERVER_CLEAN}:21/bid.j172.tw/index.php"
 
-          curl --fail --show-error --ssl-reqd --ftp-pasv --insecure \
-            --connect-timeout 15 --max-time 120 --retry 2 --retry-delay 2 --retry-all-errors \
-            --user "${FTP_USERNAME_CLEAN}:${FTP_PASSWORD_CLEAN}" \
-            --upload-file ".remote-htaccess" \
-            --url "ftp://${FTP_SERVER_CLEAN}:21/bid.j172.tw/.htaccess"
+          upload_with_retry ".remote-htaccess" "ftp://${FTP_SERVER_CLEAN}:21/bid.j172.tw/.htaccess"
 
-          curl --fail --show-error --ssl-reqd --ftp-pasv --insecure \
-            --connect-timeout 15 --max-time 120 --retry 2 --retry-delay 2 --retry-all-errors \
-            --user "${FTP_USERNAME_CLEAN}:${FTP_PASSWORD_CLEAN}" \
-            --upload-file ".ops-key" \
-            --url "ftp://${FTP_SERVER_CLEAN}:21/bid.j172.tw/.ops-key"
+          upload_with_retry ".ops-key" "ftp://${FTP_SERVER_CLEAN}:21/bid.j172.tw/.ops-key"
 
       - name: Trigger apply and wait for completion
         env:
