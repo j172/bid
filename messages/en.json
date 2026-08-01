@@ -260,6 +260,30 @@
     "copyright": "© 2026 j172tw Bid. All rights reserved.",
     "payments": "Payments: cards / bank transfer / third-party checkout"
   },
+  "cartPage": {
+    "title": "Cart",
+    "empty": "Your cart is currently empty.",
+    "cta": "Continue Shopping"
+  },
+  "wishlistPage": {
+    "title": "Wishlist",
+    "empty": "Your wishlist is empty right now.",
+    "cta": "Browse Listings"
+  },
+  "contactPage": {
+    "title": "Contact",
+    "subtitle": "Reach out to us for order help, listing questions, or partnership requests.",
+    "infoTitle": "Contact Information",
+    "email": "Email: support@bid-auction.example",
+    "phone": "Phone: (+1) 800-123-4567",
+    "address": "Address: 685 Market Street, Las Vegas, LA 95820",
+    "formTitle": "Send us a message",
+    "namePlaceholder": "Your name",
+    "emailPlaceholder": "Your email",
+    "subjectPlaceholder": "Subject",
+    "messagePlaceholder": "Message",
+    "submit": "Send Message"
+  },
   "errors": {
     "NOT_FOUND": "Listing not found",
     "MUST_LOGIN": "Please log in first",
