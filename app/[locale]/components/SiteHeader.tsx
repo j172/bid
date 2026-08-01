@@ -20,6 +20,9 @@ export default async function SiteHeader() {
       <div className="border-b border-border bg-slate-50">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2 text-xs text-ink-light sm:px-6">
           <p>{t("topbarNotice")}</p>
+          <span className="inline-flex rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-ink lg:hidden">
+            🔒 {t("trustSecure")}
+          </span>
           <div className="hidden items-center gap-2 text-[11px] text-ink lg:flex">
             <span className="rounded-full bg-white px-2 py-0.5 font-medium">🚚 {t("trustShipping")}</span>
             <span className="rounded-full bg-white px-2 py-0.5 font-medium">🎧 {t("trustSupport")}</span>
