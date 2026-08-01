@@ -12,6 +12,7 @@ const DESCRIPTION_SNIPPET_LENGTH = 30;
 type SearchParams = Record<string, string | string[] | undefined>;
 
 type CategoryKey = "auction" | "fixed_price";
+type SortKey = "newest" | "price_asc" | "price_desc";
 
 function inferCategoryFromListingType(type: ListingType): CategoryKey {
   return type === "auction" ? "auction" : "fixed_price";
@@ -37,12 +38,18 @@ function descriptionSnippet(description: string): string {
     : trimmed;
 }
 
-function tabHref(tabValue: ListingType | "", perfMode: "balanced" | "aggressive", searchQuery?: string): string {
+function tabHref(
+  tabValue: ListingType | "",
+  perfMode: "balanced" | "aggressive",
+  searchQuery?: string,
+  sort?: SortKey,
+): string {
   const sp = new URLSearchParams();
 
   if (tabValue) sp.set("type", tabValue);
   if (perfMode === "aggressive") sp.set("perf", "aggressive");
   if (searchQuery?.trim()) sp.set("q", searchQuery.trim());
+  if (sort && sort !== "newest") sp.set("sort", sort);
 
   const query = sp.toString();
   return query ? `/listings?${query}` : "/listings";
@@ -58,6 +65,8 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   const type = (Array.isArray(typeParam) ? typeParam[0] : typeParam) as ListingType | undefined;
   const rawQ = Array.isArray(params.q) ? params.q[0] : params.q;
   const searchQuery = rawQ?.trim() ?? "";
+  const rawSort = Array.isArray(params.sort) ? params.sort[0] : params.sort;
+  const sort: SortKey = rawSort === "price_asc" || rawSort === "price_desc" ? rawSort : "newest";
   const perfMode = perfModeFromSearchParams(params);
   const gridEagerCount = perfMode === "aggressive" ? 6 : 4;
 
@@ -77,6 +86,15 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
     return categoryMatch && minMatch && maxMatch && searchMatch;
   });
 
+  const sortedListings = [...filteredListings].sort((a, b) => {
+    const priceA = a.listing_type === "auction" ? a.current_price : (a.price ?? a.current_price);
+    const priceB = b.listing_type === "auction" ? b.current_price : (b.price ?? b.current_price);
+
+    if (sort === "price_asc") return priceA - priceB;
+    if (sort === "price_desc") return priceB - priceA;
+    return b.id - a.id;
+  });
+
   const categoryCounts = listings.reduce(
     (acc, listing) => {
       const key = inferCategoryFromListingType(listing.listing_type);
@@ -94,6 +112,7 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
     const currentMin = Array.isArray(params.minPrice) ? params.minPrice[0] : params.minPrice;
     const currentMax = Array.isArray(params.maxPrice) ? params.maxPrice[0] : params.maxPrice;
     const currentQ = Array.isArray(params.q) ? params.q[0] : params.q;
+    const currentSort = Array.isArray(params.sort) ? params.sort[0] : params.sort;
 
     const next = {
       perf,
@@ -102,6 +121,7 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
       minPrice: currentMin,
       maxPrice: currentMax,
       q: currentQ,
+      sort: currentSort,
       ...partial,
     };
 
@@ -139,7 +159,7 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
               {TYPE_TABS.map((tab) => (
                 <Link
                   key={tab.value}
-                  href={tabHref(tab.value, perfMode, searchQuery)}
+                  href={tabHref(tab.value, perfMode, searchQuery, sort)}
                   className={`block rounded-md px-3 py-2 text-sm font-medium ${
                     (type ?? "") === tab.value
                       ? "bg-gold-light text-gold-dark"
@@ -196,18 +216,39 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
         </aside>
 
         <section>
-          <div className="flex items-center justify-between rounded-xl border border-border bg-white px-4 py-3 text-sm shadow-sm">
+          <div className="flex flex-col gap-3 rounded-xl border border-border bg-white px-4 py-3 text-sm shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <p className="text-ink-light">{t("showingCount", { count: filteredListings.length })}</p>
               {searchQuery.length > 0 && <p className="truncate text-xs text-ink-light">搜尋：{searchQuery}</p>}
             </div>
-            <p className="font-semibold text-ink">{type ? t("filtered") : t("allLive")}</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-ink-light">排序</span>
+              <Link
+                href={withFilters({ sort: undefined })}
+                className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "newest" ? "bg-gold-light text-gold-dark" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
+              >
+                最新
+              </Link>
+              <Link
+                href={withFilters({ sort: "price_asc" })}
+                className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "price_asc" ? "bg-gold-light text-gold-dark" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
+              >
+                價格低→高
+              </Link>
+              <Link
+                href={withFilters({ sort: "price_desc" })}
+                className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "price_desc" ? "bg-gold-light text-gold-dark" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
+              >
+                價格高→低
+              </Link>
+              <p className="ml-1 font-semibold text-ink">{type ? t("filtered") : t("allLive")}</p>
+            </div>
           </div>
 
           {filteredListings.length === 0 && <p className="mt-6 text-ink-light">{t("noListings")}</p>}
 
           <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {filteredListings.map((listing, index) => (
+            {sortedListings.map((listing, index) => (
               <ProductCard
                 key={listing.id}
                 id={listing.id}
