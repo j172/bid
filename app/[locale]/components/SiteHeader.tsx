@@ -16,21 +16,21 @@ export default async function SiteHeader() {
   ];
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-white/95 text-ink shadow-sm backdrop-blur">
-      <div className="border-b border-border bg-slate-50">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2 text-xs text-ink-light sm:px-6">
+    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 text-ink shadow-[0_10px_30px_rgba(15,23,42,0.06)] backdrop-blur">
+      <div className="border-b border-slate-200 bg-gradient-to-r from-slate-950 via-blue-950 to-slate-950 text-slate-100">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2 text-xs sm:px-6">
           <p>{t("topbarNotice")}</p>
-          <span className="inline-flex rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-ink lg:hidden">
+          <span className="inline-flex rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium text-white lg:hidden">
             🔒 {t("trustSecure")}
           </span>
-          <div className="hidden items-center gap-2 text-[11px] text-ink lg:flex">
-            <span className="rounded-full bg-white px-2 py-0.5 font-medium">🚚 {t("trustShipping")}</span>
-            <span className="rounded-full bg-white px-2 py-0.5 font-medium">🎧 {t("trustSupport")}</span>
-            <span className="rounded-full bg-white px-2 py-0.5 font-medium">🔒 {t("trustSecure")}</span>
+          <div className="hidden items-center gap-2 text-[11px] text-white/90 lg:flex">
+            <span className="rounded-full border border-white/10 bg-white/10 px-2 py-0.5 font-medium">🚚 {t("trustShipping")}</span>
+            <span className="rounded-full border border-white/10 bg-white/10 px-2 py-0.5 font-medium">🎧 {t("trustSupport")}</span>
+            <span className="rounded-full border border-white/10 bg-white/10 px-2 py-0.5 font-medium">🔒 {t("trustSecure")}</span>
           </div>
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
-            <Link href="/account" className="font-medium text-ink hover:text-brand-blue">
+            <Link href="/account" className="font-medium text-white hover:text-blue-200">
               {t("account")}
             </Link>
           </div>
@@ -38,8 +38,8 @@ export default async function SiteHeader() {
       </div>
 
       <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-4 sm:px-6">
-        <Link href="/" className="mr-2 flex items-center gap-2 shrink-0 text-lg font-black tracking-tight sm:text-xl">
-          <span className="rounded-md bg-header px-2 py-1 text-xs font-bold text-white">BID</span>
+        <Link href="/" className="mr-2 flex shrink-0 items-center gap-2 text-lg font-black tracking-tight sm:text-xl">
+          <span className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm">BID</span>
           {t("siteName")}
         </Link>
 
@@ -104,17 +104,17 @@ export default async function SiteHeader() {
         </details>
 
         <div className="hidden min-w-0 flex-1 items-center gap-3 lg:flex">
-          <button type="button" className="inline-flex shrink-0 items-center gap-2 rounded-md bg-header px-3 py-2 text-xs font-semibold text-white">
+          <button type="button" className="inline-flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm">
             {t("allCategories")}
             <span aria-hidden>▾</span>
           </button>
 
           <form action="/listings" className="relative min-w-0 flex-1">
-            <div className="flex h-10 w-full overflow-hidden rounded-md border border-border bg-white">
+            <div className="flex h-12 w-full overflow-hidden rounded-full border border-slate-200 bg-white shadow-sm">
               <select
                 name="type"
                 defaultValue=""
-                className="w-28 shrink-0 border-r border-border bg-slate-50 px-2 text-xs text-ink focus:outline-none"
+                className="w-32 shrink-0 border-r border-slate-200 bg-slate-50 px-3 text-xs font-medium text-ink focus:outline-none"
               >
                 <option value="">{t("searchAll")}</option>
                 <option value="auction">{t("searchAuction")}</option>
@@ -124,26 +124,26 @@ export default async function SiteHeader() {
                 type="search"
                 name="q"
                 placeholder="搜尋商品、品牌或關鍵字..."
-                className="min-w-0 flex-1 px-3 text-sm text-ink placeholder:text-ink-light focus:outline-none"
+                className="min-w-0 flex-1 px-4 text-sm text-ink placeholder:text-ink-light focus:outline-none"
               />
             </div>
-            <button type="submit" className="absolute right-1 top-1 inline-flex h-8 items-center rounded-md bg-header px-3 text-xs font-semibold text-white hover:bg-header-soft">
+            <button type="submit" className="absolute right-1.5 top-1.5 inline-flex h-9 items-center rounded-full bg-slate-950 px-4 text-xs font-semibold text-white hover:bg-slate-800">
               Search
             </button>
           </form>
 
-          <div className="shrink-0 rounded-md border border-border px-3 py-2 leading-tight">
+          <div className="shrink-0 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 leading-tight shadow-sm">
             <p className="text-[11px] uppercase tracking-wide text-ink-light">客服專線</p>
             <p className="text-xs font-bold text-ink">(+886) 02-1234-5678</p>
           </div>
         </div>
 
         <div className="hidden items-center gap-2 lg:flex">
-          <Link href="/wishlist" aria-label="Wishlist" className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-white text-ink hover:border-brand-blue hover:text-brand-blue">
+          <Link href="/wishlist" aria-label="Wishlist" className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-ink shadow-sm hover:border-brand-blue hover:text-brand-blue">
             <span aria-hidden>♡</span>
             <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-header px-1 text-[10px] text-white">0</span>
           </Link>
-          <Link href="/cart" aria-label="Cart" className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-white text-ink hover:border-brand-blue hover:text-brand-blue">
+          <Link href="/cart" aria-label="Cart" className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-ink shadow-sm hover:border-brand-blue hover:text-brand-blue">
             <span aria-hidden>🛒</span>
             <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-header px-1 text-[10px] text-white">0</span>
           </Link>
@@ -168,8 +168,8 @@ export default async function SiteHeader() {
         </div>
       </div>
 
-      <div className="hidden border-t border-border bg-white lg:block">
-        <div className="mx-auto max-w-6xl px-4 py-2 sm:px-6">
+      <div className="hidden border-t border-slate-200 bg-gradient-to-b from-white to-slate-50 lg:block">
+        <div className="mx-auto max-w-6xl px-4 py-2.5 sm:px-6">
           <div className="flex items-center justify-between gap-4 text-sm">
             <nav className="flex min-w-0 flex-wrap items-center gap-5 text-ink">
               <Link href="/" className="font-medium hover:text-brand-blue">
@@ -193,10 +193,10 @@ export default async function SiteHeader() {
               )}
             </nav>
 
-            <p className="shrink-0 text-xs font-semibold uppercase tracking-wide text-brand-blue">Premium Auction Experience</p>
+            <p className="shrink-0 rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-blue">Premium Auction Experience</p>
           </div>
 
-          <div className="mt-2 flex items-center justify-between gap-3 border-t border-dashed border-border pt-2">
+          <div className="mt-2 flex items-center justify-between gap-3 border-t border-dashed border-slate-200 pt-2.5">
             <div className="flex min-w-0 items-center gap-2 text-xs">
               <span className="shrink-0 font-semibold text-ink-light">{t("trendingSearches")}</span>
               <div className="flex min-w-0 flex-wrap gap-2">
@@ -204,7 +204,7 @@ export default async function SiteHeader() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="rounded-full border border-border bg-slate-50 px-2.5 py-1 font-medium text-ink hover:border-brand-blue hover:text-brand-blue"
+                    className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-ink shadow-sm hover:border-brand-blue hover:text-brand-blue"
                   >
                     {item.label}
                   </Link>
@@ -213,10 +213,10 @@ export default async function SiteHeader() {
             </div>
 
             <div className="flex shrink-0 items-center gap-2 text-xs">
-              <Link href="/listings?sort=price_asc" className="rounded-md bg-amber-50 px-2.5 py-1 font-semibold text-amber-700 hover:bg-amber-100">
+              <Link href="/listings?sort=price_asc" className="rounded-full bg-amber-50 px-3 py-1.5 font-semibold text-amber-700 hover:bg-amber-100">
                 {t("dealZone")}
               </Link>
-              <Link href="/listings?type=fixed_price&maxPrice=1000" className="rounded-md bg-blue-50 px-2.5 py-1 font-semibold text-blue-700 hover:bg-blue-100">
+              <Link href="/listings?type=fixed_price&maxPrice=1000" className="rounded-full bg-blue-50 px-3 py-1.5 font-semibold text-blue-700 hover:bg-blue-100">
                 {t("newbieZone")}
               </Link>
             </div>
