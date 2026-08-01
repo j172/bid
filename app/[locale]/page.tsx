@@ -208,7 +208,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             <Link
               key={item.id}
               href={`/listings/${item.id}`}
-              className="group rounded-2xl border border-border bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              className="group rounded-2xl border border-border bg-white p-3 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-brand-blue/60 hover:shadow-md"
             >
               <div className="relative aspect-square overflow-hidden rounded-xl bg-slate-100">
                 {item.photos[0] && (
@@ -221,6 +221,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                     className="h-full w-full object-cover transition group-hover:scale-105"
                   />
                 )}
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition group-hover:opacity-100" />
                 <span className="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-1 text-[11px] font-bold text-brand-blue shadow-sm">
                   {item.listing_type === "auction" ? "AUCTION" : "FIXED"}
                 </span>
@@ -291,7 +292,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {bestMixed.map((item, index) => (
-            <article key={`best-${item.id}`} className="group rounded-2xl border border-border bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+            <article key={`best-${item.id}`} className="group rounded-2xl border border-border bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-brand-blue/60 hover:shadow-md">
               <Link href={`/listings/${item.id}`} className="block">
                 <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
                   {item.photos[0] && (
@@ -304,6 +305,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                       className="h-full w-full object-cover transition group-hover:scale-105"
                     />
                   )}
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition group-hover:opacity-100" />
                   <span className="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-1 text-[11px] font-bold text-brand-blue shadow-sm">
                     {item.listing_type === "auction" ? "HOT BIDDING" : "BEST PRICE"}
                   </span>
@@ -363,17 +365,32 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       </section>
 
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
-        <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 p-7 text-white">
+        <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 p-7 text-white shadow-lg">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-200">Enhance your bidding experience</p>
           <h2 className="mt-2 text-3xl font-black">Don’t Miss These Deals</h2>
-          <div className="mt-4 flex flex-wrap gap-3 text-sm">
-            <span className="rounded-md bg-white/15 px-3 py-1">06 Days</span>
-            <span className="rounded-md bg-white/15 px-3 py-1">03 Hours</span>
-            <span className="rounded-md bg-white/15 px-3 py-1">07 Minutes</span>
-            <span className="rounded-md bg-white/15 px-3 py-1">20 Seconds</span>
+
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="rounded-xl bg-white/10 px-3 py-2 text-center backdrop-blur-sm">
+              <p className="text-[11px] uppercase tracking-wide text-blue-100">Days</p>
+              <p className="mt-1 text-2xl font-black">06</p>
+            </div>
+            <div className="rounded-xl bg-white/10 px-3 py-2 text-center backdrop-blur-sm">
+              <p className="text-[11px] uppercase tracking-wide text-blue-100">Hours</p>
+              <p className="mt-1 text-2xl font-black">03</p>
+            </div>
+            <div className="rounded-xl bg-white/10 px-3 py-2 text-center backdrop-blur-sm">
+              <p className="text-[11px] uppercase tracking-wide text-blue-100">Minutes</p>
+              <p className="mt-1 text-2xl font-black">07</p>
+            </div>
+            <div className="rounded-xl bg-white/10 px-3 py-2 text-center backdrop-blur-sm">
+              <p className="text-[11px] uppercase tracking-wide text-blue-100">Seconds</p>
+              <p className="mt-1 text-2xl font-black">20</p>
+            </div>
           </div>
-          <Link href="/listings" className="mt-5 inline-flex rounded-md bg-white px-4 py-2 text-sm font-bold text-blue-800">
+
+          <Link href="/listings" className="mt-6 inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-bold text-blue-800 transition hover:bg-blue-50">
             Check it Out
+            <span aria-hidden>→</span>
           </Link>
         </div>
       </section>
