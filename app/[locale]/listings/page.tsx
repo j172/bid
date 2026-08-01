@@ -1,6 +1,5 @@
 import { getTranslations } from "next-intl/server";
 import { listOpenListings, type ListingType } from "@/lib/listings";
-import { listingPhotoUrl } from "@/lib/uploads";
 import { formatRemaining } from "@/lib/format";
 import { maskDisplayName } from "@/lib/mask";
 import { Link } from "@/i18n/navigation";
@@ -38,13 +37,15 @@ function descriptionSnippet(description: string): string {
     : trimmed;
 }
 
-function tabHref(tabValue: ListingType | "", perfMode: "balanced" | "aggressive"): string {
-  if (!tabValue) {
-    return perfMode === "aggressive" ? "/listings?perf=aggressive" : "/listings";
-  }
-  return perfMode === "aggressive"
-    ? `/listings?type=${tabValue}&perf=aggressive`
-    : `/listings?type=${tabValue}`;
+function tabHref(tabValue: ListingType | "", perfMode: "balanced" | "aggressive", searchQuery?: string): string {
+  const sp = new URLSearchParams();
+
+  if (tabValue) sp.set("type", tabValue);
+  if (perfMode === "aggressive") sp.set("perf", "aggressive");
+  if (searchQuery?.trim()) sp.set("q", searchQuery.trim());
+
+  const query = sp.toString();
+  return query ? `/listings?${query}` : "/listings";
 }
 
 export default async function ListingsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
@@ -55,6 +56,8 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   const minPrice = parseNumberParam(params.minPrice);
   const maxPrice = parseNumberParam(params.maxPrice);
   const type = (Array.isArray(typeParam) ? typeParam[0] : typeParam) as ListingType | undefined;
+  const rawQ = Array.isArray(params.q) ? params.q[0] : params.q;
+  const searchQuery = rawQ?.trim() ?? "";
   const perfMode = perfModeFromSearchParams(params);
   const gridEagerCount = perfMode === "aggressive" ? 6 : 4;
 
@@ -68,7 +71,10 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
     const price = listing.listing_type === "auction" ? listing.current_price : (listing.price ?? listing.current_price);
     const minMatch = minPrice === undefined || price >= minPrice;
     const maxMatch = maxPrice === undefined || price <= maxPrice;
-    return categoryMatch && minMatch && maxMatch;
+    const searchMatch =
+      searchQuery.length === 0 ||
+      `${listing.title} ${listing.description}`.toLowerCase().includes(searchQuery.toLowerCase());
+    return categoryMatch && minMatch && maxMatch && searchMatch;
   });
 
   const categoryCounts = listings.reduce(
@@ -87,6 +93,7 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
     const currentCategory = Array.isArray(params.category) ? params.category[0] : params.category;
     const currentMin = Array.isArray(params.minPrice) ? params.minPrice[0] : params.minPrice;
     const currentMax = Array.isArray(params.maxPrice) ? params.maxPrice[0] : params.maxPrice;
+    const currentQ = Array.isArray(params.q) ? params.q[0] : params.q;
 
     const next = {
       perf,
@@ -94,6 +101,7 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
       category: currentCategory,
       minPrice: currentMin,
       maxPrice: currentMax,
+      q: currentQ,
       ...partial,
     };
 
@@ -131,7 +139,7 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
               {TYPE_TABS.map((tab) => (
                 <Link
                   key={tab.value}
-                  href={tabHref(tab.value, perfMode)}
+                  href={tabHref(tab.value, perfMode, searchQuery)}
                   className={`block rounded-md px-3 py-2 text-sm font-medium ${
                     (type ?? "") === tab.value
                       ? "bg-gold-light text-gold-dark"
@@ -189,7 +197,10 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
 
         <section>
           <div className="flex items-center justify-between rounded-xl border border-border bg-white px-4 py-3 text-sm shadow-sm">
-            <p className="text-ink-light">{t("showingCount", { count: filteredListings.length })}</p>
+            <div className="min-w-0">
+              <p className="text-ink-light">{t("showingCount", { count: filteredListings.length })}</p>
+              {searchQuery.length > 0 && <p className="truncate text-xs text-ink-light">搜尋：{searchQuery}</p>}
+            </div>
             <p className="font-semibold text-ink">{type ? t("filtered") : t("allLive")}</p>
           </div>
 
