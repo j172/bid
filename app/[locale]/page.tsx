@@ -196,6 +196,12 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       </section>
 
       <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-6">
+        <div className="mb-3 flex items-end justify-between">
+          <h2 className="text-2xl font-bold">Featured Collections</h2>
+          <Link href="/listings" className="text-sm font-semibold text-brand-blue hover:text-header">
+            Explore all
+          </Link>
+        </div>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Link href="/listings?type=auction" className="rounded-2xl border border-border bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
             <p className="text-xs font-bold uppercase tracking-wide text-brand-blue">Collection</p>
