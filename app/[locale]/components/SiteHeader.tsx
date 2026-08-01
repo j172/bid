@@ -34,6 +34,18 @@ export default async function SiteHeader() {
             {t("menu")}
           </summary>
           <div className="absolute right-0 top-10 z-30 w-60 rounded-lg border border-border bg-white p-2 shadow-xl">
+            <form action="/listings" className="mb-2 flex items-center gap-2 rounded-md bg-slate-50 p-2">
+              <input
+                type="search"
+                name="q"
+                placeholder="搜尋商品..."
+                className="min-w-0 flex-1 rounded-md border border-border bg-white px-2 py-1.5 text-xs text-ink placeholder:text-ink-light focus:border-brand-blue focus:outline-none"
+              />
+              <button type="submit" className="rounded-md bg-header px-2 py-1.5 text-xs font-semibold text-white">
+                Go
+              </button>
+            </form>
+
             <nav className="flex flex-col text-sm text-ink">
               <Link href="/" className="rounded-md px-3 py-2 hover:bg-slate-100">
                 {t("home")}
