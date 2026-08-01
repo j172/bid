@@ -21,6 +21,9 @@
     "searchAll": "All",
     "searchAuction": "Auction",
     "searchFixed": "Fixed",
+    "trustShipping": "Fast Dispatch",
+    "trustSupport": "24/7 Support",
+    "trustSecure": "Secure Checkout",
     "login": "Log In",
     "register": "Sign Up",
     "logout": "Log Out"

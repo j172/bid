@@ -18,8 +18,13 @@ export default async function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-white/95 text-ink shadow-sm backdrop-blur">
       <div className="border-b border-border bg-slate-50">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2 text-xs text-ink-light sm:px-6">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2 text-xs text-ink-light sm:px-6">
           <p>{t("topbarNotice")}</p>
+          <div className="hidden items-center gap-2 text-[11px] text-ink lg:flex">
+            <span className="rounded-full bg-white px-2 py-0.5 font-medium">🚚 {t("trustShipping")}</span>
+            <span className="rounded-full bg-white px-2 py-0.5 font-medium">🎧 {t("trustSupport")}</span>
+            <span className="rounded-full bg-white px-2 py-0.5 font-medium">🔒 {t("trustSecure")}</span>
+          </div>
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
             <Link href="/account" className="font-medium text-ink hover:text-brand-blue">
