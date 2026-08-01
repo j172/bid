@@ -292,6 +292,39 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </div>
       </section>
 
+      <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
+        <div className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-blue">Shop by Brand</p>
+              <h3 className="mt-1 text-xl font-black text-ink">熱門品牌精選館</h3>
+            </div>
+            <Link href="/listings?sort=price_desc" className="text-sm font-semibold text-brand-blue hover:text-header">
+              View premium picks →
+            </Link>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+            {[
+              { label: "OMEGA", href: "/listings?type=auction" },
+              { label: "ROLEX", href: "/listings?sort=price_desc" },
+              { label: "SONY", href: "/listings?type=fixed_price" },
+              { label: "APPLE", href: "/listings?sort=price_desc" },
+              { label: "NIKON", href: "/listings?type=auction" },
+              { label: "LEICA", href: "/listings?sort=price_desc" },
+            ].map((brand) => (
+              <Link
+                key={brand.label}
+                href={brand.href}
+                className="rounded-xl border border-border bg-slate-50 px-3 py-3 text-center text-sm font-extrabold tracking-wide text-ink transition hover:-translate-y-0.5 hover:border-brand-blue hover:bg-white hover:text-brand-blue"
+              >
+                {brand.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
         <div className="flex items-end justify-between">
           <h2 className="text-2xl font-bold">{t("newArrivals")}</h2>
