@@ -49,7 +49,7 @@ export default async function SiteFooter() {
             <li>{t("terms")}</li>
             <li>{t("faq")}</li>
             <li>
-              <Link href="/account" className="hover:text-gold">
+              <Link href="/contact" className="hover:text-gold">
                 {t("contact")}
               </Link>
             </li>
