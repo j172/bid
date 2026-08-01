@@ -437,6 +437,21 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           ))}
         </div>
       </section>
+
+      <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-6">
+        <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-ink">Trusted checkout · buyer protection</p>
+            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-ink-light">
+              <span className="rounded-md border border-border bg-slate-50 px-2 py-1">SSL Secure</span>
+              <span className="rounded-md border border-border bg-slate-50 px-2 py-1">VISA</span>
+              <span className="rounded-md border border-border bg-slate-50 px-2 py-1">Mastercard</span>
+              <span className="rounded-md border border-border bg-slate-50 px-2 py-1">PayPal</span>
+              <span className="rounded-md border border-border bg-slate-50 px-2 py-1">Apple Pay</span>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
