@@ -1,6 +1,5 @@
 import { getTranslations } from "next-intl/server";
 import { preload } from "react-dom";
-import { getDb } from "@/lib/db";
 import { listOpenListings } from "@/lib/listings";
 import { listingPhotoUrl } from "@/lib/uploads";
 import { formatRemaining } from "@/lib/format";
@@ -27,24 +26,12 @@ function perfModeFromSearchParams(params: SearchParams): "balanced" | "aggressiv
   return mode === "aggressive" ? "aggressive" : "balanced";
 }
 
-async function checkDb(): Promise<{ ok: boolean; error?: string }> {
-  try {
-    const db = await getDb();
-    await db.query("SELECT 1");
-    return { ok: true };
-  } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : String(error) };
-  }
-}
-
 export default async function HomePage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams;
   const perfMode = perfModeFromSearchParams(params);
-  const db = await checkDb();
   const t = await getTranslations("home");
   const tListings = await getTranslations("listings");
   const tFormat = await getTranslations("format");
-  const status = db.ok ? t("dbConnected") : t("dbFailed", { error: db.error ?? "" });
   const listings = await listOpenListings();
 
   const featured = listings.slice(0, 3);
@@ -129,10 +116,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         auctionHref={`/listings?type=auction${perfSuffix}`}
         cards={heroCards}
       />
-
-      <p className="mx-auto max-w-6xl px-4 py-3 text-center text-xs text-ink-light sm:px-6">
-        {t("serverStatus", { status })}
-      </p>
 
       <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
         <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-border bg-white shadow-sm md:grid-cols-2 lg:grid-cols-4">
