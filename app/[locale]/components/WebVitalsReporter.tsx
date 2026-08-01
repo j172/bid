@@ -55,7 +55,7 @@ export default function WebVitalsReporter() {
         <p className="font-semibold">Web Vitals</p>
         <span
           className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
-            perfMode === "aggressive" ? "bg-orange-500/25 text-orange-200" : "bg-blue-500/25 text-blue-200"
+            perfMode === "aggressive" ? "bg-sky-500/25 text-sky-200" : "bg-blue-500/25 text-blue-200"
           }`}
         >
           {perfMode}

@@ -56,7 +56,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       <section className="bg-header text-white">
         <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-14 sm:px-6 lg:grid-cols-2 lg:items-center">
           <div>
-            <p className="inline-flex rounded-full bg-gold/15 px-3 py-1 text-xs font-semibold text-orange-200">{t("heroBadge")}</p>
+            <p className="inline-flex rounded-full bg-brand-blue/20 px-3 py-1 text-xs font-semibold text-blue-100">{t("heroBadge")}</p>
             <h1 className="mt-5 text-4xl font-black leading-tight sm:text-5xl">{t("title")}</h1>
             <p className="mt-4 max-w-xl text-base text-slate-300 sm:text-lg">{t("subtitle")}</p>
             <div className="mt-8 flex flex-wrap gap-3">
@@ -163,15 +163,15 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <div className="rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 p-7 text-white">
+          <div className="rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 p-7 text-white">
             <p className="text-xs font-bold uppercase tracking-wider">{t("promoAuctionBadge")}</p>
             <h3 className="mt-2 text-2xl font-black">{t("promoAuctionTitle")}</h3>
-            <p className="mt-3 text-sm text-orange-100">{t("promoAuctionDesc")}</p>
-            <Link href={`/listings?type=auction${perfSuffix}`} className="mt-5 inline-flex rounded-md bg-white px-4 py-2 text-sm font-bold text-orange-600">
+            <p className="mt-3 text-sm text-blue-100">{t("promoAuctionDesc")}</p>
+            <Link href={`/listings?type=auction${perfSuffix}`} className="mt-5 inline-flex rounded-md bg-white px-4 py-2 text-sm font-bold text-blue-700">
               {t("promoAuctionCta")}
             </Link>
           </div>
-          <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-7 text-white">
+          <div className="rounded-2xl bg-gradient-to-r from-blue-700 to-slate-900 p-7 text-white">
             <p className="text-xs font-bold uppercase tracking-wider">{t("promoFixedBadge")}</p>
             <h3 className="mt-2 text-2xl font-black">{t("promoFixedTitle")}</h3>
             <p className="mt-3 text-sm text-blue-100">{t("promoFixedDesc")}</p>

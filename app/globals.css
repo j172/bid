@@ -3,24 +3,22 @@
 @theme {
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
-  /* Auction-house palette: near-black header/nav, white surfaces, a warm
-     gold accent for prices/primary actions (evokes a gavel/auction feel
-     rather than a generic e-commerce blue), status colors for bidding state. */
-  --color-ink: #0f172a;
-  --color-ink-light: #475569;
-  --color-header: #0b1220;
-  --color-header-soft: #121a2b;
+  /* Nextmerce-aligned palette: deep navy shell + vivid commerce blue accent. */
+  --color-ink: #010f1c;
+  --color-ink-light: #5a6270;
+  --color-header: #0a1f52;
+  --color-header-soft: #12306b;
   --color-surface: #ffffff;
-  --color-surface-muted: #f9fafb;
-  --color-border: #e2e8f0;
+  --color-surface-muted: #f5f7ff;
+  --color-border: #e3e8f4;
 
-  --color-gold: #f97316;
-  --color-gold-dark: #ea580c;
-  --color-gold-light: #ffedd5;
+  --color-gold: #0989ff;
+  --color-gold-dark: #0672d8;
+  --color-gold-light: #e6f3ff;
 
-  --color-brand-blue: #2563eb;
-  --color-brand-blue-dark: #1d4ed8;
-  --color-brand-chip: #dbeafe;
+  --color-brand-blue: #0989ff;
+  --color-brand-blue-dark: #0672d8;
+  --color-brand-chip: #e6f3ff;
 
   --color-leading: #15803d;
   --color-leading-bg: #dcfce7;
