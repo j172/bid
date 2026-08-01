@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { getCurrentUser } from "@/lib/auth";
 import { Link } from "@/i18n/navigation";
+import NextLink from "next/link";
 import LanguageSwitcher from "./LanguageSwitcher";
 import LogoutButton from "./LogoutButton";
 
@@ -25,9 +26,12 @@ export default async function SiteHeader() {
             </Link>
           )}
           {user?.role === "admin" && (
-            <Link href="/z04urru6" className="hover:text-gold-light">
+            // Plain next/link, not the locale-aware Link above: /z04urru6 lives
+            // entirely outside the [locale]-routed tree (see middleware.ts's
+            // matcher), so it must never get a locale prefix like /zh-CN/z04urru6.
+            <NextLink href="/z04urru6" className="hover:text-gold-light">
               {t("admin")}
-            </Link>
+            </NextLink>
           )}
         </nav>
 
