@@ -14,6 +14,13 @@ type SearchParams = Record<string, string | string[] | undefined>;
 
 type CategoryItem = { key: "auction" | "fixed_price"; count: number };
 
+type VisualCategoryItem = {
+  label: string;
+  subtitle: string;
+  href: string;
+  badge: string;
+};
+
 function perfModeFromSearchParams(params: SearchParams): "balanced" | "aggressive" {
   const modeParam = params.perf;
   const mode = Array.isArray(modeParam) ? modeParam[0] : modeParam;
@@ -47,6 +54,44 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const categoryItems: CategoryItem[] = [
     { key: "auction", count: listings.filter((item) => item.listing_type === "auction").length },
     { key: "fixed_price", count: listings.filter((item) => item.listing_type === "fixed_price").length },
+  ];
+  const visualCategories: VisualCategoryItem[] = [
+    {
+      label: t("categoryAuction"),
+      subtitle: t("promoAuctionTitle"),
+      href: "/listings?type=auction",
+      badge: "⚡",
+    },
+    {
+      label: t("categoryFixedPrice"),
+      subtitle: t("promoFixedTitle"),
+      href: "/listings?type=fixed_price",
+      badge: "🛍️",
+    },
+    {
+      label: "快速結標",
+      subtitle: "支援一鍵買斷",
+      href: "/listings?type=auction",
+      badge: "🎯",
+    },
+    {
+      label: "限時精選",
+      subtitle: "高人氣商品推薦",
+      href: "/listings",
+      badge: "🔥",
+    },
+    {
+      label: "買家最愛",
+      subtitle: "固定價熱門排行",
+      href: "/listings?type=fixed_price",
+      badge: "❤️",
+    },
+    {
+      label: "新手友善",
+      subtitle: "從低價商品開始",
+      href: "/listings",
+      badge: "🌟",
+    },
   ];
   const feedbacks = [
     { quote: t("feedbackQuoteOne"), role: t("feedbackRoleOne") },
@@ -88,19 +133,35 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         {t("serverStatus", { status })}
       </p>
 
-      <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-6">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <article className="rounded-xl border border-border bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gold">{t("serviceFast")}</p>
-            <p className="mt-2 text-sm text-ink-light">{t("serviceFastDesc")}</p>
+      <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
+        <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-border bg-white shadow-sm md:grid-cols-2 lg:grid-cols-4">
+          <article className="flex items-center gap-3 border-b border-border px-5 py-4 md:border-r lg:border-b-0">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-lg">🚚</span>
+            <div>
+              <p className="text-sm font-bold text-ink">{t("serviceFast")}</p>
+              <p className="text-xs text-ink-light">{t("serviceFastDesc")}</p>
+            </div>
           </article>
-          <article className="rounded-xl border border-border bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gold">{t("serviceSecure")}</p>
-            <p className="mt-2 text-sm text-ink-light">{t("serviceSecureDesc")}</p>
+          <article className="flex items-center gap-3 border-b border-border px-5 py-4 lg:border-b-0 lg:border-r">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-lg">🔒</span>
+            <div>
+              <p className="text-sm font-bold text-ink">{t("serviceSecure")}</p>
+              <p className="text-xs text-ink-light">{t("serviceSecureDesc")}</p>
+            </div>
           </article>
-          <article className="rounded-xl border border-border bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gold">{t("serviceSupport")}</p>
-            <p className="mt-2 text-sm text-ink-light">{t("serviceSupportDesc")}</p>
+          <article className="flex items-center gap-3 border-b border-border px-5 py-4 md:border-b-0 md:border-r">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-lg">🎧</span>
+            <div>
+              <p className="text-sm font-bold text-ink">{t("serviceSupport")}</p>
+              <p className="text-xs text-ink-light">{t("serviceSupportDesc")}</p>
+            </div>
+          </article>
+          <article className="flex items-center gap-3 px-5 py-4">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-lg">✅</span>
+            <div>
+              <p className="text-sm font-bold text-ink">100% 嚴格驗證</p>
+              <p className="text-xs text-ink-light">所有價格與庫存皆伺服器檢核</p>
+            </div>
           </article>
         </div>
       </section>
@@ -109,15 +170,29 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         <div className="flex items-end justify-between">
           <h2 className="text-2xl font-bold">{t("browseByCategory")}</h2>
         </div>
-        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {categoryItems.map((cat) => {
-            const label = cat.key === "auction" ? t("categoryAuction") : t("categoryFixedPrice");
-            const href = cat.key === "auction" ? "/listings?type=auction" : "/listings?type=fixed_price";
+        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {visualCategories.map((cat) => {
+            const count =
+              cat.href.includes("type=auction")
+                ? categoryItems.find((item) => item.key === "auction")?.count
+                : cat.href.includes("type=fixed_price")
+                  ? categoryItems.find((item) => item.key === "fixed_price")?.count
+                  : listings.length;
             return (
-              <Link key={cat.key} href={href} className="rounded-xl border border-border bg-white p-5 shadow-sm hover:shadow-md">
-                <p className="text-xs font-semibold uppercase tracking-wide text-gold">{label}</p>
-                <p className="mt-2 text-2xl font-black text-ink">{cat.count}</p>
-                <p className="mt-1 text-sm text-ink-light">{t("viewAll")}</p>
+              <Link
+                key={`${cat.label}-${cat.href}`}
+                href={cat.href}
+                className="group rounded-2xl border border-border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-blue">{cat.label}</p>
+                    <p className="mt-2 text-sm text-ink-light">{cat.subtitle}</p>
+                  </div>
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-lg">{cat.badge}</span>
+                </div>
+                <p className="mt-4 text-2xl font-black text-ink">{count}</p>
+                <p className="mt-1 text-sm font-semibold text-brand-blue group-hover:text-header">{t("viewAll")} →</p>
               </Link>
             );
           })}
@@ -127,15 +202,19 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
         <div className="flex items-end justify-between">
           <h2 className="text-2xl font-bold">{t("newArrivals")}</h2>
-          <Link href={perfMode === "aggressive" ? "/listings?perf=aggressive" : "/listings"} className="text-sm font-semibold text-gold hover:text-gold-dark">
+          <Link href={perfMode === "aggressive" ? "/listings?perf=aggressive" : "/listings"} className="text-sm font-semibold text-brand-blue hover:text-header">
             {t("viewAll")}
           </Link>
         </div>
 
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {newArrivals.map((item, index) => (
-            <Link key={item.id} href={`/listings/${item.id}`} className="group rounded-xl border border-border bg-white p-3 shadow-sm hover:shadow-md">
-              <div className="aspect-square overflow-hidden rounded-lg bg-slate-100">
+            <Link
+              key={item.id}
+              href={`/listings/${item.id}`}
+              className="group rounded-2xl border border-border bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <div className="relative aspect-square overflow-hidden rounded-xl bg-slate-100">
                 {item.photos[0] && (
                   <ProgressiveImage
                     src={listingPhotoUrl(item.id, item.photos[0])}
@@ -146,11 +225,17 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                     className="h-full w-full object-cover transition group-hover:scale-105"
                   />
                 )}
+                <span className="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-1 text-[11px] font-bold text-brand-blue shadow-sm">
+                  {item.listing_type === "auction" ? "AUCTION" : "FIXED"}
+                </span>
               </div>
               <p className="mt-3 truncate text-sm font-semibold text-ink">{item.title}</p>
-              <p className="mt-1 text-lg font-black text-gold">
-                {item.listing_type === "auction" ? item.current_price : item.price}
-              </p>
+              <div className="mt-2 flex items-end gap-2">
+                <p className="text-lg font-black text-ink">{item.listing_type === "auction" ? item.current_price : item.price}</p>
+                <p className="text-xs text-ink-light line-through">
+                  {Math.ceil(Number(item.listing_type === "auction" ? item.current_price : item.price) * 1.12)}
+                </p>
+              </div>
               <p className="mt-1 text-xs text-ink-light">
                 {item.listing_type === "auction"
                   ? item.ends_at
@@ -158,29 +243,44 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                     : t("timeless")
                   : tListings("remainingUnits", { count: item.stock_remaining ?? 0 })}
               </p>
-              <p className="mt-2 text-xs font-semibold text-brand-blue">{t("cardCta")}</p>
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <span className="inline-flex rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-ink">Quick View</span>
+                <span className="inline-flex rounded-md bg-header px-2 py-1 text-[11px] font-semibold text-white">Add To Cart</span>
+              </div>
             </Link>
           ))}
         </div>
       </section>
 
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <div className="rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 p-7 text-white">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+          <div className="rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 p-7 text-white lg:col-span-2">
             <p className="text-xs font-bold uppercase tracking-wider">{t("promoAuctionBadge")}</p>
-            <h3 className="mt-2 text-2xl font-black">{t("promoAuctionTitle")}</h3>
-            <p className="mt-3 text-sm text-blue-100">{t("promoAuctionDesc")}</p>
+            <h3 className="mt-2 text-3xl font-black">{t("promoAuctionTitle")}</h3>
+            <p className="mt-3 max-w-xl text-sm text-blue-100">{t("promoAuctionDesc")}</p>
             <Link href={`/listings?type=auction${perfSuffix}`} className="mt-5 inline-flex rounded-md bg-white px-4 py-2 text-sm font-bold text-blue-700">
               {t("promoAuctionCta")}
             </Link>
           </div>
-          <div className="rounded-2xl bg-gradient-to-r from-blue-700 to-slate-900 p-7 text-white">
-            <p className="text-xs font-bold uppercase tracking-wider">{t("promoFixedBadge")}</p>
-            <h3 className="mt-2 text-2xl font-black">{t("promoFixedTitle")}</h3>
-            <p className="mt-3 text-sm text-blue-100">{t("promoFixedDesc")}</p>
-            <Link href={`/listings?type=fixed_price${perfSuffix}`} className="mt-5 inline-flex rounded-md bg-white px-4 py-2 text-sm font-bold text-blue-700">
-              {t("promoFixedCta")}
-            </Link>
+
+          <div className="grid gap-5">
+            <div className="rounded-2xl bg-gradient-to-r from-blue-700 to-slate-900 p-6 text-white">
+              <p className="text-xs font-bold uppercase tracking-wider">{t("promoFixedBadge")}</p>
+              <h3 className="mt-2 text-2xl font-black">{t("promoFixedTitle")}</h3>
+              <p className="mt-3 text-sm text-blue-100">{t("promoFixedDesc")}</p>
+              <Link href={`/listings?type=fixed_price${perfSuffix}`} className="mt-4 inline-flex rounded-md bg-white px-3 py-1.5 text-xs font-bold text-blue-700">
+                {t("promoFixedCta")}
+              </Link>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-white p-6">
+              <p className="text-xs font-bold uppercase tracking-wider text-brand-blue">Up to 40% Off</p>
+              <h3 className="mt-2 text-xl font-black text-ink">搶手商品週末限時折扣</h3>
+              <p className="mt-2 text-sm text-ink-light">從競標標的到固定價商品，這週精選一次看完。</p>
+              <Link href="/listings" className="mt-4 inline-flex rounded-md bg-header px-3 py-1.5 text-xs font-bold text-white">
+                立即查看
+              </Link>
+            </div>
           </div>
         </div>
       </section>
