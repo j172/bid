@@ -123,6 +123,8 @@ jobs:
 
           ops_curl "/__ops/apply?key=$OPS_KEY_CLEAN&cb=$(date +%s)"
 
+          CHALLENGE_HITS=0
+
           for ATTEMPT in $(seq 1 30); do
             STATUS="$(ops_curl "/__ops/status?key=$OPS_KEY_CLEAN&cb=$(date +%s)")"
 
@@ -133,8 +135,14 @@ jobs:
             fi
 
             if printf '%s' "$STATUS" | grep -Fq 'Please wait while your request is being verified'; then
-              echo "status endpoint returned CDN challenge page"
-              exit 1
+              CHALLENGE_HITS=$((CHALLENGE_HITS + 1))
+              echo "status endpoint returned CDN challenge page ($CHALLENGE_HITS)"
+              if [ "$CHALLENGE_HITS" -ge 6 ]; then
+                echo "Too many CDN challenge responses while waiting for apply"
+                exit 1
+              fi
+              sleep 2
+              continue
             fi
 
             if printf '%s' "$STATUS" | grep -Eiq '\[FAIL\]|\[ROLLBACK\]'; then
