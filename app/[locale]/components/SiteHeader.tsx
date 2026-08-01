@@ -74,27 +74,22 @@ export default async function SiteHeader() {
             <span aria-hidden>▾</span>
           </button>
 
-          <nav className="flex min-w-0 flex-wrap items-center gap-4 text-sm text-ink">
-            <Link href="/" className="font-medium hover:text-brand-blue">
-              {t("home")}
-            </Link>
-            <Link href="/listings" className="font-medium hover:text-brand-blue">
-              {t("browse")}
-            </Link>
-            <Link href="/contact" className="font-medium hover:text-brand-blue">
-              聯絡
-            </Link>
-            {user && (
-              <Link href="/my-bids" className="font-medium hover:text-brand-blue">
-                {t("myBids")}
-              </Link>
-            )}
-            {user?.role === "admin" && (
-              <NextLink href="/z04urru6" className="font-medium hover:text-brand-blue">
-                {t("admin")}
-              </NextLink>
-            )}
-          </nav>
+          <form action="/listings" className="relative min-w-0 flex-1">
+            <input
+              type="search"
+              name="q"
+              placeholder="搜尋商品、品牌或關鍵字..."
+              className="h-10 w-full rounded-md border border-border bg-white pl-3 pr-20 text-sm text-ink placeholder:text-ink-light focus:border-brand-blue focus:outline-none"
+            />
+            <button type="submit" className="absolute right-1 top-1 inline-flex h-8 items-center rounded-md bg-header px-3 text-xs font-semibold text-white hover:bg-header-soft">
+              Search
+            </button>
+          </form>
+
+          <div className="shrink-0 rounded-md border border-border px-3 py-2 leading-tight">
+            <p className="text-[11px] uppercase tracking-wide text-ink-light">客服專線</p>
+            <p className="text-xs font-bold text-ink">(+886) 02-1234-5678</p>
+          </div>
         </div>
 
         <div className="hidden items-center gap-2 lg:flex">
@@ -124,6 +119,34 @@ export default async function SiteHeader() {
               </Link>
             </>
           )}
+        </div>
+      </div>
+
+      <div className="hidden border-t border-border bg-white lg:block">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-2 text-sm sm:px-6">
+          <nav className="flex min-w-0 flex-wrap items-center gap-5 text-ink">
+            <Link href="/" className="font-medium hover:text-brand-blue">
+              {t("home")}
+            </Link>
+            <Link href="/listings" className="font-medium hover:text-brand-blue">
+              {t("browse")}
+            </Link>
+            <Link href="/contact" className="font-medium hover:text-brand-blue">
+              聯絡
+            </Link>
+            {user && (
+              <Link href="/my-bids" className="font-medium hover:text-brand-blue">
+                {t("myBids")}
+              </Link>
+            )}
+            {user?.role === "admin" && (
+              <NextLink href="/z04urru6" className="font-medium hover:text-brand-blue">
+                {t("admin")}
+              </NextLink>
+            )}
+          </nav>
+
+          <p className="shrink-0 text-xs font-semibold uppercase tracking-wide text-brand-blue">Premium Auction Experience</p>
         </div>
       </div>
     </header>
