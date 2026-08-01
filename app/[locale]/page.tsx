@@ -35,8 +35,14 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const quickDeals = listings.slice(0, 3);
   const newArrivals = listings.slice(0, 8);
   const bestMixed = listings.slice(0, 6);
-  const topAuctions = listings.filter((item) => item.listing_type === "auction").slice(0, 4);
-  const topFixed = listings.filter((item) => item.listing_type === "fixed_price").slice(0, 4);
+  const topAuctions = [...listings]
+    .filter((item) => item.listing_type === "auction")
+    .sort((a, b) => b.bidCount - a.bidCount || b.current_price - a.current_price)
+    .slice(0, 4);
+  const topFixed = [...listings]
+    .filter((item) => item.listing_type === "fixed_price")
+    .sort((a, b) => b.purchaseCount - a.purchaseCount || (b.price ?? 0) - (a.price ?? 0))
+    .slice(0, 4);
   const categoryItems: CategoryItem[] = [
     { key: "auction", count: listings.filter((item) => item.listing_type === "auction").length },
     { key: "fixed_price", count: listings.filter((item) => item.listing_type === "fixed_price").length },
@@ -357,7 +363,10 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {newArrivals.map((item, index) => (
-            <article key={item.id} className="group rounded-2xl border border-border bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-brand-blue/60 hover:shadow-md">
+            <article
+              key={item.id}
+              className="group rounded-2xl border border-border bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-brand-blue/60 hover:shadow-md"
+            >
               <Link href={`/listings/${item.id}`} className="block">
                 <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
                   {item.photos[0] && (
@@ -379,14 +388,13 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                   </span>
                 </div>
               </Link>
-
               <h3 className="mt-3 truncate text-sm font-semibold text-ink">{item.title}</h3>
               <div className="mt-1 flex items-center justify-between text-[11px] text-ink-light">
                 <span className="inline-flex items-center gap-1">
                   <span className="text-amber-500">★</span>
                   <span>4.9</span>
                 </span>
-                <span>{item.listing_type === "auction" ? `已出價 ${item.bidCount}` : `已售 ${Math.max(0, 9 - (item.stock_remaining ?? 0))}`}</span>
+                <span>{item.listing_type === "auction" ? `已出價 ${item.bidCount}` : `已售 ${item.purchaseCount}`}</span>
               </div>
               <div className="mt-2 flex items-end gap-2">
                 <p className="text-lg font-black text-ink">{item.listing_type === "auction" ? item.current_price : item.price}</p>
@@ -394,7 +402,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                   {Math.ceil(Number(item.listing_type === "auction" ? item.current_price : item.price) * 1.18)}
                 </p>
               </div>
-
               <div className="mt-3 flex items-center gap-2 text-[11px]">
                 <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold text-ink">Quick View</span>
                 <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold text-ink">Add To Wishlist</span>
@@ -410,7 +417,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
           <div className="rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 p-7 text-white lg:col-span-2">
-            <span className="inline-flex rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Flash Sale 40% Off</span>
+            <span className="inline-flex rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Flash Sale Picks</span>
             <p className="text-xs font-bold uppercase tracking-wider">{t("promoAuctionBadge")}</p>
             <h3 className="mt-2 text-3xl font-black">{t("promoAuctionTitle")}</h3>
             <p className="mt-3 max-w-xl text-sm text-blue-100">{t("promoAuctionDesc")}</p>
@@ -431,6 +438,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             </div>
 
             <div className="rounded-2xl border border-border bg-white p-6">
+              <p className="text-xs font-bold uppercase tracking-wider text-brand-blue">Weekly Picks</p>
               <h3 className="mt-2 text-xl font-black text-ink">搶手商品週末限時折扣</h3>
               <p className="mt-2 text-sm text-ink-light">從競標標的到固定價商品，這週精選一次看完。</p>
               <Link href="/listings" className="mt-4 inline-flex rounded-md bg-header px-3 py-1.5 text-xs font-bold text-white">
@@ -480,7 +488,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                   <span className="text-amber-500">★</span>
                   <span>4.9</span>
                 </span>
-                <span>{item.listing_type === "auction" ? `已出價 ${item.bidCount}` : `已售 ${Math.max(0, 9 - (item.stock_remaining ?? 0))}`}</span>
+                <span>{item.listing_type === "auction" ? `已出價 ${item.bidCount}` : `已售 ${item.purchaseCount}`}</span>
               </div>
               <div className="mt-2 flex items-end gap-2">
                 <p className="text-lg font-black text-ink">{item.listing_type === "auction" ? item.current_price : item.price}</p>
@@ -523,7 +531,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                 <Link key={item.id} href={`/listings/${item.id}`} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 hover:bg-slate-100">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold">{item.title}</p>
-                    <p className="text-xs text-ink-light">{tListings("remainingUnits", { count: item.stock_remaining ?? 0 })}</p>
+                    <p className="text-xs text-ink-light">已售 {item.purchaseCount}</p>
                   </div>
                   <p className="ml-3 shrink-0 text-sm font-bold text-gold">{item.price}</p>
                 </Link>
