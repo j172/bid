@@ -282,6 +282,13 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                 </span>
               </div>
               <p className="mt-3 truncate text-sm font-semibold text-ink">{item.title}</p>
+              <div className="mt-1 flex items-center justify-between text-[11px] text-ink-light">
+                <span className="inline-flex items-center gap-1">
+                  <span className="text-amber-500">★</span>
+                  <span>4.8</span>
+                </span>
+                <span>{item.listing_type === "auction" ? `已出價 ${item.bidCount}` : `已售 ${Math.max(0, 9 - (item.stock_remaining ?? 0))}`}</span>
+              </div>
               <div className="mt-2 flex items-end gap-2">
                 <p className="text-lg font-black text-ink">{item.listing_type === "auction" ? item.current_price : item.price}</p>
                 <p className="text-xs text-ink-light line-through">
@@ -373,6 +380,13 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               </Link>
 
               <h3 className="mt-3 truncate text-sm font-semibold text-ink">{item.title}</h3>
+              <div className="mt-1 flex items-center justify-between text-[11px] text-ink-light">
+                <span className="inline-flex items-center gap-1">
+                  <span className="text-amber-500">★</span>
+                  <span>4.9</span>
+                </span>
+                <span>{item.listing_type === "auction" ? `已出價 ${item.bidCount}` : `已售 ${Math.max(0, 9 - (item.stock_remaining ?? 0))}`}</span>
+              </div>
               <div className="mt-2 flex items-end gap-2">
                 <p className="text-lg font-black text-ink">{item.listing_type === "auction" ? item.current_price : item.price}</p>
                 <p className="text-xs text-ink-light line-through">
