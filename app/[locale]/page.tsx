@@ -1,5 +1,4 @@
 import { getTranslations } from "next-intl/server";
-import { preload } from "react-dom";
 import { listOpenListings } from "@/lib/listings";
 import { listingPhotoUrl } from "@/lib/uploads";
 import { formatRemaining } from "@/lib/format";
@@ -96,13 +95,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         : tListings("remainingUnits", { count: item.stock_remaining ?? 0 }),
     photo: item.photos[0],
   }));
-
-  if (featured[0]?.photos[0]) {
-    preload(listingPhotoUrl(featured[0].id, featured[0].photos[0]), {
-      as: "image",
-      fetchPriority: "high",
-    });
-  }
 
   return (
     <main className="pb-8">

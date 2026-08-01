@@ -110,22 +110,31 @@ jobs:
         run: |
           set -euo pipefail
           OPS_KEY_CLEAN="$(printf '%s' "$OPS_KEY" | tr -d '\r\n')"
+          ORIGIN_IP="103.21.221.12"
 
-          curl --fail --show-error --silent --insecure \
-            --connect-timeout 10 --max-time 30 --retry 2 --retry-delay 2 --retry-all-errors \
-            --resolve "bid.j172.tw:443:103.21.221.12" \
-            "https://bid.j172.tw/__ops/apply?key=$OPS_KEY_CLEAN&cb=$(date +%s)"
+          ops_curl() {
+            local url_path="$1"
+            curl --fail --show-error --silent --insecure \
+              --connect-timeout 10 --max-time 30 --retry 2 --retry-delay 2 --retry-all-errors \
+              --header "Host: bid.j172.tw" \
+              --user-agent "bid-deploy-bot/1.0" \
+              "https://${ORIGIN_IP}${url_path}"
+          }
+
+          ops_curl "/__ops/apply?key=$OPS_KEY_CLEAN&cb=$(date +%s)"
 
           for ATTEMPT in $(seq 1 30); do
-            STATUS="$(curl --fail --show-error --silent --insecure \
-              --connect-timeout 10 --max-time 20 --retry 2 --retry-delay 2 --retry-all-errors \
-              --resolve "bid.j172.tw:443:103.21.221.12" \
-              "https://bid.j172.tw/__ops/status?key=$OPS_KEY_CLEAN&cb=$(date +%s)")"
+            STATUS="$(ops_curl "/__ops/status?key=$OPS_KEY_CLEAN&cb=$(date +%s)")"
 
             echo "$STATUS"
 
             if printf '%s' "$STATUS" | grep -Fq '[DONE]'; then
               exit 0
+            fi
+
+            if printf '%s' "$STATUS" | grep -Fq 'Please wait while your request is being verified'; then
+              echo "status endpoint returned CDN challenge page"
+              exit 1
             fi
 
             if printf '%s' "$STATUS" | grep -Eiq '\[FAIL\]|\[ROLLBACK\]'; then
@@ -143,7 +152,9 @@ jobs:
       - name: Verify live site
         run: |
           set -euo pipefail
+          ORIGIN_IP="103.21.221.12"
           curl --fail --show-error --silent --insecure --location \
             --connect-timeout 10 --max-time 20 --retry 2 --retry-delay 2 --retry-all-errors \
-            --resolve "bid.j172.tw:443:103.21.221.12" \
-            "https://bid.j172.tw/api/health?verify=$(date +%s)" | grep -q '"ok":true'
+            --header "Host: bid.j172.tw" \
+            --user-agent "bid-deploy-bot/1.0" \
+            "https://${ORIGIN_IP}/api/health?verify=$(date +%s)" | grep -q '"ok":true'
