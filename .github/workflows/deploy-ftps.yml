@@ -125,7 +125,7 @@ jobs:
 
           CHALLENGE_HITS=0
 
-          for ATTEMPT in $(seq 1 30); do
+          for ATTEMPT in $(seq 1 45); do
             STATUS="$(ops_curl "/__ops/status?key=$OPS_KEY_CLEAN&cb=$(date +%s)")"
 
             echo "$STATUS"
@@ -137,11 +137,8 @@ jobs:
             if printf '%s' "$STATUS" | grep -Fq 'Please wait while your request is being verified'; then
               CHALLENGE_HITS=$((CHALLENGE_HITS + 1))
               echo "status endpoint returned CDN challenge page ($CHALLENGE_HITS)"
-              if [ "$CHALLENGE_HITS" -ge 6 ]; then
-                echo "Too many CDN challenge responses while waiting for apply"
-                exit 1
-              fi
-              sleep 2
+              # Treat challenge as transient; keep polling until overall timeout.
+              sleep 3
               continue
             fi
 
@@ -150,7 +147,7 @@ jobs:
               exit 1
             fi
 
-            echo "Waiting for apply completion ($ATTEMPT/30)..."
+            echo "Waiting for apply completion ($ATTEMPT/45)..."
             sleep 2
           done
 
