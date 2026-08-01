@@ -203,25 +203,41 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           </Link>
         </div>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <Link href="/listings?type=auction" className="rounded-2xl border border-border bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          <Link
+            href="/listings?type=auction"
+            className="group rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-cyan-50 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          >
             <p className="text-xs font-bold uppercase tracking-wide text-brand-blue">Collection</p>
             <p className="mt-1 text-base font-black text-ink">Live Auctions</p>
             <p className="mt-1 text-xs text-ink-light">即時出價商品</p>
+            <p className="mt-3 text-[11px] font-bold text-brand-blue">Explore now →</p>
           </Link>
-          <Link href="/listings?type=fixed_price" className="rounded-2xl border border-border bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-            <p className="text-xs font-bold uppercase tracking-wide text-brand-blue">Collection</p>
+          <Link
+            href="/listings?type=fixed_price"
+            className="group rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">Collection</p>
             <p className="mt-1 text-base font-black text-ink">Fixed Deals</p>
             <p className="mt-1 text-xs text-ink-light">快速下單專區</p>
+            <p className="mt-3 text-[11px] font-bold text-emerald-700">Explore now →</p>
           </Link>
-          <Link href="/listings?sort=price_desc" className="rounded-2xl border border-border bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-            <p className="text-xs font-bold uppercase tracking-wide text-brand-blue">Collection</p>
+          <Link
+            href="/listings?sort=price_desc"
+            className="group rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <p className="text-xs font-bold uppercase tracking-wide text-violet-700">Collection</p>
             <p className="mt-1 text-base font-black text-ink">Premium Picks</p>
             <p className="mt-1 text-xs text-ink-light">高單價精選</p>
+            <p className="mt-3 text-[11px] font-bold text-violet-700">Explore now →</p>
           </Link>
-          <Link href="/listings?q=proxy" className="rounded-2xl border border-border bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-            <p className="text-xs font-bold uppercase tracking-wide text-brand-blue">Collection</p>
+          <Link
+            href="/listings?q=proxy"
+            className="group rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <p className="text-xs font-bold uppercase tracking-wide text-amber-700">Collection</p>
             <p className="mt-1 text-base font-black text-ink">Proxy Bidding</p>
             <p className="mt-1 text-xs text-ink-light">自動守價商品</p>
+            <p className="mt-3 text-[11px] font-bold text-amber-700">Explore now →</p>
           </Link>
         </div>
       </section>
