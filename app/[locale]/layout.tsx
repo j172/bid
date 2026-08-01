@@ -3,7 +3,7 @@ import { hasLocale } from "next-intl";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { routing } from "@/i18n/routing";
 import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
@@ -46,7 +46,9 @@ export default async function LocaleLayout({
     <html lang={locale}>
       <body className="min-h-screen font-sans text-ink">
         <NextIntlClientProvider>
-          <WebVitalsReporter />
+          <Suspense fallback={null}>
+            <WebVitalsReporter />
+          </Suspense>
           <SiteHeader />
           {children}
           <SiteFooter />
