@@ -8,15 +8,18 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "postinstall": "node scripts/copy-tinymce.mjs"
   },
   "dependencies": {
+    "@tinymce/tinymce-react": "^6.3.0",
     "mysql2": "^3.23.1",
     "next": "16.0.10",
     "next-intl": "^4.13.4",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
-    "recharts": "^3.10.1"
+    "recharts": "^3.10.1",
+    "tinymce": "^8.8.2"
   },
   "devDependencies": {
     "@swc/helpers": "^0.5.23",

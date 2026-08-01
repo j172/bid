@@ -82,6 +82,8 @@ export default function AdminShell({ children, email }: { children: ReactNode; e
       users: { label: "使用者列表", icon: "👤" },
       new: { label: "建立商品", icon: "➕" },
       closed: { label: "已結標結算", icon: "✅" },
+      newsletter: { label: "電子報", icon: "✉️" },
+      compose: { label: "撰寫新電子報", icon: "📝" },
     };
 
     let runningPath = "";

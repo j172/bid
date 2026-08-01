@@ -238,6 +238,10 @@
     "newsletterSubtitle": "Subscribe for new listings, bid reminders, and limited-time offers.",
     "newsletterPlaceholder": "Enter your email",
     "subscribe": "Subscribe",
+    "newsletterSubscribing": "Subscribing…",
+    "newsletterSuccess": "Thanks for subscribing!",
+    "newsletterError": "Something went wrong. Please try again.",
+    "newsletterInvalidEmail": "Please enter a valid email address.",
     "copyright": "© 2026 j172tw Bid. All rights reserved.",
     "payments": "Payments: cards / bank transfer / third-party checkout"
   },

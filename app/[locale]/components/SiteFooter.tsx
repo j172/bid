@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import NewsletterForm from "./NewsletterForm";
 
 export default async function SiteFooter() {
   const t = await getTranslations("footer");
@@ -58,16 +59,7 @@ export default async function SiteFooter() {
         <section>
           <h3 className="text-sm font-bold uppercase tracking-wide text-ink">{t("newsletterTitle")}</h3>
           <p className="mt-3 text-sm text-ink-light">{t("newsletterSubtitle")}</p>
-          <div className="mt-4 flex items-center gap-2">
-            <input
-              type="email"
-              placeholder={t("newsletterPlaceholder")}
-              className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-gold focus:outline-none"
-            />
-            <button className="rounded-md bg-gold px-3 py-2 text-sm font-semibold text-white hover:bg-gold-dark">
-              {t("subscribe")}
-            </button>
-          </div>
+          <NewsletterForm />
         </section>
       </div>
 

@@ -19,5 +19,8 @@ tsconfig.tsbuildinfo
 # runtime-uploaded listing photos (live only on the server)
 /uploads/
 
+# self-hosted TinyMCE runtime, copied from node_modules by postinstall
+/public/tinymce/
+
 # background-agent worktrees (each is its own separate checkout/.git)
 /.claude/worktrees/
