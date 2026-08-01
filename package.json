@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@tinymce/tinymce-react": "^6.3.0",
+    "isomorphic-dompurify": "^3.21.0",
     "mysql2": "^3.23.1",
     "next": "16.0.10",
     "next-intl": "^4.13.4",

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  DESCRIPTION_HTML_MAX,
   DESCRIPTION_MAX,
   ENDS_AT_MAX_DAYS,
   PRICE_MAX,
@@ -46,6 +47,20 @@ describe("validateDescription", () => {
 
   it("accepts a description at exactly the max length", () => {
     expect(validateDescription("a".repeat(DESCRIPTION_MAX))).toEqual({ ok: true });
+  });
+
+  it("measures length against visible text, not HTML markup", () => {
+    const html = `<p><strong>${"a".repeat(DESCRIPTION_MAX)}</strong></p>`;
+    expect(validateDescription(html)).toEqual({ ok: true });
+  });
+
+  it("rejects an empty rich-text description (tags with no visible text)", () => {
+    expect(validateDescription("<p><br></p>").ok).toBe(false);
+  });
+
+  it("rejects raw HTML over the safety ceiling even if visible text is short", () => {
+    const html = `<p>hi</p><!--${"a".repeat(DESCRIPTION_HTML_MAX)}-->`;
+    expect(validateDescription(html).ok).toBe(false);
   });
 });
 

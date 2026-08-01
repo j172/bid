@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
+import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
 import {
   getListingById,
   getPhotoFileNames,
@@ -8,7 +10,8 @@ import {
 } from "@/lib/listings";
 import { validateDescription, validatePrice, validateStockRemaining, validateTitle } from "@/lib/listingValidation";
 import { MAX_PHOTO_COUNT } from "@/lib/photoLimits";
-import { deleteListingPhotoFiles, saveListingPhotos } from "@/lib/uploads";
+import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
+import { deleteListingPhotoFiles, descriptionImageUrl, saveDescriptionImages, saveListingPhotos } from "@/lib/uploads";
 
 type OrderEntry = { type: "existing"; fileName: string } | { type: "new"; index: number };
 
@@ -41,6 +44,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const price = Number(form.get("price"));
   const stockRemaining = Number(form.get("stockRemaining"));
   const newPhotos = form.getAll("photos").filter((entry): entry is File => entry instanceof File && entry.size > 0);
+  const descriptionImages = form
+    .getAll("descriptionImages")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
 
   let order: OrderEntry[];
   try {
@@ -72,6 +78,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (order.length > MAX_PHOTO_COUNT) {
     return NextResponse.json({ ok: false, error: `照片最多 ${MAX_PHOTO_COUNT} 張` }, { status: 400 });
   }
+  if (descriptionImages.length > DESCRIPTION_IMAGE_MAX_COUNT) {
+    return NextResponse.json({ ok: false, error: `描述圖片最多 ${DESCRIPTION_IMAGE_MAX_COUNT} 張` }, { status: 400 });
+  }
 
   const currentFileNames = await getPhotoFileNames(listingId);
   const currentFileNameSet = new Set(currentFileNames);
@@ -82,8 +91,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   let savedFileNames: string[];
+  let finalDescription: string;
   try {
     savedFileNames = await saveListingPhotos(listingId, newPhotos);
+    const descriptionImageFileNames = await saveDescriptionImages(listingId, descriptionImages);
+    const descriptionImageUrls = descriptionImageFileNames.map((fileName) => descriptionImageUrl(listingId, fileName));
+    finalDescription = sanitizeDescriptionHtml(resolveDescriptionImagePlaceholders(description, descriptionImageUrls));
   } catch (error) {
     const message = error instanceof Error ? error.message : "圖片上傳失敗";
     return NextResponse.json({ ok: false, error: message }, { status: 400 });
@@ -91,7 +104,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const finalOrder = order.map((entry) => (entry.type === "existing" ? entry.fileName : savedFileNames[entry.index]));
 
-  const result = await updateFixedPriceListing(listingId, { title, description, price, stockRemaining });
+  const result = await updateFixedPriceListing(listingId, { title, description: finalDescription, price, stockRemaining });
   if (!result.ok) {
     // Roll back the newly-saved files — the update was rejected (e.g. the
     // listing was cancelled by someone else between the check above and now).

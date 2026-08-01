@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { addListingPhotos, deleteListing, insertListing, type NewListingInput } from "@/lib/listings";
+import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
+import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
+import { addListingPhotos, deleteListing, insertListing, updateListingDescription, type NewListingInput } from "@/lib/listings";
 import { validateDescription, validateEndsAt, validatePrice, validateStockQuantity, validateTitle } from "@/lib/listingValidation";
 import { MAX_PHOTO_COUNT } from "@/lib/photoLimits";
-import { saveListingPhotos } from "@/lib/uploads";
+import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
+import { descriptionImageUrl, saveDescriptionImages, saveListingPhotos } from "@/lib/uploads";
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -19,6 +22,9 @@ export async function POST(request: Request) {
   const title = String(form.get("title") ?? "").trim();
   const description = String(form.get("description") ?? "").trim();
   const photos = form.getAll("photos").filter((entry): entry is File => entry instanceof File && entry.size > 0);
+  const descriptionImages = form
+    .getAll("descriptionImages")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
 
   const titleResult = validateTitle(title);
   if (!titleResult.ok) {
@@ -33,6 +39,9 @@ export async function POST(request: Request) {
   }
   if (photos.length > MAX_PHOTO_COUNT) {
     return NextResponse.json({ ok: false, error: `照片最多 ${MAX_PHOTO_COUNT} 張` }, { status: 400 });
+  }
+  if (descriptionImages.length > DESCRIPTION_IMAGE_MAX_COUNT) {
+    return NextResponse.json({ ok: false, error: `描述圖片最多 ${DESCRIPTION_IMAGE_MAX_COUNT} 張` }, { status: 400 });
   }
 
   let input: NewListingInput;
@@ -50,7 +59,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: stockResult.error }, { status: 400 });
     }
 
-    input = { listingType, title, description, price, stockQuantity, createdBy: user.id };
+    // description is filled in after insertListing, once its final HTML
+    // (with description-image placeholders resolved and the whole thing
+    // sanitized) is ready — see the comment below insertListing.
+    input = { listingType, title, description: "", price, stockQuantity, createdBy: user.id };
   } else {
     const startingPrice = Number(form.get("startingPrice"));
     const buyItNowPriceRaw = String(form.get("buyItNowPrice") ?? "").trim();
@@ -76,14 +88,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: endsAtResult.error }, { status: 400 });
     }
 
-    input = { listingType, title, description, startingPrice, buyItNowPrice, endsAt, createdBy: user.id };
+    input = { listingType, title, description: "", startingPrice, buyItNowPrice, endsAt, createdBy: user.id };
   }
 
+  // The listing's own id names its photo/description-image directories, so
+  // it has to exist before any files are saved — hence description is
+  // inserted empty above and only backfilled (sanitized, with its `cid:N`
+  // image placeholders resolved to real URLs) once that's done.
   const listingId = await insertListing(input);
 
   try {
     const fileNames = await saveListingPhotos(listingId, photos);
     await addListingPhotos(listingId, fileNames);
+
+    const descriptionImageFileNames = await saveDescriptionImages(listingId, descriptionImages);
+    const descriptionImageUrls = descriptionImageFileNames.map((fileName) => descriptionImageUrl(listingId, fileName));
+    const resolvedDescription = resolveDescriptionImagePlaceholders(description, descriptionImageUrls);
+    await updateListingDescription(listingId, sanitizeDescriptionHtml(resolvedDescription));
   } catch (error) {
     await deleteListing(listingId);
     const message = error instanceof Error ? error.message : "圖片上傳失敗";

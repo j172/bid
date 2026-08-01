@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto";
 import { copyFile, mkdir, unlink, writeFile } from "fs/promises";
 import { join } from "path";
+import { DESCRIPTION_IMAGE_MAX_BYTES } from "@/lib/descriptionImageLimits";
 import { MAX_PHOTO_BYTES } from "@/lib/photoLimits";
 
 const ALLOWED_EXTENSIONS: Record<string, string> = {
@@ -45,6 +46,37 @@ export async function saveListingPhotos(listingId: number, photos: File[]): Prom
 
 export function listingPhotoUrl(listingId: number, fileName: string): string {
   return `/uploads/listings/${listingId}/${fileName}`;
+}
+
+// Images inserted inline into a listing's rich-text description (see
+// DescriptionEditor) — stored under their own subdirectory, separate from
+// the main photo gallery, since the two have independent count/size limits
+// (lib/descriptionImageLimits.ts) and aren't part of listing_photos.
+export async function saveDescriptionImages(listingId: number, images: File[]): Promise<string[]> {
+  const dir = join(UPLOADS_ROOT, "listings", String(listingId), "description");
+  await mkdir(dir, { recursive: true });
+
+  const fileNames: string[] = [];
+  for (const image of images) {
+    if (!isAllowedPhotoType(image.type)) {
+      throw new Error(`不支援的圖片格式：${image.type || "unknown"}`);
+    }
+    if (image.size > DESCRIPTION_IMAGE_MAX_BYTES) {
+      throw new Error(`描述圖片過大（上限 ${DESCRIPTION_IMAGE_MAX_BYTES / 1024 / 1024}MB）`);
+    }
+
+    const extension = ALLOWED_EXTENSIONS[image.type];
+    const fileName = `${randomBytes(16).toString("hex")}.${extension}`;
+    const buffer = Buffer.from(await image.arrayBuffer());
+    await writeFile(join(dir, fileName), buffer);
+    fileNames.push(fileName);
+  }
+
+  return fileNames;
+}
+
+export function descriptionImageUrl(listingId: number, fileName: string): string {
+  return `/uploads/listings/${listingId}/description/${fileName}`;
 }
 
 // Used when editing a listing's photos — removes files no longer kept in

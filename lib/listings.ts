@@ -91,6 +91,16 @@ export async function insertListing(input: NewListingInput): Promise<number> {
   return (result as { insertId: number }).insertId;
 }
 
+// Used by the create-listing route to backfill the final description HTML
+// once inline description images have been saved to disk and their `cid:N`
+// placeholders resolved to real URLs — insertListing itself has to run
+// first (its own id names the photo/description-image directory), so the
+// row briefly holds the placeholder-only description in between.
+export async function updateListingDescription(listingId: number, description: string): Promise<void> {
+  const db = await getDb();
+  await db.query("UPDATE listings SET description = ? WHERE id = ?", [description, listingId]);
+}
+
 export async function addListingPhotos(listingId: number, fileNames: string[]): Promise<void> {
   const db = await getDb();
   for (let i = 0; i < fileNames.length; i++) {
