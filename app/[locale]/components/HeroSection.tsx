@@ -37,9 +37,6 @@ export default function HeroSection({
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-10">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <article className="relative isolate overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 p-7 text-white shadow-xl lg:col-span-2 lg:min-h-[420px]">
-            <span className="absolute right-4 top-4 rounded-full bg-rose-500 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white shadow-md">
-              Up to 40% Off
-            </span>
             <div className="pointer-events-none absolute -left-20 -top-20 h-56 w-56 rounded-full bg-white/10 blur-2xl" />
             <div className="pointer-events-none absolute -bottom-24 left-1/3 h-56 w-56 rounded-full bg-cyan-400/20 blur-2xl" />
 

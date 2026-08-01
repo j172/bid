@@ -1,7 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { listOpenListings } from "@/lib/listings";
 import { listingPhotoUrl } from "@/lib/uploads";
-import { formatRemaining } from "@/lib/format";
 import { Link } from "@/i18n/navigation";
 import ProgressiveImage from "@/app/components/ProgressiveImage";
 import HeroSection from "./components/HeroSection";
@@ -30,7 +29,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const perfMode = perfModeFromSearchParams(params);
   const t = await getTranslations("home");
   const tListings = await getTranslations("listings");
-  const tFormat = await getTranslations("format");
   const listings = await listOpenListings();
 
   const featured = listings.slice(0, 3);
@@ -359,59 +357,52 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {newArrivals.map((item, index) => (
-            <Link
-              key={item.id}
-              href={`/listings/${item.id}`}
-              className="group rounded-2xl border border-border bg-white p-3 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-brand-blue/60 hover:shadow-md"
-            >
-              <div className="relative aspect-square overflow-hidden rounded-xl bg-slate-100">
-                {item.photos[0] && (
-                  <ProgressiveImage
-                    src={listingPhotoUrl(item.id, item.photos[0])}
-                    alt={item.title}
-                    eager={index < homeEagerCount}
-                    fetchPriority={index < homeEagerCount ? "high" : "auto"}
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                    className="h-full w-full object-cover transition group-hover:scale-105"
-                  />
-                )}
-                <span className="absolute right-2 top-2 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold text-rose-600 shadow-sm">
-                  -12%
-                </span>
-                <span className="absolute bottom-2 right-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-sm text-rose-500 opacity-0 shadow-sm transition group-hover:opacity-100">
-                  ♥
-                </span>
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition group-hover:opacity-100" />
-                <span className="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-1 text-[11px] font-bold text-brand-blue shadow-sm">
-                  {item.listing_type === "auction" ? "AUCTION" : "FIXED"}
-                </span>
-              </div>
-              <p className="mt-3 truncate text-sm font-semibold text-ink">{item.title}</p>
+            <article key={item.id} className="group rounded-2xl border border-border bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-brand-blue/60 hover:shadow-md">
+              <Link href={`/listings/${item.id}`} className="block">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
+                  {item.photos[0] && (
+                    <ProgressiveImage
+                      src={listingPhotoUrl(item.id, item.photos[0])}
+                      alt={item.title}
+                      eager={index < homeEagerCount}
+                      fetchPriority={index < homeEagerCount ? "high" : "auto"}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="h-full w-full object-cover transition group-hover:scale-105"
+                    />
+                  )}
+                  <span className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-sm text-rose-500 opacity-0 shadow-sm transition group-hover:opacity-100">
+                    ♥
+                  </span>
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition group-hover:opacity-100" />
+                  <span className="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-1 text-[11px] font-bold text-brand-blue shadow-sm">
+                    {item.listing_type === "auction" ? "HOT BIDDING" : "BEST PRICE"}
+                  </span>
+                </div>
+              </Link>
+
+              <h3 className="mt-3 truncate text-sm font-semibold text-ink">{item.title}</h3>
               <div className="mt-1 flex items-center justify-between text-[11px] text-ink-light">
                 <span className="inline-flex items-center gap-1">
                   <span className="text-amber-500">★</span>
-                  <span>4.8</span>
+                  <span>4.9</span>
                 </span>
                 <span>{item.listing_type === "auction" ? `已出價 ${item.bidCount}` : `已售 ${Math.max(0, 9 - (item.stock_remaining ?? 0))}`}</span>
               </div>
               <div className="mt-2 flex items-end gap-2">
                 <p className="text-lg font-black text-ink">{item.listing_type === "auction" ? item.current_price : item.price}</p>
                 <p className="text-xs text-ink-light line-through">
-                  {Math.ceil(Number(item.listing_type === "auction" ? item.current_price : item.price) * 1.12)}
+                  {Math.ceil(Number(item.listing_type === "auction" ? item.current_price : item.price) * 1.18)}
                 </p>
               </div>
-              <p className="mt-1 text-xs text-ink-light">
-                {item.listing_type === "auction"
-                  ? item.ends_at
-                    ? formatRemaining(item.ends_at, tFormat)
-                    : t("timeless")
-                  : tListings("remainingUnits", { count: item.stock_remaining ?? 0 })}
-              </p>
-              <div className="mt-3 flex items-center justify-between gap-2">
-                <span className="inline-flex rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-ink">Quick View</span>
-                <span className="inline-flex rounded-md bg-header px-2 py-1 text-[11px] font-semibold text-white">Add To Cart</span>
+
+              <div className="mt-3 flex items-center gap-2 text-[11px]">
+                <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold text-ink">Quick View</span>
+                <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold text-ink">Add To Wishlist</span>
+                <Link href={`/listings/${item.id}`} className="rounded-md bg-header px-2 py-1 font-semibold text-white">
+                  {item.listing_type === "fixed_price" ? "Add To Cart" : "Place Bid"}
+                </Link>
               </div>
-            </Link>
+            </article>
           ))}
         </div>
       </section>
@@ -440,7 +431,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             </div>
 
             <div className="rounded-2xl border border-border bg-white p-6">
-              <p className="text-xs font-bold uppercase tracking-wider text-brand-blue">Up to 40% Off</p>
               <h3 className="mt-2 text-xl font-black text-ink">搶手商品週末限時折扣</h3>
               <p className="mt-2 text-sm text-ink-light">從競標標的到固定價商品，這週精選一次看完。</p>
               <Link href="/listings" className="mt-4 inline-flex rounded-md bg-header px-3 py-1.5 text-xs font-bold text-white">
@@ -503,7 +493,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                 <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold text-ink">Quick View</span>
                 <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold text-ink">Add To Wishlist</span>
                 <Link href={`/listings/${item.id}`} className="rounded-md bg-header px-2 py-1 font-semibold text-white">
-                  Add To Cart
+                  {item.listing_type === "fixed_price" ? "Add To Cart" : "Place Bid"}
                 </Link>
               </div>
             </article>
@@ -593,20 +583,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </div>
       </section>
 
-      <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-6">
-        <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-ink">Trusted checkout · buyer protection</p>
-            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-ink-light">
-              <span className="rounded-md border border-border bg-slate-50 px-2 py-1">SSL Secure</span>
-              <span className="rounded-md border border-border bg-slate-50 px-2 py-1">VISA</span>
-              <span className="rounded-md border border-border bg-slate-50 px-2 py-1">Mastercard</span>
-              <span className="rounded-md border border-border bg-slate-50 px-2 py-1">PayPal</span>
-              <span className="rounded-md border border-border bg-slate-50 px-2 py-1">Apple Pay</span>
-            </div>
-          </div>
-        </div>
-      </section>
     </main>
   );
 }

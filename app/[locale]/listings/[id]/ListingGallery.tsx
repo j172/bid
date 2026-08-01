@@ -48,12 +48,12 @@ export default function ListingGallery({ title, imageUrls }: ListingGalleryProps
   }, [moveSelection]);
 
   if (urls.length === 0) {
-    return <div className="aspect-square rounded-xl border border-border bg-surface-muted" />;
+    return <div className="aspect-video rounded-xl border border-border bg-surface-muted" />;
   }
 
   return (
     <div className="flex flex-col gap-4" ref={galleryRef}>
-      <div className="aspect-square overflow-hidden rounded-2xl border border-border bg-surface-muted shadow-sm">
+      <div className="aspect-video overflow-hidden rounded-2xl border border-border bg-surface-muted shadow-sm">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={selectedUrl} alt={title} className="h-full w-full object-cover" />
       </div>
