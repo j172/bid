@@ -18,6 +18,9 @@
     "quickProxy": "Proxy Bid",
     "dealZone": "Flash Deals",
     "newbieZone": "Starter Picks",
+    "searchAll": "All",
+    "searchAuction": "Auction",
+    "searchFixed": "Fixed",
     "login": "Log In",
     "register": "Sign Up",
     "logout": "Log Out"

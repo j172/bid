@@ -93,12 +93,23 @@ export default async function SiteHeader() {
           </button>
 
           <form action="/listings" className="relative min-w-0 flex-1">
-            <input
-              type="search"
-              name="q"
-              placeholder="搜尋商品、品牌或關鍵字..."
-              className="h-10 w-full rounded-md border border-border bg-white pl-3 pr-20 text-sm text-ink placeholder:text-ink-light focus:border-brand-blue focus:outline-none"
-            />
+            <div className="flex h-10 w-full overflow-hidden rounded-md border border-border bg-white">
+              <select
+                name="type"
+                defaultValue=""
+                className="w-28 shrink-0 border-r border-border bg-slate-50 px-2 text-xs text-ink focus:outline-none"
+              >
+                <option value="">{t("searchAll")}</option>
+                <option value="auction">{t("searchAuction")}</option>
+                <option value="fixed_price">{t("searchFixed")}</option>
+              </select>
+              <input
+                type="search"
+                name="q"
+                placeholder="搜尋商品、品牌或關鍵字..."
+                className="min-w-0 flex-1 px-3 text-sm text-ink placeholder:text-ink-light focus:outline-none"
+              />
+            </div>
             <button type="submit" className="absolute right-1 top-1 inline-flex h-8 items-center rounded-md bg-header px-3 text-xs font-semibold text-white hover:bg-header-soft">
               Search
             </button>

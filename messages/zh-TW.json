@@ -18,6 +18,9 @@
     "quickProxy": "代理出價",
     "dealZone": "限時優惠",
     "newbieZone": "新手專區",
+    "searchAll": "全部",
+    "searchAuction": "競標",
+    "searchFixed": "固定價",
     "login": "登入",
     "register": "註冊",
     "logout": "登出"
