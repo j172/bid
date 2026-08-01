@@ -88,8 +88,8 @@ export default function HeroSection({
                     <ProgressiveImage
                       src={listingPhotoUrl(item!.id, item!.photo)}
                       alt={item!.title}
-                      eager={index === 0}
-                      fetchPriority={index === 0 ? "high" : "auto"}
+                      eager={false}
+                      fetchPriority="auto"
                       sizes="(max-width: 1024px) 100vw, 22vw"
                       className="h-full w-full object-cover transition group-hover:scale-105"
                     />
