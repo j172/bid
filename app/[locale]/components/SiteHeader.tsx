@@ -41,6 +41,15 @@ export default async function SiteHeader() {
           </summary>
           <div className="absolute right-0 top-10 z-30 w-60 rounded-lg border border-border bg-white p-2 shadow-xl">
             <form action="/listings" className="mb-2 flex items-center gap-2 rounded-md bg-slate-50 p-2">
+              <select
+                name="type"
+                defaultValue=""
+                className="w-20 shrink-0 rounded-md border border-border bg-white px-1.5 py-1.5 text-xs text-ink focus:border-brand-blue focus:outline-none"
+              >
+                <option value="">{t("searchAll")}</option>
+                <option value="auction">{t("searchAuction")}</option>
+                <option value="fixed_price">{t("searchFixed")}</option>
+              </select>
               <input
                 type="search"
                 name="q"
