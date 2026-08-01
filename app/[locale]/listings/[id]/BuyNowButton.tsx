@@ -30,16 +30,16 @@ export default function BuyNowButton({ listingId, buyItNowPrice }: { listingId: 
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-col gap-2">
       <button
         type="button"
         onClick={handleBuyNow}
         disabled={submitting}
-        className="rounded-md border-2 border-header px-4 py-2 font-medium text-header transition hover:bg-header hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-xl border-2 border-brand-blue px-4 py-3 text-base font-bold text-brand-blue transition hover:bg-brand-blue hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
       >
         {submitting ? t("submitting") : t("button", { price: buyItNowPrice })}
       </button>
-      {error && <span className="text-sm text-ended">{error}</span>}
+      {error && <span className="rounded-lg bg-ended-bg px-3 py-2 text-sm text-ended">{error}</span>}
     </div>
   );
 }

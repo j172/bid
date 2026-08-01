@@ -43,8 +43,8 @@ export default function BidForm({ listingId, minimumNextBid }: { listingId: numb
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-      <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <label className="flex flex-col gap-2 text-sm font-medium text-ink-light">
         {t("label", { minimum: minimumNextBid })}
         <input
           type="number"
@@ -53,15 +53,15 @@ export default function BidForm({ listingId, minimumNextBid }: { listingId: numb
           value={maxAmount}
           onChange={(e) => setMaxAmount(Number(e.target.value))}
           required
-          className="w-full rounded-md border border-border px-3 py-2 focus:border-gold focus:outline-none"
+          className="w-full rounded-xl border border-border px-4 py-3 text-base focus:border-brand-blue focus:outline-none"
         />
       </label>
-      <div className="flex items-center gap-3">
-        <Button type="submit" disabled={submitting}>
+      <div className="flex flex-col gap-2">
+        <Button type="submit" disabled={submitting} className="w-full rounded-xl py-3 text-base font-bold">
           {submitting ? t("submitting") : t("submit")}
         </Button>
-        {error && <span className="text-sm text-ended">{error}</span>}
-        {notice && <span className="text-sm text-ink-light">{notice}</span>}
+        {error && <span className="rounded-lg bg-ended-bg px-3 py-2 text-sm text-ended">{error}</span>}
+        {notice && <span className="rounded-lg bg-brand-chip px-3 py-2 text-sm text-brand-blue">{notice}</span>}
       </div>
     </form>
   );
