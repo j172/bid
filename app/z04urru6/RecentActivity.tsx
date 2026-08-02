@@ -19,7 +19,7 @@ export default function RecentActivity({ activity }: { activity: RecentActivityD
           <ul className="mt-3 flex flex-col gap-2 text-sm">
             {activity.newUsers.map((user) => (
               <li key={user.id} className="flex flex-col">
-                <Link href={`/z04urru6/users/${user.id}`} className="truncate text-gold hover:underline">
+                <Link href={`/z04urru6/users/${user.id}`} className="truncate text-interactive-primary hover:underline">
                   {user.displayName ?? user.email}
                 </Link>
                 <span className="text-xs text-ink-light">{formatDate(user.createdAt)}</span>
@@ -38,7 +38,7 @@ export default function RecentActivity({ activity }: { activity: RecentActivityD
             {activity.newListings.map((listing) => (
               <li key={listing.id} className="flex flex-col">
                 <span>
-                  <Link href={`/listings/${listing.id}`} className="truncate text-gold hover:underline">
+                  <Link href={`/listings/${listing.id}`} className="truncate text-interactive-primary hover:underline">
                     {listing.title}
                   </Link>{" "}
                   <span className="text-xs text-ink-light">（{TYPE_LABEL[listing.listingType]}）</span>
@@ -60,7 +60,7 @@ export default function RecentActivity({ activity }: { activity: RecentActivityD
               <li key={bid.id} className="flex flex-col">
                 <span className="truncate">
                   {bid.email}{" "}
-                  <Link href={`/listings/${bid.listingId}`} className="text-gold hover:underline">
+                  <Link href={`/listings/${bid.listingId}`} className="text-interactive-primary hover:underline">
                     {bid.listingTitle}
                   </Link>{" "}
                   <span className="font-semibold">{bid.amount.toLocaleString()}</span>

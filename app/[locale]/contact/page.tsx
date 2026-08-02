@@ -25,7 +25,7 @@ export default async function ContactPage() {
             <input className="rounded-md border border-border px-3 py-2" placeholder={t("emailPlaceholder")} />
             <input className="rounded-md border border-border px-3 py-2" placeholder={t("subjectPlaceholder")} />
             <textarea className="min-h-28 rounded-md border border-border px-3 py-2" placeholder={t("messagePlaceholder")} />
-            <button type="button" className="rounded-md bg-gold px-4 py-2 text-sm font-semibold text-white hover:bg-gold-dark">
+            <button type="button" className="rounded-md bg-interactive-primary px-4 py-2 text-sm font-semibold text-white hover:bg-interactive-primary-active">
               {t("submit")}
             </button>
           </form>

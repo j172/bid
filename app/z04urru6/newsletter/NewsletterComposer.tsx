@@ -95,7 +95,7 @@ export default function NewsletterComposer() {
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           required
-          className="w-full rounded-md border border-border px-3 py-2 text-ink focus:border-gold focus:outline-none"
+          className="w-full rounded-md border border-border px-3 py-2 text-ink focus:border-interactive-primary focus:outline-none"
         />
       </label>
 
@@ -181,7 +181,7 @@ export default function NewsletterComposer() {
             type="datetime-local"
             value={scheduledAt}
             onChange={(e) => setScheduledAt(e.target.value)}
-            className="w-full max-w-xs rounded-md border border-border px-3 py-2 text-ink focus:border-gold focus:outline-none"
+            className="w-full max-w-xs rounded-md border border-border px-3 py-2 text-ink focus:border-interactive-primary focus:outline-none"
           />
         </label>
       )}
@@ -203,7 +203,7 @@ export default function NewsletterComposer() {
           type="button"
           onClick={handleSend}
           disabled={!contentReady || status !== "idle"}
-          className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue-dark disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg bg-interactive-primary px-4 py-2 text-sm font-medium text-white hover:bg-interactive-primary-active disabled:cursor-not-allowed disabled:opacity-50"
         >
           {status === "sending" ? "處理中..." : scheduleEnabled ? "建立並排程寄送" : "建立並立即寄送"}
         </button>

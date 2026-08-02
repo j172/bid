@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import Button from "@/app/components/Button";
 
-const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-gold focus:outline-none";
+const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
 
 export default function ChangePasswordForm() {
   const t = useTranslations("changePasswordForm");

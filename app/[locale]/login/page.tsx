@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import AuthFormShell from "../components/AuthFormShell";
 
-const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-gold focus:outline-none";
+const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -48,7 +48,7 @@ export default function LoginPage() {
       footer={
         <p className="mt-4 text-sm text-ink-light">
           {t("noAccount")}{" "}
-          <Link href="/register" className="font-medium text-gold hover:underline">
+          <Link href="/register" className="font-medium text-interactive-primary hover:underline">
             {t("registerLink")}
           </Link>
         </p>

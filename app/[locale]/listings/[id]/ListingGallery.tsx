@@ -100,8 +100,8 @@ export default function ListingGallery({ title, imageUrls }: ListingGalleryProps
                 aria-pressed={active}
                 className={`h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg border bg-white transition ${
                   active
-                    ? "border-brand-blue ring-2 ring-brand-blue/30"
-                    : "border-border hover:border-brand-blue/50 focus-visible:border-brand-blue"
+                    ? "border-interactive-primary ring-2 ring-interactive-primary/30"
+                    : "border-border hover:border-interactive-primary/50 focus-visible:border-interactive-primary"
                 }`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}

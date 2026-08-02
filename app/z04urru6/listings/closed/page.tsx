@@ -61,7 +61,7 @@ export default async function ClosedListingsPage({ searchParams }: { searchParam
             name="search"
             defaultValue={search}
             placeholder="搜尋商品標題"
-            className="rounded-md border border-border px-2 py-1 text-sm focus:border-gold focus:outline-none"
+            className="rounded-md border border-border px-2 py-1 text-sm focus:border-interactive-primary focus:outline-none"
           />
         </label>
         <label className="flex flex-col gap-1 text-xs text-ink-light">
@@ -70,7 +70,7 @@ export default async function ClosedListingsPage({ searchParams }: { searchParam
             name="winnerEmail"
             defaultValue={winnerEmail}
             placeholder="搜尋得標者 email"
-            className="rounded-md border border-border px-2 py-1 text-sm focus:border-gold focus:outline-none"
+            className="rounded-md border border-border px-2 py-1 text-sm focus:border-interactive-primary focus:outline-none"
           />
         </label>
         <label className="flex flex-col gap-1 text-xs text-ink-light">
@@ -78,7 +78,7 @@ export default async function ClosedListingsPage({ searchParams }: { searchParam
           <select
             name="status"
             defaultValue={status}
-            className="rounded-md border border-border px-2 py-1 text-sm focus:border-gold focus:outline-none"
+            className="rounded-md border border-border px-2 py-1 text-sm focus:border-interactive-primary focus:outline-none"
           >
             <option value="all">全部</option>
             <option value="settled">已完成交易</option>
@@ -91,18 +91,18 @@ export default async function ClosedListingsPage({ searchParams }: { searchParam
           <select
             name="sort"
             defaultValue={sort}
-            className="rounded-md border border-border px-2 py-1 text-sm focus:border-gold focus:outline-none"
+            className="rounded-md border border-border px-2 py-1 text-sm focus:border-interactive-primary focus:outline-none"
           >
             <option value="ends_desc">結標時間（新→舊）</option>
             <option value="price_desc">成交價（高→低）</option>
           </select>
         </label>
-        <button type="submit" className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue-dark">
+        <button type="submit" className="rounded-lg bg-interactive-primary px-4 py-2 text-sm font-medium text-white hover:bg-interactive-primary-active">
           套用
         </button>
         <a
           href={`/api/admin/listings/closed/export?${exportQuery}`}
-          className="rounded-lg border border-brand-blue px-4 py-2 text-sm font-medium text-brand-blue hover:bg-brand-chip"
+          className="rounded-lg border border-interactive-primary px-4 py-2 text-sm font-medium text-interactive-primary hover:bg-interactive-primary-subtle"
         >
           匯出 CSV
         </a>
@@ -129,7 +129,7 @@ export default async function ClosedListingsPage({ searchParams }: { searchParam
               {listings.map((listing) => (
                 <tr key={listing.id} className="transition hover:bg-surface-muted/80">
                   <td className={td}>
-                    <Link href={`/listings/${listing.id}`} className="font-medium text-gold hover:underline">
+                    <Link href={`/listings/${listing.id}`} className="font-medium text-interactive-primary hover:underline">
                       {listing.title}
                     </Link>
                   </td>
@@ -185,7 +185,7 @@ export default async function ClosedListingsPage({ searchParams }: { searchParam
           {page > 1 && (
             <Link
               href={`/z04urru6/listings/closed?${buildQuery(params, { page: String(page - 1) })}`}
-              className="text-gold hover:underline"
+              className="text-interactive-primary hover:underline"
             >
               上一頁
             </Link>
@@ -196,7 +196,7 @@ export default async function ClosedListingsPage({ searchParams }: { searchParam
           {page < totalPages && (
             <Link
               href={`/z04urru6/listings/closed?${buildQuery(params, { page: String(page + 1) })}`}
-              className="text-gold hover:underline"
+              className="text-interactive-primary hover:underline"
             >
               下一頁
             </Link>

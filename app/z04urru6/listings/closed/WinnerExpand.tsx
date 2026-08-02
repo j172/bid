@@ -36,7 +36,7 @@ export default function WinnerExpand({ listingId, email }: { listingId: number; 
 
   return (
     <div>
-      <button type="button" onClick={handleToggle} className="text-xs font-medium text-gold hover:underline">
+      <button type="button" onClick={handleToggle} className="text-xs font-medium text-interactive-primary hover:underline">
         {email} {open ? "▲" : "▼"}
       </button>
       {open && (

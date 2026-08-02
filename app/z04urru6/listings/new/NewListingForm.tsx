@@ -7,7 +7,7 @@ import DescriptionEditor, { type DescriptionEditorHandle } from "../DescriptionE
 import PhotoGalleryEditor, { type PhotoItem } from "../PhotoGalleryEditor";
 import { ENDS_AT_MAX_DAYS, PRICE_MAX, TITLE_MAX } from "@/lib/listingValidation";
 
-const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-gold focus:outline-none";
+const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
 const counterClass = (current: number, max: number) => `text-xs ${current > max ? "text-ended" : "text-ink-light"}`;
 
 type ListingType = "auction" | "fixed_price";

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ENDS_AT_MAX_DAYS } from "@/lib/listingValidation";
 
-const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-gold focus:outline-none disabled:opacity-50";
+const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none disabled:opacity-50";
 
 function toDatetimeLocalValue(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");

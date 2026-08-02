@@ -37,7 +37,7 @@ export default function ListingDetailTabs({
           onClick={() => setActiveTab("description")}
           className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
             activeTab === "description"
-              ? "bg-brand-blue text-white"
+              ? "bg-interactive-primary text-white"
               : "bg-slate-100 text-ink-light hover:bg-slate-200"
           }`}
         >
@@ -48,7 +48,7 @@ export default function ListingDetailTabs({
           onClick={() => setActiveTab("additional")}
           className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
             activeTab === "additional"
-              ? "bg-brand-blue text-white"
+              ? "bg-interactive-primary text-white"
               : "bg-slate-100 text-ink-light hover:bg-slate-200"
           }`}
         >
@@ -59,7 +59,7 @@ export default function ListingDetailTabs({
           onClick={() => setActiveTab("reviews")}
           className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
             activeTab === "reviews"
-              ? "bg-brand-blue text-white"
+              ? "bg-interactive-primary text-white"
               : "bg-slate-100 text-ink-light hover:bg-slate-200"
           }`}
         >
@@ -75,7 +75,7 @@ export default function ListingDetailTabs({
               No @tailwindcss/typography plugin here, so rich-text tags are styled
               explicitly via child selectors instead of a `prose` class. */}
           <div
-            className="mt-3 max-w-none leading-7 text-ink-light [&_a]:text-gold [&_a]:underline [&_h2]:mt-4 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-ink [&_h3]:mt-3 [&_h3]:text-base [&_h3]:font-bold [&_h3]:text-ink [&_img]:my-2 [&_img]:max-w-full [&_img]:rounded-md [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-border [&_td]:p-2 [&_th]:border [&_th]:border-border [&_th]:p-2 [&_ul]:list-disc [&_ul]:pl-5"
+            className="mt-3 max-w-none leading-7 text-ink-light [&_a]:text-interactive-primary [&_a]:underline [&_h2]:mt-4 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-ink [&_h3]:mt-3 [&_h3]:text-base [&_h3]:font-bold [&_h3]:text-ink [&_img]:my-2 [&_img]:max-w-full [&_img]:rounded-md [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-border [&_td]:p-2 [&_th]:border [&_th]:border-border [&_th]:p-2 [&_ul]:list-disc [&_ul]:pl-5"
             dangerouslySetInnerHTML={{ __html: description }}
           />
         </div>

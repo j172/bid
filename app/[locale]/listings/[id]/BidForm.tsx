@@ -53,7 +53,7 @@ export default function BidForm({ listingId, minimumNextBid }: { listingId: numb
           value={maxAmount}
           onChange={(e) => setMaxAmount(Number(e.target.value))}
           required
-          className="w-full rounded-xl border border-border px-4 py-3 text-base focus:border-brand-blue focus:outline-none"
+          className="w-full rounded-xl border border-border px-4 py-3 text-base focus:border-interactive-primary focus:outline-none"
         />
       </label>
       <div className="flex flex-col gap-2">
@@ -61,7 +61,7 @@ export default function BidForm({ listingId, minimumNextBid }: { listingId: numb
           {submitting ? t("submitting") : t("submit")}
         </Button>
         {error && <span className="rounded-lg bg-ended-bg px-3 py-2 text-sm text-ended">{error}</span>}
-        {notice && <span className="rounded-lg bg-brand-chip px-3 py-2 text-sm text-brand-blue">{notice}</span>}
+        {notice && <span className="rounded-lg bg-interactive-primary-subtle px-3 py-2 text-sm text-interactive-primary">{notice}</span>}
       </div>
     </form>
   );

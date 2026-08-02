@@ -36,7 +36,7 @@ export default function BuyerExpand({ orderId, email }: { orderId: number; email
 
   return (
     <div>
-      <button type="button" onClick={handleToggle} className="text-xs font-medium text-gold hover:underline">
+      <button type="button" onClick={handleToggle} className="text-xs font-medium text-interactive-primary hover:underline">
         {email} {open ? "▲" : "▼"}
       </button>
       {open && (

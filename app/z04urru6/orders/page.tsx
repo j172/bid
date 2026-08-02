@@ -53,7 +53,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
             name="search"
             defaultValue={search}
             placeholder="搜尋商品標題"
-            className="rounded-md border border-border px-2 py-1 text-sm focus:border-gold focus:outline-none"
+            className="rounded-md border border-border px-2 py-1 text-sm focus:border-interactive-primary focus:outline-none"
           />
         </label>
         <label className="flex flex-col gap-1 text-xs text-ink-light">
@@ -62,7 +62,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
             name="buyerEmail"
             defaultValue={buyerEmail}
             placeholder="搜尋買家 email"
-            className="rounded-md border border-border px-2 py-1 text-sm focus:border-gold focus:outline-none"
+            className="rounded-md border border-border px-2 py-1 text-sm focus:border-interactive-primary focus:outline-none"
           />
         </label>
         <label className="flex flex-col gap-1 text-xs text-ink-light">
@@ -70,7 +70,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
           <select
             name="status"
             defaultValue={status}
-            className="rounded-md border border-border px-2 py-1 text-sm focus:border-gold focus:outline-none"
+            className="rounded-md border border-border px-2 py-1 text-sm focus:border-interactive-primary focus:outline-none"
           >
             <option value="all">全部</option>
             <option value="settled">已完成交易</option>
@@ -82,13 +82,13 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
           <select
             name="sort"
             defaultValue={sort}
-            className="rounded-md border border-border px-2 py-1 text-sm focus:border-gold focus:outline-none"
+            className="rounded-md border border-border px-2 py-1 text-sm focus:border-interactive-primary focus:outline-none"
           >
             <option value="created_desc">購買時間（新→舊）</option>
             <option value="amount_desc">金額（高→低）</option>
           </select>
         </label>
-        <button type="submit" className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue-dark">
+        <button type="submit" className="rounded-lg bg-interactive-primary px-4 py-2 text-sm font-medium text-white hover:bg-interactive-primary-active">
           套用
         </button>
       </form>
@@ -113,7 +113,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
               {orders.map((order) => (
                 <tr key={order.id} className="transition hover:bg-surface-muted/80">
                   <td className={td}>
-                    <Link href={`/listings/${order.listingId}`} className="font-medium text-gold hover:underline">
+                    <Link href={`/listings/${order.listingId}`} className="font-medium text-interactive-primary hover:underline">
                       {order.listingTitle}
                     </Link>
                   </td>
@@ -156,7 +156,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
       {totalPages > 1 && (
         <div className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-2 text-sm shadow-sm">
           {page > 1 && (
-            <Link href={`/z04urru6/orders?${buildQuery(params, { page: String(page - 1) })}`} className="text-gold hover:underline">
+            <Link href={`/z04urru6/orders?${buildQuery(params, { page: String(page - 1) })}`} className="text-interactive-primary hover:underline">
               上一頁
             </Link>
           )}
@@ -164,7 +164,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
             第 {page} / {totalPages} 頁（共 {total} 筆）
           </span>
           {page < totalPages && (
-            <Link href={`/z04urru6/orders?${buildQuery(params, { page: String(page + 1) })}`} className="text-gold hover:underline">
+            <Link href={`/z04urru6/orders?${buildQuery(params, { page: String(page + 1) })}`} className="text-interactive-primary hover:underline">
               下一頁
             </Link>
           )}

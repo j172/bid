@@ -4,8 +4,8 @@ import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, X
 
 // Colors validated together for categorical use (colorblind-safe pairing,
 // contrast against the white chart surface) — see the dataviz skill's
-// palette validator. Gold matches the site's existing brand accent
-// (--color-gold in app/globals.css); blue is its paired categorical slot.
+// palette validator. Kept independent of the brand palette so chart
+// series stay distinguishable regardless of brand color changes.
 const AUCTION_COLOR = "#b45309";
 const FIXED_PRICE_COLOR = "#2a78d6";
 const GRID_COLOR = "#e5e7eb";

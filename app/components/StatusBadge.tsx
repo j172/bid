@@ -1,7 +1,7 @@
 export default function StatusBadge({ status, isLeading }: { status: string; isLeading?: boolean }) {
   if (status === "scheduled") {
     return (
-      <span className="inline-block rounded-full bg-brand-chip px-2.5 py-0.5 text-xs font-medium text-brand-blue">
+      <span className="inline-block rounded-full bg-interactive-primary-subtle px-2.5 py-0.5 text-xs font-medium text-interactive-primary">
         尚未開標
       </span>
     );
@@ -39,7 +39,7 @@ export default function StatusBadge({ status, isLeading }: { status: string; isL
   }
 
   return (
-    <span className="inline-block rounded-full bg-gold-light px-2.5 py-0.5 text-xs font-medium text-gold-dark">
+    <span className="inline-block rounded-full bg-interactive-primary-subtle px-2.5 py-0.5 text-xs font-medium text-interactive-primary-active">
       競標中
     </span>
   );

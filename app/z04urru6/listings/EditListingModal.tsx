@@ -6,7 +6,7 @@ import DescriptionEditor, { type DescriptionEditorHandle } from "./DescriptionEd
 import PhotoGalleryEditor, { type PhotoItem } from "./PhotoGalleryEditor";
 import { PRICE_MAX, TITLE_MAX } from "@/lib/listingValidation";
 
-const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-gold focus:outline-none";
+const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
 const counterClass = (current: number, max: number) => `text-xs ${current > max ? "text-ended" : "text-ink-light"}`;
 
 export default function EditListingModal({ listingId }: { listingId: number }) {

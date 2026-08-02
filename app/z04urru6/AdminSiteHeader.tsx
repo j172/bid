@@ -19,16 +19,16 @@ export default async function AdminSiteHeader() {
         </Link>
 
         <nav className="flex flex-wrap items-center gap-4 text-sm">
-          <Link href="/listings" className="hover:text-gold-light">
+          <Link href="/listings" className="hover:text-interactive-primary-subtle">
             瀏覽商品
           </Link>
           {user && (
-            <Link href="/my-bids" className="hover:text-gold-light">
+            <Link href="/my-bids" className="hover:text-interactive-primary-subtle">
               我的出價紀錄
             </Link>
           )}
           {user?.role === "admin" && (
-            <Link href="/z04urru6" className="hover:text-gold-light">
+            <Link href="/z04urru6" className="hover:text-interactive-primary-subtle">
               後台
             </Link>
           )}
@@ -37,19 +37,19 @@ export default async function AdminSiteHeader() {
         <div className="flex items-center gap-3 text-sm">
           {user ? (
             <>
-              <Link href="/account" className="hidden hover:text-gold-light sm:inline">
+              <Link href="/account" className="hidden hover:text-interactive-primary-subtle sm:inline">
                 {user.email}
               </Link>
               <AdminLogoutButton />
             </>
           ) : (
             <>
-              <Link href="/login" className="hover:text-gold-light">
+              <Link href="/login" className="hover:text-interactive-primary-subtle">
                 登入
               </Link>
               <Link
                 href="/register"
-                className="rounded-md bg-gold px-3 py-1.5 font-medium text-white hover:bg-gold-dark"
+                className="rounded-md bg-interactive-primary px-3 py-1.5 font-medium text-white hover:bg-interactive-primary-active"
               >
                 註冊
               </Link>

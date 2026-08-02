@@ -10,7 +10,7 @@ export default function StatusBadge({ status, isLeading }: { status: string; isL
 
   if (status === "scheduled") {
     return (
-      <span className="inline-block rounded-full bg-brand-chip px-2.5 py-0.5 text-xs font-medium text-brand-blue">
+      <span className="inline-block rounded-full bg-interactive-primary-subtle px-2.5 py-0.5 text-xs font-medium text-interactive-primary">
         {t("scheduled")}
       </span>
     );
@@ -48,7 +48,7 @@ export default function StatusBadge({ status, isLeading }: { status: string; isL
   }
 
   return (
-    <span className="inline-block rounded-full bg-gold-light px-2.5 py-0.5 text-xs font-medium text-gold-dark">
+    <span className="inline-block rounded-full bg-interactive-primary-subtle px-2.5 py-0.5 text-xs font-medium text-interactive-primary-active">
       {t("bidding")}
     </span>
   );

@@ -50,7 +50,7 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
             name="search"
             defaultValue={search}
             placeholder="搜尋商品標題"
-            className="rounded-md border border-border px-2 py-1 text-sm focus:border-gold focus:outline-none"
+            className="rounded-md border border-border px-2 py-1 text-sm focus:border-interactive-primary focus:outline-none"
           />
         </label>
         <label className="flex flex-col gap-1 text-xs text-ink-light">
@@ -58,7 +58,7 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
           <select
             name="type"
             defaultValue={type ?? ""}
-            className="rounded-md border border-border px-2 py-1 text-sm focus:border-gold focus:outline-none"
+            className="rounded-md border border-border px-2 py-1 text-sm focus:border-interactive-primary focus:outline-none"
           >
             <option value="">全部</option>
             <option value="auction">競標商品</option>
@@ -70,7 +70,7 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
           <select
             name="sort"
             defaultValue={sort}
-            className="rounded-md border border-border px-2 py-1 text-sm focus:border-gold focus:outline-none"
+            className="rounded-md border border-border px-2 py-1 text-sm focus:border-interactive-primary focus:outline-none"
           >
             <option value="ends_asc">剩餘時間（近→遠）</option>
             <option value="price_desc">價格（高→低）</option>
@@ -81,7 +81,7 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
             <option value="created_asc">建立時間（舊→新）</option>
           </select>
         </label>
-        <button type="submit" className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue-dark">
+        <button type="submit" className="rounded-lg bg-interactive-primary px-4 py-2 text-sm font-medium text-white hover:bg-interactive-primary-active">
           套用
         </button>
       </form>
@@ -104,7 +104,7 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
               {listings.map((listing) => (
                 <tr key={listing.id} className="transition hover:bg-surface-muted/80">
                   <td className={td}>
-                    <Link href={`/listings/${listing.id}`} className="font-medium text-gold hover:underline">
+                    <Link href={`/listings/${listing.id}`} className="font-medium text-interactive-primary hover:underline">
                       {listing.title}
                     </Link>
                   </td>
@@ -118,7 +118,7 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
                         `剩餘 ${listing.stockRemaining} / ${listing.stockQuantity}`
                       )
                     ) : listing.status === "scheduled" && listing.startsAt ? (
-                      <span className="text-brand-blue">尚未開標・距離開標 {formatRemainingZhHant(listing.startsAt).replace("剩餘 ", "")}</span>
+                      <span className="text-interactive-primary">尚未開標・距離開標 {formatRemainingZhHant(listing.startsAt).replace("剩餘 ", "")}</span>
                     ) : (
                       listing.endsAt && formatRemainingZhHant(listing.endsAt)
                     )}
@@ -146,7 +146,7 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
       {totalPages > 1 && (
         <div className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-2 text-sm shadow-sm">
           {page > 1 && (
-            <Link href={`/z04urru6/listings?${buildQuery(params, { page: String(page - 1) })}`} className="text-gold hover:underline">
+            <Link href={`/z04urru6/listings?${buildQuery(params, { page: String(page - 1) })}`} className="text-interactive-primary hover:underline">
               上一頁
             </Link>
           )}
@@ -154,7 +154,7 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
             第 {page} / {totalPages} 頁（共 {total} 筆）
           </span>
           {page < totalPages && (
-            <Link href={`/z04urru6/listings?${buildQuery(params, { page: String(page + 1) })}`} className="text-gold hover:underline">
+            <Link href={`/z04urru6/listings?${buildQuery(params, { page: String(page + 1) })}`} className="text-interactive-primary hover:underline">
               下一頁
             </Link>
           )}

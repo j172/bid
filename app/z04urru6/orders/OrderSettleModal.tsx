@@ -66,7 +66,7 @@ export default function OrderSettleModal({
                   minLength={4}
                   maxLength={30}
                   pattern="[A-Za-z0-9-]+"
-                  className="rounded-md border border-border px-3 py-2 focus:border-gold focus:outline-none"
+                  className="rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none"
                 />
               </label>
               <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
@@ -78,7 +78,7 @@ export default function OrderSettleModal({
                   required
                   min={1}
                   step={1}
-                  className="rounded-md border border-border px-3 py-2 focus:border-gold focus:outline-none"
+                  className="rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none"
                 />
               </label>
               {error && <p className="text-sm text-ended">{error}</p>}

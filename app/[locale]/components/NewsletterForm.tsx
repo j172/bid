@@ -45,12 +45,12 @@ export default function NewsletterForm() {
           }}
           placeholder={t("newsletterPlaceholder")}
           required
-          className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-gold focus:outline-none"
+          className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-interactive-primary focus:outline-none"
         />
         <button
           type="submit"
           disabled={status === "loading"}
-          className="whitespace-nowrap rounded-md bg-gold px-3 py-2 text-sm font-semibold text-white hover:bg-gold-dark disabled:opacity-60"
+          className="whitespace-nowrap rounded-md bg-interactive-primary px-3 py-2 text-sm font-semibold text-white hover:bg-interactive-primary-active disabled:opacity-60"
         >
           {status === "loading" ? t("newsletterSubscribing") : t("subscribe")}
         </button>

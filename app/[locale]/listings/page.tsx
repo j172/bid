@@ -162,7 +162,7 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
                   href={tabHref(tab.value, perfMode, searchQuery, sort)}
                   className={`block rounded-md px-3 py-2 text-sm font-medium ${
                     (type ?? "") === tab.value
-                      ? "bg-gold-light text-gold-dark"
+                      ? "bg-interactive-primary-subtle text-interactive-primary-active"
                       : "bg-slate-50 text-ink-light hover:bg-slate-100"
                   }`}
                 >
@@ -174,13 +174,13 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
             <div className="mt-5 border-t border-border pt-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">{t("categoryTitle")}</p>
               <div className="mt-2 space-y-2">
-                <Link href={withFilters({ category: undefined })} className={`block rounded-md px-3 py-2 text-sm ${!selectedCategory ? "bg-gold-light text-gold-dark" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
+                <Link href={withFilters({ category: undefined })} className={`block rounded-md px-3 py-2 text-sm ${!selectedCategory ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
                   {t("categoryAll")}
                 </Link>
-                <Link href={withFilters({ category: "auction" })} className={`block rounded-md px-3 py-2 text-sm ${selectedCategory === "auction" ? "bg-gold-light text-gold-dark" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
+                <Link href={withFilters({ category: "auction" })} className={`block rounded-md px-3 py-2 text-sm ${selectedCategory === "auction" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
                   {t("tabAuction")} ({categoryCounts.auction})
                 </Link>
-                <Link href={withFilters({ category: "fixed_price" })} className={`block rounded-md px-3 py-2 text-sm ${selectedCategory === "fixed_price" ? "bg-gold-light text-gold-dark" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
+                <Link href={withFilters({ category: "fixed_price" })} className={`block rounded-md px-3 py-2 text-sm ${selectedCategory === "fixed_price" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
                   {t("tabFixedPrice")} ({categoryCounts.fixed_price})
                 </Link>
               </div>
@@ -189,16 +189,16 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
             <div className="mt-5 border-t border-border pt-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">{t("priceTitle")}</p>
               <div className="mt-2 space-y-2">
-                <Link href={withFilters({ minPrice: undefined, maxPrice: undefined })} className={`block rounded-md px-3 py-2 text-sm ${minPrice === undefined && maxPrice === undefined ? "bg-gold-light text-gold-dark" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
+                <Link href={withFilters({ minPrice: undefined, maxPrice: undefined })} className={`block rounded-md px-3 py-2 text-sm ${minPrice === undefined && maxPrice === undefined ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
                   {t("priceAny")}
                 </Link>
-                <Link href={withFilters({ minPrice: "0", maxPrice: "500" })} className={`block rounded-md px-3 py-2 text-sm ${minPrice === 0 && maxPrice === 500 ? "bg-gold-light text-gold-dark" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
+                <Link href={withFilters({ minPrice: "0", maxPrice: "500" })} className={`block rounded-md px-3 py-2 text-sm ${minPrice === 0 && maxPrice === 500 ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
                   {t("priceLow")}
                 </Link>
-                <Link href={withFilters({ minPrice: "501", maxPrice: "1000" })} className={`block rounded-md px-3 py-2 text-sm ${minPrice === 501 && maxPrice === 1000 ? "bg-gold-light text-gold-dark" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
+                <Link href={withFilters({ minPrice: "501", maxPrice: "1000" })} className={`block rounded-md px-3 py-2 text-sm ${minPrice === 501 && maxPrice === 1000 ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
                   {t("priceMid")}
                 </Link>
-                <Link href={withFilters({ minPrice: "1001", maxPrice: undefined })} className={`block rounded-md px-3 py-2 text-sm ${minPrice === 1001 && maxPrice === undefined ? "bg-gold-light text-gold-dark" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
+                <Link href={withFilters({ minPrice: "1001", maxPrice: undefined })} className={`block rounded-md px-3 py-2 text-sm ${minPrice === 1001 && maxPrice === undefined ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
                   {t("priceHigh")}
                 </Link>
               </div>
@@ -225,19 +225,19 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
               <span className="text-xs font-semibold uppercase tracking-wide text-ink-light">排序</span>
               <Link
                 href={withFilters({ sort: undefined })}
-                className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "newest" ? "bg-gold-light text-gold-dark" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
+                className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "newest" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
               >
                 最新
               </Link>
               <Link
                 href={withFilters({ sort: "price_asc" })}
-                className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "price_asc" ? "bg-gold-light text-gold-dark" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
+                className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "price_asc" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
               >
                 價格低→高
               </Link>
               <Link
                 href={withFilters({ sort: "price_desc" })}
-                className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "price_desc" ? "bg-gold-light text-gold-dark" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
+                className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "price_desc" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
               >
                 價格高→低
               </Link>

@@ -387,7 +387,7 @@ export default function AdminCommandPalette({
   function itemClass(index: number): string {
     return [
       "flex w-full rounded-lg px-3 py-2 text-left transition",
-      selectedIndex === index ? "bg-brand-chip ring-1 ring-brand-blue/40" : "hover:bg-surface-muted",
+      selectedIndex === index ? "bg-interactive-primary-subtle ring-1 ring-interactive-primary/40" : "hover:bg-surface-muted",
     ].join(" ");
   }
 
@@ -406,7 +406,7 @@ export default function AdminCommandPalette({
       const keywordLower = keyword.toLowerCase();
       return parts.map((part, index) =>
         part.toLowerCase() === keywordLower ? (
-          <mark key={`${part}-${index}`} className="rounded bg-brand-chip px-0.5 text-ink">
+          <mark key={`${part}-${index}`} className="rounded bg-interactive-primary-subtle px-0.5 text-ink">
             {part}
           </mark>
         ) : (
@@ -477,7 +477,7 @@ export default function AdminCommandPalette({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="搜尋頁面、動作、商品、使用者..."
-            className="w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm focus:border-brand-blue focus:outline-none"
+            className="w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm focus:border-interactive-primary focus:outline-none"
           />
           <p className="mt-2 text-xs text-ink-light">
             提示：輸入 2 個字以上會搜尋資料庫（商品/使用者），使用 ↑ ↓ / PgUp PgDn / Home End 導覽、Enter 執行、Esc 關閉。

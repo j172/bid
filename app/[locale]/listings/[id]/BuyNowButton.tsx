@@ -35,7 +35,7 @@ export default function BuyNowButton({ listingId, buyItNowPrice }: { listingId: 
         type="button"
         onClick={handleBuyNow}
         disabled={submitting}
-        className="w-full rounded-xl border-2 border-brand-blue px-4 py-3 text-base font-bold text-brand-blue transition hover:bg-brand-blue hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-xl border-2 border-interactive-primary px-4 py-3 text-base font-bold text-interactive-primary transition hover:bg-interactive-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
       >
         {submitting ? t("submitting") : t("button", { price: buyItNowPrice })}
       </button>

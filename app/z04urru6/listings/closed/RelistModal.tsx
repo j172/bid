@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ENDS_AT_MAX_DAYS, PRICE_MAX } from "@/lib/listingValidation";
 
-const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-gold focus:outline-none";
+const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
 
 function defaultEndsAt(): string {
   const date = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -75,7 +75,7 @@ export default function RelistModal({ listingId }: { listingId: number }) {
       <button
         type="button"
         onClick={handleOpen}
-        className="rounded-md border border-gold px-3 py-1.5 text-sm font-medium text-gold hover:bg-gold-light"
+        className="rounded-md border border-interactive-primary px-3 py-1.5 text-sm font-medium text-interactive-primary hover:bg-interactive-primary-subtle"
       >
         重新上架
       </button>

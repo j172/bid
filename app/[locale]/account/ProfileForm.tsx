@@ -5,7 +5,7 @@ import { useState } from "react";
 import Button from "@/app/components/Button";
 import { useRouter } from "@/i18n/navigation";
 
-const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-gold focus:outline-none";
+const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
 
 export default function ProfileForm({
   initialDisplayName,

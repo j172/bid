@@ -29,7 +29,7 @@ export default async function NewsletterPage() {
       <AdminPageIntro title="電子報" description="透過 Resend 寄送電子報給訂閱名單。">
         <Link
           href="/z04urru6/newsletter/compose"
-          className="inline-block rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue-dark"
+          className="inline-block rounded-lg bg-interactive-primary px-4 py-2 text-sm font-medium text-white hover:bg-interactive-primary-active"
         >
           撰寫新電子報
         </Link>

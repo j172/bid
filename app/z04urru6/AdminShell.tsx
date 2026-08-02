@@ -13,7 +13,7 @@ function navClass(active: boolean, collapsed: boolean): string {
   return [
     "group relative flex items-center rounded-xl px-3 py-2 text-sm transition",
     active
-      ? "bg-brand-blue text-white shadow-[0_8px_24px_rgba(9,137,255,0.35)] before:absolute before:left-1 before:top-1/2 before:h-4 before:w-1 before:-translate-y-1/2 before:rounded-full before:bg-white"
+      ? "bg-interactive-primary text-white shadow-[0_8px_24px_rgba(9,137,255,0.35)] before:absolute before:left-1 before:top-1/2 before:h-4 before:w-1 before:-translate-y-1/2 before:rounded-full before:bg-white"
       : "text-slate-300 hover:bg-white/10 hover:text-white",
     collapsed ? "justify-center" : "justify-start",
   ].join(" ");
@@ -245,7 +245,7 @@ export default function AdminShell({ children, email }: { children: ReactNode; e
                             {crumb.icon} {crumb.label}
                           </span>
                         ) : (
-                          <Link href={crumb.href} className="hover:text-brand-blue">
+                          <Link href={crumb.href} className="hover:text-interactive-primary">
                             {crumb.icon} {crumb.label}
                           </Link>
                         )}

@@ -54,7 +54,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
             name="search"
             defaultValue={search}
             placeholder="Email / 顯示名稱 / 電話"
-            className="rounded-md border border-border px-2 py-1 text-sm focus:border-gold focus:outline-none"
+            className="rounded-md border border-border px-2 py-1 text-sm focus:border-interactive-primary focus:outline-none"
           />
         </label>
         <label className="flex flex-col gap-1 text-xs text-ink-light">
@@ -62,7 +62,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
           <select
             name="role"
             defaultValue={role ?? ""}
-            className="rounded-md border border-border px-2 py-1 text-sm focus:border-gold focus:outline-none"
+            className="rounded-md border border-border px-2 py-1 text-sm focus:border-interactive-primary focus:outline-none"
           >
             <option value="">全部</option>
             <option value="admin">管理員</option>
@@ -74,7 +74,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
           <select
             name="status"
             defaultValue={status}
-            className="rounded-md border border-border px-2 py-1 text-sm focus:border-gold focus:outline-none"
+            className="rounded-md border border-border px-2 py-1 text-sm focus:border-interactive-primary focus:outline-none"
           >
             <option value="all">全部（不含已刪除）</option>
             <option value="active">正常</option>
@@ -87,7 +87,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
           <select
             name="sort"
             defaultValue={sort}
-            className="rounded-md border border-border px-2 py-1 text-sm focus:border-gold focus:outline-none"
+            className="rounded-md border border-border px-2 py-1 text-sm focus:border-interactive-primary focus:outline-none"
           >
             <option value="created_desc">註冊時間（新→舊）</option>
             <option value="created_asc">註冊時間（舊→新）</option>
@@ -95,7 +95,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
             <option value="gmv_desc">總成交額（高→低）</option>
           </select>
         </label>
-        <button type="submit" className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue-dark">
+        <button type="submit" className="rounded-lg bg-interactive-primary px-4 py-2 text-sm font-medium text-white hover:bg-interactive-primary-active">
           套用
         </button>
       </form>
@@ -121,7 +121,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
               {users.map((user) => (
                 <tr key={user.id} className="transition hover:bg-surface-muted/80">
                   <td className={td}>
-                    <Link href={`/z04urru6/users/${user.id}`} className="font-medium text-gold hover:underline">
+                    <Link href={`/z04urru6/users/${user.id}`} className="font-medium text-interactive-primary hover:underline">
                       {user.email}
                     </Link>
                   </td>
@@ -157,7 +157,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
           {page > 1 && (
             <Link
               href={`/z04urru6/users?${buildQuery(params, { page: String(page - 1) })}`}
-              className="text-gold hover:underline"
+              className="text-interactive-primary hover:underline"
             >
               上一頁
             </Link>
@@ -168,7 +168,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
           {page < totalPages && (
             <Link
               href={`/z04urru6/users?${buildQuery(params, { page: String(page + 1) })}`}
-              className="text-gold hover:underline"
+              className="text-interactive-primary hover:underline"
             >
               下一頁
             </Link>

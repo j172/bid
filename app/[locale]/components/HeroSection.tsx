@@ -110,19 +110,19 @@ export default function HeroSection({
     <section className="bg-gradient-to-b from-[#eef4ff] via-[#f4f7fb] to-[#f8fafc]">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-12">
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-          <article className="relative isolate overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-900 p-7 text-white shadow-[0_25px_70px_rgba(15,23,42,0.22)] lg:col-span-2 lg:min-h-[440px] lg:p-9">
+          <article className="relative isolate overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-muted-olive-950 to-muted-olive-900 p-7 text-white shadow-[0_25px_70px_rgba(15,23,42,0.22)] lg:col-span-2 lg:min-h-[440px] lg:p-9">
             <div className="pointer-events-none absolute -left-20 -top-20 h-56 w-56 rounded-full bg-white/10 blur-2xl" />
-            <div className="pointer-events-none absolute -bottom-24 left-1/3 h-56 w-56 rounded-full bg-cyan-400/20 blur-2xl" />
+            <div className="pointer-events-none absolute -bottom-24 left-1/3 h-56 w-56 rounded-full bg-muted-olive-400/20 blur-2xl" />
             <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-white/5 to-transparent" />
 
             {activeCard ? (
               <>
                 <div className="relative z-10 max-w-[33rem]">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100 backdrop-blur-sm">
+                    <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-olive-100 backdrop-blur-sm">
                       TOP {activeIndex + 1}
                     </span>
-                    <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-400/10 px-3 py-1 text-[11px] font-semibold text-cyan-100 backdrop-blur-sm">
+                    <span className="inline-flex rounded-full border border-muted-olive-300/30 bg-muted-olive-400/10 px-3 py-1 text-[11px] font-semibold text-muted-olive-100 backdrop-blur-sm">
                       {formatRemainingFromNow(activeCard.endsAt, nowMs, tFormat)}
                     </span>
                   </div>
@@ -131,7 +131,7 @@ export default function HeroSection({
                     {activeCard.title}
                   </h1>
 
-                  <p className="mt-4 max-w-[29rem] text-base leading-[1.65] text-blue-100 sm:text-lg">
+                  <p className="mt-4 max-w-[29rem] text-base leading-[1.65] text-muted-olive-100 sm:text-lg">
                     {activeCard.bidCount === 0
                       ? tListings("noBidsYet")
                       : tListings("totalBids", { count: activeCard.bidCount })}
@@ -158,7 +158,7 @@ export default function HeroSection({
                 <div className="relative z-10 mt-6 flex max-w-[33rem] flex-wrap gap-3">
                   <Link
                     href={activeCard.href}
-                    className="rounded-full bg-white px-6 py-3 text-sm font-bold text-blue-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-50"
+                    className="rounded-full bg-white px-6 py-3 text-sm font-bold text-muted-olive-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-muted-olive-50"
                   >
                     {tHome("promoAuctionCta")}
                   </Link>
@@ -170,13 +170,13 @@ export default function HeroSection({
                   </Link>
                 </div>
 
-                <div className="relative z-10 mt-12 grid max-w-xl gap-2 text-xs text-blue-100 sm:grid-cols-3 sm:text-sm">
+                <div className="relative z-10 mt-12 grid max-w-xl gap-2 text-xs text-muted-olive-100 sm:grid-cols-3 sm:text-sm">
                   <div className="rounded-xl border border-white/10 bg-white/12 px-4 py-3 backdrop-blur-sm">
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-blue-200">{tDetail("specCurrentPrice")}</p>
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-muted-olive-200">{tDetail("specCurrentPrice")}</p>
                     <p className="mt-1 text-base font-bold text-white">{numberFormatter.format(activeCard.currentPrice)}</p>
                   </div>
                   <div className="rounded-xl border border-white/10 bg-white/12 px-4 py-3 backdrop-blur-sm">
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-blue-200">{tDetail("specBuyNow")}</p>
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-muted-olive-200">{tDetail("specBuyNow")}</p>
                     <p className="mt-1 text-base font-bold text-white">
                       {activeCard.buyItNowPrice === null
                         ? tDetail("specNotAvailable")
@@ -184,7 +184,7 @@ export default function HeroSection({
                     </p>
                   </div>
                   <div className="rounded-xl border border-white/10 bg-white/12 px-4 py-3 backdrop-blur-sm">
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-blue-200">{tDetail("specEndTime")}</p>
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-muted-olive-200">{tDetail("specEndTime")}</p>
                     <p className="mt-1 text-base font-bold text-white">{dateTimeFormatter.format(new Date(activeCard.endsAt))}</p>
                   </div>
                 </div>
@@ -227,17 +227,17 @@ export default function HeroSection({
               </>
             ) : (
               <div className="relative z-10 max-w-xl">
-                <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100 backdrop-blur-sm">
+                <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-olive-100 backdrop-blur-sm">
                   AUCTION
                 </span>
                 <h1 className="mt-5 text-4xl font-black leading-[1.05] text-white sm:text-5xl lg:text-6xl">
                   {tListings("noListings")}
                 </h1>
-                <p className="mt-4 max-w-lg text-base leading-7 text-blue-100 sm:text-lg">
+                <p className="mt-4 max-w-lg text-base leading-7 text-muted-olive-100 sm:text-lg">
                   {tHome("promoAuctionDesc")}
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <Link href={browseHref} className="rounded-full bg-white px-6 py-3 text-sm font-bold text-blue-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-50">
+                  <Link href={browseHref} className="rounded-full bg-white px-6 py-3 text-sm font-bold text-muted-olive-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-muted-olive-50">
                     {tHome("browseButton")}
                   </Link>
                 </div>
@@ -255,12 +255,12 @@ export default function HeroSection({
                 <div
                   className={`pointer-events-none absolute inset-0 opacity-80 ${
                     index === 0
-                      ? "bg-gradient-to-br from-cyan-50 via-white to-blue-50"
+                      ? "bg-gradient-to-br from-muted-olive-50 via-white to-muted-olive-50"
                       : "bg-gradient-to-br from-amber-50 via-white to-rose-50"
                   }`}
                 />
                 <div className="relative">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.145em] text-brand-blue drop-shadow-[0_1px_0_rgba(255,255,255,0.72)]">高價競標</p>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.145em] text-interactive-primary drop-shadow-[0_1px_0_rgba(255,255,255,0.72)]">高價競標</p>
                   <h2 className="mt-2 line-clamp-2 text-xl font-extrabold leading-tight text-ink">{item.title}</h2>
                   <div className="mt-4 rounded-2xl border border-amber-200/70 bg-gradient-to-r from-amber-50 via-white to-yellow-50 px-4 py-3 shadow-[0_8px_20px_rgba(217,119,6,0.12)] ring-1 ring-white/70">
                     <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-700 drop-shadow-[0_1px_0_rgba(255,255,255,0.78)]">{tDetail("specCurrentPrice")}</p>

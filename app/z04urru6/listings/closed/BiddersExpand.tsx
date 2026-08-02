@@ -44,7 +44,7 @@ export default function BiddersExpand({ listingId, bidCount }: { listingId: numb
 
   return (
     <div>
-      <button type="button" onClick={handleToggle} className="text-xs font-medium text-gold hover:underline">
+      <button type="button" onClick={handleToggle} className="text-xs font-medium text-interactive-primary hover:underline">
         {bidCount} {open ? "▲ 收合" : "▼ 展開"}
       </button>
       {open && (

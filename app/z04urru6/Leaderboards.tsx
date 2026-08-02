@@ -25,7 +25,7 @@ export default function Leaderboards({
               <li key={listing.id} className="flex items-center justify-between gap-2">
                 <span className="flex min-w-0 items-baseline gap-2">
                   <span className="text-ink-light">{index + 1}.</span>
-                  <Link href={`/listings/${listing.id}`} className="truncate text-gold hover:underline">
+                  <Link href={`/listings/${listing.id}`} className="truncate text-interactive-primary hover:underline">
                     {listing.title}
                   </Link>
                   <span className="flex-shrink-0 text-xs text-ink-light">（{TYPE_LABEL[listing.listingType]}）</span>

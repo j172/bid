@@ -18,7 +18,7 @@ export default async function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 text-ink shadow-[0_10px_30px_rgba(15,23,42,0.06)] backdrop-blur">
-      <div className="border-b border-slate-200 bg-gradient-to-r from-slate-950 via-blue-950 to-slate-950 text-slate-100">
+      <div className="border-b border-slate-200 bg-gradient-to-r from-slate-950 via-muted-olive-950 to-slate-950 text-slate-100">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2 text-xs sm:px-6">
           <p>{t("topbarNotice")}</p>
           <span className="inline-flex rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium text-white lg:hidden">
@@ -31,7 +31,7 @@ export default async function SiteHeader() {
           </div>
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
-            <Link href="/account" className="font-medium text-white hover:text-blue-200">
+            <Link href="/account" className="font-medium text-white hover:text-muted-olive-200">
               {t("account")}
             </Link>
           </div>
@@ -54,7 +54,7 @@ export default async function SiteHeader() {
         </Link>
 
         <details className="relative lg:hidden ml-auto">
-          <summary className="list-none rounded-md border border-border px-3 py-1.5 text-sm font-semibold text-ink hover:border-brand-blue">
+          <summary className="list-none rounded-md border border-border px-3 py-1.5 text-sm font-semibold text-ink hover:border-interactive-primary">
             {t("menu")}
           </summary>
           <div className="absolute right-0 top-10 z-30 w-60 rounded-lg border border-border bg-white p-2 shadow-xl">
@@ -62,7 +62,7 @@ export default async function SiteHeader() {
               <select
                 name="type"
                 defaultValue=""
-                className="w-20 shrink-0 rounded-md border border-border bg-white px-1.5 py-1.5 text-xs text-ink focus:border-brand-blue focus:outline-none"
+                className="w-20 shrink-0 rounded-md border border-border bg-white px-1.5 py-1.5 text-xs text-ink focus:border-interactive-primary focus:outline-none"
               >
                 <option value="">{t("searchAll")}</option>
                 <option value="auction">{t("searchAuction")}</option>
@@ -72,7 +72,7 @@ export default async function SiteHeader() {
                 type="search"
                 name="q"
                 placeholder="搜尋商品..."
-                className="min-w-0 flex-1 rounded-md border border-border bg-white px-2 py-1.5 text-xs text-ink placeholder:text-ink-light focus:border-brand-blue focus:outline-none"
+                className="min-w-0 flex-1 rounded-md border border-border bg-white px-2 py-1.5 text-xs text-ink placeholder:text-ink-light focus:border-interactive-primary focus:outline-none"
               />
               <button type="submit" className="rounded-md bg-header px-2 py-1.5 text-xs font-semibold text-white">
                 Go
@@ -114,7 +114,7 @@ export default async function SiteHeader() {
         </details>
 
         <div className="hidden min-w-0 flex-1 items-center gap-3 lg:flex">
-          <button type="button" className="inline-flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm">
+          <button type="button" className="inline-flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-muted-olive-500 to-muted-olive-700 px-4 py-2.5 text-xs font-semibold text-white shadow-sm">
             {t("allCategories")}
             <span aria-hidden>▾</span>
           </button>
@@ -149,21 +149,21 @@ export default async function SiteHeader() {
         </div>
 
         <div className="hidden items-center gap-2 lg:flex">
-          <Link href="/cart" aria-label="Cart" className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-ink shadow-sm hover:border-brand-blue hover:text-brand-blue">
+          <Link href="/cart" aria-label="Cart" className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-ink shadow-sm hover:border-interactive-primary hover:text-interactive-primary">
             <span aria-hidden>🛒</span>
             <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-header px-1 text-[10px] text-white">0</span>
           </Link>
 
           {user ? (
             <>
-              <Link href="/account" className="hidden max-w-44 truncate rounded-md border border-border px-3 py-2 text-sm font-medium hover:border-brand-blue sm:inline">
+              <Link href="/account" className="hidden max-w-44 truncate rounded-md border border-border px-3 py-2 text-sm font-medium hover:border-interactive-primary sm:inline">
                 {user.email}
               </Link>
               <LogoutButton />
             </>
           ) : (
             <>
-              <Link href="/login" className="rounded-md border border-border px-3 py-2 text-sm font-medium hover:border-brand-blue">
+              <Link href="/login" className="rounded-md border border-border px-3 py-2 text-sm font-medium hover:border-interactive-primary">
                 {t("login")}
               </Link>
               <Link href="/register" className="rounded-md bg-header px-3 py-2 text-sm font-semibold text-white hover:bg-header-soft">
@@ -178,28 +178,28 @@ export default async function SiteHeader() {
         <div className="mx-auto max-w-6xl px-4 py-2.5 sm:px-6">
           <div className="flex items-center justify-between gap-4 text-sm">
             <nav className="flex min-w-0 flex-wrap items-center gap-5 text-ink">
-              <Link href="/" className="font-medium hover:text-brand-blue">
+              <Link href="/" className="font-medium hover:text-interactive-primary">
                 {t("home")}
               </Link>
-              <Link href="/listings" className="font-medium hover:text-brand-blue">
+              <Link href="/listings" className="font-medium hover:text-interactive-primary">
                 {t("browse")}
               </Link>
-              <Link href="/contact" className="font-medium hover:text-brand-blue">
+              <Link href="/contact" className="font-medium hover:text-interactive-primary">
                 {t("contact")}
               </Link>
               {user && (
-                <Link href="/my-bids" className="font-medium hover:text-brand-blue">
+                <Link href="/my-bids" className="font-medium hover:text-interactive-primary">
                   {t("myBids")}
                 </Link>
               )}
               {user?.role === "admin" && (
-                <NextLink href="/z04urru6" className="font-medium hover:text-brand-blue">
+                <NextLink href="/z04urru6" className="font-medium hover:text-interactive-primary">
                   {t("admin")}
                 </NextLink>
               )}
             </nav>
 
-            <p className="shrink-0 rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-blue">Premium Auction Experience</p>
+            <p className="shrink-0 rounded-full bg-muted-olive-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-interactive-primary">Premium Auction Experience</p>
           </div>
 
           <div className="mt-2 flex items-center justify-between gap-3 border-t border-dashed border-slate-200 pt-2.5">
@@ -210,7 +210,7 @@ export default async function SiteHeader() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-ink shadow-sm hover:border-brand-blue hover:text-brand-blue"
+                    className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-ink shadow-sm hover:border-interactive-primary hover:text-interactive-primary"
                   >
                     {item.label}
                   </Link>
@@ -222,7 +222,7 @@ export default async function SiteHeader() {
               <Link href="/listings?sort=price_asc" className="rounded-full bg-amber-50 px-3 py-1.5 font-semibold text-amber-700 hover:bg-amber-100">
                 {t("dealZone")}
               </Link>
-              <Link href="/listings?type=fixed_price&maxPrice=1000" className="rounded-full bg-blue-50 px-3 py-1.5 font-semibold text-blue-700 hover:bg-blue-100">
+              <Link href="/listings?type=fixed_price&maxPrice=1000" className="rounded-full bg-muted-olive-50 px-3 py-1.5 font-semibold text-muted-olive-700 hover:bg-muted-olive-100">
                 {t("newbieZone")}
               </Link>
             </div>

@@ -39,7 +39,7 @@ export default async function MyBidsPage() {
               {bids.map((bid, index) => (
                 <tr key={index}>
                   <td className={td}>
-                    <Link href={`/listings/${bid.listingId}`} className="font-medium text-gold hover:underline">
+                    <Link href={`/listings/${bid.listingId}`} className="font-medium text-interactive-primary hover:underline">
                       {bid.listingTitle}
                     </Link>
                   </td>

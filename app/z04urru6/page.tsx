@@ -57,7 +57,7 @@ export default async function AdminOverviewPage() {
           {cards.map((card) => (
             <div key={card.label} className={cardClass}>
               <p className="text-sm text-ink-light">{card.label}</p>
-              <p className="mt-1 text-2xl font-bold text-brand-blue">{card.value.toLocaleString()}</p>
+              <p className="mt-1 text-2xl font-bold text-interactive-primary">{card.value.toLocaleString()}</p>
             </div>
           ))}
         </div>

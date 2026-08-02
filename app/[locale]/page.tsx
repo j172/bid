@@ -155,16 +155,16 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         <div className="rounded-2xl border border-border bg-white px-4 py-3 shadow-sm">
           <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
             <span className="rounded-full bg-header px-3 py-1 font-semibold text-white">熱門入口</span>
-            <Link href="/listings?type=auction" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-brand-blue hover:text-brand-blue">
+            <Link href="/listings?type=auction" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-interactive-primary hover:text-interactive-primary">
               🔥 即將結標
             </Link>
-            <Link href="/listings?type=fixed_price&maxPrice=1000" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-brand-blue hover:text-brand-blue">
+            <Link href="/listings?type=fixed_price&maxPrice=1000" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-interactive-primary hover:text-interactive-primary">
               💡 千元好物
             </Link>
-            <Link href="/listings?q=proxy" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-brand-blue hover:text-brand-blue">
+            <Link href="/listings?q=proxy" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-interactive-primary hover:text-interactive-primary">
               ⚙️ 代理出價
             </Link>
-            <Link href="/listings?sort=price_desc" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-brand-blue hover:text-brand-blue">
+            <Link href="/listings?sort=price_desc" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-interactive-primary hover:text-interactive-primary">
               💎 高單價精選
             </Link>
           </div>
@@ -174,28 +174,28 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
         <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-border bg-white shadow-sm md:grid-cols-2 lg:grid-cols-4">
           <article className="flex items-center gap-3 border-b border-border px-5 py-4 md:border-r lg:border-b-0">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-lg">🚚</span>
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-muted-olive-50 text-lg">🚚</span>
             <div>
               <p className="text-sm font-bold text-ink">{t("serviceFast")}</p>
               <p className="text-xs text-ink-light">{t("serviceFastDesc")}</p>
             </div>
           </article>
           <article className="flex items-center gap-3 border-b border-border px-5 py-4 lg:border-b-0 lg:border-r">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-lg">🔒</span>
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-muted-olive-50 text-lg">🔒</span>
             <div>
               <p className="text-sm font-bold text-ink">{t("serviceSecure")}</p>
               <p className="text-xs text-ink-light">{t("serviceSecureDesc")}</p>
             </div>
           </article>
           <article className="flex items-center gap-3 border-b border-border px-5 py-4 md:border-b-0 md:border-r">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-lg">🎧</span>
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-muted-olive-50 text-lg">🎧</span>
             <div>
               <p className="text-sm font-bold text-ink">{t("serviceSupport")}</p>
               <p className="text-xs text-ink-light">{t("serviceSupportDesc")}</p>
             </div>
           </article>
           <article className="flex items-center gap-3 px-5 py-4">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-lg">✅</span>
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-muted-olive-50 text-lg">✅</span>
             <div>
               <p className="text-sm font-bold text-ink">100% 嚴格驗證</p>
               <p className="text-xs text-ink-light">所有價格與庫存皆伺服器檢核</p>
@@ -224,13 +224,13 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-blue">{cat.label}</p>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-interactive-primary">{cat.label}</p>
                     <p className="mt-2 text-sm text-ink-light">{cat.subtitle}</p>
                   </div>
                   <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-lg">{cat.badge}</span>
                 </div>
                 <p className="mt-4 text-2xl font-black text-ink">{count}</p>
-                <p className="mt-1 text-sm font-semibold text-brand-blue group-hover:text-header">{t("viewAll")} →</p>
+                <p className="mt-1 text-sm font-semibold text-interactive-primary group-hover:text-header">{t("viewAll")} →</p>
               </Link>
             );
           })}
@@ -240,19 +240,19 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-6">
         <div className="mb-3 flex items-end justify-between">
           <h2 className="text-2xl font-bold">Featured Collections</h2>
-          <Link href="/listings" className="text-sm font-semibold text-brand-blue hover:text-header">
+          <Link href="/listings" className="text-sm font-semibold text-interactive-primary hover:text-header">
             Explore all
           </Link>
         </div>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Link
             href="/listings?type=auction"
-            className="group rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-cyan-50 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            className="group rounded-2xl border border-muted-olive-100 bg-gradient-to-br from-muted-olive-50 via-white to-muted-olive-50 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           >
-            <p className="text-xs font-bold uppercase tracking-wide text-brand-blue">Collection</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-interactive-primary">Collection</p>
             <p className="mt-1 text-base font-black text-ink">Live Auctions</p>
             <p className="mt-1 text-xs text-ink-light">即時出價商品</p>
-            <p className="mt-3 text-[11px] font-bold text-brand-blue">Explore now →</p>
+            <p className="mt-3 text-[11px] font-bold text-interactive-primary">Explore now →</p>
           </Link>
           <Link
             href="/listings?type=fixed_price"
@@ -291,7 +291,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-rose-600">Daily Deals</p>
               <h3 className="mt-1 text-xl font-black text-ink">今日精選快閃優惠</h3>
             </div>
-            <Link href="/listings" className="text-sm font-semibold text-brand-blue hover:text-header">
+            <Link href="/listings" className="text-sm font-semibold text-interactive-primary hover:text-header">
               Shop all deals →
             </Link>
           </div>
@@ -304,7 +304,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               <Link
                 key={`deal-${item.id}`}
                 href={`/listings/${item.id}`}
-                className="group flex items-center gap-3 rounded-xl border border-border bg-slate-50 p-3 transition hover:-translate-y-0.5 hover:border-brand-blue/50 hover:bg-white"
+                className="group flex items-center gap-3 rounded-xl border border-border bg-slate-50 p-3 transition hover:-translate-y-0.5 hover:border-interactive-primary/50 hover:bg-white"
               >
                 <div className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-lg ${hasPhoto ? "bg-slate-100" : "bg-white/90"}`}>
                   <ZoomableProductImage
@@ -340,10 +340,10 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         <div className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-blue">Shop by Brand</p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-interactive-primary">Shop by Brand</p>
               <h3 className="mt-1 text-xl font-black text-ink">熱門品牌精選館</h3>
             </div>
-            <Link href="/listings?sort=price_desc" className="text-sm font-semibold text-brand-blue hover:text-header">
+            <Link href="/listings?sort=price_desc" className="text-sm font-semibold text-interactive-primary hover:text-header">
               View premium picks →
             </Link>
           </div>
@@ -360,7 +360,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               <Link
                 key={brand.label}
                 href={brand.href}
-                className="rounded-xl border border-border bg-slate-50 px-3 py-3 text-center text-sm font-extrabold tracking-wide text-ink transition hover:-translate-y-0.5 hover:border-brand-blue hover:bg-white hover:text-brand-blue"
+                className="rounded-xl border border-border bg-slate-50 px-3 py-3 text-center text-sm font-extrabold tracking-wide text-ink transition hover:-translate-y-0.5 hover:border-interactive-primary hover:bg-white hover:text-interactive-primary"
               >
                 {brand.label}
               </Link>
@@ -372,7 +372,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
         <div className="flex items-end justify-between">
           <h2 className="text-2xl font-bold">{t("newArrivals")}</h2>
-          <Link href={perfMode === "aggressive" ? "/listings?perf=aggressive" : "/listings"} className="text-sm font-semibold text-brand-blue hover:text-header">
+          <Link href={perfMode === "aggressive" ? "/listings?perf=aggressive" : "/listings"} className="text-sm font-semibold text-interactive-primary hover:text-header">
             {t("viewAll")}
           </Link>
         </div>
@@ -383,19 +383,19 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           </Link>
           <Link
             href="/listings?type=auction"
-            className="rounded-full border border-border bg-white px-3 py-1 font-medium text-ink transition hover:border-brand-blue hover:text-brand-blue"
+            className="rounded-full border border-border bg-white px-3 py-1 font-medium text-ink transition hover:border-interactive-primary hover:text-interactive-primary"
           >
             熱門競標
           </Link>
           <Link
             href="/listings?type=fixed_price"
-            className="rounded-full border border-border bg-white px-3 py-1 font-medium text-ink transition hover:border-brand-blue hover:text-brand-blue"
+            className="rounded-full border border-border bg-white px-3 py-1 font-medium text-ink transition hover:border-interactive-primary hover:text-interactive-primary"
           >
             固定價精選
           </Link>
           <Link
             href="/listings?sort=price_desc"
-            className="rounded-full border border-border bg-white px-3 py-1 font-medium text-ink transition hover:border-brand-blue hover:text-brand-blue"
+            className="rounded-full border border-border bg-white px-3 py-1 font-medium text-ink transition hover:border-interactive-primary hover:text-interactive-primary"
           >
             高單價趨勢
           </Link>
@@ -408,7 +408,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               return (
             <article
               key={item.id}
-              className="group rounded-2xl border border-border bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-brand-blue/60 hover:shadow-md"
+              className="group rounded-2xl border border-border bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-interactive-primary/60 hover:shadow-md"
             >
               <Link href={`/listings/${item.id}`} className="block">
                 <div className={`relative aspect-[4/3] overflow-hidden rounded-xl ${hasPhoto ? "bg-slate-100" : "bg-white/90"}`}>
@@ -421,7 +421,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                     zoomPreset="medium"
                   />
                   <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition group-hover:opacity-100" />
-                  <span className="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-1 text-[11px] font-bold text-brand-blue shadow-sm">
+                  <span className="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-1 text-[11px] font-bold text-interactive-primary shadow-sm">
                     {item.listing_type === "auction" ? "HOT BIDDING" : "BEST PRICE"}
                   </span>
                 </div>
@@ -452,29 +452,29 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-          <div className="rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 p-7 text-white lg:col-span-2">
+          <div className="rounded-2xl bg-gradient-to-r from-muted-olive-500 to-muted-olive-600 p-7 text-white lg:col-span-2">
             <span className="inline-flex rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Auction Focus</span>
             <p className="text-xs font-bold uppercase tracking-wider">{t("promoAuctionBadge")}</p>
             <h3 className="mt-2 text-3xl font-black">{t("promoAuctionTitle")}</h3>
-            <p className="mt-3 max-w-xl text-sm text-blue-100">{t("promoAuctionDesc")}</p>
-            <Link href={`/listings?type=auction${perfSuffix}`} className="mt-5 inline-flex rounded-md bg-white px-4 py-2 text-sm font-bold text-blue-700">
+            <p className="mt-3 max-w-xl text-sm text-muted-olive-100">{t("promoAuctionDesc")}</p>
+            <Link href={`/listings?type=auction${perfSuffix}`} className="mt-5 inline-flex rounded-md bg-white px-4 py-2 text-sm font-bold text-muted-olive-700">
               {t("promoAuctionCta")}
             </Link>
           </div>
 
           <div className="grid gap-5">
-            <div className="rounded-2xl bg-gradient-to-r from-blue-700 to-slate-900 p-6 text-white">
+            <div className="rounded-2xl bg-gradient-to-r from-muted-olive-700 to-slate-900 p-6 text-white">
               <span className="inline-flex rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Limited Offer</span>
               <p className="text-xs font-bold uppercase tracking-wider">{t("promoFixedBadge")}</p>
               <h3 className="mt-2 text-2xl font-black">{t("promoFixedTitle")}</h3>
-              <p className="mt-3 text-sm text-blue-100">{t("promoFixedDesc")}</p>
-              <Link href={`/listings?type=fixed_price${perfSuffix}`} className="mt-4 inline-flex rounded-md bg-white px-3 py-1.5 text-xs font-bold text-blue-700">
+              <p className="mt-3 text-sm text-muted-olive-100">{t("promoFixedDesc")}</p>
+              <Link href={`/listings?type=fixed_price${perfSuffix}`} className="mt-4 inline-flex rounded-md bg-white px-3 py-1.5 text-xs font-bold text-muted-olive-700">
                 {t("promoFixedCta")}
               </Link>
             </div>
 
             <div className="rounded-2xl border border-border bg-white p-6">
-              <p className="text-xs font-bold uppercase tracking-wider text-brand-blue">Weekly Picks</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-interactive-primary">Weekly Picks</p>
               <h3 className="mt-2 text-xl font-black text-ink">搶手商品週末限時折扣</h3>
               <p className="mt-2 text-sm text-ink-light">從競標標的到固定價商品，這週精選一次看完。</p>
               <Link href="/listings" className="mt-4 inline-flex rounded-md bg-header px-3 py-1.5 text-xs font-bold text-white">
@@ -488,7 +488,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
         <div className="flex items-end justify-between">
           <h2 className="text-2xl font-bold">Best Sellers</h2>
-          <Link href="/listings" className="text-sm font-semibold text-brand-blue hover:text-header">
+          <Link href="/listings" className="text-sm font-semibold text-interactive-primary hover:text-header">
             {t("viewAll")}
           </Link>
         </div>
@@ -498,7 +498,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             (() => {
               const hasPhoto = Boolean(item.photos[0]);
               return (
-            <article key={`best-${item.id}`} className="group rounded-2xl border border-border bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-brand-blue/60 hover:shadow-md">
+            <article key={`best-${item.id}`} className="group rounded-2xl border border-border bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-interactive-primary/60 hover:shadow-md">
               <Link href={`/listings/${item.id}`} className="block">
                 <div className={`relative aspect-[4/3] overflow-hidden rounded-xl ${hasPhoto ? "bg-slate-100" : "bg-white/90"}`}>
                   <ZoomableProductImage
@@ -510,7 +510,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                     zoomPreset="medium"
                   />
                   <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition group-hover:opacity-100" />
-                  <span className="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-1 text-[11px] font-bold text-brand-blue shadow-sm">
+                  <span className="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-1 text-[11px] font-bold text-interactive-primary shadow-sm">
                     {item.listing_type === "auction" ? "HOT BIDDING" : "BEST PRICE"}
                   </span>
                 </div>
@@ -550,7 +550,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                     <p className="truncate text-sm font-semibold">{item.title}</p>
                     <p className="text-xs text-ink-light">{item.bidCount === 0 ? tListings("noBidsYet") : tListings("totalBids", { count: item.bidCount })}</p>
                   </div>
-                  <p className="ml-3 shrink-0 text-sm font-bold text-gold">{item.current_price}</p>
+                  <p className="ml-3 shrink-0 text-sm font-bold text-interactive-primary">{item.current_price}</p>
                 </Link>
               ))}
             </div>
@@ -565,7 +565,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                     <p className="truncate text-sm font-semibold">{item.title}</p>
                     <p className="text-xs text-ink-light">已售 {item.purchaseCount}</p>
                   </div>
-                  <p className="ml-3 shrink-0 text-sm font-bold text-gold">{item.price}</p>
+                  <p className="ml-3 shrink-0 text-sm font-bold text-interactive-primary">{item.price}</p>
                 </Link>
               ))}
             </div>
@@ -574,14 +574,14 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       </section>
 
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
-        <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 p-7 text-white shadow-lg">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-200">Enhance your bidding experience</p>
+        <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-muted-olive-900 to-slate-900 p-7 text-white shadow-lg">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-muted-olive-200">Enhance your bidding experience</p>
           <h2 className="mt-2 text-3xl font-black">依真實資料掌握熱門商品</h2>
-          <p className="mt-4 max-w-3xl text-sm text-blue-100">
+          <p className="mt-4 max-w-3xl text-sm text-muted-olive-100">
             首頁所有熱門卡片、出價次數與已售件數皆直接來自目前商品資料，不再用寫死數字假裝即時行情。
           </p>
 
-          <Link href="/listings" className="mt-6 inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-bold text-blue-800 transition hover:bg-blue-50">
+          <Link href="/listings" className="mt-6 inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-bold text-muted-olive-800 transition hover:bg-muted-olive-50">
             查看全部商品
             <span aria-hidden>→</span>
           </Link>

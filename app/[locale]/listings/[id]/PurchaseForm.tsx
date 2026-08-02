@@ -51,7 +51,7 @@ export default function PurchaseForm({ listingId, stockRemaining }: { listingId:
           value={quantity}
           onChange={(e) => setQuantity(Number(e.target.value))}
           required
-          className="w-full rounded-xl border border-border px-4 py-3 text-base focus:border-brand-blue focus:outline-none"
+          className="w-full rounded-xl border border-border px-4 py-3 text-base focus:border-interactive-primary focus:outline-none"
         />
       </label>
       <div className="flex flex-col gap-2">

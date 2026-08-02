@@ -36,7 +36,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
   return (
     <main>
       <AdminPageIntro title={detail.displayName ?? detail.email} description="檢視使用者資料、權限與出價行為明細。">
-        <Link href="/z04urru6/users" className="text-sm text-brand-blue hover:underline">
+        <Link href="/z04urru6/users" className="text-sm text-interactive-primary hover:underline">
           ← 回使用者列表
         </Link>
       </AdminPageIntro>
@@ -83,7 +83,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
             <ul className="mt-4 flex flex-col gap-2">
               {listings.map((listing) => (
                 <li key={listing.id} className="flex items-center justify-between text-sm">
-                  <Link href={`/listings/${listing.id}`} className="font-medium text-gold hover:underline">
+                  <Link href={`/listings/${listing.id}`} className="font-medium text-interactive-primary hover:underline">
                     {listing.title}
                   </Link>
                   <StatusBadge status={listing.status} />
@@ -114,7 +114,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
                 {bids.map((bid, index) => (
                   <tr key={index} className="transition hover:bg-surface-muted/80">
                     <td className={td}>
-                      <Link href={`/listings/${bid.listingId}`} className="font-medium text-gold hover:underline">
+                      <Link href={`/listings/${bid.listingId}`} className="font-medium text-interactive-primary hover:underline">
                         {bid.listingTitle}
                       </Link>
                     </td>

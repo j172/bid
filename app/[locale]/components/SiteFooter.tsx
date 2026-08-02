@@ -33,22 +33,22 @@ export default async function SiteFooter() {
           <h3 className="text-sm font-extrabold uppercase tracking-wide text-ink">{t("accountTitle")}</h3>
           <ul className="mt-3 space-y-2 text-sm text-ink-light">
             <li>
-              <Link href="/login" className="hover:text-brand-blue">
+              <Link href="/login" className="hover:text-interactive-primary">
                 {t("loginRegister")}
               </Link>
             </li>
             <li>
-              <Link href="/account" className="hover:text-brand-blue">
+              <Link href="/account" className="hover:text-interactive-primary">
                 {t("accountSettings")}
               </Link>
             </li>
             <li>
-              <Link href="/my-bids" className="hover:text-brand-blue">
+              <Link href="/my-bids" className="hover:text-interactive-primary">
                 {t("myBids")}
               </Link>
             </li>
             <li>
-              <Link href="/listings" className="hover:text-brand-blue">
+              <Link href="/listings" className="hover:text-interactive-primary">
                 {t("shop")}
               </Link>
             </li>
@@ -63,7 +63,7 @@ export default async function SiteFooter() {
             <li>{t("terms")}</li>
             <li>{t("faq")}</li>
             <li>
-              <Link href="/contact" className="hover:text-brand-blue">
+              <Link href="/contact" className="hover:text-interactive-primary">
                 {t("contact")}
               </Link>
             </li>
