@@ -3,7 +3,6 @@ import LiveListingStatus from "../listings/[id]/LiveListingStatus";
 // THROWAWAY visual-verification route — not part of the app, delete after use.
 export default function DevPreviewHeroCountdown() {
   const now = Date.now();
-  const renderedAt = new Date(now).toISOString();
   const twoDaysThreeHours = new Date(now + (2 * 24 + 3) * 3600_000 + 12 * 60_000 + 47_000).toISOString();
   const fortyMinutes = new Date(now + 40 * 60_000 + 5_000).toISOString();
   const startsInOneHour = new Date(now + 65 * 60_000).toISOString();
@@ -19,7 +18,6 @@ export default function DevPreviewHeroCountdown() {
             initialEndsAt={twoDaysThreeHours}
             initialStartsAt={null}
             initialStatus="open"
-            renderedAt={renderedAt}
           />
         </div>
       </div>
@@ -33,7 +31,6 @@ export default function DevPreviewHeroCountdown() {
             initialEndsAt={fortyMinutes}
             initialStartsAt={null}
             initialStatus="open"
-            renderedAt={renderedAt}
           />
         </div>
       </div>
@@ -47,7 +44,6 @@ export default function DevPreviewHeroCountdown() {
             initialEndsAt={twoDaysThreeHours}
             initialStartsAt={startsInOneHour}
             initialStatus="scheduled"
-            renderedAt={renderedAt}
           />
         </div>
       </div>
