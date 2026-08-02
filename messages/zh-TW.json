@@ -71,7 +71,13 @@
     "feedbackRoleTwo": "Wilson · 直接購買用戶",
     "serverStatus": "App server 運作中 · MySQL {status}",
     "dbConnected": "已連線",
-    "dbFailed": "連線失敗（{error}）"
+    "dbFailed": "連線失敗（{error}）",
+    "weatherTitle": "天氣資訊",
+    "weatherWindyLabel": "Windy 風場地圖",
+    "weatherWindyDesc": "即時風向、風速與天氣預報地圖，可縮放拖曳查看台灣周邊天候。",
+    "weatherCwaLabel": "中央氣象署",
+    "weatherCwaDesc": "中央氣象署即時天氣資訊，掌握最新氣象觀測與預報資料。",
+    "weatherOpenNewTab": "開啟新分頁查看"
   },
   "listings": {
     "title": "競標中商品",

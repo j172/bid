@@ -71,7 +71,13 @@
     "feedbackRoleTwo": "Wilson · 直接购买用户",
     "serverStatus": "App server 运作中 · MySQL {status}",
     "dbConnected": "已连线",
-    "dbFailed": "连线失败（{error}）"
+    "dbFailed": "连线失败（{error}）",
+    "weatherTitle": "天气资讯",
+    "weatherWindyLabel": "Windy 风场地图",
+    "weatherWindyDesc": "即时风向、风速与天气预报地图，可缩放拖动查看台湾周边天候。",
+    "weatherCwaLabel": "中央气象署",
+    "weatherCwaDesc": "中央气象署即时天气资讯，掌握最新气象观测与预报资料。",
+    "weatherOpenNewTab": "开启新分页查看"
   },
   "listings": {
     "title": "竞标中商品",

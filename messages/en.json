@@ -71,7 +71,13 @@
     "feedbackRoleTwo": "Wilson · Direct buyer",
     "serverStatus": "App server running · MySQL {status}",
     "dbConnected": "connected",
-    "dbFailed": "connection failed ({error})"
+    "dbFailed": "connection failed ({error})",
+    "weatherTitle": "Weather Info",
+    "weatherWindyLabel": "Windy Wind Map",
+    "weatherWindyDesc": "Live wind direction, speed, and forecast map — pan and zoom to check conditions around Taiwan.",
+    "weatherCwaLabel": "Central Weather Administration",
+    "weatherCwaDesc": "Live weather data from Taiwan's Central Weather Administration, including current observations and forecasts.",
+    "weatherOpenNewTab": "Open in new tab"
   },
   "listings": {
     "title": "Live Auctions",
