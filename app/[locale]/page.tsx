@@ -315,11 +315,13 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                     sizes="80px"
                     zoomPreset="medium"
                   />
-                  <span className="absolute left-1 top-1 rounded bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold text-white">HOT</span>
                 </div>
 
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-bold text-ink">{item.title}</p>
+                  <div className="flex items-center gap-1.5">
+                    <span className="shrink-0 rounded bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold text-white">HOT</span>
+                    <p className="truncate text-sm font-bold text-ink">{item.title}</p>
+                  </div>
                   <p className="mt-1 text-xs text-ink-light">{item.listing_type === "auction" ? "競標中" : "固定價優惠"}</p>
                   <div className="mt-2 flex items-end gap-2">
                     <p className="text-base font-black text-ink">{item.listing_type === "auction" ? item.current_price : item.price}</p>
@@ -411,6 +413,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               className="group rounded-2xl border border-border bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-interactive-primary/60 hover:shadow-md"
             >
               <Link href={`/listings/${item.id}`} className="block">
+                <div className="mb-2">
+                  <span className="inline-flex rounded-md bg-interactive-primary-subtle px-2 py-1 text-[11px] font-bold text-interactive-primary">
+                    {item.listing_type === "auction" ? "HOT BIDDING" : "BEST PRICE"}
+                  </span>
+                </div>
                 <div className={`relative aspect-[4/3] overflow-hidden rounded-xl ${hasPhoto ? "bg-slate-100" : "bg-white/90"}`}>
                   <ZoomableProductImage
                     src={item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : "/images/hero-placeholder.png"}
@@ -421,9 +428,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                     zoomPreset="medium"
                   />
                   <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition group-hover:opacity-100" />
-                  <span className="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-1 text-[11px] font-bold text-interactive-primary shadow-sm">
-                    {item.listing_type === "auction" ? "HOT BIDDING" : "BEST PRICE"}
-                  </span>
                 </div>
               </Link>
               <h3 className="mt-3 truncate text-sm font-semibold text-ink">{item.title}</h3>
@@ -500,6 +504,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               return (
             <article key={`best-${item.id}`} className="group rounded-2xl border border-border bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-interactive-primary/60 hover:shadow-md">
               <Link href={`/listings/${item.id}`} className="block">
+                <div className="mb-2">
+                  <span className="inline-flex rounded-md bg-interactive-primary-subtle px-2 py-1 text-[11px] font-bold text-interactive-primary">
+                    {item.listing_type === "auction" ? "HOT BIDDING" : "BEST PRICE"}
+                  </span>
+                </div>
                 <div className={`relative aspect-[4/3] overflow-hidden rounded-xl ${hasPhoto ? "bg-slate-100" : "bg-white/90"}`}>
                   <ZoomableProductImage
                     src={item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : "/images/hero-placeholder.png"}
@@ -510,9 +519,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                     zoomPreset="medium"
                   />
                   <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition group-hover:opacity-100" />
-                  <span className="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-1 text-[11px] font-bold text-interactive-primary shadow-sm">
-                    {item.listing_type === "auction" ? "HOT BIDDING" : "BEST PRICE"}
-                  </span>
                 </div>
               </Link>
 
