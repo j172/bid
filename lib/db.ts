@@ -83,6 +83,54 @@ CREATE TABLE IF NOT EXISTS purchases (
   KEY idx_purchases_listing (listing_id),
   KEY idx_purchases_buyer (buyer_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- CMS foundation (issue #33 / #32) — see db/init.sql for the fuller
+-- per-column comments; these three are brand-new tables with their whole
+-- final schema from day one, so (unlike the ensureColumn migrations below,
+-- which patch already-deployed columns) they can just be plain
+-- CREATE TABLE IF NOT EXISTS statements here, same as listing_photos/bids/
+-- purchases above were originally.
+CREATE TABLE IF NOT EXISTS homepage_sections (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  section_type VARCHAR(30) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  image_file_name VARCHAR(255) NOT NULL,
+  link_url VARCHAR(500) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_homepage_sections_type_sort (section_type, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS pigeon_gallery_categories (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  gallery_type VARCHAR(20) NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  cover_image_file_name VARCHAR(255) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_gallery_categories_type_sort (gallery_type, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS pigeon_gallery_items (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  category_id BIGINT NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  image_file_name VARCHAR(255) NOT NULL,
+  price_type VARCHAR(20) NOT NULL,
+  reference_price BIGINT NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_gallery_items_category_sort (category_id, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
 
 // Columns added after their table's initial CREATE TABLE IF NOT EXISTS;

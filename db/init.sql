@@ -92,3 +92,66 @@ CREATE TABLE IF NOT EXISTS purchases (
   KEY idx_purchases_listing (listing_id),
   KEY idx_purchases_buyer (buyer_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- CMS foundation (see GitHub issue #33, spec in #32) — generic homepage CMS
+-- blocks and the pigeon showcase gallery. Both are fully decoupled from
+-- `listings`: these are display-only marketing content, never real
+-- transactable products.
+
+-- Generic image+link+sort_order homepage block entries. section_type is an
+-- application-level tag (currently only 'partner_loft' / 合作鴿舍) rather
+-- than its own lookup table, since new section types are expected to be rare
+-- and code-driven (each type gets its own homepage placement), unlike
+-- pigeon_gallery_categories below which is genuinely admin-managed taxonomy.
+CREATE TABLE IF NOT EXISTS homepage_sections (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  section_type VARCHAR(30) NOT NULL,          -- 'partner_loft' (合作鴿舍)
+  title VARCHAR(255) NOT NULL,
+  image_file_name VARCHAR(255) NOT NULL,
+  link_url VARCHAR(500) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_homepage_sections_type_sort (section_type, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Fully dynamic taxonomy for the pigeon showcase (入賞鴿展示 / 進口鴿展示):
+-- admins can add/rename/remove categories freely, unlike the code-driven
+-- section_type above. Category pages are auto-routed from gallery_type +
+-- id (see /[locale]/pigeons/{gallery_type}/{categoryId} — a T2/T3 concern),
+-- so there's no separate link_url column here.
+CREATE TABLE IF NOT EXISTS pigeon_gallery_categories (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  gallery_type VARCHAR(20) NOT NULL,          -- 'award' (入賞鴿) | 'import' (進口鴿)
+  name VARCHAR(100) NOT NULL,                 -- e.g. 石君鴿舍 / 比利時
+  cover_image_file_name VARCHAR(255) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_gallery_categories_type_sort (gallery_type, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Individual showcase pigeons within a category — display-only Gallery
+-- entries (no bidding/purchase flow), deliberately with no FK to `listings`.
+-- No ON DELETE CASCADE from pigeon_gallery_categories (this project doesn't
+-- use FK constraints anywhere — see `listings`/`listing_photos` above), so
+-- deletePigeonGalleryCategory (lib/pigeonGallery.ts) removes a category's
+-- items itself before removing the category row.
+CREATE TABLE IF NOT EXISTS pigeon_gallery_items (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  category_id BIGINT NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  image_file_name VARCHAR(255) NOT NULL,
+  price_type VARCHAR(20) NOT NULL,            -- 'auction' (競標種鴿) | 'fixed_price' (定價種鴿)
+  reference_price BIGINT NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_gallery_items_category_sort (category_id, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
