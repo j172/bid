@@ -2,8 +2,8 @@ import { getTranslations } from "next-intl/server";
 import { listOpenListings } from "@/lib/listings";
 import { listingPhotoUrl } from "@/lib/uploads";
 import { Link } from "@/i18n/navigation";
-import ProgressiveImage from "@/app/components/ProgressiveImage";
 import HeroSection from "./components/HeroSection";
+import ZoomableProductImage from "./components/ZoomableProductImage";
 
 export const dynamic = "force-dynamic";
 
@@ -124,6 +124,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     href: `/listings/${item.id}`,
     title: item.title,
     photoUrl: item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : "/images/hero-placeholder.png",
+    hasPhoto: Boolean(item.photos[0]),
     currentPrice: item.current_price,
     buyItNowPrice: item.buy_it_now_price,
     endsAt: item.ends_at!.toISOString(),
@@ -134,6 +135,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     href: `/listings/${item.id}`,
     title: item.title,
     photoUrl: item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : "/images/hero-placeholder.png",
+    hasPhoto: Boolean(item.photos[0]),
     currentPrice: item.current_price,
     buyItNowPrice: item.buy_it_now_price,
     endsAt: item.ends_at!.toISOString(),
@@ -296,19 +298,22 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
           <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
             {quickDeals.map((item, index) => (
+              (() => {
+                const hasPhoto = Boolean(item.photos[0]);
+                return (
               <Link
                 key={`deal-${item.id}`}
                 href={`/listings/${item.id}`}
                 className="group flex items-center gap-3 rounded-xl border border-border bg-slate-50 p-3 transition hover:-translate-y-0.5 hover:border-brand-blue/50 hover:bg-white"
               >
-                <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100">
-                  <ProgressiveImage
+                <div className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-lg ${hasPhoto ? "bg-slate-100" : "bg-white/90"}`}>
+                  <ZoomableProductImage
                     src={item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : "/images/hero-placeholder.png"}
                     alt={item.title}
                     eager={index === 0}
                     fetchPriority={index === 0 ? "high" : "auto"}
                     sizes="80px"
-                    className="h-full w-full object-cover transition group-hover:scale-105"
+                    zoomPreset="medium"
                   />
                   <span className="absolute left-1 top-1 rounded bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold text-white">HOT</span>
                 </div>
@@ -324,6 +329,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                   </div>
                 </div>
               </Link>
+                );
+              })()
             ))}
           </div>
         </div>
@@ -396,19 +403,22 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {newArrivals.map((item, index) => (
+            (() => {
+              const hasPhoto = Boolean(item.photos[0]);
+              return (
             <article
               key={item.id}
               className="group rounded-2xl border border-border bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-brand-blue/60 hover:shadow-md"
             >
               <Link href={`/listings/${item.id}`} className="block">
-                <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
-                  <ProgressiveImage
+                <div className={`relative aspect-[4/3] overflow-hidden rounded-xl ${hasPhoto ? "bg-slate-100" : "bg-white/90"}`}>
+                  <ZoomableProductImage
                     src={item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : "/images/hero-placeholder.png"}
                     alt={item.title}
                     eager={index < homeEagerCount}
                     fetchPriority={index < homeEagerCount ? "high" : "auto"}
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    className="h-full w-full object-cover transition group-hover:scale-105"
+                    zoomPreset="medium"
                   />
                   <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition group-hover:opacity-100" />
                   <span className="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-1 text-[11px] font-bold text-brand-blue shadow-sm">
@@ -434,6 +444,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                 </Link>
               </div>
             </article>
+              );
+            })()
           ))}
         </div>
       </section>
@@ -483,16 +495,19 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {bestMixed.map((item, index) => (
+            (() => {
+              const hasPhoto = Boolean(item.photos[0]);
+              return (
             <article key={`best-${item.id}`} className="group rounded-2xl border border-border bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-brand-blue/60 hover:shadow-md">
               <Link href={`/listings/${item.id}`} className="block">
-                <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
-                  <ProgressiveImage
+                <div className={`relative aspect-[4/3] overflow-hidden rounded-xl ${hasPhoto ? "bg-slate-100" : "bg-white/90"}`}>
+                  <ZoomableProductImage
                     src={item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : "/images/hero-placeholder.png"}
                     alt={item.title}
                     eager={index < 1}
                     fetchPriority={index < 1 ? "high" : "auto"}
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    className="h-full w-full object-cover transition group-hover:scale-105"
+                    zoomPreset="medium"
                   />
                   <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition group-hover:opacity-100" />
                   <span className="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-1 text-[11px] font-bold text-brand-blue shadow-sm">
@@ -520,6 +535,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                 </Link>
               </div>
             </article>
+              );
+            })()
           ))}
         </div>
 

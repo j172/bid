@@ -1,5 +1,5 @@
 import { Link } from "@/i18n/navigation";
-import ProgressiveImage from "@/app/components/ProgressiveImage";
+import ZoomableProductImage from "./ZoomableProductImage";
 import { listingPhotoUrl } from "@/lib/uploads";
 
 interface ProductCardProps {
@@ -35,13 +35,13 @@ export default function ProductCard({
       className="group overflow-hidden rounded-xl border border-border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
     >
       <div className="relative aspect-square overflow-hidden bg-slate-100">
-        <ProgressiveImage
+        <ZoomableProductImage
           src={photo ? listingPhotoUrl(id, photo) : "/images/hero-placeholder.png"}
           alt={title}
           eager={eager}
           fetchPriority={highPriorityImage ? "high" : "auto"}
           sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
-          className="h-full w-full object-cover transition group-hover:scale-105"
+          zoomPreset="low"
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-900/60 via-slate-900/0 to-transparent opacity-0 transition group-hover:opacity-100" />
         <div className="absolute bottom-3 left-1/2 w-[calc(100%-1.5rem)] -translate-x-1/2 translate-y-3 rounded-md bg-white/95 px-3 py-2 text-center text-xs font-bold text-brand-blue opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">

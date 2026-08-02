@@ -4,12 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import ProgressiveImage from "@/app/components/ProgressiveImage";
+import ZoomableProductImage from "./ZoomableProductImage";
 
 interface HeroCardItem {
   id: number;
   href: string;
   title: string;
   photoUrl: string;
+  hasPhoto: boolean;
   currentPrice: number;
   buyItNowPrice: number | null;
   endsAt: string;
@@ -151,14 +153,18 @@ export default function HeroSection({
                   </div>
                 </div>
 
-                <div className="pointer-events-none absolute -bottom-7 right-0 w-[46%] min-w-[230px] max-w-[360px] px-4 lg:px-6">
+                <div
+                  className={`pointer-events-none absolute -bottom-1 -right-1 w-[33vw] min-w-[124px] max-w-[212px] px-2 sm:-bottom-4 sm:right-0 sm:w-[38%] sm:min-w-[180px] sm:max-w-[280px] sm:px-4 lg:-bottom-7 lg:w-[46%] lg:min-w-[230px] lg:max-w-[360px] lg:px-6 ${
+                    activeCard.hasPhoto ? "" : "rounded-2xl bg-white/90 p-2"
+                  }`}
+                >
                   <ProgressiveImage
                     src={activeCard.photoUrl}
                     alt={activeCard.title}
                     eager
                     fetchPriority="high"
-                    sizes="(max-width: 1024px) 0vw, 30vw"
-                    className="h-auto w-full object-contain drop-shadow-2xl"
+                    sizes="(max-width: 640px) 34vw, (max-width: 1024px) 38vw, 30vw"
+                    className={`h-auto w-full drop-shadow-2xl ${activeCard.hasPhoto ? "object-contain" : "object-contain p-2"}`}
                   />
                 </div>
 
@@ -274,14 +280,17 @@ export default function HeroSection({
                   </div>
 
                   {item.photoUrl && (
-                    <div className="mt-5 aspect-[16/9] overflow-hidden rounded-2xl bg-slate-100">
-                      <ProgressiveImage
+                    <div
+                      className={`mt-5 aspect-[16/9] overflow-hidden rounded-2xl ${
+                        item.hasPhoto ? "bg-slate-100" : "bg-white/90"
+                      }`}
+                    >
+                      <ZoomableProductImage
                         src={item.photoUrl}
                         alt={item.title}
                         eager={false}
                         fetchPriority="auto"
                         sizes="(max-width: 1024px) 100vw, 22vw"
-                        className="h-full w-full object-cover transition group-hover:scale-105"
                       />
                     </div>
                   )}
