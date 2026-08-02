@@ -12,7 +12,6 @@ export default async function SiteHeader() {
   const quickSearches = [
     { label: t("quickAuction"), href: "/listings?type=auction" },
     { label: t("quickFixed"), href: "/listings?type=fixed_price" },
-    { label: t("quickUnder500"), href: "/listings?minPrice=0&maxPrice=500" },
     { label: t("quickAutoBid"), href: "/#auto-bidding-explainer" },
   ];
 
