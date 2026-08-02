@@ -158,14 +158,16 @@ export default function HeroSection({
                     activeCard.hasPhoto ? "" : "rounded-2xl bg-white/90 p-2"
                   }`}
                 >
-                  <ProgressiveImage
-                    src={activeCard.photoUrl}
-                    alt={activeCard.title}
-                    eager
-                    fetchPriority="high"
-                    sizes="(max-width: 640px) 34vw, (max-width: 1024px) 38vw, 30vw"
-                    className={`h-auto w-full drop-shadow-2xl ${activeCard.hasPhoto ? "object-contain" : "object-contain p-2"}`}
-                  />
+                  <div className="aspect-[4/3] w-full">
+                    <ProgressiveImage
+                      src={activeCard.photoUrl}
+                      alt={activeCard.title}
+                      eager
+                      fetchPriority="high"
+                      sizes="(max-width: 640px) 34vw, (max-width: 1024px) 38vw, 30vw"
+                      className={`h-full w-full drop-shadow-2xl ${activeCard.hasPhoto ? "object-contain" : "object-contain p-2"}`}
+                    />
+                  </div>
                 </div>
 
                 <div className="relative z-10 mt-12 grid max-w-xl gap-2 text-xs text-blue-100 sm:grid-cols-3 sm:text-sm">
