@@ -65,6 +65,14 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     .filter((item) => item.listing_type === "fixed_price")
     .sort((a, b) => b.purchaseCount - a.purchaseCount || (b.price ?? 0) - (a.price ?? 0))
     .slice(0, 4);
+  // Independent "定價種鴿" homepage section (issue #36) — real fixed_price,
+  // status='open' listings straight from the same fetch every other section
+  // on this page already uses, newest-first so recently listed pigeons
+  // surface first. Renders nothing when there are none (see JSX below).
+  const fixedPriceListings = [...listings]
+    .filter((item) => item.listing_type === "fixed_price")
+    .sort((a, b) => b.created_at.getTime() - a.created_at.getTime())
+    .slice(0, 6);
   const categoryItems: CategoryItem[] = [
     { key: "auction", count: listings.filter((item) => item.listing_type === "auction").length },
     { key: "fixed_price", count: listings.filter((item) => item.listing_type === "fixed_price").length },
@@ -335,6 +343,58 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           </div>
         </div>
       </section>
+
+      {fixedPriceListings.length > 0 && (
+        <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
+          <div className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-600">{t("fixedPriceSectionEyebrow")}</p>
+                <h3 className="mt-1 text-xl font-black text-ink">{t("fixedPriceSectionTitle")}</h3>
+              </div>
+              <Link href="/listings?type=fixed_price" className="text-sm font-semibold text-interactive-primary hover:text-header">
+                {t("fixedPriceSectionCta")} →
+              </Link>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+              {fixedPriceListings.map((item, index) => {
+                const hasPhoto = Boolean(item.photos[0]);
+                return (
+                  <Link
+                    key={`fixed-price-${item.id}`}
+                    href={`/listings/${item.id}`}
+                    className="group flex items-center gap-3 rounded-xl border border-border bg-slate-50 p-3 transition hover:-translate-y-0.5 hover:border-interactive-primary/50 hover:bg-white"
+                  >
+                    <div className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-lg ${hasPhoto ? "bg-slate-100" : "bg-white/90"}`}>
+                      <ZoomableProductImage
+                        src={item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : "/images/hero-placeholder.png"}
+                        alt={item.title}
+                        eager={index === 0}
+                        fetchPriority={index === 0 ? "high" : "auto"}
+                        sizes="80px"
+                        zoomPreset="medium"
+                      />
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-ink">{item.title}</p>
+                      <p className="mt-1 text-xs text-ink-light">
+                        {item.stock_remaining != null
+                          ? tListings("remainingUnits", { count: item.stock_remaining })
+                          : t("fixedPriceSectionItemLabel")}
+                      </p>
+                      <div className="mt-2 flex items-end gap-2">
+                        <p className="text-base font-black text-ink">{item.price}</p>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
         <div className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
