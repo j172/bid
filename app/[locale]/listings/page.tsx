@@ -192,9 +192,6 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
                 <Link href={withFilters({ minPrice: undefined, maxPrice: undefined })} className={`block rounded-md px-3 py-2 text-sm ${minPrice === undefined && maxPrice === undefined ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
                   {t("priceAny")}
                 </Link>
-                <Link href={withFilters({ minPrice: "0", maxPrice: "500" })} className={`block rounded-md px-3 py-2 text-sm ${minPrice === 0 && maxPrice === 500 ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
-                  {t("priceLow")}
-                </Link>
                 <Link href={withFilters({ minPrice: "501", maxPrice: "1000" })} className={`block rounded-md px-3 py-2 text-sm ${minPrice === 501 && maxPrice === 1000 ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
                   {t("priceMid")}
                 </Link>
