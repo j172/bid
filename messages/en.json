@@ -245,7 +245,11 @@
     "days": "{count}d",
     "hours": "{count}h",
     "minutes": "{count}m",
-    "lessThanMinute": "less than a minute left"
+    "lessThanMinute": "less than a minute left",
+    "unitDays": "Days",
+    "unitHours": "Hours",
+    "unitMinutes": "Minutes",
+    "unitSeconds": "Seconds"
   },
   "languageSwitcher": {
     "label": "Language",

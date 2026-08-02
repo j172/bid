@@ -10,6 +10,7 @@ import ZoomableProductImage from "../../components/ZoomableProductImage";
 import StatusBadge from "../../components/StatusBadge";
 import BidForm from "./BidForm";
 import BuyNowButton from "./BuyNowButton";
+import HeroCountdownStrip from "./HeroCountdownStrip";
 import ListingDetailTabs from "./ListingDetailTabs";
 import ListingGallery from "./ListingGallery";
 import LiveListingStatus from "./LiveListingStatus";
@@ -89,21 +90,42 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
     t("reviewHintThree"),
   ];
 
+  // Captured once per request and passed to every client component that
+  // seeds a countdown from it — see useListingCountdown for why this needs
+  // to be a stable prop rather than each client component calling
+  // Date.now() itself (hydration mismatch).
+  const renderedAt = new Date().toISOString();
+
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <div className="rounded-2xl bg-white px-5 py-4 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">
-          <Link href="/" className="hover:text-gold">
+          <Link href="/" className="hover:text-interactive-primary">
             {tNav("home")}
           </Link>{" "}
           /{" "}
-          <Link href="/listings" className="hover:text-gold">
+          <Link href="/listings" className="hover:text-interactive-primary">
             {tNav("browse")}
           </Link>{" "}
           / {t("shopDetails")}
         </p>
         <h1 className="mt-2 text-3xl font-black text-ink">{listing.title}</h1>
       </div>
+
+      {isAuction && (
+        <div className="mt-6">
+          <HeroCountdownStrip
+            listingId={listing.id}
+            imageUrl={imageUrls[0] ?? "/images/hero-placeholder.png"}
+            initialCurrentPrice={listing.current_price}
+            initialBuyItNowPrice={listing.buy_it_now_price}
+            initialEndsAt={listing.ends_at!.toISOString()}
+            initialStartsAt={listing.starts_at ? listing.starts_at.toISOString() : null}
+            initialStatus={listing.status}
+            renderedAt={renderedAt}
+          />
+        </div>
+      )}
 
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-2">
         <div className="flex flex-col gap-3">
@@ -114,7 +136,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
           <div>
             <div className="flex items-center gap-3">
               {discountRate !== null && (
-                <span className="rounded-full bg-brand-chip px-3 py-1 text-xs font-black uppercase tracking-wide text-brand-blue">
+                <span className="rounded-full bg-interactive-primary-subtle px-3 py-1 text-xs font-black uppercase tracking-wide text-interactive-primary">
                   {discountRate}% {t("off")}
                 </span>
               )}
@@ -128,7 +150,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
             {isFixedPrice ? (
               <div className="flex flex-col gap-1">
                 <div className="mt-2 flex items-baseline gap-3">
-                  <span className="text-4xl font-black text-brand-blue">{listing.price}</span>
+                  <span className="text-4xl font-black text-interactive-primary">{listing.price}</span>
                   <StatusBadge status={listing.status} />
                 </div>
                 <p className="text-sm text-ink-light">{stockLabel}</p>
@@ -139,7 +161,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                   {listing.buy_it_now_price !== null && (
                     <span className="text-lg text-ink-light line-through">{listing.buy_it_now_price}</span>
                   )}
-                  <span className="text-4xl font-black text-brand-blue">{listing.current_price}</span>
+                  <span className="text-4xl font-black text-interactive-primary">{listing.current_price}</span>
                 </div>
                 <LiveListingStatus
                   listingId={listing.id}
@@ -147,9 +169,10 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                   initialEndsAt={listing.ends_at!.toISOString()}
                   initialStartsAt={listing.starts_at ? listing.starts_at.toISOString() : null}
                   initialStatus={listing.status}
+                  renderedAt={renderedAt}
                 />
                 {listing.buy_it_now_price !== null && (
-                  <p className="mt-3 inline-flex w-fit rounded-md bg-gold-light px-2 py-1 text-sm font-medium text-gold-dark">
+                  <p className="mt-3 inline-flex w-fit rounded-md bg-interactive-primary-subtle px-2 py-1 text-sm font-medium text-interactive-primary-active">
                     {t("buyItNowPrice", { price: listing.buy_it_now_price })}
                   </p>
                 )}
@@ -163,7 +186,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
             </div>
 
             {isScheduled && listing.starts_at && (
-              <p className="mt-6 border-t border-border pt-6 text-sm font-medium text-brand-blue">
+              <p className="mt-6 border-t border-border pt-6 text-sm font-medium text-interactive-primary">
                 {t("scheduledNotice", { time: formatRemaining(listing.starts_at, tFormat, { prefixKey: "startsInPrefix", endedKey: "startingSoon" }) })}
               </p>
             )}
@@ -181,7 +204,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                         <BidForm listingId={listing.id} minimumNextBid={minimumNextBid} />
                       </div>
                       {listing.buy_it_now_price !== null && (
-                        <div className="rounded-xl border border-brand-blue/20 bg-brand-chip p-4">
+                        <div className="rounded-xl border border-interactive-primary/20 bg-interactive-primary-subtle p-4">
                           <BuyNowButton listingId={listing.id} buyItNowPrice={listing.buy_it_now_price} />
                         </div>
                       )}
@@ -190,7 +213,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                 </div>
               ) : (
                 <p className="mt-6 border-t border-border pt-6 text-sm text-ink-light">
-                  <Link href="/login" className="font-medium text-gold hover:underline">
+                  <Link href="/login" className="font-medium text-interactive-primary hover:underline">
                     {t("loginPrompt")}
                   </Link>
                   {isFixedPrice ? t("loginToBuy") : t("loginToBidOrBuy")}
@@ -233,16 +256,16 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                   zoomPreset="high"
                 />
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-900/60 via-slate-900/5 to-transparent opacity-0 transition group-hover:opacity-100" />
-                <div className="absolute bottom-3 left-1/2 w-[calc(100%-1.5rem)] -translate-x-1/2 translate-y-3 rounded-md bg-white/95 px-3 py-2 text-center text-xs font-bold text-brand-blue opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                <div className="absolute bottom-3 left-1/2 w-[calc(100%-1.5rem)] -translate-x-1/2 translate-y-3 rounded-md bg-white/95 px-3 py-2 text-center text-xs font-bold text-interactive-primary opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                   {t("viewDetails")}
                 </div>
               </div>
               <div className="p-4">
                 <h3 className="truncate font-semibold text-ink">{related.title}</h3>
-                <p className="mt-2 text-lg font-black text-brand-blue">
+                <p className="mt-2 text-lg font-black text-interactive-primary">
                   {related.listing_type === "fixed_price" ? related.price : related.current_price}
                 </p>
-                <p className="mt-2 inline-flex rounded-full bg-brand-chip px-2 py-0.5 text-xs font-semibold text-brand-blue">
+                <p className="mt-2 inline-flex rounded-full bg-interactive-primary-subtle px-2 py-0.5 text-xs font-semibold text-interactive-primary">
                   {t("viewDetails")}
                 </p>
               </div>

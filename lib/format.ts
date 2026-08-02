@@ -8,12 +8,11 @@ type Translator = (key: string, values?: Record<string, string | number>) => str
 // ends_at countdown — see the "time until start" countdown for a 'scheduled'
 // listing (LiveListingStatus.tsx), which needs its own prefix/ended wording
 // but otherwise counts down identically.
-export function formatRemaining(
-  target: Date,
+export function formatRemainingMs(
+  remainingMs: number,
   t: Translator,
   options?: { prefixKey?: string; endedKey?: string },
 ): string {
-  const remainingMs = new Date(target).getTime() - Date.now();
   if (remainingMs <= 0) {
     return t(options?.endedKey ?? "ended");
   }
@@ -34,6 +33,33 @@ export function formatRemaining(
 
   const prefix = t(options?.prefixKey ?? "remainingPrefix");
   return prefix ? `${prefix} ${parts.join(" ")}` : parts.join(" ");
+}
+
+export function formatRemaining(
+  target: Date,
+  t: Translator,
+  options?: { prefixKey?: string; endedKey?: string },
+): string {
+  return formatRemainingMs(new Date(target).getTime() - Date.now(), t, options);
+}
+
+// Day/hour/minute/second breakdown for digit-tile countdowns (e.g. the
+// listing hero strip) — same units as formatRemainingMs but as raw numbers
+// rather than a localized sentence, and includes seconds since a digit clock
+// is expected to tick every second.
+export function breakdownRemainingMs(remainingMs: number): {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+} {
+  const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+  return {
+    days: Math.floor(totalSeconds / 86_400),
+    hours: Math.floor((totalSeconds % 86_400) / 3_600),
+    minutes: Math.floor((totalSeconds % 3_600) / 60),
+    seconds: totalSeconds % 60,
+  };
 }
 
 // Admin-only, hardcoded Traditional Chinese — the admin backend (app/z04urru6)
