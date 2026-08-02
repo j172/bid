@@ -154,7 +154,7 @@ export default function HeroSection({
                 </div>
 
                 <div
-                  className={`pointer-events-none absolute -bottom-1 -right-1 w-[33vw] min-w-[124px] max-w-[212px] px-2 sm:-bottom-4 sm:right-0 sm:w-[38%] sm:min-w-[180px] sm:max-w-[280px] sm:px-4 lg:-bottom-7 lg:w-[46%] lg:min-w-[230px] lg:max-w-[360px] lg:px-6 ${
+                  className={`pointer-events-none absolute bottom-4 right-0 w-[min(33rem,calc(100%-1rem))] px-2 sm:px-4 lg:px-6 ${
                     activeCard.hasPhoto ? "" : "rounded-2xl bg-white/90 p-2"
                   }`}
                 >
