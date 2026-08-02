@@ -143,8 +143,8 @@ export default async function SiteHeader() {
           </form>
 
           <div className="shrink-0 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 leading-tight shadow-sm">
-            <p className="text-[11px] uppercase tracking-wide text-ink-light">客服專線</p>
-            <p className="text-xs font-bold text-ink">(+886) 02-1234-5678</p>
+            <p className="text-[11px] uppercase tracking-wide text-ink-light">{t("supportPhoneLabel")}</p>
+            <p className="text-xs font-bold text-ink">{t("supportPhone")}</p>
           </div>
         </div>
 
