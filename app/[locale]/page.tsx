@@ -9,13 +9,12 @@ export const dynamic = "force-dynamic";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-type CategoryItem = { key: "auction" | "fixed_price"; count: number };
-
 type VisualCategoryItem = {
   label: string;
   subtitle: string;
   href: string;
   badge: string;
+  count: number;
 };
 
 function perfModeFromSearchParams(params: SearchParams): "balanced" | "aggressive" {
@@ -33,8 +32,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   // for the /listings browse page's benefit — the homepage's curated
   // sections below (ending soon, quick deals, etc.) all assume "actively
   // biddable" semantics (bid counts, "剩餘 X" urgency framing), so they stay
-  // open-only rather than growing their own scheduled-aware treatment.
-  const listings = (await listOpenListings()).filter((item) => item.status === "open");
+  // open-only rather than growing their own scheduled-aware treatment. The
+  // "分類瀏覽" cards are the one exception (see below) — they intentionally
+  // surface scheduled listings too, so they keep the unfiltered result.
+  const allFetchedListings = await listOpenListings();
+  const listings = allFetchedListings.filter((item) => item.status === "open");
 
   const heroRenderedAt = new Date().toISOString();
   const auctionsByEndingSoon = [...listings]
@@ -65,46 +67,78 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     .filter((item) => item.listing_type === "fixed_price")
     .sort((a, b) => b.purchaseCount - a.purchaseCount || (b.price ?? 0) - (a.price ?? 0))
     .slice(0, 4);
-  const categoryItems: CategoryItem[] = [
-    { key: "auction", count: listings.filter((item) => item.listing_type === "auction").length },
-    { key: "fixed_price", count: listings.filter((item) => item.listing_type === "fixed_price").length },
-  ];
+  // "分類瀏覽" 卡片：維持「依商品狀態／熱度」瀏覽入口的定位（不是合作鴿舍／
+  // 入賞鴿／進口鴿那套 CMS 分類系統），但每張卡片都改成對 listings 真實計算
+  // 出來的子集合，並且連結帶對應的篩選 query，讓點進去的清單筆數跟卡片上
+  // 的數字一致。
+  const QUICK_CLOSE_WINDOW_HOURS = 72;
+  const quickCloseWindowMs = QUICK_CLOSE_WINDOW_HOURS * 60 * 60 * 1000;
+  const now = new Date().getTime();
+  const auctionListings = listings.filter((item) => item.listing_type === "auction");
+  const fixedPriceListings = listings.filter((item) => item.listing_type === "fixed_price");
+  // 快速結標：open 狀態的競標商品中，3 天內即將截止的（而非全部競標商品，
+  // 否則會跟「拍賣商品」卡片數字重複）。
+  const quickCloseAuctions = auctionListings.filter((item) => {
+    if (!item.ends_at) return false;
+    const remaining = item.ends_at.getTime() - now;
+    return remaining >= 0 && remaining <= quickCloseWindowMs;
+  });
+  // 即將開賣：取代原本語意無法對應真實欄位的「限時精選」，改為真的還沒開賣
+  // 的 scheduled 商品（原本的「高人氣商品推薦」在 schema 上跟「買家最愛」重
+  // 複，故合理替換為狀態面向的另一個真實子集合）。
+  const scheduledListings = allFetchedListings.filter((item) => item.status === "scheduled");
+  // 買家最愛：依出價次數（競標）+ 購買次數（固定價）加總排序取熱門商品，
+  // 只計入有實際出價／購買紀錄的商品，避免跟「全部商品」的數字重複。
+  const popularListings = listings.filter((item) => item.bidCount + item.purchaseCount > 0);
+  // 新手友善：原本語意（低價入門）在現有 schema 下可直接用真實價格欄位計算，
+  // 取兩種商品類型皆適用的現價 <= 門檻。
+  const BEGINNER_MAX_PRICE = 1000;
+  const beginnerListings = listings.filter((item) => {
+    const price = item.listing_type === "auction" ? item.current_price : (item.price ?? item.current_price);
+    return price <= BEGINNER_MAX_PRICE;
+  });
   const visualCategories: VisualCategoryItem[] = [
     {
       label: t("categoryAuction"),
       subtitle: t("promoAuctionTitle"),
       href: "/listings?type=auction",
       badge: "⚡",
+      count: auctionListings.length,
     },
     {
       label: t("categoryFixedPrice"),
       subtitle: t("promoFixedTitle"),
       href: "/listings?type=fixed_price",
       badge: "🛍️",
+      count: fixedPriceListings.length,
     },
     {
       label: "快速結標",
-      subtitle: "支援一鍵買斷",
-      href: "/listings?type=auction",
+      subtitle: "3 天內即將截止競標",
+      href: `/listings?type=auction&sort=ends_soon&withinHours=${QUICK_CLOSE_WINDOW_HOURS}`,
       badge: "🎯",
+      count: quickCloseAuctions.length,
     },
     {
-      label: "限時精選",
-      subtitle: "高人氣商品推薦",
-      href: "/listings",
-      badge: "🔥",
+      label: "即將開賣",
+      subtitle: "尚未開標，搶先預約關注",
+      href: "/listings?status=scheduled&sort=starts_soon",
+      badge: "⏰",
+      count: scheduledListings.length,
     },
     {
       label: "買家最愛",
-      subtitle: "固定價熱門排行",
-      href: "/listings?type=fixed_price",
+      subtitle: "依出價與購買熱度排行",
+      href: "/listings?sort=popular",
       badge: "❤️",
+      count: popularListings.length,
     },
     {
       label: "新手友善",
-      subtitle: "從低價商品開始",
-      href: "/listings",
+      subtitle: `${BEGINNER_MAX_PRICE} 元有找，輕鬆入門`,
+      href: `/listings?maxPrice=${BEGINNER_MAX_PRICE}`,
       badge: "🌟",
+      count: beginnerListings.length,
     },
   ];
   const marketplaceHighlights = [
@@ -209,31 +243,23 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           <h2 className="text-2xl font-bold">{t("browseByCategory")}</h2>
         </div>
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {visualCategories.map((cat) => {
-            const count =
-              cat.href.includes("type=auction")
-                ? categoryItems.find((item) => item.key === "auction")?.count
-                : cat.href.includes("type=fixed_price")
-                  ? categoryItems.find((item) => item.key === "fixed_price")?.count
-                  : listings.length;
-            return (
-              <Link
-                key={`${cat.label}-${cat.href}`}
-                href={cat.href}
-                className="group rounded-2xl border border-border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-interactive-primary">{cat.label}</p>
-                    <p className="mt-2 text-sm text-ink-light">{cat.subtitle}</p>
-                  </div>
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-lg">{cat.badge}</span>
+          {visualCategories.map((cat) => (
+            <Link
+              key={`${cat.label}-${cat.href}`}
+              href={cat.href}
+              className="group rounded-2xl border border-border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-interactive-primary">{cat.label}</p>
+                  <p className="mt-2 text-sm text-ink-light">{cat.subtitle}</p>
                 </div>
-                <p className="mt-4 text-2xl font-black text-ink">{count}</p>
-                <p className="mt-1 text-sm font-semibold text-interactive-primary group-hover:text-header">{t("viewAll")} →</p>
-              </Link>
-            );
-          })}
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-lg">{cat.badge}</span>
+              </div>
+              <p className="mt-4 text-2xl font-black text-ink">{cat.count}</p>
+              <p className="mt-1 text-sm font-semibold text-interactive-primary group-hover:text-header">{t("viewAll")} →</p>
+            </Link>
+          ))}
         </div>
       </section>
 

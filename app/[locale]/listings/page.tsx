@@ -12,7 +12,10 @@ const DESCRIPTION_SNIPPET_LENGTH = 30;
 type SearchParams = Record<string, string | string[] | undefined>;
 
 type CategoryKey = "auction" | "fixed_price";
-type SortKey = "newest" | "price_asc" | "price_desc";
+// ends_soon / starts_soon / popular power the homepage "分類瀏覽" cards
+// (see app/[locale]/page.tsx) — real, computable subsets/orderings rather
+// than the hardcoded links that used to live there.
+type SortKey = "newest" | "price_asc" | "price_desc" | "ends_soon" | "starts_soon" | "popular";
 
 function inferCategoryFromListingType(type: ListingType): CategoryKey {
   return type === "auction" ? "auction" : "fixed_price";
@@ -50,6 +53,8 @@ function tabHref(
   if (perfMode === "aggressive") sp.set("perf", "aggressive");
   if (searchQuery?.trim()) sp.set("q", searchQuery.trim());
   if (sort && sort !== "newest") sp.set("sort", sort);
+  // Deliberately drop status/withinHours here — switching the type tab
+  // exits any homepage-card-specific filtering rather than compounding it.
 
   const query = sp.toString();
   return query ? `/listings?${query}` : "/listings";
@@ -66,7 +71,19 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   const rawQ = Array.isArray(params.q) ? params.q[0] : params.q;
   const searchQuery = rawQ?.trim() ?? "";
   const rawSort = Array.isArray(params.sort) ? params.sort[0] : params.sort;
-  const sort: SortKey = rawSort === "price_asc" || rawSort === "price_desc" ? rawSort : "newest";
+  const sort: SortKey =
+    rawSort === "price_asc" ||
+    rawSort === "price_desc" ||
+    rawSort === "ends_soon" ||
+    rawSort === "starts_soon" ||
+    rawSort === "popular"
+      ? rawSort
+      : "newest";
+  // Only "scheduled" is a supported value today (powers the homepage's
+  // "即將開賣" card) — anything else is treated as no status filter.
+  const rawStatus = Array.isArray(params.status) ? params.status[0] : params.status;
+  const statusFilter = rawStatus === "scheduled" ? "scheduled" : undefined;
+  const withinHours = parseNumberParam(params.withinHours);
   const perfMode = perfModeFromSearchParams(params);
   const gridEagerCount = perfMode === "aggressive" ? 6 : 4;
 
@@ -75,6 +92,7 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   const tFormat = await getTranslations("format");
   const anonymousBuyer = await getTranslations("mask").then((tMask) => tMask("anonymousBuyer"));
 
+  const nowMs = new Date().getTime();
   const filteredListings = listings.filter((listing) => {
     const categoryMatch = !selectedCategory || inferCategoryFromListingType(listing.listing_type) === selectedCategory;
     const price = listing.listing_type === "auction" ? listing.current_price : (listing.price ?? listing.current_price);
@@ -83,7 +101,18 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
     const searchMatch =
       searchQuery.length === 0 ||
       `${listing.title} ${listing.description}`.toLowerCase().includes(searchQuery.toLowerCase());
-    return categoryMatch && minMatch && maxMatch && searchMatch;
+    const statusMatch = !statusFilter || listing.status === statusFilter;
+    const withinHoursMatch =
+      withinHours === undefined ||
+      (listing.listing_type === "auction" &&
+        listing.status === "open" &&
+        listing.ends_at !== null &&
+        listing.ends_at.getTime() - nowMs >= 0 &&
+        listing.ends_at.getTime() - nowMs <= withinHours * 60 * 60 * 1000);
+    // "popular" is a homepage-favorites sort — items with zero bids/purchases
+    // aren't "buyer favorites", so exclude them rather than just reordering.
+    const popularMatch = sort !== "popular" || listing.bidCount + listing.purchaseCount > 0;
+    return categoryMatch && minMatch && maxMatch && searchMatch && statusMatch && withinHoursMatch && popularMatch;
   });
 
   const sortedListings = [...filteredListings].sort((a, b) => {
@@ -92,6 +121,19 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
 
     if (sort === "price_asc") return priceA - priceB;
     if (sort === "price_desc") return priceB - priceA;
+    if (sort === "ends_soon") {
+      const aTime = a.ends_at ? a.ends_at.getTime() : Infinity;
+      const bTime = b.ends_at ? b.ends_at.getTime() : Infinity;
+      return aTime - bTime;
+    }
+    if (sort === "starts_soon") {
+      const aTime = a.starts_at ? a.starts_at.getTime() : Infinity;
+      const bTime = b.starts_at ? b.starts_at.getTime() : Infinity;
+      return aTime - bTime;
+    }
+    if (sort === "popular") {
+      return (b.bidCount + b.purchaseCount) - (a.bidCount + a.purchaseCount);
+    }
     return b.id - a.id;
   });
 
@@ -113,6 +155,8 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
     const currentMax = Array.isArray(params.maxPrice) ? params.maxPrice[0] : params.maxPrice;
     const currentQ = Array.isArray(params.q) ? params.q[0] : params.q;
     const currentSort = Array.isArray(params.sort) ? params.sort[0] : params.sort;
+    const currentStatus = Array.isArray(params.status) ? params.status[0] : params.status;
+    const currentWithinHours = Array.isArray(params.withinHours) ? params.withinHours[0] : params.withinHours;
 
     const next = {
       perf,
@@ -122,6 +166,8 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
       maxPrice: currentMax,
       q: currentQ,
       sort: currentSort,
+      status: currentStatus,
+      withinHours: currentWithinHours,
       ...partial,
     };
 
@@ -241,7 +287,21 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
               >
                 價格高→低
               </Link>
-              <p className="ml-1 font-semibold text-ink">{type ? t("filtered") : t("allLive")}</p>
+              <Link
+                href={withFilters({ sort: "ends_soon", withinHours: undefined })}
+                className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "ends_soon" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
+              >
+                即將截止
+              </Link>
+              <Link
+                href={withFilters({ sort: "popular" })}
+                className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "popular" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
+              >
+                買家最愛
+              </Link>
+              <p className="ml-1 font-semibold text-ink">
+                {type || statusFilter || withinHours !== undefined || sort === "popular" ? t("filtered") : t("allLive")}
+              </p>
             </div>
           </div>
 
