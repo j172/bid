@@ -22,15 +22,15 @@ export default function ProgressiveImage({
   sizes = "(max-width: 768px) 100vw, 33vw",
   fetchPriority = "auto",
 }: ProgressiveImageProps) {
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(eager);
   const [errored, setErrored] = useState(false);
 
   // A carousel (HeroSection) reuses this component instance across slides,
   // so a failure on one image must not permanently fall back every slide after it.
   useEffect(() => {
-    setLoaded(false);
+    setLoaded(eager);
     setErrored(false);
-  }, [src]);
+  }, [src, eager]);
 
   const displaySrc = errored ? FALLBACK_SRC : src;
 
