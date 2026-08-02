@@ -102,6 +102,7 @@ export default function ZoomableProductImage({
   }, []);
 
   const displaySrc = errored ? FALLBACK_SRC : src;
+  const shouldBypassOptimizer = displaySrc.startsWith("/uploads/") || displaySrc.includes("/uploads/");
   const interactionsEnabled = !reducedMotion && !lowPerformanceMode;
   const zoomScale = ZOOM_PRESET_SCALE[zoomPreset];
   const lensLeft = Math.min(Math.max(cursor.x - LENS_SIZE / 2, 0), Math.max(cursor.width - LENS_SIZE, 0));
@@ -163,6 +164,7 @@ export default function ZoomableProductImage({
         src={displaySrc}
         alt={alt}
         fill
+        unoptimized={shouldBypassOptimizer}
         priority={eager}
         sizes={sizes}
         loading={eager ? "eager" : "lazy"}
@@ -194,6 +196,7 @@ export default function ZoomableProductImage({
           src={displaySrc}
           alt=""
           fill
+          unoptimized={shouldBypassOptimizer}
           sizes="288px"
           loading="lazy"
           className="object-contain p-3"

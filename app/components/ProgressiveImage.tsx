@@ -33,6 +33,7 @@ export default function ProgressiveImage({
   }, [src, eager]);
 
   const displaySrc = errored ? FALLBACK_SRC : src;
+  const shouldBypassOptimizer = displaySrc.startsWith("/uploads/") || displaySrc.includes("/uploads/");
 
   return (
     <div className="relative h-full w-full overflow-hidden">
@@ -41,6 +42,7 @@ export default function ProgressiveImage({
         src={displaySrc}
         alt={alt}
         fill
+        unoptimized={shouldBypassOptimizer}
         priority={eager}
         sizes={sizes}
         loading={eager ? "eager" : "lazy"}
