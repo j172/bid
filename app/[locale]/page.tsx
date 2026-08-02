@@ -107,16 +107,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       badge: "🌟",
     },
   ];
-  const marketplaceHighlights = [
-    {
-      title: "真實競標資料",
-      description: "首頁出價次數、已售件數與排行榜皆直接來自目前開放商品資料。",
-    },
-    {
-      title: "固定價／競標分流",
-      description: "一般商品才提供購買入口，競標商品則統一導向出價流程。",
-    },
-  ];
   const homeEagerCount = perfMode === "aggressive" ? 2 : 1;
   const perfSuffix = perfMode === "aggressive" ? "&perf=aggressive" : "";
   const heroCards = endingSoonAuctions.map((item) => ({
@@ -589,14 +579,32 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       </section>
 
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
-        <h2 className="text-2xl font-bold">Marketplace Notes</h2>
+        <h2 className="text-2xl font-bold">{t("weatherTitle")}</h2>
         <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-          {marketplaceHighlights.map((item) => (
-            <article key={item.title} className="rounded-2xl border border-border bg-white p-6 shadow-sm">
-              <p className="text-base font-bold text-ink">{item.title}</p>
-              <p className="mt-3 text-sm leading-7 text-ink-light">{item.description}</p>
-            </article>
-          ))}
+          <div className="overflow-hidden rounded-2xl border border-border bg-white shadow-sm">
+            <div className="border-b border-border px-4 py-3">
+              <p className="text-sm font-bold text-ink">{t("weatherWindyLabel")}</p>
+            </div>
+            <iframe
+              src="https://embed.windy.com/embed2.html?lat=23.380&lon=121.313&detailLat=23.380&detailLon=121.313&width=650&height=450&zoom=7&level=surface&overlay=wind&product=ecmwf&menu=&message=true&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=-1"
+              title={t("weatherWindyLabel")}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="h-[420px] w-full border-0 sm:h-[460px]"
+            />
+          </div>
+          <div className="overflow-hidden rounded-2xl border border-border bg-white shadow-sm">
+            <div className="border-b border-border px-4 py-3">
+              <p className="text-sm font-bold text-ink">{t("weatherCwaLabel")}</p>
+            </div>
+            <iframe
+              src="https://wifi.cwa.gov.tw/v2/"
+              title={t("weatherCwaLabel")}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="h-[420px] w-full border-0 sm:h-[460px]"
+            />
+          </div>
         </div>
       </section>
 
