@@ -89,6 +89,7 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
 
   const listings = await listOpenListings(type);
   const t = await getTranslations("listings");
+  const tNav = await getTranslations("nav");
   const tFormat = await getTranslations("format");
   const anonymousBuyer = await getTranslations("mask").then((tMask) => tMask("anonymousBuyer"));
 
@@ -193,7 +194,12 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <div className="rounded-xl bg-white p-4 shadow-sm sm:p-6">
-        <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">Home / Listings</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">
+          <Link href="/" className="hover:text-interactive-primary">
+            {tNav("home")}
+          </Link>{" "}
+          / {t("title")}
+        </p>
         <h1 className="mt-2 text-3xl font-black text-ink">{t("title")}</h1>
       </div>
 
@@ -262,39 +268,44 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
           <div className="flex flex-col gap-3 rounded-xl border border-border bg-white px-4 py-3 text-sm shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <p className="text-ink-light">{t("showingCount", { count: filteredListings.length })}</p>
-              {searchQuery.length > 0 && <p className="truncate text-xs text-ink-light">搜尋：{searchQuery}</p>}
+              {searchQuery.length > 0 && (
+                <p className="truncate text-xs text-ink-light">
+                  {t("searchPrefix")}
+                  {searchQuery}
+                </p>
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wide text-ink-light">排序</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-ink-light">{t("sortLabel")}</span>
               <Link
                 href={withFilters({ sort: undefined })}
                 className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "newest" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
               >
-                最新
+                {t("sortNewest")}
               </Link>
               <Link
                 href={withFilters({ sort: "price_asc" })}
                 className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "price_asc" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
               >
-                價格低→高
+                {t("sortPriceAsc")}
               </Link>
               <Link
                 href={withFilters({ sort: "price_desc" })}
                 className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "price_desc" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
               >
-                價格高→低
+                {t("sortPriceDesc")}
               </Link>
               <Link
                 href={withFilters({ sort: "ends_soon", withinHours: undefined })}
                 className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "ends_soon" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
               >
-                即將截止
+                {t("sortEndsSoon")}
               </Link>
               <Link
                 href={withFilters({ sort: "popular" })}
                 className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "popular" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
               >
-                買家最愛
+                {t("sortPopular")}
               </Link>
               <p className="ml-1 font-semibold text-ink">
                 {type || statusFilter || withinHours !== undefined || sort === "popular" ? t("filtered") : t("allLive")}

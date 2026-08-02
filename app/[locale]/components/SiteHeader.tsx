@@ -70,11 +70,11 @@ export default async function SiteHeader() {
               <input
                 type="search"
                 name="q"
-                placeholder="搜尋商品..."
+                placeholder={t("searchPlaceholderShort")}
                 className="min-w-0 flex-1 rounded-md border border-border bg-white px-2 py-1.5 text-xs text-ink placeholder:text-ink-light focus:border-interactive-primary focus:outline-none"
               />
               <button type="submit" className="rounded-md bg-header px-2 py-1.5 text-xs font-semibold text-white">
-                Go
+                {t("searchSubmit")}
               </button>
             </form>
 
@@ -132,12 +132,12 @@ export default async function SiteHeader() {
               <input
                 type="search"
                 name="q"
-                placeholder="搜尋商品、品牌或關鍵字..."
+                placeholder={t("searchPlaceholder")}
                 className="h-full min-w-0 flex-1 px-4 text-sm text-ink placeholder:text-ink-light focus:outline-none"
               />
             </div>
             <button type="submit" className="absolute right-[5px] top-[5px] inline-flex h-[38px] items-center rounded-full bg-slate-950 px-4 text-xs font-semibold leading-none text-white hover:bg-slate-800">
-              Search
+              {t("searchSubmit")}
             </button>
           </form>
 
@@ -148,7 +148,7 @@ export default async function SiteHeader() {
         </div>
 
         <div className="hidden items-center gap-2 lg:flex">
-          <Link href="/cart" aria-label="Cart" className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-ink shadow-sm hover:border-interactive-primary hover:text-interactive-primary">
+          <Link href="/cart" aria-label={t("cartLabel")} className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-ink shadow-sm hover:border-interactive-primary hover:text-interactive-primary">
             <span aria-hidden>🛒</span>
             <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-header px-1 text-[10px] text-white">0</span>
           </Link>

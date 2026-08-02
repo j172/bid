@@ -120,7 +120,7 @@ export default function HeroSection({
                 <div className="relative z-10 max-w-[33rem]">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-olive-100 backdrop-blur-sm">
-                      TOP {activeIndex + 1}
+                      {tHome("topBadge", { rank: activeIndex + 1 })}
                     </span>
                     <span className="inline-flex rounded-full border border-muted-olive-300/30 bg-muted-olive-400/10 px-3 py-1 text-[11px] font-semibold text-muted-olive-100 backdrop-blur-sm">
                       {formatRemainingFromNow(activeCard.endsAt, nowMs, tFormat)}
@@ -196,7 +196,7 @@ export default function HeroSection({
                         <button
                           key={item.id}
                           type="button"
-                          aria-label={`Go to slide ${index + 1}`}
+                          aria-label={tHome("slideGoTo", { index: index + 1 })}
                           onClick={() => setActiveIndex(index)}
                           className={`h-2.5 rounded-full transition ${
                             index === activeIndex ? "w-8 bg-white" : "w-2.5 bg-white/35 hover:bg-white/60"
@@ -207,7 +207,7 @@ export default function HeroSection({
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        aria-label="Previous slide"
+                        aria-label={tHome("slidePrevious")}
                         onClick={() => setActiveIndex((index) => (index - 1 + cards.length) % cards.length)}
                         className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-lg text-white backdrop-blur-sm transition hover:bg-white/20"
                       >
@@ -215,7 +215,7 @@ export default function HeroSection({
                       </button>
                       <button
                         type="button"
-                        aria-label="Next slide"
+                        aria-label={tHome("slideNext")}
                         onClick={() => setActiveIndex((index) => (index + 1) % cards.length)}
                         className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-lg text-white backdrop-blur-sm transition hover:bg-white/20"
                       >
@@ -228,7 +228,7 @@ export default function HeroSection({
             ) : (
               <div className="relative z-10 max-w-xl">
                 <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-olive-100 backdrop-blur-sm">
-                  AUCTION
+                  {tHome("heroEmptyBadge")}
                 </span>
                 <h1 className="mt-5 text-4xl font-black leading-[1.05] text-white sm:text-5xl lg:text-6xl">
                   {tListings("noListings")}
@@ -260,7 +260,7 @@ export default function HeroSection({
                   }`}
                 />
                 <div className="relative">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.145em] text-interactive-primary drop-shadow-[0_1px_0_rgba(255,255,255,0.72)]">高價競標</p>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.145em] text-interactive-primary drop-shadow-[0_1px_0_rgba(255,255,255,0.72)]">{tHome("topPriceBadge")}</p>
                   <h2 className="mt-2 line-clamp-2 text-xl font-extrabold leading-tight text-ink">{item.title}</h2>
                   <div className="mt-4 rounded-2xl border border-amber-200/70 bg-gradient-to-r from-amber-50 via-white to-yellow-50 px-4 py-3 shadow-[0_8px_20px_rgba(217,119,6,0.12)] ring-1 ring-white/70">
                     <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-700 drop-shadow-[0_1px_0_rgba(255,255,255,0.78)]">{tDetail("specCurrentPrice")}</p>

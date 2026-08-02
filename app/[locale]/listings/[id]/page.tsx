@@ -141,7 +141,6 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                   {discountRate}% {t("off")}
                 </span>
               )}
-              <span className="text-sm text-ink-light">(0 {t("customerReviews")})</span>
             </div>
             <p className="mt-4 text-sm font-semibold text-ink-light">{stockLabel}</p>
           </div>

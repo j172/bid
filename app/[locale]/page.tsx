@@ -131,29 +131,29 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       count: fixedPriceOpenListings.length,
     },
     {
-      label: "快速結標",
-      subtitle: "3 天內即將截止競標",
+      label: t("quickCloseLabel"),
+      subtitle: t("quickCloseSubtitle", { hours: QUICK_CLOSE_WINDOW_HOURS }),
       href: `/listings?type=auction&sort=ends_soon&withinHours=${QUICK_CLOSE_WINDOW_HOURS}`,
       badge: "🎯",
       count: quickCloseAuctions.length,
     },
     {
-      label: "即將開賣",
-      subtitle: "尚未開標，搶先預約關注",
+      label: t("comingSoonLabel"),
+      subtitle: t("comingSoonSubtitle"),
       href: "/listings?status=scheduled&sort=starts_soon",
       badge: "⏰",
       count: scheduledListings.length,
     },
     {
-      label: "買家最愛",
-      subtitle: "依出價與購買熱度排行",
+      label: t("popularLabel"),
+      subtitle: t("popularSubtitle"),
       href: "/listings?sort=popular",
       badge: "❤️",
       count: popularListings.length,
     },
     {
-      label: "新手友善",
-      subtitle: `${BEGINNER_MAX_PRICE} 元有找，輕鬆入門`,
+      label: t("beginnerLabel"),
+      subtitle: t("beginnerSubtitle", { price: BEGINNER_MAX_PRICE }),
       href: `/listings?maxPrice=${BEGINNER_MAX_PRICE}`,
       badge: "🌟",
       count: beginnerListings.length,
@@ -196,18 +196,18 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       <section className="mx-auto mt-5 max-w-6xl px-4 sm:px-6">
         <div className="rounded-2xl border border-border bg-white px-4 py-3 shadow-sm">
           <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-            <span className="rounded-full bg-header px-3 py-1 font-semibold text-white">熱門入口</span>
+            <span className="rounded-full bg-header px-3 py-1 font-semibold text-white">{t("quickNavTitle")}</span>
             <Link href="/listings?type=auction" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-interactive-primary hover:text-interactive-primary">
-              🔥 即將結標
+              {t("quickNavEndingSoon")}
             </Link>
             <Link href="/listings?type=fixed_price&maxPrice=1000" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-interactive-primary hover:text-interactive-primary">
-              💡 千元好物
+              {t("quickNavBudgetPicks")}
             </Link>
             <Link href="/#auto-bidding-explainer" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-interactive-primary hover:text-interactive-primary">
-              ⚙️ 自動出價說明
+              {t("quickNavAutoBidGuide")}
             </Link>
             <Link href="/listings?sort=price_desc" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-interactive-primary hover:text-interactive-primary">
-              💎 高單價精選
+              {t("quickNavPremiumPicks")}
             </Link>
           </div>
         </div>
@@ -260,8 +260,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           <article className="flex items-center gap-3 px-5 py-4">
             <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-muted-olive-50 text-lg">✅</span>
             <div>
-              <p className="text-sm font-bold text-ink">100% 嚴格驗證</p>
-              <p className="text-xs text-ink-light">所有價格與庫存皆伺服器檢核</p>
+              <p className="text-sm font-bold text-ink">{t("serviceVerified")}</p>
+              <p className="text-xs text-ink-light">{t("serviceVerifiedDesc")}</p>
             </div>
           </article>
         </div>
@@ -338,11 +338,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         <div className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-rose-600">Daily Deals</p>
-              <h3 className="mt-1 text-xl font-black text-ink">今日精選快閃優惠</h3>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-rose-600">{t("dailyPicksEyebrow")}</p>
+              <h3 className="mt-1 text-xl font-black text-ink">{t("dailyPicksTitle")}</h3>
             </div>
             <Link href="/listings" className="text-sm font-semibold text-interactive-primary hover:text-header">
-              Shop all deals →
+              {t("viewAll")} →
             </Link>
           </div>
 
@@ -369,10 +369,10 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="shrink-0 rounded bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold text-white">HOT</span>
+                    <span className="shrink-0 rounded bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold text-white">{t("badgeHotBidding")}</span>
                     <p className="truncate text-sm font-bold text-ink">{item.title}</p>
                   </div>
-                  <p className="mt-1 text-xs text-ink-light">{item.listing_type === "auction" ? "競標中" : "固定價優惠"}</p>
+                  <p className="mt-1 text-xs text-ink-light">{item.listing_type === "auction" ? t("statusBidding") : t("statusFixedDeal")}</p>
                   <div className="mt-2 flex items-end gap-2">
                     <p className="text-base font-black text-ink">{item.listing_type === "auction" ? item.current_price : item.price}</p>
                     <p className="text-[11px] text-ink-light line-through">
@@ -491,25 +491,25 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
         <div className="mt-4 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
           <Link href="/listings" className="rounded-full bg-header px-3 py-1 font-semibold text-white">
-            全部商品
+            {t("pillAll")}
           </Link>
           <Link
             href="/listings?type=auction"
             className="rounded-full border border-border bg-white px-3 py-1 font-medium text-ink transition hover:border-interactive-primary hover:text-interactive-primary"
           >
-            熱門競標
+            {t("pillHotAuction")}
           </Link>
           <Link
             href="/listings?type=fixed_price"
             className="rounded-full border border-border bg-white px-3 py-1 font-medium text-ink transition hover:border-interactive-primary hover:text-interactive-primary"
           >
-            固定價精選
+            {t("pillFixedPicks")}
           </Link>
           <Link
             href="/listings?sort=price_desc"
             className="rounded-full border border-border bg-white px-3 py-1 font-medium text-ink transition hover:border-interactive-primary hover:text-interactive-primary"
           >
-            高單價趨勢
+            {t("pillPriceDesc")}
           </Link>
         </div>
 
@@ -525,7 +525,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               <Link href={`/listings/${item.id}`} className="block">
                 <div className="mb-2">
                   <span className="inline-flex rounded-md bg-interactive-primary-subtle px-2 py-1 text-[11px] font-bold text-interactive-primary">
-                    {item.listing_type === "auction" ? "HOT BIDDING" : "BEST PRICE"}
+                    {item.listing_type === "auction" ? t("badgeHotBidding") : t("badgeBestPrice")}
                   </span>
                 </div>
                 <div className={`relative aspect-[4/3] overflow-hidden rounded-xl ${hasPhoto ? "bg-slate-100" : "bg-white/90"}`}>
@@ -544,17 +544,21 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               <div className="mt-1 flex items-center justify-between text-[11px] text-ink-light">
                 <span className="inline-flex items-center gap-1">
                   <span className="text-amber-500">●</span>
-                  <span>{item.listing_type === "auction" ? "競標中" : "一般商品"}</span>
+                  <span>{item.listing_type === "auction" ? t("statusBidding") : t("statusFixedDeal")}</span>
                 </span>
-                <span>{item.listing_type === "auction" ? `已出價 ${item.bidCount}` : `已售 ${item.purchaseCount}`}</span>
+                <span>
+                  {item.listing_type === "auction"
+                    ? t("bidCountShort", { count: item.bidCount })
+                    : t("purchaseCountShort", { count: item.purchaseCount })}
+                </span>
               </div>
               <div className="mt-2 flex items-end gap-2">
                 <p className="text-lg font-black text-ink">{item.listing_type === "auction" ? item.current_price : item.price}</p>
               </div>
               <div className="mt-3 flex items-center gap-2 text-[11px]">
-                <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold text-ink">Quick View</span>
+                <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold text-ink">{tListings("quickAction")}</span>
                 <Link href={`/listings/${item.id}`} className="rounded-md bg-header px-2 py-1 font-semibold text-white">
-                  {item.listing_type === "fixed_price" ? "Add To Cart" : "Place Bid"}
+                  {item.listing_type === "fixed_price" ? t("promoFixedCta") : t("promoAuctionCta")}
                 </Link>
               </div>
             </article>
@@ -567,7 +571,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
           <div className="rounded-2xl bg-gradient-to-r from-muted-olive-500 to-muted-olive-600 p-7 text-white lg:col-span-2">
-            <span className="inline-flex rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Auction Focus</span>
             <p className="text-xs font-bold uppercase tracking-wider">{t("promoAuctionBadge")}</p>
             <h3 className="mt-2 text-3xl font-black">{t("promoAuctionTitle")}</h3>
             <p className="mt-3 max-w-xl text-sm text-muted-olive-100">{t("promoAuctionDesc")}</p>
@@ -578,7 +581,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
           <div className="grid gap-5">
             <div className="rounded-2xl bg-gradient-to-r from-muted-olive-700 to-slate-900 p-6 text-white">
-              <span className="inline-flex rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Limited Offer</span>
               <p className="text-xs font-bold uppercase tracking-wider">{t("promoFixedBadge")}</p>
               <h3 className="mt-2 text-2xl font-black">{t("promoFixedTitle")}</h3>
               <p className="mt-3 text-sm text-muted-olive-100">{t("promoFixedDesc")}</p>
@@ -588,11 +590,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             </div>
 
             <div className="rounded-2xl border border-border bg-white p-6">
-              <p className="text-xs font-bold uppercase tracking-wider text-interactive-primary">Weekly Picks</p>
-              <h3 className="mt-2 text-xl font-black text-ink">搶手商品週末限時折扣</h3>
-              <p className="mt-2 text-sm text-ink-light">從競標標的到固定價商品，這週精選一次看完。</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-interactive-primary">{t("weeklyPicksEyebrow")}</p>
+              <h3 className="mt-2 text-xl font-black text-ink">{t("weeklyPicksTitle")}</h3>
+              <p className="mt-2 text-sm text-ink-light">{t("weeklyPicksDesc")}</p>
               <Link href="/listings" className="mt-4 inline-flex rounded-md bg-header px-3 py-1.5 text-xs font-bold text-white">
-                立即查看
+                {t("viewAll")}
               </Link>
             </div>
           </div>
@@ -601,7 +603,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
         <div className="flex items-end justify-between">
-          <h2 className="text-2xl font-bold">Best Sellers</h2>
+          <h2 className="text-2xl font-bold">{t("bestSellersTitle")}</h2>
           <Link href="/listings" className="text-sm font-semibold text-interactive-primary hover:text-header">
             {t("viewAll")}
           </Link>
@@ -616,7 +618,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               <Link href={`/listings/${item.id}`} className="block">
                 <div className="mb-2">
                   <span className="inline-flex rounded-md bg-interactive-primary-subtle px-2 py-1 text-[11px] font-bold text-interactive-primary">
-                    {item.listing_type === "auction" ? "HOT BIDDING" : "BEST PRICE"}
+                    {item.listing_type === "auction" ? t("badgeHotBidding") : t("badgeBestPrice")}
                   </span>
                 </div>
                 <div className={`relative aspect-[4/3] overflow-hidden rounded-xl ${hasPhoto ? "bg-slate-100" : "bg-white/90"}`}>
@@ -636,18 +638,22 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               <div className="mt-1 flex items-center justify-between text-[11px] text-ink-light">
                 <span className="inline-flex items-center gap-1">
                   <span className="text-amber-500">●</span>
-                  <span>{item.listing_type === "auction" ? "競標中" : "一般商品"}</span>
+                  <span>{item.listing_type === "auction" ? t("statusBidding") : t("statusFixedDeal")}</span>
                 </span>
-                <span>{item.listing_type === "auction" ? `已出價 ${item.bidCount}` : `已售 ${item.purchaseCount}`}</span>
+                <span>
+                  {item.listing_type === "auction"
+                    ? t("bidCountShort", { count: item.bidCount })
+                    : t("purchaseCountShort", { count: item.purchaseCount })}
+                </span>
               </div>
               <div className="mt-2 flex items-end gap-2">
                 <p className="text-lg font-black text-ink">{item.listing_type === "auction" ? item.current_price : item.price}</p>
               </div>
 
               <div className="mt-3 flex items-center gap-2 text-[11px]">
-                <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold text-ink">Quick View</span>
+                <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold text-ink">{tListings("quickAction")}</span>
                 <Link href={`/listings/${item.id}`} className="rounded-md bg-header px-2 py-1 font-semibold text-white">
-                  {item.listing_type === "fixed_price" ? "Add To Cart" : "Place Bid"}
+                  {item.listing_type === "fixed_price" ? t("promoFixedCta") : t("promoAuctionCta")}
                 </Link>
               </div>
             </article>
@@ -679,7 +685,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                 <Link key={item.id} href={`/listings/${item.id}`} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 hover:bg-slate-100">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold">{item.title}</p>
-                    <p className="text-xs text-ink-light">已售 {item.purchaseCount}</p>
+                    <p className="text-xs text-ink-light">{t("purchaseCountShort", { count: item.purchaseCount })}</p>
                   </div>
                   <p className="ml-3 shrink-0 text-sm font-bold text-interactive-primary">{item.price}</p>
                 </Link>
@@ -691,14 +697,14 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
         <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-muted-olive-900 to-slate-900 p-7 text-white shadow-lg">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-muted-olive-200">Enhance your bidding experience</p>
-          <h2 className="mt-2 text-3xl font-black">依真實資料掌握熱門商品</h2>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-muted-olive-200">{t("trustEyebrow")}</p>
+          <h2 className="mt-2 text-3xl font-black">{t("trustTitle")}</h2>
           <p className="mt-4 max-w-3xl text-sm text-muted-olive-100">
-            首頁所有熱門卡片、出價次數與已售件數皆直接來自目前商品資料，不再用寫死數字假裝即時行情。
+            {t("trustDesc")}
           </p>
 
           <Link href="/listings" className="mt-6 inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-bold text-muted-olive-800 transition hover:bg-muted-olive-50">
-            查看全部商品
+            {t("trustCta")}
             <span aria-hidden>→</span>
           </Link>
         </div>
