@@ -20,18 +20,36 @@ export default function LiveListingStatus({
   listingId,
   initialCurrentPrice,
   initialEndsAt,
+  initialStartsAt,
   initialStatus,
 }: {
   listingId: number;
   initialCurrentPrice: number;
   initialEndsAt: string;
+  /** ISO 8601 string, or null — set only while status is 'scheduled'. */
+  initialStartsAt: string | null;
   initialStatus: string;
 }) {
   const t = useTranslations("format");
   const [currentPrice, setCurrentPrice] = useState(initialCurrentPrice);
   const [endsAt, setEndsAt] = useState(initialEndsAt);
+  const [startsAt, setStartsAt] = useState(initialStartsAt);
   const [status, setStatus] = useState(initialStatus);
-  const [remainingLabel, setRemainingLabel] = useState(() => formatRemaining(new Date(initialEndsAt), t));
+
+  // While still 'scheduled', count down to the start time instead of the end
+  // time — showing "剩餘 X" (ends_at) on a listing that hasn't opened yet
+  // would be actively misleading. Once the poll below reports status flipping
+  // to 'open' (the server-side sweep does this once starts_at passes), this
+  // automatically switches to the normal end-time countdown.
+  const showingCountdownToStart = status === "scheduled" && startsAt !== null;
+  const countdownTarget = showingCountdownToStart ? startsAt! : endsAt;
+  const [remainingLabel, setRemainingLabel] = useState(() =>
+    formatRemaining(
+      new Date(countdownTarget),
+      t,
+      showingCountdownToStart ? { prefixKey: "startsInPrefix", endedKey: "startingSoon" } : undefined,
+    ),
+  );
 
   // Poll the status endpoint on an interval, only while there's something
   // left to change. Stops (no interval set) as soon as status flips away
@@ -51,6 +69,7 @@ export default function LiveListingStatus({
 
         setCurrentPrice(payload.currentPrice);
         setEndsAt(payload.endsAt);
+        setStartsAt(payload.startsAt);
         setStatus(payload.status);
       } catch {
         // Offline / proxy hiccup: keep showing the last known-good state
@@ -65,15 +84,17 @@ export default function LiveListingStatus({
     };
   }, [listingId, status]);
 
-  // The remaining-time label depends on Date.now(), not just on endsAt, so
-  // it needs its own re-render tick even between polls (otherwise the label
-  // would only update every 4s server-fetch and drift/looking stale in
-  // between, or never flip to "ended" promptly).
+  // The remaining-time label depends on Date.now(), not just on the target
+  // date, so it needs its own re-render tick even between polls (otherwise
+  // the label would only update every 4s server-fetch and drift/looking
+  // stale in between, or never flip to "ended"/"startingSoon" promptly).
   useEffect(() => {
-    setRemainingLabel(formatRemaining(new Date(endsAt), t));
-    const tickId = setInterval(() => setRemainingLabel(formatRemaining(new Date(endsAt), t)), 30_000);
+    const options = showingCountdownToStart ? { prefixKey: "startsInPrefix", endedKey: "startingSoon" } : undefined;
+    const tick = () => setRemainingLabel(formatRemaining(new Date(countdownTarget), t, options));
+    tick();
+    const tickId = setInterval(tick, 30_000);
     return () => clearInterval(tickId);
-  }, [endsAt, t]);
+  }, [countdownTarget, showingCountdownToStart, t]);
 
   return (
     <div className="flex flex-col gap-1">

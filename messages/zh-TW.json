@@ -119,6 +119,7 @@
     "specStatus": "狀態",
     "specCurrentPrice": "目前價格",
     "specBuyNow": "買斷價格",
+    "specStartTime": "起標時間",
     "specEndTime": "剩餘時間",
     "specStock": "庫存",
     "specNotAvailable": "未提供",
@@ -126,6 +127,8 @@
     "specSingleItem": "單件競標",
     "statusLive": "競標中",
     "statusEnded": "已結束",
+    "statusScheduled": "尚未開標",
+    "scheduledNotice": "{time}，尚未開放出價",
     "reviewHintOne": "目前尚無公開評價，請先登入參與出價或購買流程。",
     "reviewHintTwo": "每次出價會即時更新領先狀態與目前價格。",
     "reviewHintThree": "若達到買斷價，商品會立即結標。",
@@ -163,6 +166,7 @@
     "defaultError": "購買失敗"
   },
   "statusBadge": {
+    "scheduled": "尚未開標",
     "cancelled": "已下架",
     "closed": "已結標",
     "leading": "目前領先",
@@ -236,6 +240,8 @@
   "format": {
     "ended": "已結束",
     "remainingPrefix": "剩餘",
+    "startsInPrefix": "距離開標",
+    "startingSoon": "即將開標",
     "days": "{count} 天",
     "hours": "{count} 小時",
     "minutes": "{count} 分鐘",

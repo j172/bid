@@ -29,7 +29,12 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const perfMode = perfModeFromSearchParams(params);
   const t = await getTranslations("home");
   const tListings = await getTranslations("listings");
-  const listings = await listOpenListings();
+  // listOpenListings now also returns 'scheduled' (not-yet-started) auctions
+  // for the /listings browse page's benefit — the homepage's curated
+  // sections below (ending soon, quick deals, etc.) all assume "actively
+  // biddable" semantics (bid counts, "剩餘 X" urgency framing), so they stay
+  // open-only rather than growing their own scheduled-aware treatment.
+  const listings = (await listOpenListings()).filter((item) => item.status === "open");
 
   const heroRenderedAt = new Date().toISOString();
   const auctionsByEndingSoon = [...listings]

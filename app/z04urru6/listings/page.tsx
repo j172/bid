@@ -3,6 +3,7 @@ import { getOpenListingsForAdmin, OPEN_LISTINGS_PAGE_SIZE, type ListOpenListings
 import { formatRemainingZhHant } from "@/lib/format";
 import CancelButton from "./CancelButton";
 import EditListingModal from "./EditListingModal";
+import EditScheduleModal from "./EditScheduleModal";
 import AdminPageIntro from "../AdminPageIntro";
 
 export const dynamic = "force-dynamic";
@@ -110,15 +111,24 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
                   <td className={td}>{TYPE_LABEL[listing.listingType]}</td>
                   <td className={`${td} font-semibold`}>{listing.currentPrice}</td>
                   <td className={td}>
-                    {listing.listingType === "fixed_price"
-                      ? listing.stockRemaining === 0
-                        ? "已售罄"
-                        : `剩餘 ${listing.stockRemaining} / ${listing.stockQuantity}`
-                      : listing.endsAt && formatRemainingZhHant(listing.endsAt)}
+                    {listing.listingType === "fixed_price" ? (
+                      listing.stockRemaining === 0 ? (
+                        "已售罄"
+                      ) : (
+                        `剩餘 ${listing.stockRemaining} / ${listing.stockQuantity}`
+                      )
+                    ) : listing.status === "scheduled" && listing.startsAt ? (
+                      <span className="text-brand-blue">尚未開標・距離開標 {formatRemainingZhHant(listing.startsAt).replace("剩餘 ", "")}</span>
+                    ) : (
+                      listing.endsAt && formatRemainingZhHant(listing.endsAt)
+                    )}
                   </td>
                   <td className={`${td} text-right`}>
                     <div className="flex items-center justify-end gap-2">
                       {listing.listingType === "fixed_price" && <EditListingModal listingId={listing.id} />}
+                      {listing.listingType === "auction" && listing.status === "scheduled" && listing.startsAt && (
+                        <EditScheduleModal listingId={listing.id} startsAt={listing.startsAt} />
+                      )}
                       {listing.canCancel ? (
                         <CancelButton listingId={listing.id} />
                       ) : (

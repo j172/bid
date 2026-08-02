@@ -25,6 +25,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       ok: true,
       currentPrice: status.currentPrice,
       endsAt: status.endsAt,
+      startsAt: status.startsAt,
       status: status.status,
     },
     { headers: { "Cache-Control": "no-store" } },

@@ -267,16 +267,23 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
                           : t("remainingUnits", { count: listing.stock_remaining ?? 0 }),
                         t("totalPurchases", { count: listing.purchaseCount }),
                       ]
-                    : [
-                        ...(listing.buy_it_now_price !== null
-                          ? [t("buyItNowPrice", { price: listing.buy_it_now_price })]
-                          : []),
-                        listing.ends_at ? formatRemaining(listing.ends_at, tFormat) : t("timeless"),
-                        listing.bidCount === 0
-                          ? t("noBidsYet")
-                          : t("currentLeader", { name: maskDisplayName(listing.leaderDisplayName, anonymousBuyer) }),
-                        t("totalBids", { count: listing.bidCount }),
-                      ]
+                    : listing.status === "scheduled" && listing.starts_at
+                      ? [
+                          formatRemaining(listing.starts_at, tFormat, {
+                            prefixKey: "startsInPrefix",
+                            endedKey: "startingSoon",
+                          }),
+                        ]
+                      : [
+                          ...(listing.buy_it_now_price !== null
+                            ? [t("buyItNowPrice", { price: listing.buy_it_now_price })]
+                            : []),
+                          listing.ends_at ? formatRemaining(listing.ends_at, tFormat) : t("timeless"),
+                          listing.bidCount === 0
+                            ? t("noBidsYet")
+                            : t("currentLeader", { name: maskDisplayName(listing.leaderDisplayName, anonymousBuyer) }),
+                          t("totalBids", { count: listing.bidCount }),
+                        ]
                 }
                 eager={index < gridEagerCount}
                 highPriorityImage={index < 2}

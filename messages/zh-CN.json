@@ -119,6 +119,7 @@
     "specStatus": "状态",
     "specCurrentPrice": "当前价格",
     "specBuyNow": "买断价格",
+    "specStartTime": "起标时间",
     "specEndTime": "剩余时间",
     "specStock": "库存",
     "specNotAvailable": "未提供",
@@ -126,6 +127,8 @@
     "specSingleItem": "单件竞标",
     "statusLive": "竞标中",
     "statusEnded": "已结束",
+    "statusScheduled": "尚未开标",
+    "scheduledNotice": "{time}，尚未开放出价",
     "reviewHintOne": "目前暂无公开评价，请先登录参与出价或购买。",
     "reviewHintTwo": "每次出价都会实时更新领先状态与当前价格。",
     "reviewHintThree": "若达到买断价，商品会立即结标。",
@@ -163,6 +166,7 @@
     "defaultError": "购买失败"
   },
   "statusBadge": {
+    "scheduled": "尚未开标",
     "cancelled": "已下架",
     "closed": "已结标",
     "leading": "目前领先",
@@ -236,6 +240,8 @@
   "format": {
     "ended": "已结束",
     "remainingPrefix": "剩余",
+    "startsInPrefix": "距离开标",
+    "startingSoon": "即将开标",
     "days": "{count} 天",
     "hours": "{count} 小时",
     "minutes": "{count} 分钟",

@@ -4,10 +4,18 @@
 // own (more complex) generic types.
 type Translator = (key: string, values?: Record<string, string | number>) => string;
 
-export function formatRemaining(endsAt: Date, t: Translator): string {
-  const remainingMs = new Date(endsAt).getTime() - Date.now();
+// options lets callers reuse this for a "time until X" other than the
+// ends_at countdown — see the "time until start" countdown for a 'scheduled'
+// listing (LiveListingStatus.tsx), which needs its own prefix/ended wording
+// but otherwise counts down identically.
+export function formatRemaining(
+  target: Date,
+  t: Translator,
+  options?: { prefixKey?: string; endedKey?: string },
+): string {
+  const remainingMs = new Date(target).getTime() - Date.now();
   if (remainingMs <= 0) {
-    return t("ended");
+    return t(options?.endedKey ?? "ended");
   }
 
   const totalMinutes = Math.floor(remainingMs / 60_000);
@@ -24,7 +32,7 @@ export function formatRemaining(endsAt: Date, t: Translator): string {
     return t("lessThanMinute");
   }
 
-  const prefix = t("remainingPrefix");
+  const prefix = t(options?.prefixKey ?? "remainingPrefix");
   return prefix ? `${prefix} ${parts.join(" ")}` : parts.join(" ");
 }
 

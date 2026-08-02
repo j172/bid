@@ -3,7 +3,14 @@ import { getCurrentUser } from "@/lib/auth";
 import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
 import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
 import { addListingPhotos, deleteListing, insertListing, updateListingDescription, type NewListingInput } from "@/lib/listings";
-import { validateDescription, validateEndsAt, validatePrice, validateStockQuantity, validateTitle } from "@/lib/listingValidation";
+import {
+  validateDescription,
+  validateEndsAt,
+  validatePrice,
+  validateStartsAt,
+  validateStockQuantity,
+  validateTitle,
+} from "@/lib/listingValidation";
 import { MAX_PHOTO_COUNT } from "@/lib/photoLimits";
 import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
 import { descriptionImageUrl, saveDescriptionImages, saveListingPhotos } from "@/lib/uploads";
@@ -69,6 +76,8 @@ export async function POST(request: Request) {
     const buyItNowPrice = buyItNowPriceRaw === "" ? null : Number(buyItNowPriceRaw);
     const endsAtRaw = String(form.get("endsAt") ?? "");
     const endsAt = new Date(endsAtRaw);
+    const startsAtRaw = String(form.get("startsAt") ?? "").trim();
+    const startsAt = startsAtRaw === "" ? null : new Date(startsAtRaw);
 
     const startingPriceResult = validatePrice(startingPrice, "起標價");
     if (!startingPriceResult.ok) {
@@ -87,8 +96,14 @@ export async function POST(request: Request) {
     if (!endsAtResult.ok) {
       return NextResponse.json({ ok: false, error: endsAtResult.error }, { status: 400 });
     }
+    if (startsAt !== null) {
+      const startsAtResult = validateStartsAt(startsAt, endsAt);
+      if (!startsAtResult.ok) {
+        return NextResponse.json({ ok: false, error: startsAtResult.error }, { status: 400 });
+      }
+    }
 
-    input = { listingType, title, description: "", startingPrice, buyItNowPrice, endsAt, createdBy: user.id };
+    input = { listingType, title, description: "", startingPrice, buyItNowPrice, startsAt, endsAt, createdBy: user.id };
   }
 
   // The listing's own id names its photo/description-image directories, so

@@ -7,9 +7,43 @@ describe("parseListingStatusResponse", () => {
       ok: true,
       currentPrice: 1100,
       endsAt: "2026-08-01T00:00:00.000Z",
+      startsAt: null,
       status: "open",
     });
-    expect(result).toEqual({ currentPrice: 1100, endsAt: "2026-08-01T00:00:00.000Z", status: "open" });
+    expect(result).toEqual({
+      currentPrice: 1100,
+      endsAt: "2026-08-01T00:00:00.000Z",
+      startsAt: null,
+      status: "open",
+    });
+  });
+
+  it("accepts a well-formed payload with a scheduled startsAt", () => {
+    const result = parseListingStatusResponse({
+      ok: true,
+      currentPrice: 1100,
+      endsAt: "2026-08-01T00:00:00.000Z",
+      startsAt: "2026-07-01T00:00:00.000Z",
+      status: "scheduled",
+    });
+    expect(result).toEqual({
+      currentPrice: 1100,
+      endsAt: "2026-08-01T00:00:00.000Z",
+      startsAt: "2026-07-01T00:00:00.000Z",
+      status: "scheduled",
+    });
+  });
+
+  it("rejects an unparseable startsAt", () => {
+    expect(
+      parseListingStatusResponse({
+        ok: true,
+        currentPrice: 1100,
+        endsAt: "2026-08-01T00:00:00.000Z",
+        startsAt: "not-a-date",
+        status: "scheduled",
+      }),
+    ).toBeNull();
   });
 
   it("rejects a response with ok: false", () => {
@@ -37,14 +71,19 @@ describe("parseListingStatusResponse", () => {
   });
 
   it("rejects a missing or empty status", () => {
-    expect(parseListingStatusResponse({ ok: true, currentPrice: 1100, endsAt: "2026-08-01T00:00:00.000Z", status: "" })).toBeNull();
-    expect(parseListingStatusResponse({ ok: true, currentPrice: 1100, endsAt: "2026-08-01T00:00:00.000Z" })).toBeNull();
+    expect(
+      parseListingStatusResponse({ ok: true, currentPrice: 1100, endsAt: "2026-08-01T00:00:00.000Z", startsAt: null, status: "" }),
+    ).toBeNull();
+    expect(
+      parseListingStatusResponse({ ok: true, currentPrice: 1100, endsAt: "2026-08-01T00:00:00.000Z", startsAt: null }),
+    ).toBeNull();
   });
 });
 
 describe("isPollableStatus", () => {
-  it("is true only for open listings", () => {
+  it("is true for open and scheduled listings", () => {
     expect(isPollableStatus("open")).toBe(true);
+    expect(isPollableStatus("scheduled")).toBe(true);
   });
 
   it("is false for closed or any other terminal status", () => {

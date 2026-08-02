@@ -119,6 +119,7 @@
     "specStatus": "Status",
     "specCurrentPrice": "Current Price",
     "specBuyNow": "Buy-it-now",
+    "specStartTime": "Starts",
     "specEndTime": "Time Left",
     "specStock": "Stock",
     "specNotAvailable": "Not available",
@@ -126,6 +127,8 @@
     "specSingleItem": "Single-item auction",
     "statusLive": "Live",
     "statusEnded": "Ended",
+    "statusScheduled": "Not started yet",
+    "scheduledNotice": "{time} — bidding not open yet",
     "reviewHintOne": "No public reviews yet — log in to place bids or complete checkout.",
     "reviewHintTwo": "Each bid updates the leading status and current price in real time.",
     "reviewHintThree": "If buy-it-now is reached, the listing ends immediately.",
@@ -163,6 +166,7 @@
     "defaultError": "Purchase failed"
   },
   "statusBadge": {
+    "scheduled": "Not started yet",
     "cancelled": "Delisted",
     "closed": "Ended",
     "leading": "Leading",
@@ -236,6 +240,8 @@
   "format": {
     "ended": "Ended",
     "remainingPrefix": "",
+    "startsInPrefix": "Starts in",
+    "startingSoon": "Starting soon",
     "days": "{count}d",
     "hours": "{count}h",
     "minutes": "{count}m",

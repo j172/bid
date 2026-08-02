@@ -21,6 +21,7 @@ export default function RelistModal({ listingId }: { listingId: number }) {
 
   const [startingPrice, setStartingPrice] = useState("");
   const [buyItNowPrice, setBuyItNowPrice] = useState("");
+  const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState(defaultEndsAt);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -54,6 +55,7 @@ export default function RelistModal({ listingId }: { listingId: number }) {
       body: JSON.stringify({
         startingPrice: Number(startingPrice),
         buyItNowPrice: buyItNowPrice === "" ? null : Number(buyItNowPrice),
+        startsAt: startsAt === "" ? null : startsAt,
         endsAt,
       }),
     });
@@ -111,6 +113,15 @@ export default function RelistModal({ listingId }: { listingId: number }) {
                     min={1}
                     max={PRICE_MAX}
                     step={1}
+                    className={inputClass}
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+                  起標時間（選填，留空則立即開放競標）
+                  <input
+                    value={startsAt}
+                    onChange={(e) => setStartsAt(e.target.value)}
+                    type="datetime-local"
                     className={inputClass}
                   />
                 </label>

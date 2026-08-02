@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { addListingPhotos, relistClosedListing } from "@/lib/listings";
-import { validateEndsAt, validatePrice } from "@/lib/listingValidation";
+import { validateEndsAt, validatePrice, validateStartsAt } from "@/lib/listingValidation";
 import { copyListingPhotos } from "@/lib/uploads";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -21,6 +21,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const buyItNowPriceRaw = body?.buyItNowPrice;
   const buyItNowPrice = buyItNowPriceRaw === null || buyItNowPriceRaw === undefined || buyItNowPriceRaw === "" ? null : Number(buyItNowPriceRaw);
   const endsAt = new Date(String(body?.endsAt ?? ""));
+  const startsAtRaw = body?.startsAt;
+  const startsAt = startsAtRaw === null || startsAtRaw === undefined || startsAtRaw === "" ? null : new Date(String(startsAtRaw));
 
   const startingPriceResult = validatePrice(startingPrice, "起標價");
   if (!startingPriceResult.ok) {
@@ -39,8 +41,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!endsAtResult.ok) {
     return NextResponse.json({ ok: false, error: endsAtResult.error }, { status: 400 });
   }
+  if (startsAt !== null) {
+    const startsAtResult = validateStartsAt(startsAt, endsAt);
+    if (!startsAtResult.ok) {
+      return NextResponse.json({ ok: false, error: startsAtResult.error }, { status: 400 });
+    }
+  }
 
-  const result = await relistClosedListing(listingId, { startingPrice, buyItNowPrice, endsAt });
+  const result = await relistClosedListing(listingId, { startingPrice, buyItNowPrice, startsAt, endsAt });
   if (!result.ok) {
     return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
   }

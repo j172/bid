@@ -35,6 +35,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
   const user = await getCurrentUser();
   const isOpen = listing.status === "open";
+  const isScheduled = listing.status === "scheduled";
   const isFixedPrice = listing.listing_type === "fixed_price";
   const minimumNextBid = getMinimumNextBid(listing.current_price);
   const t = await getTranslations("listingDetail");
@@ -54,16 +55,24 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       : t("remainingUnits", { count: listing.stock_remaining ?? 0 })
     : isOpen
       ? t("inStock")
-      : t("ended");
+      : isScheduled
+        ? t("statusScheduled")
+        : t("ended");
 
   const specs = [
     { label: t("specType"), value: isAuction ? tListings("badgeAuction") : tListings("badgeFixedPrice") },
-    { label: t("specStatus"), value: isOpen ? t("statusLive") : t("statusEnded") },
+    {
+      label: t("specStatus"),
+      value: isScheduled ? t("statusScheduled") : isOpen ? t("statusLive") : t("statusEnded"),
+    },
     { label: t("specCurrentPrice"), value: `${listing.current_price}` },
     {
       label: t("specBuyNow"),
       value: listing.buy_it_now_price !== null ? `${listing.buy_it_now_price}` : t("specNotAvailable"),
     },
+    ...(listing.starts_at
+      ? [{ label: t("specStartTime"), value: formatRemaining(listing.starts_at, tFormat, { prefixKey: "startsInPrefix", endedKey: "startingSoon" }) }]
+      : []),
     {
       label: t("specEndTime"),
       value: listing.ends_at ? formatRemaining(listing.ends_at, tFormat) : t("specNoDeadline"),
@@ -136,6 +145,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                   listingId={listing.id}
                   initialCurrentPrice={listing.current_price}
                   initialEndsAt={listing.ends_at!.toISOString()}
+                  initialStartsAt={listing.starts_at ? listing.starts_at.toISOString() : null}
                   initialStatus={listing.status}
                 />
                 {listing.buy_it_now_price !== null && (
@@ -151,6 +161,12 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
               <p>{t("benefitTwo")}</p>
               <p>{t("benefitThree")}</p>
             </div>
+
+            {isScheduled && listing.starts_at && (
+              <p className="mt-6 border-t border-border pt-6 text-sm font-medium text-brand-blue">
+                {t("scheduledNotice", { time: formatRemaining(listing.starts_at, tFormat, { prefixKey: "startsInPrefix", endedKey: "startingSoon" }) })}
+              </p>
+            )}
 
             {isOpen &&
               (user ? (

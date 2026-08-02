@@ -32,6 +32,10 @@ CREATE TABLE IF NOT EXISTS listings (
   starting_price BIGINT NOT NULL,
   current_price BIGINT NOT NULL,
   buy_it_now_price BIGINT NULL,
+  -- Optional scheduled start (auction listings only); status is 'scheduled'
+  -- until this passes, then lazily flips to 'open' — see openScheduledListings
+  -- in lib/listings.ts, which mirrors closeExpiredListings' pattern.
+  starts_at DATETIME NULL,
   ends_at DATETIME NULL,
   status VARCHAR(20) NOT NULL DEFAULT 'open',
   created_by BIGINT NOT NULL,
@@ -47,7 +51,8 @@ CREATE TABLE IF NOT EXISTS listings (
   stock_quantity BIGINT NULL,
   stock_remaining BIGINT NULL,
   PRIMARY KEY (id),
-  KEY idx_listings_status_ends (status, ends_at)
+  KEY idx_listings_status_ends (status, ends_at),
+  KEY idx_listings_status_starts (status, starts_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS listing_photos (

@@ -85,6 +85,26 @@ export function validateEndsAt(endsAt: Date): FieldValidationResult {
   return { ok: true };
 }
 
+// Starting time is optional (auction listings only) — a listing with no
+// starts_at simply opens immediately, matching every listing's behavior
+// before this field existed. When set, it shares ends_at's own 90-day-out
+// cap (independently — the two aren't checked relative to each other beyond
+// the plain starts_at < endsAt ordering) and must leave at least a minute of
+// runway before ends_at.
+export function validateStartsAt(startsAt: Date, endsAt: Date): FieldValidationResult {
+  if (Number.isNaN(startsAt.getTime()) || startsAt.getTime() <= Date.now()) {
+    return { ok: false, error: "起標時間必須是有效且在未來的時間" };
+  }
+  const maxMs = ENDS_AT_MAX_DAYS * 24 * 60 * 60 * 1000;
+  if (startsAt.getTime() > Date.now() + maxMs) {
+    return { ok: false, error: `起標時間最遠只能設定在 ${ENDS_AT_MAX_DAYS} 天後` };
+  }
+  if (startsAt.getTime() >= endsAt.getTime()) {
+    return { ok: false, error: "起標時間必須早於結標時間" };
+  }
+  return { ok: true };
+}
+
 export function validateStockQuantity(value: number): FieldValidationResult {
   if (!Number.isFinite(value) || !Number.isInteger(value) || value <= 0) {
     return { ok: false, error: "庫存數量必須是正整數" };

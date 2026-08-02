@@ -29,6 +29,8 @@ export interface Listing {
   stock_remaining: number | null;
   /** Null for 'fixed_price' listings (no time limit) — required for 'auction' listings. */
   ends_at: Date | null;
+  /** Auction listings only — null means "opens immediately" (status starts as 'open', never 'scheduled'). */
+  starts_at: Date | null;
   status: string;
   created_by: number;
   created_at: Date;
@@ -45,6 +47,8 @@ export type NewListingInput =
       description: string;
       startingPrice: number;
       buyItNowPrice: number | null;
+      /** Optional — null means the listing opens immediately (status 'open'), matching pre-existing behavior. */
+      startsAt: Date | null;
       endsAt: Date;
       createdBy: number;
     }
@@ -74,17 +78,20 @@ export async function insertListing(input: NewListingInput): Promise<number> {
     return (result as { insertId: number }).insertId;
   }
 
+  const status = input.startsAt !== null ? "scheduled" : "open";
   const [result] = await db.query(
     `INSERT INTO listings
-       (title, description, listing_type, starting_price, current_price, buy_it_now_price, ends_at, status, created_by, created_at)
-     VALUES (?, ?, 'auction', ?, ?, ?, ?, 'open', ?, NOW())`,
+       (title, description, listing_type, starting_price, current_price, buy_it_now_price, starts_at, ends_at, status, created_by, created_at)
+     VALUES (?, ?, 'auction', ?, ?, ?, ?, ?, ?, ?, NOW())`,
     [
       input.title,
       input.description,
       input.startingPrice,
       input.startingPrice,
       input.buyItNowPrice,
+      input.startsAt,
       input.endsAt,
+      status,
       input.createdBy,
     ],
   );
@@ -133,18 +140,21 @@ export type CancelListingOutcome = { ok: true } | { ok: false; error: string };
 // natural close and from a BIN sale. For auction listings, only allowed
 // while the listing has never received a single bid (leader_max_amount is
 // still null), so it can never retroactively invalidate a real bidder's
-// win. Fixed-price listings work differently: any number of independent
-// buyers can have already purchased units (there's no single "winner" to
-// invalidate), so admins can delist them at any time — past purchases stay
-// fully valid and trackable on the orders page regardless. Uses a distinct
-// 'cancelled' status (not 'closed') so it never shows up alongside real
-// settled auction sales on the admin closed-listings page.
+// win — this is automatically true for every still-'scheduled' listing,
+// since bidding is blocked until it opens (see resolveProxyBid/resolveBuyNow),
+// so a scheduled listing can always be pulled before it goes live. Fixed-price
+// listings work differently: any number of independent buyers can have
+// already purchased units (there's no single "winner" to invalidate), so
+// admins can delist them at any time — past purchases stay fully valid and
+// trackable on the orders page regardless. Uses a distinct 'cancelled' status
+// (not 'closed') so it never shows up alongside real settled auction sales on
+// the admin closed-listings page.
 export async function cancelListing(listingId: number): Promise<CancelListingOutcome> {
   const db = await getDb();
   const [result] = await db.query(
     `UPDATE listings
      SET status = 'cancelled'
-     WHERE id = ? AND status = 'open' AND (listing_type = 'fixed_price' OR leader_max_amount IS NULL)`,
+     WHERE id = ? AND status IN ('open', 'scheduled') AND (listing_type = 'fixed_price' OR leader_max_amount IS NULL)`,
     [listingId],
   );
   const affectedRows = (result as { affectedRows: number }).affectedRows;
@@ -169,7 +179,7 @@ export type RelistOutcome =
 // how listing creation already splits DB insert from saveListingPhotos.
 export async function relistClosedListing(
   listingId: number,
-  input: { startingPrice: number; buyItNowPrice: number | null; endsAt: Date },
+  input: { startingPrice: number; buyItNowPrice: number | null; startsAt: Date | null; endsAt: Date },
 ): Promise<RelistOutcome> {
   const db = await getDb();
 
@@ -206,6 +216,7 @@ export async function relistClosedListing(
     description: listing.description,
     startingPrice: input.startingPrice,
     buyItNowPrice: input.buyItNowPrice,
+    startsAt: input.startsAt,
     endsAt: input.endsAt,
     createdBy: listing.created_by,
   });
@@ -218,9 +229,13 @@ export interface OpenListingForAdmin {
   id: number;
   title: string;
   listingType: ListingType;
+  /** 'open' or 'scheduled' — this view includes not-yet-started auctions too. */
+  status: string;
   currentPrice: number;
   /** Null for fixed_price listings (no time limit). */
   endsAt: Date | null;
+  /** Auction listings only — set while status is 'scheduled'. */
+  startsAt: Date | null;
   hasBids: boolean;
   /** Null for auction listings. */
   stockQuantity: number | null;
@@ -267,10 +282,12 @@ const OPEN_LISTINGS_SORT_CLAUSES: Record<OpenListingsSort, string> = {
 export async function getOpenListingsForAdmin(
   options: ListOpenListingsForAdminOptions = {},
 ): Promise<{ listings: OpenListingForAdmin[]; total: number }> {
-  await closeExpiredListings();
+  await syncListingLifecycle();
   const db = await getDb();
 
-  const conditions = ["status = 'open'"];
+  // Scheduled (not-yet-started) auctions belong in this view too — admins
+  // still need to see/edit/cancel them before they go live.
+  const conditions = ["status IN ('open', 'scheduled')"];
   const params: string[] = [];
   const search = options.search?.trim();
   if (search) {
@@ -292,7 +309,7 @@ export async function getOpenListingsForAdmin(
 
   const [rows] = await db.query(
     `SELECT
-       id, title, listing_type AS listingType, current_price AS currentPrice, ends_at AS endsAt,
+       id, title, listing_type AS listingType, status, current_price AS currentPrice, ends_at AS endsAt, starts_at AS startsAt,
        (leader_max_amount IS NOT NULL) AS hasBids,
        stock_quantity AS stockQuantity, stock_remaining AS stockRemaining
      FROM listings
@@ -322,7 +339,7 @@ export interface OverviewStats {
 // themselves (see cancelListing's comment), so their sales would otherwise
 // be invisible to this stat.
 export async function getOverviewStats(): Promise<OverviewStats> {
-  await closeExpiredListings();
+  await syncListingLifecycle();
   const db = await getDb();
   const [rows] = await db.query(
     `SELECT
@@ -351,6 +368,27 @@ export async function closeExpiredListings(): Promise<void> {
   );
 }
 
+// Opens any listing whose scheduled start time has passed — the mirror image
+// of closeExpiredListings above (same lazy-sweep-on-every-access pattern, no
+// background worker in this deployment). Must run before closeExpiredListings
+// in syncListingLifecycle so a listing whose starts_at and ends_at have *both*
+// already passed (e.g. the admin scheduled a very short auction and nobody
+// looked at it in time) still passes through 'open' on its way to 'closed'
+// rather than getting stuck in 'scheduled' forever — closeExpiredListings only
+// ever matches status = 'open'.
+export async function openScheduledListings(): Promise<void> {
+  const db = await getDb();
+  await db.query("UPDATE listings SET status = 'open' WHERE status = 'scheduled' AND starts_at <= NOW()");
+}
+
+// The single entry point every read/write path below calls instead of
+// closeExpiredListings directly — keeps both lazy sweeps (start, then end) in
+// sync at every access without every call site needing to know both exist.
+export async function syncListingLifecycle(): Promise<void> {
+  await openScheduledListings();
+  await closeExpiredListings();
+}
+
 export interface ListingCardExtras {
   /** Auction only — the current leader's raw (unmasked) display name; null if no bids yet or the leader never set one. */
   leaderDisplayName: string | null;
@@ -365,10 +403,13 @@ export interface ListingCardExtras {
 // leading (masked — see lib/mask.ts) and how much activity the listing has
 // had, via a LEFT JOIN + correlated subqueries rather than a per-row loop.
 export async function listOpenListings(type?: ListingType): Promise<(ListingWithPhotos & ListingCardExtras)[]> {
-  await closeExpiredListings();
+  await syncListingLifecycle();
   const db = await getDb();
 
-  const conditions = ["l.status = 'open'"];
+  // Scheduled (not-yet-started) auctions are included too — they're shown
+  // publicly with a "starts at" badge instead of a bid button (bidding
+  // itself stays blocked server-side, see resolveProxyBid/resolveBuyNow).
+  const conditions = ["l.status IN ('open', 'scheduled')"];
   const params: string[] = [];
   if (type) {
     conditions.push("l.listing_type = ?");
@@ -396,7 +437,7 @@ export async function listOpenListings(type?: ListingType): Promise<(ListingWith
 }
 
 export async function getListingById(id: number): Promise<ListingWithPhotos | null> {
-  await closeExpiredListings();
+  await syncListingLifecycle();
   const db = await getDb();
   const [rows] = await db.query("SELECT * FROM listings WHERE id = ? LIMIT 1", [id]);
   const list = rows as Listing[];
@@ -486,7 +527,7 @@ function closedListingsWhereClause(options: ListClosedListingsOptions): { where:
 export async function listClosedListings(
   options: ListClosedListingsOptions = {},
 ): Promise<{ listings: ClosedListingSummary[]; total: number }> {
-  await closeExpiredListings();
+  await syncListingLifecycle();
   const db = await getDb();
   const { where, params } = closedListingsWhereClause(options);
 
@@ -639,7 +680,7 @@ export interface ListingCreatedByUser {
 // detail page in case the viewed account currently is, or previously was,
 // an admin.
 export async function getListingsCreatedByUser(userId: number): Promise<ListingCreatedByUser[]> {
-  await closeExpiredListings();
+  await syncListingLifecycle();
   const db = await getDb();
   const [rows] = await db.query(
     `SELECT id, title, status, current_price AS currentPrice, ends_at AS endsAt
@@ -666,7 +707,7 @@ export interface BidHistoryEntry {
 // bids (still open, isLeading tells them if they're winning) from settled
 // ones (closed, isLeading tells them if they won) at a glance.
 export async function getBidHistoryForUser(userId: number): Promise<BidHistoryEntry[]> {
-  await closeExpiredListings();
+  await syncListingLifecycle();
   const db = await getDb();
   const [rows] = await db.query(
     `SELECT
@@ -692,22 +733,24 @@ export async function getBidHistoryForUser(userId: number): Promise<BidHistoryEn
 export interface ListingStatusSnapshot {
   currentPrice: number;
   endsAt: Date;
+  /** Auction listings only — set while status is 'scheduled'. */
+  startsAt: Date | null;
   status: string;
 }
 
 // Lightweight read for the live-status poll (see
-// app/api/listings/[id]/status/route.ts): just the three columns that can
-// change after page load (current_price via bids, ends_at via anti-snipe,
-// status once the auction closes) — no photo lookups needed on every poll.
+// app/api/listings/[id]/status/route.ts): just the columns that can change
+// after page load (current_price via bids, ends_at via anti-snipe, status
+// once the auction opens/closes) — no photo lookups needed on every poll.
 export async function getListingStatus(id: number): Promise<ListingStatusSnapshot | null> {
-  await closeExpiredListings();
+  await syncListingLifecycle();
   const db = await getDb();
-  const [rows] = await db.query("SELECT current_price, ends_at, status FROM listings WHERE id = ? LIMIT 1", [id]);
-  const list = rows as { current_price: number; ends_at: Date; status: string }[];
+  const [rows] = await db.query("SELECT current_price, ends_at, starts_at, status FROM listings WHERE id = ? LIMIT 1", [id]);
+  const list = rows as { current_price: number; ends_at: Date; starts_at: Date | null; status: string }[];
   const listing = list[0];
   if (!listing) return null;
 
-  return { currentPrice: listing.current_price, endsAt: listing.ends_at, status: listing.status };
+  return { currentPrice: listing.current_price, endsAt: listing.ends_at, startsAt: listing.starts_at, status: listing.status };
 }
 
 // Locks the listing row for the duration of the read-validate-write so two
@@ -716,7 +759,7 @@ export async function getListingStatus(id: number): Promise<ListingStatusSnapsho
 // leader's max is deliberately never returned to callers, only the
 // resulting visible current_price.
 export async function placeBid(listingId: number, userId: number, maxAmount: number): Promise<ProxyBidOutcome> {
-  await closeExpiredListings();
+  await syncListingLifecycle();
   const db = await getDb();
   const connection = await db.getConnection();
 
@@ -803,7 +846,7 @@ export async function placeBid(listingId: number, userId: number, maxAmount: num
 // already exist, always sells at the listing's buy_it_now_price, and
 // atomically closes the listing so no further bids/buyouts can land.
 export async function buyNow(listingId: number, userId: number): Promise<BuyNowOutcome> {
-  await closeExpiredListings();
+  await syncListingLifecycle();
   const db = await getDb();
   const connection = await db.getConnection();
 
@@ -922,6 +965,33 @@ export async function updateFixedPriceListing(
   } finally {
     connection.release();
   }
+}
+
+export type UpdateListingStartsAtOutcome = { ok: true } | { ok: false; error: string };
+
+// Admin edit — lets a mistyped/changed-of-mind start time be corrected on a
+// still-'scheduled' auction, without cancelling and recreating the whole
+// listing. Deliberately much narrower than a full auction edit (which stays
+// unsupported — see updateFixedPriceListing's comment on why live bidding
+// state makes that dangerous): this only ever touches starts_at, and only
+// while status is still 'scheduled', i.e. before any bidding could possibly
+// have happened, so none of that risk applies here. Passing startsAt: null
+// clears the schedule and opens the listing immediately, same as if it had
+// never had a start time at all.
+export async function updateListingStartsAt(listingId: number, startsAt: Date | null): Promise<UpdateListingStartsAtOutcome> {
+  await syncListingLifecycle();
+  const db = await getDb();
+  const [result] = await db.query(
+    `UPDATE listings
+     SET starts_at = ?, status = ?
+     WHERE id = ? AND status = 'scheduled' AND listing_type = 'auction'`,
+    [startsAt, startsAt !== null ? "scheduled" : "open", listingId],
+  );
+  const affectedRows = (result as { affectedRows: number }).affectedRows;
+  if (affectedRows === 0) {
+    return { ok: false, error: "無法更新起標時間：商品不存在或已經開標" };
+  }
+  return { ok: true };
 }
 
 // Fixed-price ("一般商品") purchase: unlike placeBid/buyNow, this never

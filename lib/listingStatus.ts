@@ -10,6 +10,8 @@ export interface ListingStatusPayload {
   currentPrice: number;
   /** ISO 8601 string, not a Date — Dates don't survive JSON. */
   endsAt: string;
+  /** ISO 8601 string, or null — set only while status is 'scheduled'. */
+  startsAt: string | null;
   status: string;
 }
 
@@ -23,17 +25,20 @@ export function parseListingStatusResponse(data: unknown): ListingStatusPayload 
   const record = data as Record<string, unknown>;
   if (record.ok !== true) return null;
 
-  const { currentPrice, endsAt, status } = record;
+  const { currentPrice, endsAt, startsAt, status } = record;
   if (typeof currentPrice !== "number" || !Number.isFinite(currentPrice)) return null;
   if (typeof endsAt !== "string" || Number.isNaN(new Date(endsAt).getTime())) return null;
+  if (startsAt !== null && (typeof startsAt !== "string" || Number.isNaN(new Date(startsAt).getTime()))) return null;
   if (typeof status !== "string" || status.length === 0) return null;
 
-  return { currentPrice, endsAt, status };
+  return { currentPrice, endsAt, startsAt, status };
 }
 
-// Only "open" listings can still change (further bids, anti-snipe
-// extensions); once a listing is any other status there's nothing left to
-// poll for.
+// "open" listings can still change (further bids, anti-snipe extensions);
+// "scheduled" ones need polling too, just to notice the moment they flip to
+// open (the server-side sweep only runs when something reads the row, and
+// this poll is exactly the thing making that happen for an actively-viewed
+// listing). Any other status is final — nothing left to poll for.
 export function isPollableStatus(status: string): boolean {
-  return status === "open";
+  return status === "open" || status === "scheduled";
 }

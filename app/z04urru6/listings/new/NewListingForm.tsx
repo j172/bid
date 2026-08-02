@@ -20,6 +20,7 @@ export default function NewListingForm() {
   const [description, setDescription] = useState("");
   const [startingPrice, setStartingPrice] = useState("");
   const [buyItNowPrice, setBuyItNowPrice] = useState("");
+  const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
   const [price, setPrice] = useState("");
   const [stockQuantity, setStockQuantity] = useState("");
@@ -44,6 +45,7 @@ export default function NewListingForm() {
     } else {
       formData.set("startingPrice", startingPrice);
       formData.set("buyItNowPrice", buyItNowPrice);
+      formData.set("startsAt", startsAt);
       formData.set("endsAt", endsAt);
     }
     for (const item of photoItems) {
@@ -163,6 +165,15 @@ export default function NewListingForm() {
               min={1}
               max={PRICE_MAX}
               step={1}
+              className={inputClass}
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+            起標時間（選填，最遠 {ENDS_AT_MAX_DAYS} 天後；留空則立即開放競標）
+            <input
+              value={startsAt}
+              onChange={(e) => setStartsAt(e.target.value)}
+              type="datetime-local"
               className={inputClass}
             />
           </label>
