@@ -10,6 +10,39 @@ import { resolvePurchase, type PurchaseOutcome } from "@/lib/purchase";
 import { notifyAuctionEnded, notifyOutbid, notifyPurchaseConfirmed } from "@/lib/notifications";
 import type { ErrorCode } from "@/lib/errorCodes";
 
+let listingsStartsAtColumnExists: boolean | null = null;
+
+function isMissingStartsAtColumnError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const maybe = error as { code?: string; sqlMessage?: string };
+  return maybe.code === "ER_BAD_FIELD_ERROR" && (maybe.sqlMessage ?? "").includes("starts_at");
+}
+
+async function hasListingsStartsAtColumn(db: Awaited<ReturnType<typeof getDb>>): Promise<boolean> {
+  if (listingsStartsAtColumnExists !== null) {
+    return listingsStartsAtColumnExists;
+  }
+
+  try {
+    const [rows] = await db.query(
+      `SELECT 1 AS present
+       FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE()
+         AND TABLE_NAME = 'listings'
+         AND COLUMN_NAME = 'starts_at'
+       LIMIT 1`,
+    );
+    listingsStartsAtColumnExists = (rows as { present: number }[]).length > 0;
+  } catch {
+    // If metadata inspection is blocked, keep the legacy behavior and let
+    // normal queries decide; targeted handlers below still downgrade on the
+    // specific "unknown column starts_at" error.
+    listingsStartsAtColumnExists = true;
+  }
+
+  return listingsStartsAtColumnExists;
+}
+
 export type ListingType = "auction" | "fixed_price";
 
 export interface Listing {
@@ -78,23 +111,47 @@ export async function insertListing(input: NewListingInput): Promise<number> {
     return (result as { insertId: number }).insertId;
   }
 
-  const status = input.startsAt !== null ? "scheduled" : "open";
-  const [result] = await db.query(
-    `INSERT INTO listings
-       (title, description, listing_type, starting_price, current_price, buy_it_now_price, starts_at, ends_at, status, created_by, created_at)
-     VALUES (?, ?, 'auction', ?, ?, ?, ?, ?, ?, ?, NOW())`,
-    [
-      input.title,
-      input.description,
-      input.startingPrice,
-      input.startingPrice,
-      input.buyItNowPrice,
-      input.startsAt,
-      input.endsAt,
-      status,
-      input.createdBy,
-    ],
-  );
+  const supportsStartsAt = await hasListingsStartsAtColumn(db);
+
+  let result: unknown;
+  if (supportsStartsAt) {
+    const status = input.startsAt !== null ? "scheduled" : "open";
+    [result] = await db.query(
+      `INSERT INTO listings
+         (title, description, listing_type, starting_price, current_price, buy_it_now_price, starts_at, ends_at, status, created_by, created_at)
+       VALUES (?, ?, 'auction', ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [
+        input.title,
+        input.description,
+        input.startingPrice,
+        input.startingPrice,
+        input.buyItNowPrice,
+        input.startsAt,
+        input.endsAt,
+        status,
+        input.createdBy,
+      ],
+    );
+  } else {
+    // Legacy schema fallback: starts_at column does not exist, so scheduling
+    // cannot be persisted. We degrade to immediate-open behavior instead of
+    // throwing and taking down the request path.
+    [result] = await db.query(
+      `INSERT INTO listings
+         (title, description, listing_type, starting_price, current_price, buy_it_now_price, ends_at, status, created_by, created_at)
+       VALUES (?, ?, 'auction', ?, ?, ?, ?, 'open', ?, NOW())`,
+      [
+        input.title,
+        input.description,
+        input.startingPrice,
+        input.startingPrice,
+        input.buyItNowPrice,
+        input.endsAt,
+        input.createdBy,
+      ],
+    );
+  }
+
   return (result as { insertId: number }).insertId;
 }
 
@@ -284,6 +341,7 @@ export async function getOpenListingsForAdmin(
 ): Promise<{ listings: OpenListingForAdmin[]; total: number }> {
   await syncListingLifecycle();
   const db = await getDb();
+  const startsAtSelect = (await hasListingsStartsAtColumn(db)) ? "starts_at AS startsAt" : "NULL AS startsAt";
 
   // Scheduled (not-yet-started) auctions belong in this view too — admins
   // still need to see/edit/cancel them before they go live.
@@ -309,7 +367,7 @@ export async function getOpenListingsForAdmin(
 
   const [rows] = await db.query(
     `SELECT
-       id, title, listing_type AS listingType, status, current_price AS currentPrice, ends_at AS endsAt, starts_at AS startsAt,
+       id, title, listing_type AS listingType, status, current_price AS currentPrice, ends_at AS endsAt, ${startsAtSelect},
        (leader_max_amount IS NOT NULL) AS hasBids,
        stock_quantity AS stockQuantity, stock_remaining AS stockRemaining
      FROM listings
@@ -378,7 +436,19 @@ export async function closeExpiredListings(): Promise<void> {
 // ever matches status = 'open'.
 export async function openScheduledListings(): Promise<void> {
   const db = await getDb();
-  await db.query("UPDATE listings SET status = 'open' WHERE status = 'scheduled' AND starts_at <= NOW()");
+  if (!(await hasListingsStartsAtColumn(db))) {
+    return;
+  }
+
+  try {
+    await db.query("UPDATE listings SET status = 'open' WHERE status = 'scheduled' AND starts_at <= NOW()");
+  } catch (error) {
+    if (isMissingStartsAtColumnError(error)) {
+      listingsStartsAtColumnExists = false;
+      return;
+    }
+    throw error;
+  }
 }
 
 // The single entry point every read/write path below calls instead of
@@ -745,12 +815,23 @@ export interface ListingStatusSnapshot {
 export async function getListingStatus(id: number): Promise<ListingStatusSnapshot | null> {
   await syncListingLifecycle();
   const db = await getDb();
-  const [rows] = await db.query("SELECT current_price, ends_at, starts_at, status FROM listings WHERE id = ? LIMIT 1", [id]);
-  const list = rows as { current_price: number; ends_at: Date; starts_at: Date | null; status: string }[];
+  const supportsStartsAt = await hasListingsStartsAtColumn(db);
+  const [rows] = await db.query(
+    supportsStartsAt
+      ? "SELECT current_price, ends_at, starts_at, status FROM listings WHERE id = ? LIMIT 1"
+      : "SELECT current_price, ends_at, status FROM listings WHERE id = ? LIMIT 1",
+    [id],
+  );
+  const list = rows as { current_price: number; ends_at: Date; starts_at?: Date | null; status: string }[];
   const listing = list[0];
   if (!listing) return null;
 
-  return { currentPrice: listing.current_price, endsAt: listing.ends_at, startsAt: listing.starts_at, status: listing.status };
+  return {
+    currentPrice: listing.current_price,
+    endsAt: listing.ends_at,
+    startsAt: supportsStartsAt ? (listing.starts_at ?? null) : null,
+    status: listing.status,
+  };
 }
 
 // Locks the listing row for the duration of the read-validate-write so two
@@ -981,6 +1062,9 @@ export type UpdateListingStartsAtOutcome = { ok: true } | { ok: false; error: st
 export async function updateListingStartsAt(listingId: number, startsAt: Date | null): Promise<UpdateListingStartsAtOutcome> {
   await syncListingLifecycle();
   const db = await getDb();
+  if (!(await hasListingsStartsAtColumn(db))) {
+    return { ok: false, error: "目前資料庫尚未支援起標時間欄位（starts_at）" };
+  }
   const [result] = await db.query(
     `UPDATE listings
      SET starts_at = ?, status = ?

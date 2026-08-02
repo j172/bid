@@ -102,6 +102,25 @@ async function ensureColumn(db: mysql.Pool, table: string, column: string, defin
   return false;
 }
 
+async function ensureIndex(
+  db: mysql.Pool,
+  table: string,
+  indexName: string,
+  definitionSql: string,
+): Promise<boolean> {
+  const [rows] = await db.query(
+    `SELECT COUNT(*) AS cnt FROM information_schema.STATISTICS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?`,
+    [table, indexName],
+  );
+  const count = (rows as { cnt: number }[])[0].cnt;
+  if (count === 0) {
+    await db.query(`ALTER TABLE ${table} ADD ${definitionSql}`);
+    return true;
+  }
+  return false;
+}
+
 async function ensureBiddingColumns(db: mysql.Pool): Promise<void> {
   const currentPriceAdded = await ensureColumn(db, "listings", "current_price", "BIGINT NOT NULL DEFAULT 0");
   if (currentPriceAdded) {
@@ -150,6 +169,11 @@ async function ensureAccountColumns(db: mysql.Pool): Promise<void> {
   await ensureColumn(db, "listings", "price", "BIGINT NULL");
   await ensureColumn(db, "listings", "stock_quantity", "BIGINT NULL");
   await ensureColumn(db, "listings", "stock_remaining", "BIGINT NULL");
+  // Optional scheduled-start timestamp for auction listings. Status stays
+  // 'scheduled' until this moment, then openScheduledListings() lazily flips
+  // to 'open'. Must exist on already-deployed DBs too, not just fresh init.sql.
+  await ensureColumn(db, "listings", "starts_at", "DATETIME NULL");
+  await ensureIndex(db, "listings", "idx_listings_status_starts", "INDEX idx_listings_status_starts (status, starts_at)");
   // Set at registration time from whichever locale the registration page was
   // on (see app/api/auth/register/route.ts) — used to pick the language for
   // that user's email notifications (see lib/notifications.ts). Existing
