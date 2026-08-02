@@ -4,11 +4,11 @@ export interface AdminNavItem {
   section: "dashboard" | "commerce" | "content";
 }
 
-// "content" (首頁內容管理) items are deliberately not linked here yet — the
-// pages themselves (合作鴿舍 / 入賞鴿 / 進口鴿管理 UI) are built by later
-// tickets (#34/#35) on top of the CRUD API this ticket (#33) adds. This nav
-// section is pre-reserved so those tickets only need to add entries, not
-// introduce a new section.
+// "content" (首頁內容管理) items — 合作鴿舍 (#34) is still not linked here
+// (that ticket hasn't built its admin UI yet); this ticket (#35) adds the
+// 入賞鴿／進口鴿 gallery entries. Items management has no direct nav entry
+// since it always requires a categoryId — it's reached via the "管理項目"
+// link on the categories page instead.
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { label: "總覽", href: "/z04urru6", section: "dashboard" },
   { label: "開放中商品", href: "/z04urru6/listings", section: "commerce" },
@@ -17,4 +17,5 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { label: "訂單管理", href: "/z04urru6/orders", section: "commerce" },
   { label: "使用者列表", href: "/z04urru6/users", section: "commerce" },
   { label: "電子報", href: "/z04urru6/newsletter", section: "commerce" },
+  { label: "入賞鴿／進口鴿分類", href: "/z04urru6/homepage/pigeon-gallery/categories", section: "content" },
 ];

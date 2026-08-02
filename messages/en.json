@@ -303,6 +303,27 @@
     "messagePlaceholder": "Message",
     "submit": "Send Message"
   },
+  "pigeonGallery": {
+    "sectionAwardTitle": "Award Pigeon Showcase",
+    "sectionAwardSubtitle": "Award Winning Lofts",
+    "sectionImportTitle": "Imported Pigeon Showcase",
+    "sectionImportSubtitle": "Imported Bloodlines",
+    "breadcrumbHome": "Home",
+    "categoryTitleAward": "{name} Award Pigeon Showcase",
+    "categoryTitleImport": "{name} Imported Pigeon Showcase",
+    "filterTypeTitle": "Type",
+    "filterTypeAll": "All Types",
+    "filterTypeAuction": "Auction Breeder",
+    "filterTypeFixed": "Fixed Price Breeder",
+    "filterPriceTitle": "Price Range",
+    "filterPriceAny": "Any Price",
+    "filterPriceRange1": "15,000 - 20,000",
+    "filterPriceRange2": "20,000 - 30,000",
+    "filterPriceRange3": "30,000 and up",
+    "referencePriceLabel": "Reference Price",
+    "showingCount": "{count} items",
+    "emptyState": "No showcase items yet"
+  },
   "errors": {
     "NOT_FOUND": "Listing not found",
     "MUST_LOGIN": "Please log in first",

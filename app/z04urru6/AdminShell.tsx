@@ -67,6 +67,7 @@ export default function AdminShell({ children, email }: { children: ReactNode; e
     () => ({
       dashboard: ADMIN_NAV_ITEMS.filter((item) => item.section === "dashboard"),
       commerce: ADMIN_NAV_ITEMS.filter((item) => item.section === "commerce"),
+      content: ADMIN_NAV_ITEMS.filter((item) => item.section === "content"),
     }),
     [],
   );
@@ -84,6 +85,10 @@ export default function AdminShell({ children, email }: { children: ReactNode; e
       closed: { label: "已結標結算", icon: "✅" },
       newsletter: { label: "電子報", icon: "✉️" },
       compose: { label: "撰寫新電子報", icon: "📝" },
+      homepage: { label: "首頁內容管理", icon: "🏡" },
+      "pigeon-gallery": { label: "鴿展 Gallery", icon: "🕊️" },
+      categories: { label: "分類管理", icon: "🗂️" },
+      items: { label: "項目管理", icon: "🐦" },
     };
 
     let runningPath = "";
@@ -188,6 +193,33 @@ export default function AdminShell({ children, email }: { children: ReactNode; e
                 })}
               </ul>
             </div>
+
+            {grouped.content.length > 0 && (
+              <div>
+                <p className={["px-2 pb-2 text-xs uppercase tracking-wider text-slate-400", collapsed ? "sr-only" : ""].join(" ")}>
+                  Content
+                </p>
+                <ul className="space-y-1">
+                  {grouped.content.map((item) => {
+                    const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                    return (
+                      <li key={item.href}>
+                        <Link
+                          href={item.href}
+                          className={navClass(active, collapsed)}
+                          onClick={() => setMobileOpen(false)}
+                          aria-current={active ? "page" : undefined}
+                        >
+                          <span className={[collapsed ? "text-xs" : "", "font-medium"].join(" ")}>
+                            {collapsed ? item.label.slice(0, 2) : item.label}
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
           </nav>
 
           <div className="mt-4 rounded-xl border border-white/10 bg-white/10 p-3 text-xs text-slate-300">

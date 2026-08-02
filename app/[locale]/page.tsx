@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { listOpenListings } from "@/lib/listings";
-import { listingPhotoUrl } from "@/lib/uploads";
+import { listingPhotoUrl, pigeonGalleryCategoryImageUrl } from "@/lib/uploads";
+import { listPigeonGalleryCategories, type GalleryType, type PigeonGalleryCategory } from "@/lib/pigeonGallery";
 import { Link } from "@/i18n/navigation";
 import HeroSection from "./components/HeroSection";
 import ZoomableProductImage from "./components/ZoomableProductImage";
@@ -29,6 +30,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const perfMode = perfModeFromSearchParams(params);
   const t = await getTranslations("home");
   const tListings = await getTranslations("listings");
+  const tGallery = await getTranslations("pigeonGallery");
+  const [awardCategories, importCategories] = await Promise.all([
+    listPigeonGalleryCategories("award", { activeOnly: true }),
+    listPigeonGalleryCategories("import", { activeOnly: true }),
+  ]);
   // listOpenListings now also returns 'scheduled' (not-yet-started) auctions
   // for the /listings browse page's benefit — the homepage's curated
   // sections below (ending soon, quick deals, etc.) all assume "actively
@@ -336,38 +342,46 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </div>
       </section>
 
-      <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
-        <div className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-interactive-primary">Shop by Brand</p>
-              <h3 className="mt-1 text-xl font-black text-ink">熱門品牌精選館</h3>
-            </div>
-            <Link href="/listings?sort=price_desc" className="text-sm font-semibold text-interactive-primary hover:text-header">
-              View premium picks →
-            </Link>
-          </div>
+      {[
+        { galleryType: "award" as GalleryType, categories: awardCategories, title: tGallery("sectionAwardTitle"), subtitle: tGallery("sectionAwardSubtitle") },
+        { galleryType: "import" as GalleryType, categories: importCategories, title: tGallery("sectionImportTitle"), subtitle: tGallery("sectionImportSubtitle") },
+      ].map(
+        (group) =>
+          group.categories.length > 0 && (
+            <section key={group.galleryType} className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
+              <div className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-interactive-primary">{group.subtitle}</p>
+                    <h3 className="mt-1 text-xl font-black text-ink">{group.title}</h3>
+                  </div>
+                </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-            {[
-              { label: "OMEGA", href: "/listings?type=auction" },
-              { label: "ROLEX", href: "/listings?sort=price_desc" },
-              { label: "SONY", href: "/listings?type=fixed_price" },
-              { label: "APPLE", href: "/listings?sort=price_desc" },
-              { label: "NIKON", href: "/listings?type=auction" },
-              { label: "LEICA", href: "/listings?sort=price_desc" },
-            ].map((brand) => (
-              <Link
-                key={brand.label}
-                href={brand.href}
-                className="rounded-xl border border-border bg-slate-50 px-3 py-3 text-center text-sm font-extrabold tracking-wide text-ink transition hover:-translate-y-0.5 hover:border-interactive-primary hover:bg-white hover:text-interactive-primary"
-              >
-                {brand.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                  {group.categories.map((category: PigeonGalleryCategory) => (
+                    <Link
+                      key={category.id}
+                      href={`/pigeons/${group.galleryType}/${category.id}`}
+                      className="group overflow-hidden rounded-xl border border-border bg-slate-50 transition hover:-translate-y-0.5 hover:border-interactive-primary hover:shadow-md"
+                    >
+                      <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+                        <img
+                          src={pigeonGalleryCategoryImageUrl(category.coverImageFileName)}
+                          alt={category.name}
+                          className="h-full w-full object-cover transition duration-200 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                      </div>
+                      <p className="px-3 py-2 text-center text-sm font-extrabold tracking-wide text-ink group-hover:text-interactive-primary">
+                        {category.name}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </section>
+          ),
+      )}
 
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
         <div className="flex items-end justify-between">
