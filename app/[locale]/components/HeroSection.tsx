@@ -136,25 +136,10 @@ export default function HeroSection({
                       ? tListings("noBidsYet")
                       : tListings("totalBids", { count: activeCard.bidCount })}
                   </p>
-
-                  <div className="mt-8 flex flex-wrap gap-3">
-                    <Link
-                      href={activeCard.href}
-                      className="rounded-full bg-white px-6 py-3 text-sm font-bold text-blue-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-50"
-                    >
-                      {tHome("promoAuctionCta")}
-                    </Link>
-                    <Link
-                      href={browseHref}
-                      className="rounded-full border border-white/30 px-6 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-white/10"
-                    >
-                      {tHome("browseButton")}
-                    </Link>
-                  </div>
                 </div>
 
                 <div
-                  className={`pointer-events-none absolute bottom-4 right-0 w-[min(33rem,calc(100%-1rem))] px-2 sm:px-4 lg:px-6 ${
+                  className={`pointer-events-none relative z-10 mt-5 w-full ${
                     activeCard.hasPhoto ? "" : "rounded-2xl bg-white/90 p-2"
                   }`}
                 >
@@ -168,6 +153,21 @@ export default function HeroSection({
                       className={`h-full w-full drop-shadow-2xl ${activeCard.hasPhoto ? "object-contain" : "object-contain p-2"}`}
                     />
                   </div>
+                </div>
+
+                <div className="relative z-10 mt-6 flex max-w-[33rem] flex-wrap gap-3">
+                  <Link
+                    href={activeCard.href}
+                    className="rounded-full bg-white px-6 py-3 text-sm font-bold text-blue-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-50"
+                  >
+                    {tHome("promoAuctionCta")}
+                  </Link>
+                  <Link
+                    href={browseHref}
+                    className="rounded-full border border-white/30 px-6 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-white/10"
+                  >
+                    {tHome("browseButton")}
+                  </Link>
                 </div>
 
                 <div className="relative z-10 mt-12 grid max-w-xl gap-2 text-xs text-blue-100 sm:grid-cols-3 sm:text-sm">
