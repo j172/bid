@@ -10,12 +10,12 @@
     "explore": "探索商品",
     "allCategories": "所有分類",
     "contact": "聯絡",
-    "topbarNotice": "全站支援競標、代理出價與一鍵買斷",
+    "topbarNotice": "全站支援競標、自動出價與一鍵買斷",
     "trendingSearches": "熱門搜尋：",
     "quickAuction": "競標專區",
     "quickFixed": "固定價專區",
     "quickUnder500": "500 元以下",
-    "quickProxy": "代理出價",
+    "quickAutoBid": "自動出價說明",
     "dealZone": "限時優惠",
     "newbieZone": "新手專區",
     "searchAll": "全部",
@@ -30,7 +30,7 @@
   },
   "home": {
     "title": "拍賣競標網站",
-    "subtitle": "單一賣家英式拍賣 — 出價、代理出價、一鍵買斷，通通支援。",
+    "subtitle": "單一賣家英式拍賣 — 出價、自動出價、一鍵買斷，通通支援。",
     "browseButton": "瀏覽競標中商品",
     "heroBadge": "PREMIUM AUCTION DESIGN",
     "auctionCta": "查看競標商品",
@@ -107,7 +107,7 @@
     "ended": "已結束",
     "priceLabel": "價格",
     "benefitOne": "配送資訊：可安排出貨與面交流程。",
-    "benefitTwo": "活動說明：競標可使用代理出價，系統自動幫你守價。",
+    "benefitTwo": "活動說明：競標可使用自動出價，系統自動幫你守價。",
     "benefitThree": "交易保障：所有出價與庫存變更皆由伺服器驗證。",
     "descriptionTab": "Description",
     "additionalTab": "Additional Information",
@@ -150,6 +150,13 @@
     "closedViaBinNotLeading": "出價已達買斷價，商品已由他人得標。",
     "leading": "你目前是最高出價者！",
     "notLeading": "已送出，但目前有人出價更高，你並未領先。"
+  },
+  "autoBiddingInfo": {
+    "title": "自動出價如何運作",
+    "description": "自動出價能幫您省去隨時盯盤的麻煩：",
+    "step1": "設定您願意支付的最高金額",
+    "step2": "有其他人出價時，系統會自動為您逐步加價，讓您維持領先",
+    "step3": "持續加價，直到對手放棄出價，或加到您設定的上限為止"
   },
   "buyNowButton": {
     "confirm": "確定要以買斷價 {price} 直接得標嗎？此動作無法撤銷。",

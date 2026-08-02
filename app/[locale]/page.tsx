@@ -29,6 +29,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const perfMode = perfModeFromSearchParams(params);
   const t = await getTranslations("home");
   const tListings = await getTranslations("listings");
+  const tAutoBid = await getTranslations("autoBiddingInfo");
   // listOpenListings now also returns 'scheduled' (not-yet-started) auctions
   // for the /listings browse page's benefit — the homepage's curated
   // sections below (ending soon, quick deals, etc.) all assume "actively
@@ -161,13 +162,34 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             <Link href="/listings?type=fixed_price&maxPrice=1000" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-interactive-primary hover:text-interactive-primary">
               💡 千元好物
             </Link>
-            <Link href="/listings?q=proxy" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-interactive-primary hover:text-interactive-primary">
-              ⚙️ 代理出價
+            <Link href="/#auto-bidding-explainer" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-interactive-primary hover:text-interactive-primary">
+              ⚙️ 自動出價說明
             </Link>
             <Link href="/listings?sort=price_desc" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-interactive-primary hover:text-interactive-primary">
               💎 高單價精選
             </Link>
           </div>
+        </div>
+      </section>
+
+      <section id="auto-bidding-explainer" className="mx-auto mt-5 max-w-6xl scroll-mt-24 px-4 sm:px-6">
+        <div className="rounded-2xl border border-interactive-primary/20 bg-interactive-primary-subtle p-5 shadow-sm sm:p-6">
+          <h2 className="text-lg font-black text-ink">{tAutoBid("title")}</h2>
+          <p className="mt-1 text-sm text-ink-light">{tAutoBid("description")}</p>
+          <ol className="mt-4 grid gap-3 sm:grid-cols-3">
+            <li className="rounded-xl bg-white/70 p-3 text-sm text-ink">
+              <span className="mb-1 block text-xs font-bold text-interactive-primary">1</span>
+              {tAutoBid("step1")}
+            </li>
+            <li className="rounded-xl bg-white/70 p-3 text-sm text-ink">
+              <span className="mb-1 block text-xs font-bold text-interactive-primary">2</span>
+              {tAutoBid("step2")}
+            </li>
+            <li className="rounded-xl bg-white/70 p-3 text-sm text-ink">
+              <span className="mb-1 block text-xs font-bold text-interactive-primary">3</span>
+              {tAutoBid("step3")}
+            </li>
+          </ol>
         </div>
       </section>
 
@@ -273,13 +295,13 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             <p className="mt-3 text-[11px] font-bold text-violet-700">Explore now →</p>
           </Link>
           <Link
-            href="/listings?q=proxy"
+            href="/#auto-bidding-explainer"
             className="group rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           >
-            <p className="text-xs font-bold uppercase tracking-wide text-amber-700">Collection</p>
-            <p className="mt-1 text-base font-black text-ink">Proxy Bidding</p>
-            <p className="mt-1 text-xs text-ink-light">自動守價商品</p>
-            <p className="mt-3 text-[11px] font-bold text-amber-700">Explore now →</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-amber-700">Guide</p>
+            <p className="mt-1 text-base font-black text-ink">Auto Bidding</p>
+            <p className="mt-1 text-xs text-ink-light">自動出價如何運作</p>
+            <p className="mt-3 text-[11px] font-bold text-amber-700">Learn more →</p>
           </Link>
         </div>
       </section>
