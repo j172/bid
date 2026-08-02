@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+const FALLBACK_SRC = "/images/hero-placeholder.png";
+
 interface ListingGalleryProps {
   title: string;
   imageUrls: string[];
@@ -11,8 +13,15 @@ export default function ListingGallery({ title, imageUrls }: ListingGalleryProps
   const urls = useMemo(() => imageUrls.filter(Boolean), [imageUrls]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [failedUrls, setFailedUrls] = useState<Set<string>>(new Set());
   const selectedUrl = urls[selectedIndex] ?? "";
   const galleryRef = useRef<HTMLDivElement>(null);
+
+  const resolveSrc = useCallback((url: string) => (failedUrls.has(url) ? FALLBACK_SRC : url), [failedUrls]);
+  const markFailed = useCallback((url: string) => {
+    if (url === FALLBACK_SRC) return;
+    setFailedUrls((previous) => (previous.has(url) ? previous : new Set(previous).add(url)));
+  }, []);
 
   const moveSelection = useCallback(
     (direction: 1 | -1) => {
@@ -70,7 +79,12 @@ export default function ListingGallery({ title, imageUrls }: ListingGalleryProps
         aria-label={`放大檢視 ${title}`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={selectedUrl} alt={title} className="h-full w-full object-cover" />
+        <img
+          src={resolveSrc(selectedUrl)}
+          alt={title}
+          className="h-full w-full object-cover"
+          onError={() => markFailed(selectedUrl)}
+        />
       </button>
 
       {urls.length > 1 && (
@@ -91,7 +105,12 @@ export default function ListingGallery({ title, imageUrls }: ListingGalleryProps
                 }`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt={title} className="h-full w-full object-cover" />
+                <img
+                  src={resolveSrc(url)}
+                  alt={title}
+                  className="h-full w-full object-cover"
+                  onError={() => markFailed(url)}
+                />
               </button>
             );
           })}
@@ -109,7 +128,12 @@ export default function ListingGallery({ title, imageUrls }: ListingGalleryProps
           </button>
           <div className="max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-2xl bg-black">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={selectedUrl} alt={title} className="h-full max-h-[90vh] w-full object-contain" />
+            <img
+              src={resolveSrc(selectedUrl)}
+              alt={title}
+              className="h-full max-h-[90vh] w-full object-contain"
+              onError={() => markFailed(selectedUrl)}
+            />
           </div>
         </div>
       )}
