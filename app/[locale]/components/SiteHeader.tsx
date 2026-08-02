@@ -176,31 +176,27 @@ export default async function SiteHeader() {
 
       <div className="hidden border-t border-slate-200 bg-gradient-to-b from-white to-slate-50 lg:block">
         <div className="mx-auto max-w-6xl px-4 py-2.5 sm:px-6">
-          <div className="flex items-center justify-between gap-4 text-sm">
-            <nav className="flex min-w-0 flex-wrap items-center gap-5 text-ink">
-              <Link href="/" className="font-medium hover:text-interactive-primary">
-                {t("home")}
+          <nav className="flex min-w-0 flex-wrap items-center gap-5 text-sm text-ink">
+            <Link href="/" className="font-medium hover:text-interactive-primary">
+              {t("home")}
+            </Link>
+            <Link href="/listings" className="font-medium hover:text-interactive-primary">
+              {t("browse")}
+            </Link>
+            <Link href="/contact" className="font-medium hover:text-interactive-primary">
+              {t("contact")}
+            </Link>
+            {user && (
+              <Link href="/my-bids" className="font-medium hover:text-interactive-primary">
+                {t("myBids")}
               </Link>
-              <Link href="/listings" className="font-medium hover:text-interactive-primary">
-                {t("browse")}
-              </Link>
-              <Link href="/contact" className="font-medium hover:text-interactive-primary">
-                {t("contact")}
-              </Link>
-              {user && (
-                <Link href="/my-bids" className="font-medium hover:text-interactive-primary">
-                  {t("myBids")}
-                </Link>
-              )}
-              {user?.role === "admin" && (
-                <NextLink href="/z04urru6" className="font-medium hover:text-interactive-primary">
-                  {t("admin")}
-                </NextLink>
-              )}
-            </nav>
-
-            <p className="shrink-0 rounded-full bg-muted-olive-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-interactive-primary">Premium Auction Experience</p>
-          </div>
+            )}
+            {user?.role === "admin" && (
+              <NextLink href="/z04urru6" className="font-medium hover:text-interactive-primary">
+                {t("admin")}
+              </NextLink>
+            )}
+          </nav>
 
           <div className="mt-2 flex items-center justify-between gap-3 border-t border-dashed border-slate-200 pt-2.5">
             <div className="flex min-w-0 items-center gap-2 text-xs">
