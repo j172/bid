@@ -4,11 +4,9 @@ export interface AdminNavItem {
   section: "dashboard" | "commerce" | "content";
 }
 
-// "content" (首頁內容管理) items are deliberately not linked here yet — the
-// pages themselves (合作鴿舍 / 入賞鴿 / 進口鴿管理 UI) are built by later
-// tickets (#34/#35) on top of the CRUD API this ticket (#33) adds. This nav
-// section is pre-reserved so those tickets only need to add entries, not
-// introduce a new section.
+// "content" (首頁內容管理) — 合作鴿舍 (#34) is the first page built on top of
+// the generic homepage_sections CRUD from #33; 入賞鴿/進口鴿管理 UI (#35)
+// will add more entries to this same section.
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { label: "總覽", href: "/z04urru6", section: "dashboard" },
   { label: "開放中商品", href: "/z04urru6/listings", section: "commerce" },
@@ -17,4 +15,5 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { label: "訂單管理", href: "/z04urru6/orders", section: "commerce" },
   { label: "使用者列表", href: "/z04urru6/users", section: "commerce" },
   { label: "電子報", href: "/z04urru6/newsletter", section: "commerce" },
+  { label: "合作鴿舍管理", href: "/z04urru6/homepage/partner-lofts", section: "content" },
 ];

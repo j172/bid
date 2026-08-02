@@ -1,6 +1,8 @@
+import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { listOpenListings } from "@/lib/listings";
-import { listingPhotoUrl } from "@/lib/uploads";
+import { listingPhotoUrl, homepageSectionImageUrl } from "@/lib/uploads";
+import { listHomepageSections } from "@/lib/homepageSections";
 import { Link } from "@/i18n/navigation";
 import HeroSection from "./components/HeroSection";
 import ZoomableProductImage from "./components/ZoomableProductImage";
@@ -35,6 +37,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   // biddable" semantics (bid counts, "剩餘 X" urgency framing), so they stay
   // open-only rather than growing their own scheduled-aware treatment.
   const listings = (await listOpenListings()).filter((item) => item.status === "open");
+  const partnerLofts = await listHomepageSections("partner_loft", { activeOnly: true });
 
   const heroRenderedAt = new Date().toISOString();
   const auctionsByEndingSoon = [...listings]
@@ -237,52 +240,47 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </div>
       </section>
 
-      <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-6">
-        <div className="mb-3 flex items-end justify-between">
-          <h2 className="text-2xl font-bold">Featured Collections</h2>
-          <Link href="/listings" className="text-sm font-semibold text-interactive-primary hover:text-header">
-            Explore all
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <Link
-            href="/listings?type=auction"
-            className="group rounded-2xl border border-muted-olive-100 bg-gradient-to-br from-muted-olive-50 via-white to-muted-olive-50 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <p className="text-xs font-bold uppercase tracking-wide text-interactive-primary">Collection</p>
-            <p className="mt-1 text-base font-black text-ink">Live Auctions</p>
-            <p className="mt-1 text-xs text-ink-light">即時出價商品</p>
-            <p className="mt-3 text-[11px] font-bold text-interactive-primary">Explore now →</p>
-          </Link>
-          <Link
-            href="/listings?type=fixed_price"
-            className="group rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">Collection</p>
-            <p className="mt-1 text-base font-black text-ink">Fixed Deals</p>
-            <p className="mt-1 text-xs text-ink-light">快速下單專區</p>
-            <p className="mt-3 text-[11px] font-bold text-emerald-700">Explore now →</p>
-          </Link>
-          <Link
-            href="/listings?sort=price_desc"
-            className="group rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <p className="text-xs font-bold uppercase tracking-wide text-violet-700">Collection</p>
-            <p className="mt-1 text-base font-black text-ink">Premium Picks</p>
-            <p className="mt-1 text-xs text-ink-light">高單價精選</p>
-            <p className="mt-3 text-[11px] font-bold text-violet-700">Explore now →</p>
-          </Link>
-          <Link
-            href="/listings?q=proxy"
-            className="group rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <p className="text-xs font-bold uppercase tracking-wide text-amber-700">Collection</p>
-            <p className="mt-1 text-base font-black text-ink">Proxy Bidding</p>
-            <p className="mt-1 text-xs text-ink-light">自動守價商品</p>
-            <p className="mt-3 text-[11px] font-bold text-amber-700">Explore now →</p>
-          </Link>
-        </div>
-      </section>
+      {partnerLofts.length > 0 && (
+        <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-6">
+          <div className="mb-1 flex items-end justify-between">
+            <h2 className="text-2xl font-bold">{t("partnerLoftsTitle")}</h2>
+            <Link href="/listings" className="text-sm font-semibold text-interactive-primary hover:text-header">
+              {t("partnerLoftsViewAll")}
+            </Link>
+          </div>
+          <p className="text-sm text-ink-light">{t("partnerLoftsSubtitle")}</p>
+          <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {partnerLofts.map((loft) => {
+              const isInternal = loft.linkUrl.startsWith("/");
+              const cardContent = (
+                <>
+                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-100">
+                    <Image
+                      src={homepageSectionImageUrl(loft.imageFileName)}
+                      alt={loft.title}
+                      fill
+                      sizes="(min-width: 1024px) 25vw, 50vw"
+                      className="object-cover transition group-hover:scale-105"
+                    />
+                  </div>
+                  <p className="mt-3 text-sm font-bold text-ink">{loft.title}</p>
+                </>
+              );
+              const cardClassName =
+                "group overflow-hidden rounded-2xl border border-border bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md";
+              return isInternal ? (
+                <Link key={loft.id} href={loft.linkUrl} className={cardClassName}>
+                  {cardContent}
+                </Link>
+              ) : (
+                <a key={loft.id} href={loft.linkUrl} target="_blank" rel="noopener noreferrer" className={cardClassName}>
+                  {cardContent}
+                </a>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
         <div className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
