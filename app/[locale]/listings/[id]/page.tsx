@@ -43,6 +43,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
   const tNav = await getTranslations("nav");
   const tListings = await getTranslations("listings");
   const tFormat = await getTranslations("format");
+  const tAutoBid = await getTranslations("autoBiddingInfo");
   const imageUrls = listing.photos.map((fileName) => listingPhotoUrl(listing.id, fileName));
 
   const isAuction = listing.listing_type === "auction";
@@ -202,6 +203,15 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                     <>
                       <div className="rounded-xl border border-border bg-surface p-4">
                         <BidForm listingId={listing.id} minimumNextBid={minimumNextBid} />
+                      </div>
+                      <div className="rounded-xl border border-interactive-primary/20 bg-interactive-primary-subtle p-4 text-xs text-ink-light">
+                        <p className="font-bold text-ink">{tAutoBid("title")}</p>
+                        <p className="mt-1">{tAutoBid("description")}</p>
+                        <ol className="mt-2 list-decimal space-y-1 pl-4">
+                          <li>{tAutoBid("step1")}</li>
+                          <li>{tAutoBid("step2")}</li>
+                          <li>{tAutoBid("step3")}</li>
+                        </ol>
                       </div>
                       {listing.buy_it_now_price !== null && (
                         <div className="rounded-xl border border-interactive-primary/20 bg-interactive-primary-subtle p-4">

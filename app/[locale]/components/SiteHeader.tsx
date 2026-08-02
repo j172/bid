@@ -13,7 +13,7 @@ export default async function SiteHeader() {
     { label: t("quickAuction"), href: "/listings?type=auction" },
     { label: t("quickFixed"), href: "/listings?type=fixed_price" },
     { label: t("quickUnder500"), href: "/listings?minPrice=0&maxPrice=500" },
-    { label: t("quickProxy"), href: "/listings?q=proxy" },
+    { label: t("quickAutoBid"), href: "/#auto-bidding-explainer" },
   ];
 
   return (

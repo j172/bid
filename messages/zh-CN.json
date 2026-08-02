@@ -10,12 +10,12 @@
     "explore": "探索商品",
     "allCategories": "所有分类",
     "contact": "联系",
-    "topbarNotice": "全站支持竞标、代理出价与一键买断",
+    "topbarNotice": "全站支持竞标、自动出价与一键买断",
     "trendingSearches": "热门搜索：",
     "quickAuction": "竞标专区",
     "quickFixed": "一口价专区",
     "quickUnder500": "500 元以下",
-    "quickProxy": "代理出价",
+    "quickAutoBid": "自动出价说明",
     "dealZone": "限时优惠",
     "newbieZone": "新手专区",
     "searchAll": "全部",
@@ -30,7 +30,7 @@
   },
   "home": {
     "title": "拍卖竞标网站",
-    "subtitle": "单一卖家英式拍卖 — 出价、代理出价、一键买断，通通支持。",
+    "subtitle": "单一卖家英式拍卖 — 出价、自动出价、一键买断，通通支持。",
     "browseButton": "浏览竞标中商品",
     "heroBadge": "PREMIUM AUCTION DESIGN",
     "auctionCta": "查看竞标商品",
@@ -119,7 +119,7 @@
     "ended": "已结束",
     "priceLabel": "价格",
     "benefitOne": "配送信息：可安排发货与当面交付流程。",
-    "benefitTwo": "活动说明：竞标支持代理出价，系统会自动帮你守价。",
+    "benefitTwo": "活动说明：竞标支持自动出价，系统会自动帮你守价。",
     "benefitThree": "交易保障：所有出价与库存变化均由服务器验证。",
     "descriptionTab": "Description",
     "additionalTab": "Additional Information",
@@ -162,6 +162,13 @@
     "closedViaBinNotLeading": "出价已达买断价，商品已由他人得标。",
     "leading": "你目前是最高出价者！",
     "notLeading": "已送出，但目前有人出价更高，你并未领先。"
+  },
+  "autoBiddingInfo": {
+    "title": "自动出价如何运作",
+    "description": "自动出价能帮您省去随时盯盘的麻烦：",
+    "step1": "设定您愿意支付的最高金额",
+    "step2": "有其他人出价时，系统会自动为您逐步加价，让您维持领先",
+    "step3": "持续加价，直到对手放弃出价，或加到您设定的上限为止"
   },
   "buyNowButton": {
     "confirm": "确定要以买断价 {price} 直接得标吗？此动作无法撤销。",
