@@ -27,14 +27,16 @@ jobs:
           test -d .next
           tar -czf .prebuilt-next.tgz .next
 
-          # public/tinymce is gitignored (postinstall copies it from
-          # node_modules/tinymce — see scripts/copy-tinymce.mjs) so it only
-          # exists here in CI after `npm ci`, never in the repo itself. The
-          # server's index.php apply script already knows how to extract an
-          # optional .prebuilt-public.tgz into public/ (see .remote-index.php)
-          # — this is what actually feeds it one.
-          if [ -d public/tinymce ]; then
-            tar -czf .prebuilt-public.tgz -C public tinymce
+          # Ships the whole public/ dir, not just tinymce: public/tinymce is
+          # gitignored (postinstall copies it from node_modules/tinymce — see
+          # scripts/copy-tinymce.mjs) so it only exists here in CI after
+          # `npm ci`, never in the repo itself, but git-tracked public/ assets
+          # (images/, etc.) need shipping too — they only exist in the repo,
+          # never on the server otherwise. The server's index.php apply script
+          # already knows how to extract an optional .prebuilt-public.tgz into
+          # public/ (see .remote-index.php) — this is what actually feeds it one.
+          if [ -d public ]; then
+            tar -czf .prebuilt-public.tgz -C public .
           fi
 
       - name: Upload prebuilt bundle and handler to server (FTPS)
