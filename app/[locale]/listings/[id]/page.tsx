@@ -1,9 +1,10 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getMinimumNextBid } from "@/lib/bidding/domain";
 import { formatRemaining } from "@/lib/format";
-import { getListingById, listOpenListings } from "@/lib/listings";
+import { maskDisplayName } from "@/lib/mask";
+import { getListingActivityFeed, getListingById, listOpenListings } from "@/lib/listings";
 import { listingPhotoUrl } from "@/lib/uploads";
 import { Link } from "@/i18n/navigation";
 import ZoomableProductImage from "../../components/ZoomableProductImage";
@@ -44,6 +45,8 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
   const tListings = await getTranslations("listings");
   const tFormat = await getTranslations("format");
   const tAutoBid = await getTranslations("autoBiddingInfo");
+  const tMask = await getTranslations("mask");
+  const locale = await getLocale();
   const imageUrls = listing.photos.map((fileName) => listingPhotoUrl(listing.id, fileName));
 
   const isAuction = listing.listing_type === "auction";
@@ -85,11 +88,26 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
     },
   ];
 
-  const reviewLines = [
-    t("reviewHintOne"),
-    t("reviewHintTwo"),
-    t("reviewHintThree"),
-  ];
+  // Public bid/transaction activity feed (issue #45) — no login required.
+  // Source table auto-switches on listing type (see getListingActivityFeed's
+  // own header comment): auction listings read `bids`, fixed_price listings
+  // read `purchases`. Masked here (not in the lib layer) to match the
+  // existing convention of masking at the page level — see
+  // maskDisplayName(listing.leaderDisplayName, ...) on the listings grid.
+  const activityFeed = await getListingActivityFeed(listing.id, listing.listing_type);
+  const activityDateFormatter = new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const anonymousBuyer = tMask("anonymousBuyer");
+  const activityLines = activityFeed.entries.map((entry) => ({
+    maskedName: maskDisplayName(entry.displayName, anonymousBuyer),
+    amountLabel: `${entry.amount}`,
+    dateLabel: activityDateFormatter.format(entry.createdAt),
+  }));
 
   // Captured once per request and passed to every client component that
   // seeds a countdown from it — see useListingCountdown for why this needs
@@ -235,13 +253,19 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       <ListingDetailTabs
         descriptionLabel={t("descriptionTab")}
         additionalLabel={t("additionalTab")}
-        reviewsLabel={t("reviewsTab")}
+        activityLabel={t("activityTab")}
         descriptionTitle={t("descriptionHeading")}
         additionalTitle={t("additionalHeading")}
-        reviewsTitle={t("reviewsHeading")}
+        activityTitle={t("activityHeading")}
         description={listing.description}
         specs={specs}
-        reviewLines={reviewLines}
+        activityTotalCountLabel={
+          isFixedPrice
+            ? t("activityTotalPurchases", { count: activityFeed.totalCount })
+            : t("activityTotalBids", { count: activityFeed.totalCount })
+        }
+        activityLines={activityLines}
+        activityEmptyLabel={isFixedPrice ? t("activityEmptyPurchases") : t("activityEmptyBids")}
       />
 
       <section className="mt-12">

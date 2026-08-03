@@ -658,6 +658,64 @@ export async function getBiddersForListing(listingId: number): Promise<BidderEnt
   return rows as BidderEntry[];
 }
 
+export interface ListingActivityEntry {
+  /** Raw (unmasked) display name — callers mask via lib/mask.ts before rendering, same convention as leaderDisplayName in ListingCardExtras. */
+  displayName: string | null;
+  amount: number;
+  createdAt: Date;
+}
+
+export interface ListingActivityFeed {
+  /** Total number of bids/purchases ever recorded for this listing — not just the entries returned below. */
+  totalCount: number;
+  /** Newest first, capped at ACTIVITY_FEED_LIMIT. */
+  entries: ListingActivityEntry[];
+}
+
+const ACTIVITY_FEED_LIMIT = 20;
+
+// Powers the public listing detail page's "出價與交易動態" tab (issue #45,
+// replacing the old static-copy reviews tab) — auction listings source from
+// `bids`, fixed_price listings from `purchases`. Public/no-login-required,
+// so unlike getBiddersForListing (admin-only, joins users.email) this joins
+// users.display_name for the page to mask via maskDisplayName instead of
+// exposing email addresses. Deliberately returns only a total count rather
+// than per-bidder sequence numbers (see issue #45's acceptance criteria).
+export async function getListingActivityFeed(
+  listingId: number,
+  listingType: ListingType,
+): Promise<ListingActivityFeed> {
+  const db = await getDb();
+
+  if (listingType === "fixed_price") {
+    const [countRows] = await db.query("SELECT COUNT(*) AS cnt FROM purchases WHERE listing_id = ?", [listingId]);
+    const totalCount = (countRows as { cnt: number }[])[0].cnt;
+    const [rows] = await db.query(
+      `SELECT u.display_name AS displayName, p.total_amount AS amount, p.created_at AS createdAt
+       FROM purchases p
+       JOIN users u ON u.id = p.buyer_id
+       WHERE p.listing_id = ?
+       ORDER BY p.created_at DESC
+       LIMIT ${ACTIVITY_FEED_LIMIT}`,
+      [listingId],
+    );
+    return { totalCount, entries: rows as ListingActivityEntry[] };
+  }
+
+  const [countRows] = await db.query("SELECT COUNT(*) AS cnt FROM bids WHERE listing_id = ?", [listingId]);
+  const totalCount = (countRows as { cnt: number }[])[0].cnt;
+  const [rows] = await db.query(
+    `SELECT u.display_name AS displayName, b.amount AS amount, b.created_at AS createdAt
+     FROM bids b
+     JOIN users u ON u.id = b.user_id
+     WHERE b.listing_id = ?
+     ORDER BY b.created_at DESC
+     LIMIT ${ACTIVITY_FEED_LIMIT}`,
+    [listingId],
+  );
+  return { totalCount, entries: rows as ListingActivityEntry[] };
+}
+
 // Admin confirms the offline payment/delivery is done — releases the
 // winner from deleteAccount's "unsettled win" block (see
 // findBlockingObligation). Records the remittance account/amount the admin
