@@ -57,37 +57,37 @@ if (str_starts_with($path, '/__ops/')) {
             // newly-added dependency (e.g. node-cron for #45) builds fine in
             // CI but is missing from this host's long-lived node_modules,
             // crashing the app at boot on the very first deploy that needs it.
-            // node_modules is renamed aside rather than deleted up front so a
-            // failed `npm ci` (network blip, disk full) can still be rolled
-            // back to a working node_modules, not just a working .next —
-            // otherwise a flaky install could brick the "previous" build too.
-            . "&& echo '[NPM_CI] start '$(date) >> .apply.log "
-            . "&& rm -rf node_modules_previous >> .apply.log 2>&1 "
-            . "&& { if [ -d node_modules ]; then mv node_modules node_modules_previous; fi; } "
+            //
+            // `npm ci` (clean-slate reinstall of the whole tree) got SIGKILLed
+            // here (exit 137) — this host is known to kill heavy/long-running
+            // background processes (see this file's other comment on that),
+            // and re-fetching/re-verifying ~500 packages from scratch on every
+            // single deploy is exactly the kind of spike that trips it. `npm
+            // install` instead does an incremental sync against the existing
+            // node_modules — a no-op for everything already present and
+            // correct, touching only what package-lock.json actually changed
+            // — so the node_modules-aside-backup dance `npm ci` needed (to
+            // have something to roll back to if the clean reinstall failed
+            // partway) is dropped too: an incremental install can't leave
+            // node_modules any more broken than it already was.
+            . "&& echo '[NPM_INSTALL] start '$(date) >> .apply.log "
             // --ignore-scripts: the only lifecycle script here is postinstall
             // (scripts/copy-tinymce.mjs, copying tinymce into public/tinymce)
             // and this host never has the scripts/ source dir — CI already
             // ran that same postinstall when it built public/tinymce, which
             // ships to the host in .prebuilt-public.tgz above, so running it
             // again here would just fail on a missing file for no benefit.
-            // --no-engine-strict: a prior attempt failed here fast and
-            // silently (no visible npm error in the polled log, finishing
-            // well under the time a real install or the health probe loop
-            // would take) right after printing a non-fatal-by-default
-            // EBADENGINE warning for sanitize-html needing Node >=22 (host is
-            // v20.20.2) — consistent with this host's global npm config
-            // having engine-strict on, which promotes that warning to a hard
-            // failure. Forcing it off here removes that as a cause regardless.
-            . "&& { {$nodeBin} {$npmCliJs} ci --omit=dev --ignore-scripts --no-audit --no-fund --no-engine-strict >> .apply.log 2>&1; NPM_CI_EXIT=\$?; echo \"[NPM_CI] exit=\$NPM_CI_EXIT\" >> .apply.log; test \"\$NPM_CI_EXIT\" -eq 0; } "
-            . "&& rm -rf node_modules_previous >> .apply.log 2>&1 "
-            . "&& echo '[NPM_CI] done '$(date) >> .apply.log "
+            // --no-engine-strict: this host's global npm config promotes
+            // EBADENGINE warnings (e.g. sanitize-html wanting Node >=22 on
+            // this v20.20.2 host) to hard failures otherwise.
+            . "&& { {$nodeBin} {$npmCliJs} install --omit=dev --ignore-scripts --no-audit --no-fund --no-engine-strict --prefer-offline >> .apply.log 2>&1; NPM_INSTALL_EXIT=\$?; echo \"[NPM_INSTALL] exit=\$NPM_INSTALL_EXIT\" >> .apply.log; test \"\$NPM_INSTALL_EXIT\" -eq 0; } "
+            . "&& echo '[NPM_INSTALL] done '$(date) >> .apply.log "
             . "&& ({$nodeBin} {$pm2Bin} delete bid-web >> .apply.log 2>&1 || true) "
             . "&& setsid {$nodeBin} {$pm2Bin} start ecosystem.config.cjs --only bid-web >> .apply.log 2>&1 "
             . "&& { PROBE_OK=0; for ATTEMPT in $(seq 1 30); do if curl -fsS --max-time 5 http://127.0.0.1:{$appPort}/ >/dev/null 2>&1; then PROBE_OK=1; break; fi; sleep 1; done; test \"\$PROBE_OK\" = 1; } "
             . "&& echo '[DONE]' $(date) >> .apply.log; "
             . "} || { "
             . "echo '[ROLLBACK] apply or health probe failed' >> .apply.log; "
-            . "if [ -d node_modules_previous ]; then rm -rf node_modules; mv node_modules_previous node_modules; fi; "
             . "if [ -d .next_previous ]; then rm -rf .next_failed; mv .next .next_failed 2>/dev/null; mv .next_previous .next; {$nodeBin} {$pm2Bin} restart bid-web >> .apply.log 2>&1 || true; fi; "
             . "echo '[FAIL]' $(date) >> .apply.log; "
             . "}; "
