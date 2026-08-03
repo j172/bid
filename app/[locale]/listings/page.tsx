@@ -88,8 +88,11 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   const withinHours = parseNumberParam(params.withinHours);
   const perfMode = perfModeFromSearchParams(params);
   const gridEagerCount = perfMode === "aggressive" ? 6 : 4;
+  // Powers the homepage partner-loft card click-through: /listings?loft=<id>
+  // (issue #45 — replaces the removed homepage_sections.link_url).
+  const loftId = parseNumberParam(params.loft);
 
-  const listings = await listOpenListings(type);
+  const listings = await listOpenListings(type, { loftId });
   const t = await getTranslations("listings");
   const tNav = await getTranslations("nav");
   const tFormat = await getTranslations("format");
@@ -333,6 +336,7 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
                 description={descriptionSnippet(listing.description)}
                 photo={listing.photos[0]}
                 typeBadgeLabel={TYPE_BADGE_LABEL[listing.listing_type]}
+                loftName={listing.loftName}
                 quickActionLabel={t("quickAction")}
                 viewDetailsLabel={t("viewDetails")}
                 priceText={formatDualPrice(

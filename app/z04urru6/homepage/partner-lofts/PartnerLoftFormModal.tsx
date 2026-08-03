@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 text-sm focus:border-interactive-primary focus:outline-none";
 const TITLE_MAX = 255;
-const LINK_URL_MAX = 500;
+const BIO_MAX = 2000;
 
 type EditSection = {
   id: number;
   title: string;
-  linkUrl: string;
+  bio: string | null;
   sortOrder: number;
   isActive: boolean;
   imageUrl: string;
@@ -32,7 +32,7 @@ export default function PartnerLoftFormModal(props: Props) {
 
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(isEdit ? props.section.title : "");
-  const [linkUrl, setLinkUrl] = useState(isEdit ? props.section.linkUrl : "");
+  const [bio, setBio] = useState(isEdit ? (props.section.bio ?? "") : "");
   const [sortOrder, setSortOrder] = useState(isEdit ? String(props.section.sortOrder) : "");
   const [isActive, setIsActive] = useState(isEdit ? props.section.isActive : true);
   const [previewUrl, setPreviewUrl] = useState<string | null>(isEdit ? props.section.imageUrl : null);
@@ -41,7 +41,7 @@ export default function PartnerLoftFormModal(props: Props) {
 
   function resetForm() {
     setTitle(isEdit ? props.section.title : "");
-    setLinkUrl(isEdit ? props.section.linkUrl : "");
+    setBio(isEdit ? (props.section.bio ?? "") : "");
     setSortOrder(isEdit ? String(props.section.sortOrder) : "");
     setIsActive(isEdit ? props.section.isActive : true);
     setPreviewUrl((prev) => {
@@ -74,7 +74,7 @@ export default function PartnerLoftFormModal(props: Props) {
     setSubmitting(true);
     const formData = new FormData();
     formData.set("title", title);
-    formData.set("linkUrl", linkUrl);
+    formData.set("bio", bio);
     if (sortOrder.trim() !== "") formData.set("sortOrder", sortOrder.trim());
     formData.set("isActive", isActive ? "true" : "false");
     if (file) formData.set("image", file);
@@ -124,13 +124,13 @@ export default function PartnerLoftFormModal(props: Props) {
               </label>
 
               <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-                連結網址
-                <input
-                  value={linkUrl}
-                  onChange={(e) => setLinkUrl(e.target.value)}
-                  placeholder="例如 /listings?type=auction 或 https://example.com"
-                  maxLength={LINK_URL_MAX}
-                  required
+                簡介（選填）
+                <textarea
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="簡短介紹這個合作鴿舍"
+                  maxLength={BIO_MAX}
+                  rows={3}
                   className={inputClass}
                 />
               </label>

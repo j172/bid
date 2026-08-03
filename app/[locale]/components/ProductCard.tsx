@@ -14,6 +14,8 @@ interface ProductCardProps {
   detailLines: string[];
   eager: boolean;
   highPriorityImage: boolean;
+  /** Partner loft (合作鴿舍) name, shown as a plain-text label — never a link (issue #45). Omitted entirely when the listing has no loft set. */
+  loftName?: string | null;
 }
 
 export default function ProductCard({
@@ -28,6 +30,7 @@ export default function ProductCard({
   detailLines,
   eager,
   highPriorityImage,
+  loftName,
 }: ProductCardProps) {
   return (
     <Link
@@ -50,6 +53,7 @@ export default function ProductCard({
       </div>
       <div className="p-4">
         <span className="inline-block rounded-full bg-interactive-primary-subtle px-2 py-0.5 text-xs font-medium text-interactive-primary-active">{typeBadgeLabel}</span>
+        {loftName && <p className="mt-1 truncate text-xs font-semibold text-ink-light">{loftName}</p>}
         <h2 className="mt-2 truncate font-semibold">{title}</h2>
         <p className="mt-1 line-clamp-2 text-xs text-ink-light">{description}</p>
         <p className="mt-2 text-lg font-black text-interactive-primary">{priceText}</p>

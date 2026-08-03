@@ -43,6 +43,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const description = String(form.get("description") ?? "").trim();
   const price = Number(form.get("price"));
   const stockRemaining = Number(form.get("stockRemaining"));
+  const loftIdRaw = String(form.get("loftId") ?? "").trim();
+  const loftId = loftIdRaw === "" ? null : Number(loftIdRaw);
   const newPhotos = form.getAll("photos").filter((entry): entry is File => entry instanceof File && entry.size > 0);
   const descriptionImages = form
     .getAll("descriptionImages")
@@ -71,6 +73,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const stockResult = validateStockRemaining(stockRemaining);
   if (!stockResult.ok) {
     return NextResponse.json({ ok: false, error: stockResult.error }, { status: 400 });
+  }
+  if (loftId !== null && (!Number.isFinite(loftId) || !Number.isInteger(loftId) || loftId <= 0)) {
+    return NextResponse.json({ ok: false, error: "合作鴿舍不正確" }, { status: 400 });
   }
   if (order.length === 0) {
     return NextResponse.json({ ok: false, error: "至少需要一張照片" }, { status: 400 });
@@ -104,7 +109,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const finalOrder = order.map((entry) => (entry.type === "existing" ? entry.fileName : savedFileNames[entry.index]));
 
-  const result = await updateFixedPriceListing(listingId, { title, description: finalDescription, price, stockRemaining });
+  const result = await updateFixedPriceListing(listingId, { title, description: finalDescription, price, stockRemaining, loftId });
   if (!result.ok) {
     // Roll back the newly-saved files — the update was rejected (e.g. the
     // listing was cancelled by someone else between the check above and now).

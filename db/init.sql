@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS listings (
   price BIGINT NULL,
   stock_quantity BIGINT NULL,
   stock_remaining BIGINT NULL,
+  loft_id BIGINT NULL,                        -- optional homepage_sections.id (合作鴿舍) this listing belongs to; single-select, no DB-level FK (see below)
   PRIMARY KEY (id),
   KEY idx_listings_status_ends (status, ends_at),
   KEY idx_listings_status_starts (status, starts_at)
@@ -98,17 +99,21 @@ CREATE TABLE IF NOT EXISTS purchases (
 -- `listings`: these are display-only marketing content, never real
 -- transactable products.
 
--- Generic image+link+sort_order homepage block entries. section_type is an
+-- Generic image+sort_order homepage block entries. section_type is an
 -- application-level tag (currently only 'partner_loft' / 合作鴿舍) rather
 -- than its own lookup table, since new section types are expected to be rare
 -- and code-driven (each type gets its own homepage placement), unlike
 -- pigeon_gallery_categories below which is genuinely admin-managed taxonomy.
+-- No link_url (removed in issue #45's GRILL ME follow-up): homepage cards
+-- now link to /listings?loft=<id> (that loft's listings, via listings.loft_id
+-- below) rather than an admin-entered URL. bio is an optional free-text
+-- excerpt shown on both the admin form and the homepage card.
 CREATE TABLE IF NOT EXISTS homepage_sections (
   id BIGINT NOT NULL AUTO_INCREMENT,
   section_type VARCHAR(30) NOT NULL,          -- 'partner_loft' (合作鴿舍)
   title VARCHAR(255) NOT NULL,
   image_file_name VARCHAR(255) NOT NULL,
-  link_url VARCHAR(500) NOT NULL,
+  bio TEXT NULL,                              -- optional 簡介 shown in admin + homepage card excerpt
   sort_order INT NOT NULL DEFAULT 0,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL,

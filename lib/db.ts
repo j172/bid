@@ -169,6 +169,25 @@ async function ensureColumn(db: mysql.Pool, table: string, column: string, defin
   return false;
 }
 
+// Counterpart to ensureColumn for columns removed after their table's
+// initial CREATE TABLE IF NOT EXISTS — used by the #45 GRILL ME follow-up to
+// drop homepage_sections.link_url and pigeon_gallery_items.price_type/
+// reference_price on already-deployed databases (this project has no
+// migration framework/history, just these idempotent boot-time checks).
+async function dropColumnIfExists(db: mysql.Pool, table: string, column: string): Promise<boolean> {
+  const [rows] = await db.query(
+    `SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+    [table, column],
+  );
+  const count = (rows as { cnt: number }[])[0].cnt;
+  if (count > 0) {
+    await db.query(`ALTER TABLE ${table} DROP COLUMN ${column}`);
+    return true;
+  }
+  return false;
+}
+
 async function ensureIndex(
   db: mysql.Pool,
   table: string,
@@ -265,6 +284,19 @@ async function ensureEndsAtNullable(db: mysql.Pool): Promise<void> {
   await db.query("ALTER TABLE listings MODIFY COLUMN ends_at DATETIME NULL");
 }
 
+// GRILL ME follow-up (issue #45) amending #34's already-merged partner-loft
+// (合作鴿舍) implementation: link_url is dropped (homepage cards now link to
+// /listings?loft=<id> instead of an admin-entered URL — see
+// app/[locale]/page.tsx), replaced by an optional bio/簡介 shown on both the
+// admin form and the homepage card excerpt. listings.loft_id is the new
+// nullable single-select FK (this project has no DB-level FK constraints —
+// see db/init.sql's note on pigeon_gallery_items — so it's a plain BIGINT).
+async function ensurePartnerLoftColumns(db: mysql.Pool): Promise<void> {
+  await ensureColumn(db, "homepage_sections", "bio", "TEXT NULL");
+  await dropColumnIfExists(db, "homepage_sections", "link_url");
+  await ensureColumn(db, "listings", "loft_id", "BIGINT NULL");
+}
+
 function createPool(): mysql.Pool {
   return mysql.createPool({
     host: process.env.MYSQL_HOST,
@@ -284,6 +316,7 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensureAccountColumns(db);
   await ensureBuyItNowNullable(db);
   await ensureEndsAtNullable(db);
+  await ensurePartnerLoftColumns(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {
