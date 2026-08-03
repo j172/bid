@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS listings (
   stock_quantity BIGINT NULL,
   stock_remaining BIGINT NULL,
   loft_id BIGINT NULL,                        -- optional homepage_sections.id (合作鴿舍) this listing belongs to; single-select, no DB-level FK (see below)
+  winner_notified_at DATETIME NULL,           -- set on a successful "you won" email (lib/notifications.ts's notifyWinner/sendWinnerEmail, issue #48); NULL means never sent or last send failed
   PRIMARY KEY (id),
   KEY idx_listings_status_ends (status, ends_at),
   KEY idx_listings_status_starts (status, starts_at)
