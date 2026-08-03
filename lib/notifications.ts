@@ -24,6 +24,8 @@ const EMAIL_MESSAGES: Record<
     auctionEndedBody: (title: string) => string;
     purchaseConfirmedSubject: string;
     purchaseConfirmedBody: (title: string, quantity: number, totalAmount: number) => string;
+    winnerSubject: string;
+    winnerBody: (title: string, finalPrice: number) => string;
   }
 > = {
   "zh-TW": {
@@ -34,6 +36,9 @@ const EMAIL_MESSAGES: Record<
     purchaseConfirmedSubject: "購買成功",
     purchaseConfirmedBody: (title, quantity, totalAmount) =>
       `<p>你已購買「${title}」x ${quantity}，總金額 ${totalAmount}。管理員會與你聯繫後續付款與交付事宜。</p>`,
+    winnerSubject: "恭喜得標",
+    winnerBody: (title, finalPrice) =>
+      `<p>恭喜你得標「${title}」，得標金額 ${finalPrice}。管理員會與你聯繫後續付款與交付事宜。</p>`,
   },
   "zh-CN": {
     outbidSubject: "你被超越了",
@@ -43,6 +48,9 @@ const EMAIL_MESSAGES: Record<
     purchaseConfirmedSubject: "购买成功",
     purchaseConfirmedBody: (title, quantity, totalAmount) =>
       `<p>你已购买「${title}」x ${quantity}，总金额 ${totalAmount}。管理员会与你联系后续付款与交付事宜。</p>`,
+    winnerSubject: "恭喜得标",
+    winnerBody: (title, finalPrice) =>
+      `<p>恭喜你得标「${title}」，得标金额 ${finalPrice}。管理员会与你联系后续付款与交付事宜。</p>`,
   },
   en: {
     outbidSubject: "You've been outbid",
@@ -53,6 +61,9 @@ const EMAIL_MESSAGES: Record<
     purchaseConfirmedSubject: "Purchase confirmed",
     purchaseConfirmedBody: (title, quantity, totalAmount) =>
       `<p>You purchased "${title}" x ${quantity}, total amount ${totalAmount}. The admin will contact you about payment and delivery.</p>`,
+    winnerSubject: "Congratulations, you won!",
+    winnerBody: (title, finalPrice) =>
+      `<p>Congratulations — you won "${title}" for ${finalPrice}. The admin will contact you about payment and delivery.</p>`,
   },
 };
 
@@ -124,4 +135,52 @@ export function notifyPurchaseConfirmed(purchaseId: number): void {
       messages.purchaseConfirmedBody(row.title, row.quantity, row.totalAmount),
     );
   })().catch((error) => console.error("notifyPurchaseConfirmed failed:", error));
+}
+
+// Winner-specific "congratulations, you won" notification (issue #48) —
+// distinct from notifyAuctionEnded above, which tells every *other* bidder
+// the auction ended early and must NOT be touched by this. Called from every
+// closing path that can actually produce a winner: closeExpiredListings,
+// buyNow, and the auto-triggered buyout branch of placeBid/resolveProxyBid
+// (see lib/listings.ts) — always alongside the existing notifyAuctionEnded
+// call where one already exists, never replacing it. Recipient is only
+// listings.leader_user_id (the winner), never the other bidders. On a
+// successful send, records winner_notified_at so the admin closed-listings
+// page can show it and the "重新寄送得標信" button (see sendWinnerEmail
+// below and app/api/admin/listings/[id]/notify-winner) knows whether a
+// resend is needed.
+export function notifyWinner(listingId: number): void {
+  void sendWinnerEmail(listingId).catch((error) => console.error("notifyWinner failed:", error));
+}
+
+// Awaitable core shared by notifyWinner (fire-and-forget, for the lazy
+// closing-path triggers above) and the admin "重新寄送得標信" resend button
+// (app/api/admin/listings/[id]/notify-winner/route.ts), which needs to know
+// the send outcome synchronously so it can reflect the refreshed
+// winner_notified_at in the UI immediately rather than firing and forgetting.
+// Never throws (mirrors sendEmail) — returns false on any failure, including
+// "no winner" (leader_user_id is null, so the JOIN below yields no row).
+export async function sendWinnerEmail(listingId: number): Promise<boolean> {
+  try {
+    const db = await getDb();
+    const [rows] = await db.query(
+      `SELECT u.email AS email, u.locale AS locale, l.title AS title, l.current_price AS finalPrice
+       FROM listings l
+       JOIN users u ON u.id = l.leader_user_id
+       WHERE l.id = ?`,
+      [listingId],
+    );
+    const row = (rows as { email: string; locale: string; title: string; finalPrice: number }[])[0];
+    if (!row) return false;
+
+    const messages = EMAIL_MESSAGES[resolveLocale(row.locale)];
+    const sent = await sendEmail(row.email, messages.winnerSubject, messages.winnerBody(row.title, row.finalPrice));
+    if (sent) {
+      await db.query("UPDATE listings SET winner_notified_at = NOW() WHERE id = ?", [listingId]);
+    }
+    return sent;
+  } catch (error) {
+    console.error("sendWinnerEmail failed:", error);
+    return false;
+  }
 }

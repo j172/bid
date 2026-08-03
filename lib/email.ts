@@ -35,11 +35,14 @@ export function resendRequest(method: string, path: string, body?: unknown): Pro
 
 // Never throws — a slow or failing email provider must not be able to
 // break the bidding/buyout action that triggered it (see lib/notifications.ts,
-// which calls this without awaiting it at all).
-export async function sendEmail(to: string, subject: string, html: string): Promise<void> {
+// which calls this without awaiting it at all). Returns whether the send
+// actually succeeded so callers that DO care about the outcome (e.g.
+// notifyWinner's winner_notified_at bookkeeping, issue #48) can act on it —
+// existing callers that don't care are free to keep ignoring the return value.
+export async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
   if (!process.env.RESEND_API_KEY) {
     console.error(`RESEND_API_KEY not set — skipping email to ${to}: ${subject}`);
-    return;
+    return false;
   }
 
   try {
@@ -47,9 +50,12 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
 
     if (status < 200 || status >= 300) {
       console.error(`Failed to send email to ${to} (${status}): ${body}`);
+      return false;
     }
+    return true;
   } catch (error) {
     console.error(`Failed to send email to ${to}:`, error);
+    return false;
   }
 }
 
