@@ -302,34 +302,28 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           </div>
           <p className="text-sm text-ink-light">{t("partnerLoftsSubtitle")}</p>
           <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {partnerLofts.map((loft) => {
-              const isInternal = loft.linkUrl.startsWith("/");
-              const cardContent = (
-                <>
-                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-100">
-                    <Image
-                      src={homepageSectionImageUrl(loft.imageFileName)}
-                      alt={loft.title}
-                      fill
-                      sizes="(min-width: 1024px) 25vw, 50vw"
-                      className="object-cover transition group-hover:scale-105"
-                    />
-                  </div>
-                  <p className="mt-3 text-sm font-bold text-ink">{loft.title}</p>
-                </>
-              );
-              const cardClassName =
-                "group overflow-hidden rounded-2xl border border-border bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md";
-              return isInternal ? (
-                <Link key={loft.id} href={loft.linkUrl} className={cardClassName}>
-                  {cardContent}
-                </Link>
-              ) : (
-                <a key={loft.id} href={loft.linkUrl} target="_blank" rel="noopener noreferrer" className={cardClassName}>
-                  {cardContent}
-                </a>
-              );
-            })}
+            {partnerLofts.map((loft) => (
+              // Clicking a loft card now goes to that loft's own listings
+              // (issue #45 — link_url is gone; listings.loft_id is the new
+              // FK used by the /listings?loft=<id> filter, see lib/listings.ts).
+              <Link
+                key={loft.id}
+                href={`/listings?loft=${loft.id}`}
+                className="group overflow-hidden rounded-2xl border border-border bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-100">
+                  <Image
+                    src={homepageSectionImageUrl(loft.imageFileName)}
+                    alt={loft.title}
+                    fill
+                    sizes="(min-width: 1024px) 25vw, 50vw"
+                    className="object-cover transition group-hover:scale-105"
+                  />
+                </div>
+                <p className="mt-3 text-sm font-bold text-ink">{loft.title}</p>
+                {loft.bio && <p className="mt-1 line-clamp-2 text-xs text-ink-light">{loft.bio}</p>}
+              </Link>
+            ))}
           </div>
         </section>
       )}

@@ -33,6 +33,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       stockRemaining: listing.stock_remaining,
       startingPrice: listing.starting_price,
       buyItNowPrice: listing.buy_it_now_price,
+      loftId: listing.loft_id,
       photos: listing.photos.map((fileName) => ({ fileName, url: listingPhotoUrl(listing.id, fileName) })),
     },
   });

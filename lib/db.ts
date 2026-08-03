@@ -131,6 +131,25 @@ CREATE TABLE IF NOT EXISTS pigeon_gallery_items (
   PRIMARY KEY (id),
   KEY idx_gallery_items_category_sort (category_id, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Daily TWD/USD + TWD/CNY exchange-rate history (issue #45) — a brand-new
+-- table introduced whole, same as the three CMS tables above. rate_date is
+-- the calendar date this row was synced *for* (usually "today", see
+-- lib/exchangeRates.ts's syncExchangeRates); source_date is the trading date
+-- the rate value actually came from, which can trail behind rate_date when
+-- TAIFEX has nothing new yet (holiday, not-yet-published) and the sync falls
+-- back to the most recent successful rate instead of leaving that day blank.
+CREATE TABLE IF NOT EXISTS exchange_rates (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  currency VARCHAR(10) NOT NULL,       -- 'USD' | 'CNY' — TWD is always the implicit base
+  rate_date DATE NOT NULL,
+  source_date DATE NOT NULL,
+  rate DECIMAL(12,6) NOT NULL,         -- TWD per 1 unit of currency
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_exchange_rates_currency_date (currency, rate_date),
+  KEY idx_exchange_rates_currency_date (currency, rate_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
 
 // Columns added after their table's initial CREATE TABLE IF NOT EXISTS;
@@ -145,6 +164,25 @@ async function ensureColumn(db: mysql.Pool, table: string, column: string, defin
   const count = (rows as { cnt: number }[])[0].cnt;
   if (count === 0) {
     await db.query(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+    return true;
+  }
+  return false;
+}
+
+// Counterpart to ensureColumn for columns removed after their table's
+// initial CREATE TABLE IF NOT EXISTS — used by the #45 GRILL ME follow-up to
+// drop homepage_sections.link_url and pigeon_gallery_items.price_type/
+// reference_price on already-deployed databases (this project has no
+// migration framework/history, just these idempotent boot-time checks).
+async function dropColumnIfExists(db: mysql.Pool, table: string, column: string): Promise<boolean> {
+  const [rows] = await db.query(
+    `SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+    [table, column],
+  );
+  const count = (rows as { cnt: number }[])[0].cnt;
+  if (count > 0) {
+    await db.query(`ALTER TABLE ${table} DROP COLUMN ${column}`);
     return true;
   }
   return false;
@@ -246,6 +284,30 @@ async function ensureEndsAtNullable(db: mysql.Pool): Promise<void> {
   await db.query("ALTER TABLE listings MODIFY COLUMN ends_at DATETIME NULL");
 }
 
+// GRILL ME follow-up (issue #45) amending #34's already-merged partner-loft
+// (合作鴿舍) implementation: link_url is dropped (homepage cards now link to
+// /listings?loft=<id> instead of an admin-entered URL — see
+// app/[locale]/page.tsx), replaced by an optional bio/簡介 shown on both the
+// admin form and the homepage card excerpt. listings.loft_id is the new
+// nullable single-select FK (this project has no DB-level FK constraints —
+// see db/init.sql's note on pigeon_gallery_items — so it's a plain BIGINT).
+async function ensurePartnerLoftColumns(db: mysql.Pool): Promise<void> {
+  await ensureColumn(db, "homepage_sections", "bio", "TEXT NULL");
+  await dropColumnIfExists(db, "homepage_sections", "link_url");
+  await ensureColumn(db, "listings", "loft_id", "BIGINT NULL");
+}
+
+// Same #45 GRILL ME follow-up amending #35's already-merged pigeon gallery
+// implementation: price_type/reference_price are dropped along with the
+// category page's type/price-range filter UI (a deliberate simplification —
+// see app/[locale]/pigeons/[galleryType]/[categoryId]/page.tsx). Items get
+// the same optional loft_id single-select as listings above.
+async function ensurePigeonGalleryItemColumns(db: mysql.Pool): Promise<void> {
+  await dropColumnIfExists(db, "pigeon_gallery_items", "price_type");
+  await dropColumnIfExists(db, "pigeon_gallery_items", "reference_price");
+  await ensureColumn(db, "pigeon_gallery_items", "loft_id", "BIGINT NULL");
+}
+
 function createPool(): mysql.Pool {
   return mysql.createPool({
     host: process.env.MYSQL_HOST,
@@ -265,6 +327,8 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensureAccountColumns(db);
   await ensureBuyItNowNullable(db);
   await ensureEndsAtNullable(db);
+  await ensurePartnerLoftColumns(db);
+  await ensurePigeonGalleryItemColumns(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {

@@ -1,5 +1,7 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { listOpenListings, type ListingType } from "@/lib/listings";
+import { currencyForLocale, formatDualPrice, formatNtd } from "@/lib/currency";
+import { getLatestStoredRate } from "@/lib/exchangeRates";
 import { formatRemaining } from "@/lib/format";
 import { maskDisplayName } from "@/lib/mask";
 import { Link } from "@/i18n/navigation";
@@ -86,12 +88,22 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   const withinHours = parseNumberParam(params.withinHours);
   const perfMode = perfModeFromSearchParams(params);
   const gridEagerCount = perfMode === "aggressive" ? 6 : 4;
+  // Powers the homepage partner-loft card click-through: /listings?loft=<id>
+  // (issue #45 — replaces the removed homepage_sections.link_url).
+  const loftId = parseNumberParam(params.loft);
 
-  const listings = await listOpenListings(type);
+  const listings = await listOpenListings(type, { loftId });
   const t = await getTranslations("listings");
   const tNav = await getTranslations("nav");
   const tFormat = await getTranslations("format");
   const anonymousBuyer = await getTranslations("mask").then((tMask) => tMask("anonymousBuyer"));
+
+  // Reference-only currency conversion (issue #45) — see the listing detail
+  // page's equivalent comment; admin stays pure NTD, this grid is public.
+  const locale = await getLocale();
+  const displayCurrency = currencyForLocale(locale);
+  const displayRate = displayCurrency === "TWD" ? null : await getLatestStoredRate(displayCurrency);
+  const rateValue = displayRate?.rate ?? null;
 
   const nowMs = new Date().getTime();
   const filteredListings = listings.filter((listing) => {
@@ -324,9 +336,14 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
                 description={descriptionSnippet(listing.description)}
                 photo={listing.photos[0]}
                 typeBadgeLabel={TYPE_BADGE_LABEL[listing.listing_type]}
+                loftName={listing.loftName}
                 quickActionLabel={t("quickAction")}
                 viewDetailsLabel={t("viewDetails")}
-                priceText={listing.listing_type === "fixed_price" ? String(listing.price) : String(listing.current_price)}
+                priceText={formatDualPrice(
+                  listing.listing_type === "fixed_price" ? listing.price! : listing.current_price,
+                  displayCurrency,
+                  rateValue,
+                )}
                 detailLines={
                   listing.listing_type === "fixed_price"
                     ? [
@@ -344,7 +361,7 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
                         ]
                       : [
                           ...(listing.buy_it_now_price !== null
-                            ? [t("buyItNowPrice", { price: listing.buy_it_now_price })]
+                            ? [t("buyItNowPrice", { price: formatNtd(listing.buy_it_now_price) })]
                             : []),
                           listing.ends_at ? formatRemaining(listing.ends_at, tFormat) : t("timeless"),
                           listing.bidCount === 0

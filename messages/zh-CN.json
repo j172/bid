@@ -175,10 +175,10 @@
     "benefitThree": "交易保障：所有出价与库存变化均由服务器验证。",
     "descriptionTab": "商品说明",
     "additionalTab": "竞标信息",
-    "reviewsTab": "出价动态",
+    "activityTab": "出价动态",
     "descriptionHeading": "商品描述",
     "additionalHeading": "竞标与商品信息",
-    "reviewsHeading": "出价与交易动态",
+    "activityHeading": "出价与交易动态",
     "specType": "商品类型",
     "specStatus": "状态",
     "specCurrentPrice": "当前价格",
@@ -193,9 +193,10 @@
     "statusEnded": "已结束",
     "statusScheduled": "尚未开标",
     "scheduledNotice": "{time}，尚未开放出价",
-    "reviewHintOne": "目前暂无公开评价，请先登录参与出价或购买。",
-    "reviewHintTwo": "每次出价都会实时更新领先状态与当前价格。",
-    "reviewHintThree": "若达到买断价，商品会立即结标。",
+    "activityTotalBids": "此商品共有 {count} 次出价",
+    "activityTotalPurchases": "此商品共有 {count} 笔交易",
+    "activityEmptyBids": "目前暂无出价记录",
+    "activityEmptyPurchases": "目前暂无交易记录",
     "recentlyViewed": "精选推荐鸽况",
     "viewDetails": "查看详情",
     "soldOut": "已售罄",
@@ -208,7 +209,8 @@
     "galleryImageLabel": "{title} 图片 {index}",
     "galleryKeyboardHint": "使用 ← / → 切换照片",
     "galleryLightboxLabel": "{title} 大图预览",
-    "galleryClose": "关闭"
+    "galleryClose": "关闭",
+    "currencyReferenceOnly": "汇率仅供参考，实际交易一律以新台币结算。"
   },
   "bidForm": {
     "label": "你愿意出的最高价（至少 {minimum}，系统只会自动帮你加价到刚好赢过对手，不会直接扣到这个金额）",
@@ -218,7 +220,8 @@
     "closedViaBinLeading": "你的出价达到买断价，直接得标！",
     "closedViaBinNotLeading": "出价已达买断价，商品已由他人得标。",
     "leading": "你目前是最高出价者！",
-    "notLeading": "已送出，但目前有人出价更高，你并未领先。"
+    "notLeading": "已送出，但目前有人出价更高，你并未领先。",
+    "ntdHint": "请输入新台币金额"
   },
   "autoBiddingInfo": {
     "title": "自动出价如何运作",
@@ -363,7 +366,12 @@
     "newsletterError": "发生错误，请稍后再试。",
     "newsletterInvalidEmail": "请输入有效的 Email 地址。",
     "copyright": "© 2026 j172tw Bid. All rights reserved.",
-    "payments": "支持：信用卡 / 汇款 / 第三方支付"
+    "payments": "支持：信用卡 / 汇款 / 第三方支付",
+    "exchangeRateTitle": "实时参考汇率",
+    "exchangeRateUsd": "1 USD ≈ NT${rate}",
+    "exchangeRateCny": "1 CNY ≈ NT${rate}",
+    "exchangeRateDisclaimer": "汇率仅供参考，实际交易金额一律以新台币结算。",
+    "exchangeRateUnavailable": "汇率数据更新中"
   },
   "cartPage": {
     "title": "购物车",
@@ -392,16 +400,6 @@
     "breadcrumbHome": "首页",
     "categoryTitleAward": "{name}入赏鸽欣赏",
     "categoryTitleImport": "{name}原鸽欣赏",
-    "filterTypeTitle": "类型",
-    "filterTypeAll": "全部类型",
-    "filterTypeAuction": "竞标种鸽",
-    "filterTypeFixed": "定价种鸽",
-    "filterPriceTitle": "价格区间",
-    "filterPriceAny": "不限价格",
-    "filterPriceRange1": "15,000 - 20,000",
-    "filterPriceRange2": "20,000 - 30,000",
-    "filterPriceRange3": "30,000 以上",
-    "referencePriceLabel": "参考价格",
     "showingCount": "共 {count} 笔展示项目",
     "emptyState": "目前尚无展示项目"
   },

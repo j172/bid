@@ -172,7 +172,7 @@ describe("pigeon gallery categories", () => {
 
 describe("pigeon gallery items", () => {
   describe("listPigeonGalleryItems", () => {
-    it("filters by category_id and orders by sort_order, mapping snake_case rows", async () => {
+    it("filters by category_id, joins the loft's title, and orders by sort_order, mapping snake_case rows", async () => {
       const createdAt = new Date("2026-01-01T00:00:00Z");
       const updatedAt = new Date("2026-01-02T00:00:00Z");
       queryMock.mockResolvedValueOnce([
@@ -182,8 +182,8 @@ describe("pigeon gallery items", () => {
             category_id: 7,
             title: "冠軍鴿",
             image_file_name: "i.webp",
-            price_type: "auction",
-            reference_price: 20000,
+            loft_id: 3,
+            loftName: "石君鴿舍",
             sort_order: 0,
             is_active: 1,
             created_at: createdAt,
@@ -194,18 +194,18 @@ describe("pigeon gallery items", () => {
 
       const items = await listPigeonGalleryItems(7);
 
-      expect(queryMock).toHaveBeenCalledWith(
-        expect.stringContaining("WHERE category_id = ? ORDER BY sort_order ASC, id ASC"),
-        [7],
-      );
+      expect(queryMock.mock.calls[0][1]).toEqual([7]);
+      expect(queryMock.mock.calls[0][0]).toContain("WHERE i.category_id = ?");
+      expect(queryMock.mock.calls[0][0]).toContain("ORDER BY i.sort_order ASC, i.id ASC");
+      expect(queryMock.mock.calls[0][0]).toContain("LEFT JOIN homepage_sections loft ON loft.id = i.loft_id");
       expect(items).toEqual([
         {
           id: 1,
           categoryId: 7,
           title: "冠軍鴿",
           imageFileName: "i.webp",
-          priceType: "auction",
-          referencePrice: 20000,
+          loftId: 3,
+          loftName: "石君鴿舍",
           sortOrder: 0,
           isActive: true,
           createdAt,
@@ -217,7 +217,7 @@ describe("pigeon gallery items", () => {
     it("adds an is_active = 1 condition when activeOnly is requested", async () => {
       queryMock.mockResolvedValueOnce([[]]);
       await listPigeonGalleryItems(7, { activeOnly: true });
-      expect(queryMock.mock.calls[0][0]).toContain("is_active = 1");
+      expect(queryMock.mock.calls[0][0]).toContain("i.is_active = 1");
     });
   });
 
@@ -225,6 +225,26 @@ describe("pigeon gallery items", () => {
     it("returns null when no row matches", async () => {
       queryMock.mockResolvedValueOnce([[]]);
       expect(await getPigeonGalleryItemById(999)).toBeNull();
+    });
+
+    it("maps loftName to null when the plain lookup didn't join it in", async () => {
+      queryMock.mockResolvedValueOnce([
+        [
+          {
+            id: 1,
+            category_id: 7,
+            title: "t",
+            image_file_name: "i.webp",
+            loft_id: null,
+            sort_order: 0,
+            is_active: 1,
+            created_at: new Date(),
+            updated_at: new Date(),
+          },
+        ],
+      ]);
+      const item = await getPigeonGalleryItemById(1);
+      expect(item?.loftName).toBeNull();
     });
   });
 
@@ -236,31 +256,24 @@ describe("pigeon gallery items", () => {
         categoryId: 7,
         title: "t",
         imageFileName: "i.webp",
-        priceType: "fixed_price",
-        referencePrice: 15000,
+        loftId: 3,
         sortOrder: 2,
         isActive: false,
       });
 
       expect(id).toBe(11);
       expect(queryMock).toHaveBeenCalledTimes(1);
-      expect(queryMock.mock.calls[0][1]).toEqual([7, "t", "i.webp", "fixed_price", 15000, 2, 0]);
+      expect(queryMock.mock.calls[0][1]).toEqual([7, "t", "i.webp", 3, 2, 0]);
     });
 
-    it("defaults sortOrder to MAX(sort_order) + 1 within the category when omitted", async () => {
+    it("defaults sortOrder to MAX(sort_order) + 1 within the category when omitted, and loftId to null", async () => {
       queryMock.mockResolvedValueOnce([[{ nextOrder: 3 }]]);
       queryMock.mockResolvedValueOnce([{ insertId: 12 }]);
 
-      const id = await createPigeonGalleryItem({
-        categoryId: 7,
-        title: "t",
-        imageFileName: "i.webp",
-        priceType: "auction",
-        referencePrice: 20000,
-      });
+      const id = await createPigeonGalleryItem({ categoryId: 7, title: "t", imageFileName: "i.webp" });
 
       expect(id).toBe(12);
-      expect(queryMock.mock.calls[1][1]).toEqual([7, "t", "i.webp", "auction", 20000, 3, 1]);
+      expect(queryMock.mock.calls[1][1]).toEqual([7, "t", "i.webp", null, 3, 1]);
     });
   });
 
@@ -270,8 +283,7 @@ describe("pigeon gallery items", () => {
       const result = await updatePigeonGalleryItem(1, {
         title: "t",
         imageFileName: "i",
-        priceType: "auction",
-        referencePrice: 20000,
+        loftId: 3,
         sortOrder: 0,
         isActive: true,
       });
@@ -283,12 +295,17 @@ describe("pigeon gallery items", () => {
       const result = await updatePigeonGalleryItem(1, {
         title: "t",
         imageFileName: "i",
-        priceType: "auction",
-        referencePrice: 20000,
+        loftId: 3,
         sortOrder: 0,
         isActive: true,
       });
       expect(result).toEqual({ ok: false, error: "找不到這個展示鴿項目" });
+    });
+
+    it("clears loft_id to null when loftId is omitted", async () => {
+      queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+      await updatePigeonGalleryItem(1, { title: "t", imageFileName: "i", sortOrder: 0, isActive: true });
+      expect(queryMock.mock.calls[0][1]).toEqual(["t", "i", null, 0, 1, 1]);
     });
   });
 

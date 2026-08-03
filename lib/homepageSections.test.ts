@@ -44,7 +44,7 @@ describe("listHomepageSections", () => {
           section_type: "partner_loft",
           title: "石君鴿舍",
           image_file_name: "a.webp",
-          link_url: "/partners/1",
+          bio: "深耕鴿友信賴的合作鴿舍。",
           sort_order: 0,
           is_active: 1,
           created_at: createdAt,
@@ -65,7 +65,7 @@ describe("listHomepageSections", () => {
         sectionType: "partner_loft",
         title: "石君鴿舍",
         imageFileName: "a.webp",
-        linkUrl: "/partners/1",
+        bio: "深耕鴿友信賴的合作鴿舍。",
         sortOrder: 0,
         isActive: true,
         createdAt,
@@ -101,7 +101,7 @@ describe("getHomepageSectionById", () => {
           section_type: "partner_loft",
           title: "t",
           image_file_name: "f.webp",
-          link_url: "/y",
+          bio: null,
           sort_order: 2,
           is_active: 0,
           created_at: new Date(),
@@ -122,13 +122,13 @@ describe("createHomepageSection", () => {
       sectionType: "partner_loft",
       title: "t",
       imageFileName: "f.webp",
-      linkUrl: "/y",
+      bio: "b",
       sortOrder: 3,
     });
 
     expect(id).toBe(42);
     expect(queryMock).toHaveBeenCalledTimes(1);
-    expect(queryMock.mock.calls[0][1]).toEqual(["partner_loft", "t", "f.webp", "/y", 3, 1]);
+    expect(queryMock.mock.calls[0][1]).toEqual(["partner_loft", "t", "f.webp", "b", 3, 1]);
   });
 
   it("defaults sortOrder to MAX(sort_order) + 1 within the section_type when omitted", async () => {
@@ -139,13 +139,19 @@ describe("createHomepageSection", () => {
       sectionType: "partner_loft",
       title: "t",
       imageFileName: "f.webp",
-      linkUrl: "/y",
+      bio: "b",
     });
 
     expect(id).toBe(8);
     expect(queryMock).toHaveBeenCalledTimes(2);
     expect(queryMock.mock.calls[0][1]).toEqual(["partner_loft"]);
-    expect(queryMock.mock.calls[1][1]).toEqual(["partner_loft", "t", "f.webp", "/y", 7, 1]);
+    expect(queryMock.mock.calls[1][1]).toEqual(["partner_loft", "t", "f.webp", "b", 7, 1]);
+  });
+
+  it("defaults a missing bio to null", async () => {
+    queryMock.mockResolvedValueOnce([{ insertId: 9 }]);
+    await createHomepageSection({ sectionType: "partner_loft", title: "t", imageFileName: "f.webp", sortOrder: 0 });
+    expect(queryMock.mock.calls[0][1]).toEqual(["partner_loft", "t", "f.webp", null, 0, 1]);
   });
 
   it("stores isActive: false as 0", async () => {
@@ -154,7 +160,7 @@ describe("createHomepageSection", () => {
       sectionType: "partner_loft",
       title: "t",
       imageFileName: "f.webp",
-      linkUrl: "/y",
+      bio: "b",
       sortOrder: 0,
       isActive: false,
     });
@@ -168,7 +174,7 @@ describe("updateHomepageSection", () => {
     const result = await updateHomepageSection(1, {
       title: "t",
       imageFileName: "f",
-      linkUrl: "/y",
+      bio: "b",
       sortOrder: 0,
       isActive: true,
     });
@@ -180,11 +186,17 @@ describe("updateHomepageSection", () => {
     const result = await updateHomepageSection(1, {
       title: "t",
       imageFileName: "f",
-      linkUrl: "/y",
+      bio: "b",
       sortOrder: 0,
       isActive: true,
     });
     expect(result).toEqual({ ok: true });
+  });
+
+  it("stores a null bio as-is (clearing it)", async () => {
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+    await updateHomepageSection(1, { title: "t", imageFileName: "f", bio: null, sortOrder: 0, isActive: true });
+    expect(queryMock.mock.calls[0][1]).toEqual(["t", "f", null, 0, 1, 1]);
   });
 });
 

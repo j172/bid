@@ -28,6 +28,8 @@ export async function POST(request: Request) {
   const listingType = form.get("listingType") === "fixed_price" ? "fixed_price" : "auction";
   const title = String(form.get("title") ?? "").trim();
   const description = String(form.get("description") ?? "").trim();
+  const loftIdRaw = String(form.get("loftId") ?? "").trim();
+  const loftId = loftIdRaw === "" ? null : Number(loftIdRaw);
   const photos = form.getAll("photos").filter((entry): entry is File => entry instanceof File && entry.size > 0);
   const descriptionImages = form
     .getAll("descriptionImages")
@@ -50,6 +52,9 @@ export async function POST(request: Request) {
   if (descriptionImages.length > DESCRIPTION_IMAGE_MAX_COUNT) {
     return NextResponse.json({ ok: false, error: `描述圖片最多 ${DESCRIPTION_IMAGE_MAX_COUNT} 張` }, { status: 400 });
   }
+  if (loftId !== null && (!Number.isFinite(loftId) || !Number.isInteger(loftId) || loftId <= 0)) {
+    return NextResponse.json({ ok: false, error: "合作鴿舍不正確" }, { status: 400 });
+  }
 
   let input: NewListingInput;
 
@@ -69,7 +74,7 @@ export async function POST(request: Request) {
     // description is filled in after insertListing, once its final HTML
     // (with description-image placeholders resolved and the whole thing
     // sanitized) is ready — see the comment below insertListing.
-    input = { listingType, title, description: "", price, stockQuantity, createdBy: user.id };
+    input = { listingType, title, description: "", price, stockQuantity, createdBy: user.id, loftId };
   } else {
     const startingPrice = Number(form.get("startingPrice"));
     const buyItNowPriceRaw = String(form.get("buyItNowPrice") ?? "").trim();
@@ -103,7 +108,7 @@ export async function POST(request: Request) {
       }
     }
 
-    input = { listingType, title, description: "", startingPrice, buyItNowPrice, startsAt, endsAt, createdBy: user.id };
+    input = { listingType, title, description: "", startingPrice, buyItNowPrice, startsAt, endsAt, createdBy: user.id, loftId };
   }
 
   // The listing's own id names its photo/description-image directories, so

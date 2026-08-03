@@ -4,7 +4,7 @@ import { deleteHomepageSection, getHomepageSectionById, updateHomepageSection } 
 import { deleteHomepageSectionImageFile, homepageSectionImageUrl, saveHomepageSectionImage } from "@/lib/uploads";
 
 const TITLE_MAX = 255;
-const LINK_URL_MAX = 500;
+const BIO_MAX = 2000;
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser();
@@ -54,7 +54,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const form = await request.formData();
   const title = String(form.get("title") ?? "").trim();
-  const linkUrl = String(form.get("linkUrl") ?? "").trim();
+  const bioRaw = String(form.get("bio") ?? "").trim();
+  const bio = bioRaw === "" ? null : bioRaw;
   const sortOrder = Number(form.get("sortOrder"));
   const isActiveRaw = String(form.get("isActive") ?? "true");
   const isActive = isActiveRaw === "true" || isActiveRaw === "1";
@@ -63,8 +64,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!title || title.length > TITLE_MAX) {
     return NextResponse.json({ ok: false, error: `請輸入標題（上限 ${TITLE_MAX} 字）` }, { status: 400 });
   }
-  if (!linkUrl || linkUrl.length > LINK_URL_MAX) {
-    return NextResponse.json({ ok: false, error: `請輸入連結網址（上限 ${LINK_URL_MAX} 字）` }, { status: 400 });
+  if (bio !== null && bio.length > BIO_MAX) {
+    return NextResponse.json({ ok: false, error: `簡介上限 ${BIO_MAX} 字` }, { status: 400 });
   }
   if (!Number.isFinite(sortOrder) || !Number.isInteger(sortOrder) || sortOrder < 0) {
     return NextResponse.json({ ok: false, error: "排序必須是不小於 0 的整數" }, { status: 400 });
@@ -80,7 +81,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
   }
 
-  const result = await updateHomepageSection(sectionId, { title, linkUrl, sortOrder, isActive, imageFileName });
+  const result = await updateHomepageSection(sectionId, { title, bio, sortOrder, isActive, imageFileName });
   if (!result.ok) {
     if (imageFileName !== existing.imageFileName) {
       await deleteHomepageSectionImageFile(imageFileName);

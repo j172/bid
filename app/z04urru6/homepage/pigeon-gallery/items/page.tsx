@@ -33,7 +33,7 @@ export default async function PigeonGalleryItemsPage({ searchParams }: { searchP
       <main>
         <AdminPageIntro
           title={`「${category.name}」展示項目管理`}
-          description={`管理 ${GALLERY_LABEL[category.galleryType]}展示分類「${category.name}」底下的鴿隻項目（圖片、標題、類型、參考價格、排序）。`}
+          description={`管理 ${GALLERY_LABEL[category.galleryType]}展示分類「${category.name}」底下的鴿隻項目（圖片、標題、合作鴿舍、排序）。`}
         >
           <Link
             href={`/z04urru6/homepage/pigeon-gallery/categories?type=${category.galleryType}`}

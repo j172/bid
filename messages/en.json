@@ -175,10 +175,10 @@
     "benefitThree": "Secure flow: bids and stock changes are validated server-side.",
     "descriptionTab": "Description",
     "additionalTab": "Auction Details",
-    "reviewsTab": "Bid Activity",
+    "activityTab": "Bid Activity",
     "descriptionHeading": "Description",
     "additionalHeading": "Auction & Product Information",
-    "reviewsHeading": "Bid & Transaction Activity",
+    "activityHeading": "Bid & Transaction Activity",
     "specType": "Type",
     "specStatus": "Status",
     "specCurrentPrice": "Current Price",
@@ -193,9 +193,10 @@
     "statusEnded": "Ended",
     "statusScheduled": "Not started yet",
     "scheduledNotice": "{time} — bidding not open yet",
-    "reviewHintOne": "No public reviews yet — log in to place bids or complete checkout.",
-    "reviewHintTwo": "Each bid updates the leading status and current price in real time.",
-    "reviewHintThree": "If buy-it-now is reached, the listing ends immediately.",
+    "activityTotalBids": "{count} total bids on this listing",
+    "activityTotalPurchases": "{count} total purchases of this listing",
+    "activityEmptyBids": "No bids yet.",
+    "activityEmptyPurchases": "No purchases yet.",
     "recentlyViewed": "You May Also Like",
     "viewDetails": "View details",
     "soldOut": "Sold out",
@@ -208,7 +209,8 @@
     "galleryImageLabel": "{title} image {index}",
     "galleryKeyboardHint": "Use ← / → to switch photos",
     "galleryLightboxLabel": "{title} full-size preview",
-    "galleryClose": "Close"
+    "galleryClose": "Close",
+    "currencyReferenceOnly": "For reference only — all transactions are settled in New Taiwan Dollars."
   },
   "bidForm": {
     "label": "Your maximum bid (at least {minimum} — the system only raises the price enough to beat the next bidder, never charging you your full max)",
@@ -218,7 +220,8 @@
     "closedViaBinLeading": "Your bid reached the buy-it-now price — you won it outright!",
     "closedViaBinNotLeading": "The bid reached the buy-it-now price and the item has already been won by someone else.",
     "leading": "You're currently the highest bidder!",
-    "notLeading": "Bid submitted, but someone else is currently bidding higher — you're not leading."
+    "notLeading": "Bid submitted, but someone else is currently bidding higher — you're not leading.",
+    "ntdHint": "Enter the amount in New Taiwan Dollars (NTD)"
   },
   "autoBiddingInfo": {
     "title": "How Auto Bidding Works",
@@ -363,7 +366,12 @@
     "newsletterError": "Something went wrong. Please try again.",
     "newsletterInvalidEmail": "Please enter a valid email address.",
     "copyright": "© 2026 j172tw Bid. All rights reserved.",
-    "payments": "Payments: cards / bank transfer / third-party checkout"
+    "payments": "Payments: cards / bank transfer / third-party checkout",
+    "exchangeRateTitle": "Live reference exchange rate",
+    "exchangeRateUsd": "1 USD ≈ NT${rate}",
+    "exchangeRateCny": "1 CNY ≈ NT${rate}",
+    "exchangeRateDisclaimer": "Rates are for reference only — all transactions are settled in New Taiwan Dollars.",
+    "exchangeRateUnavailable": "Exchange rate updating"
   },
   "cartPage": {
     "title": "Cart",
@@ -392,16 +400,6 @@
     "breadcrumbHome": "Home",
     "categoryTitleAward": "{name} Award Pigeon Showcase",
     "categoryTitleImport": "{name} Imported Pigeon Showcase",
-    "filterTypeTitle": "Type",
-    "filterTypeAll": "All Types",
-    "filterTypeAuction": "Auction Breeder",
-    "filterTypeFixed": "Fixed Price Breeder",
-    "filterPriceTitle": "Price Range",
-    "filterPriceAny": "Any Price",
-    "filterPriceRange1": "15,000 - 20,000",
-    "filterPriceRange2": "20,000 - 30,000",
-    "filterPriceRange3": "30,000 and up",
-    "referencePriceLabel": "Reference Price",
     "showingCount": "{count} items",
     "emptyState": "No showcase items yet"
   },

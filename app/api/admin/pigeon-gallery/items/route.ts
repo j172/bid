@@ -1,15 +1,9 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { validatePrice } from "@/lib/listingValidation";
-import { createPigeonGalleryItem, listPigeonGalleryItems, type GalleryPriceType } from "@/lib/pigeonGallery";
+import { createPigeonGalleryItem, listPigeonGalleryItems } from "@/lib/pigeonGallery";
 import { pigeonGalleryItemImageUrl, savePigeonGalleryItemImage } from "@/lib/uploads";
 
 const TITLE_MAX = 255;
-const PRICE_TYPES: GalleryPriceType[] = ["auction", "fixed_price"];
-
-function isPriceType(value: string): value is GalleryPriceType {
-  return (PRICE_TYPES as string[]).includes(value);
-}
 
 // Admin list view for a given category_id — includes inactive rows by
 // default; pass ?activeOnly=1 for the same active-only view the public
@@ -49,8 +43,8 @@ export async function POST(request: Request) {
   const form = await request.formData();
   const categoryId = Number(form.get("categoryId"));
   const title = String(form.get("title") ?? "").trim();
-  const priceType = String(form.get("priceType") ?? "");
-  const referencePrice = Number(form.get("referencePrice"));
+  const loftIdRaw = String(form.get("loftId") ?? "").trim();
+  const loftId = loftIdRaw === "" ? null : Number(loftIdRaw);
   const sortOrderRaw = String(form.get("sortOrder") ?? "").trim();
   const sortOrder = sortOrderRaw === "" ? undefined : Number(sortOrderRaw);
   const isActiveRaw = form.get("isActive");
@@ -63,12 +57,8 @@ export async function POST(request: Request) {
   if (!title || title.length > TITLE_MAX) {
     return NextResponse.json({ ok: false, error: `請輸入標題（上限 ${TITLE_MAX} 字）` }, { status: 400 });
   }
-  if (!isPriceType(priceType)) {
-    return NextResponse.json({ ok: false, error: "priceType 必須是 auction 或 fixed_price" }, { status: 400 });
-  }
-  const priceResult = validatePrice(referencePrice, "參考價格");
-  if (!priceResult.ok) {
-    return NextResponse.json({ ok: false, error: priceResult.error }, { status: 400 });
+  if (loftId !== null && (!Number.isFinite(loftId) || !Number.isInteger(loftId) || loftId <= 0)) {
+    return NextResponse.json({ ok: false, error: "合作鴿舍不正確" }, { status: 400 });
   }
   if (sortOrder !== undefined && (!Number.isFinite(sortOrder) || !Number.isInteger(sortOrder) || sortOrder < 0)) {
     return NextResponse.json({ ok: false, error: "排序必須是不小於 0 的整數" }, { status: 400 });
@@ -89,8 +79,7 @@ export async function POST(request: Request) {
     categoryId,
     title,
     imageFileName,
-    priceType,
-    referencePrice,
+    loftId,
     sortOrder,
     isActive,
   });

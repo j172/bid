@@ -12,7 +12,8 @@ export interface HomepageSection {
   sectionType: string;
   title: string;
   imageFileName: string;
-  linkUrl: string;
+  /** Optional 簡介 shown in the admin form and the homepage card excerpt (issue #45; replaces the removed linkUrl). */
+  bio: string | null;
   sortOrder: number;
   isActive: boolean;
   createdAt: Date;
@@ -23,7 +24,8 @@ export interface NewHomepageSectionInput {
   sectionType: string;
   title: string;
   imageFileName: string;
-  linkUrl: string;
+  /** Optional — null/omit for no bio. */
+  bio?: string | null;
   /** Omit to default to end-of-list (MAX(sort_order) + 1 within this sectionType) — see createHomepageSection. */
   sortOrder?: number;
   /** Defaults to true (visible). */
@@ -33,7 +35,7 @@ export interface NewHomepageSectionInput {
 export interface UpdateHomepageSectionInput {
   title: string;
   imageFileName: string;
-  linkUrl: string;
+  bio: string | null;
   sortOrder: number;
   isActive: boolean;
 }
@@ -45,7 +47,7 @@ interface HomepageSectionRow {
   section_type: string;
   title: string;
   image_file_name: string;
-  link_url: string;
+  bio: string | null;
   sort_order: number;
   is_active: number;
   created_at: Date;
@@ -58,7 +60,7 @@ function mapRow(row: HomepageSectionRow): HomepageSection {
     sectionType: row.section_type,
     title: row.title,
     imageFileName: row.image_file_name,
-    linkUrl: row.link_url,
+    bio: row.bio,
     sortOrder: row.sort_order,
     isActive: Boolean(row.is_active),
     createdAt: row.created_at,
@@ -113,13 +115,13 @@ export async function createHomepageSection(input: NewHomepageSectionInput): Pro
 
   const [result] = await db.query(
     `INSERT INTO homepage_sections
-       (section_type, title, image_file_name, link_url, sort_order, is_active, created_at, updated_at)
+       (section_type, title, image_file_name, bio, sort_order, is_active, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
     [
       input.sectionType,
       input.title,
       input.imageFileName,
-      input.linkUrl,
+      input.bio ?? null,
       sortOrder,
       input.isActive === false ? 0 : 1,
     ],
@@ -134,9 +136,9 @@ export async function updateHomepageSection(
   const db = await getDb();
   const [result] = await db.query(
     `UPDATE homepage_sections
-     SET title = ?, image_file_name = ?, link_url = ?, sort_order = ?, is_active = ?, updated_at = NOW()
+     SET title = ?, image_file_name = ?, bio = ?, sort_order = ?, is_active = ?, updated_at = NOW()
      WHERE id = ?`,
-    [input.title, input.imageFileName, input.linkUrl, input.sortOrder, input.isActive ? 1 : 0, id],
+    [input.title, input.imageFileName, input.bio, input.sortOrder, input.isActive ? 1 : 0, id],
   );
   if ((result as { affectedRows: number }).affectedRows === 0) {
     return { ok: false, error: "找不到這個首頁區塊項目" };

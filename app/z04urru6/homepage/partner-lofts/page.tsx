@@ -24,7 +24,7 @@ export default async function PartnerLoftsAdminPage() {
 
   return (
     <main>
-      <AdminPageIntro title="合作鴿舍管理" description="管理首頁「合作鴿舍」區塊的卡片：圖片、連結與排序。停用後會立即從首頁隱藏，不需重新部署。">
+      <AdminPageIntro title="合作鴿舍管理" description="管理首頁「合作鴿舍」區塊的卡片：圖片、簡介與排序。首頁卡片點擊後會導向該鴿舍的商品列表。停用後會立即從首頁隱藏，不需重新部署。">
         <PartnerLoftFormModal mode="create" sectionType={SECTION_TYPE} />
       </AdminPageIntro>
 
@@ -37,7 +37,7 @@ export default async function PartnerLoftsAdminPage() {
               <tr>
                 <th className={th}>圖片</th>
                 <th className={th}>標題</th>
-                <th className={th}>連結</th>
+                <th className={th}>簡介</th>
                 <th className={th}>排序</th>
                 <th className={th}>狀態</th>
                 <th className={th}></th>
@@ -53,8 +53,8 @@ export default async function PartnerLoftsAdminPage() {
                       <img src={imageUrl} alt={section.title} className="h-14 w-14 rounded-lg border border-border object-cover" />
                     </td>
                     <td className={`${td} font-medium`}>{section.title}</td>
-                    <td className={`${td} max-w-xs truncate text-ink-light`} title={section.linkUrl}>
-                      {section.linkUrl}
+                    <td className={`${td} max-w-xs truncate text-ink-light`} title={section.bio ?? ""}>
+                      {section.bio ?? "—"}
                     </td>
                     <td className={td}>{section.sortOrder}</td>
                     <td className={td}>
@@ -72,7 +72,7 @@ export default async function PartnerLoftsAdminPage() {
                           section={{
                             id: section.id,
                             title: section.title,
-                            linkUrl: section.linkUrl,
+                            bio: section.bio,
                             sortOrder: section.sortOrder,
                             isActive: section.isActive,
                             imageUrl,

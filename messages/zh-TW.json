@@ -175,10 +175,10 @@
     "benefitThree": "交易保障：所有出價與庫存變更皆由伺服器驗證。",
     "descriptionTab": "商品說明",
     "additionalTab": "競標資訊",
-    "reviewsTab": "出價動態",
+    "activityTab": "出價動態",
     "descriptionHeading": "商品描述",
     "additionalHeading": "競標與商品資訊",
-    "reviewsHeading": "出價與交易動態",
+    "activityHeading": "出價與交易動態",
     "specType": "商品型態",
     "specStatus": "狀態",
     "specCurrentPrice": "目前價格",
@@ -193,9 +193,10 @@
     "statusEnded": "已結束",
     "statusScheduled": "尚未開標",
     "scheduledNotice": "{time}，尚未開放出價",
-    "reviewHintOne": "目前尚無公開評價，請先登入參與出價或購買流程。",
-    "reviewHintTwo": "每次出價會即時更新領先狀態與目前價格。",
-    "reviewHintThree": "若達到買斷價，商品會立即結標。",
+    "activityTotalBids": "此商品共有 {count} 次出價",
+    "activityTotalPurchases": "此商品共有 {count} 筆交易",
+    "activityEmptyBids": "目前尚無出價紀錄",
+    "activityEmptyPurchases": "目前尚無交易紀錄",
     "recentlyViewed": "精選推薦鴿況",
     "viewDetails": "查看詳情",
     "soldOut": "已售罄",
@@ -208,7 +209,8 @@
     "galleryImageLabel": "{title} 圖片 {index}",
     "galleryKeyboardHint": "使用 ← / → 切換照片",
     "galleryLightboxLabel": "{title} 大圖預覽",
-    "galleryClose": "關閉"
+    "galleryClose": "關閉",
+    "currencyReferenceOnly": "匯率參考用，實際交易一律以新台幣結算。"
   },
   "bidForm": {
     "label": "你願意出的最高價（至少 {minimum}，系統只會自動幫你加價到剛好贏過對手，不會直接扣到這個金額）",
@@ -218,7 +220,8 @@
     "closedViaBinLeading": "你的出價達到買斷價，直接得標！",
     "closedViaBinNotLeading": "出價已達買斷價，商品已由他人得標。",
     "leading": "你目前是最高出價者！",
-    "notLeading": "已送出，但目前有人出價更高，你並未領先。"
+    "notLeading": "已送出，但目前有人出價更高，你並未領先。",
+    "ntdHint": "請輸入新台幣金額"
   },
   "autoBiddingInfo": {
     "title": "自動出價如何運作",
@@ -363,7 +366,12 @@
     "newsletterError": "發生錯誤，請稍後再試。",
     "newsletterInvalidEmail": "請輸入有效的 Email 地址。",
     "copyright": "© 2026 j172tw Bid. All rights reserved.",
-    "payments": "支援：信用卡 / 匯款 / 第三方支付"
+    "payments": "支援：信用卡 / 匯款 / 第三方支付",
+    "exchangeRateTitle": "即時參考匯率",
+    "exchangeRateUsd": "1 USD ≈ NT${rate}",
+    "exchangeRateCny": "1 CNY ≈ NT${rate}",
+    "exchangeRateDisclaimer": "匯率僅供參考，實際交易金額一律以新台幣結算。",
+    "exchangeRateUnavailable": "匯率資料更新中"
   },
   "cartPage": {
     "title": "購物車",
@@ -392,16 +400,6 @@
     "breadcrumbHome": "首頁",
     "categoryTitleAward": "{name}入賞鴿欣賞",
     "categoryTitleImport": "{name}原鴿欣賞",
-    "filterTypeTitle": "類型",
-    "filterTypeAll": "全部類型",
-    "filterTypeAuction": "競標種鴿",
-    "filterTypeFixed": "定價種鴿",
-    "filterPriceTitle": "價格區間",
-    "filterPriceAny": "不限價格",
-    "filterPriceRange1": "15,000 - 20,000",
-    "filterPriceRange2": "20,000 - 30,000",
-    "filterPriceRange3": "30,000 以上",
-    "referencePriceLabel": "參考價格",
     "showingCount": "共 {count} 筆展示項目",
     "emptyState": "目前尚無展示項目"
   },

@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS listings (
   price BIGINT NULL,
   stock_quantity BIGINT NULL,
   stock_remaining BIGINT NULL,
+  loft_id BIGINT NULL,                        -- optional homepage_sections.id (合作鴿舍) this listing belongs to; single-select, no DB-level FK (see below)
   PRIMARY KEY (id),
   KEY idx_listings_status_ends (status, ends_at),
   KEY idx_listings_status_starts (status, starts_at)
@@ -98,17 +99,21 @@ CREATE TABLE IF NOT EXISTS purchases (
 -- `listings`: these are display-only marketing content, never real
 -- transactable products.
 
--- Generic image+link+sort_order homepage block entries. section_type is an
+-- Generic image+sort_order homepage block entries. section_type is an
 -- application-level tag (currently only 'partner_loft' / 合作鴿舍) rather
 -- than its own lookup table, since new section types are expected to be rare
 -- and code-driven (each type gets its own homepage placement), unlike
 -- pigeon_gallery_categories below which is genuinely admin-managed taxonomy.
+-- No link_url (removed in issue #45's GRILL ME follow-up): homepage cards
+-- now link to /listings?loft=<id> (that loft's listings, via listings.loft_id
+-- below) rather than an admin-entered URL. bio is an optional free-text
+-- excerpt shown on both the admin form and the homepage card.
 CREATE TABLE IF NOT EXISTS homepage_sections (
   id BIGINT NOT NULL AUTO_INCREMENT,
   section_type VARCHAR(30) NOT NULL,          -- 'partner_loft' (合作鴿舍)
   title VARCHAR(255) NOT NULL,
   image_file_name VARCHAR(255) NOT NULL,
-  link_url VARCHAR(500) NOT NULL,
+  bio TEXT NULL,                              -- optional 簡介 shown in admin + homepage card excerpt
   sort_order INT NOT NULL DEFAULT 0,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL,
@@ -141,17 +146,39 @@ CREATE TABLE IF NOT EXISTS pigeon_gallery_categories (
 -- use FK constraints anywhere — see `listings`/`listing_photos` above), so
 -- deletePigeonGalleryCategory (lib/pigeonGallery.ts) removes a category's
 -- items itself before removing the category row.
+-- price_type/reference_price were removed in issue #45's GRILL ME follow-up
+-- along with the category page's type/price-range filter UI (a deliberate
+-- simplification — the page is now pure display: photos + titles only).
+-- loft_id is the same optional 合作鴿舍 single-select as listings.loft_id.
 CREATE TABLE IF NOT EXISTS pigeon_gallery_items (
   id BIGINT NOT NULL AUTO_INCREMENT,
   category_id BIGINT NOT NULL,
   title VARCHAR(255) NOT NULL,
   image_file_name VARCHAR(255) NOT NULL,
-  price_type VARCHAR(20) NOT NULL,            -- 'auction' (競標種鴿) | 'fixed_price' (定價種鴿)
-  reference_price BIGINT NOT NULL,
+  loft_id BIGINT NULL,                        -- optional homepage_sections.id (合作鴿舍) this pigeon belongs to; plain-text label only, not a link
   sort_order INT NOT NULL DEFAULT 0,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
   PRIMARY KEY (id),
   KEY idx_gallery_items_category_sort (category_id, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Daily TWD/USD + TWD/CNY exchange-rate history (issue #45), fetched from
+-- TAIFEX's open-data feed by an in-process node-cron scheduler (see
+-- lib/scheduler.ts / lib/exchangeRates.ts). rate_date is the calendar date
+-- this row was synced for (usually "today"); source_date is the trading
+-- date the `rate` value actually came from — falls behind rate_date when
+-- TAIFEX has nothing new yet (holiday / not yet published) and the sync
+-- reuses the most recent successful rate instead of leaving the day blank.
+CREATE TABLE IF NOT EXISTS exchange_rates (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  currency VARCHAR(10) NOT NULL,              -- 'USD' | 'CNY' — TWD is always the implicit base
+  rate_date DATE NOT NULL,
+  source_date DATE NOT NULL,
+  rate DECIMAL(12,6) NOT NULL,                -- TWD per 1 unit of `currency`
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_exchange_rates_currency_date (currency, rate_date),
+  KEY idx_exchange_rates_currency_date (currency, rate_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
