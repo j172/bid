@@ -1,5 +1,7 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { listOpenListings, type ListingType } from "@/lib/listings";
+import { currencyForLocale, formatDualPrice, formatNtd } from "@/lib/currency";
+import { getLatestStoredRate } from "@/lib/exchangeRates";
 import { formatRemaining } from "@/lib/format";
 import { maskDisplayName } from "@/lib/mask";
 import { Link } from "@/i18n/navigation";
@@ -12,7 +14,10 @@ const DESCRIPTION_SNIPPET_LENGTH = 30;
 type SearchParams = Record<string, string | string[] | undefined>;
 
 type CategoryKey = "auction" | "fixed_price";
-type SortKey = "newest" | "price_asc" | "price_desc";
+// ends_soon / starts_soon / popular power the homepage "分類瀏覽" cards
+// (see app/[locale]/page.tsx) — real, computable subsets/orderings rather
+// than the hardcoded links that used to live there.
+type SortKey = "newest" | "price_asc" | "price_desc" | "ends_soon" | "starts_soon" | "popular";
 
 function inferCategoryFromListingType(type: ListingType): CategoryKey {
   return type === "auction" ? "auction" : "fixed_price";
@@ -50,6 +55,8 @@ function tabHref(
   if (perfMode === "aggressive") sp.set("perf", "aggressive");
   if (searchQuery?.trim()) sp.set("q", searchQuery.trim());
   if (sort && sort !== "newest") sp.set("sort", sort);
+  // Deliberately drop status/withinHours here — switching the type tab
+  // exits any homepage-card-specific filtering rather than compounding it.
 
   const query = sp.toString();
   return query ? `/listings?${query}` : "/listings";
@@ -66,15 +73,39 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   const rawQ = Array.isArray(params.q) ? params.q[0] : params.q;
   const searchQuery = rawQ?.trim() ?? "";
   const rawSort = Array.isArray(params.sort) ? params.sort[0] : params.sort;
-  const sort: SortKey = rawSort === "price_asc" || rawSort === "price_desc" ? rawSort : "newest";
+  const sort: SortKey =
+    rawSort === "price_asc" ||
+    rawSort === "price_desc" ||
+    rawSort === "ends_soon" ||
+    rawSort === "starts_soon" ||
+    rawSort === "popular"
+      ? rawSort
+      : "newest";
+  // Only "scheduled" is a supported value today (powers the homepage's
+  // "即將開賣" card) — anything else is treated as no status filter.
+  const rawStatus = Array.isArray(params.status) ? params.status[0] : params.status;
+  const statusFilter = rawStatus === "scheduled" ? "scheduled" : undefined;
+  const withinHours = parseNumberParam(params.withinHours);
   const perfMode = perfModeFromSearchParams(params);
   const gridEagerCount = perfMode === "aggressive" ? 6 : 4;
+  // Powers the homepage partner-loft card click-through: /listings?loft=<id>
+  // (issue #45 — replaces the removed homepage_sections.link_url).
+  const loftId = parseNumberParam(params.loft);
 
-  const listings = await listOpenListings(type);
+  const listings = await listOpenListings(type, { loftId });
   const t = await getTranslations("listings");
+  const tNav = await getTranslations("nav");
   const tFormat = await getTranslations("format");
   const anonymousBuyer = await getTranslations("mask").then((tMask) => tMask("anonymousBuyer"));
 
+  // Reference-only currency conversion (issue #45) — see the listing detail
+  // page's equivalent comment; admin stays pure NTD, this grid is public.
+  const locale = await getLocale();
+  const displayCurrency = currencyForLocale(locale);
+  const displayRate = displayCurrency === "TWD" ? null : await getLatestStoredRate(displayCurrency);
+  const rateValue = displayRate?.rate ?? null;
+
+  const nowMs = new Date().getTime();
   const filteredListings = listings.filter((listing) => {
     const categoryMatch = !selectedCategory || inferCategoryFromListingType(listing.listing_type) === selectedCategory;
     const price = listing.listing_type === "auction" ? listing.current_price : (listing.price ?? listing.current_price);
@@ -83,7 +114,18 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
     const searchMatch =
       searchQuery.length === 0 ||
       `${listing.title} ${listing.description}`.toLowerCase().includes(searchQuery.toLowerCase());
-    return categoryMatch && minMatch && maxMatch && searchMatch;
+    const statusMatch = !statusFilter || listing.status === statusFilter;
+    const withinHoursMatch =
+      withinHours === undefined ||
+      (listing.listing_type === "auction" &&
+        listing.status === "open" &&
+        listing.ends_at !== null &&
+        listing.ends_at.getTime() - nowMs >= 0 &&
+        listing.ends_at.getTime() - nowMs <= withinHours * 60 * 60 * 1000);
+    // "popular" is a homepage-favorites sort — items with zero bids/purchases
+    // aren't "buyer favorites", so exclude them rather than just reordering.
+    const popularMatch = sort !== "popular" || listing.bidCount + listing.purchaseCount > 0;
+    return categoryMatch && minMatch && maxMatch && searchMatch && statusMatch && withinHoursMatch && popularMatch;
   });
 
   const sortedListings = [...filteredListings].sort((a, b) => {
@@ -92,6 +134,19 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
 
     if (sort === "price_asc") return priceA - priceB;
     if (sort === "price_desc") return priceB - priceA;
+    if (sort === "ends_soon") {
+      const aTime = a.ends_at ? a.ends_at.getTime() : Infinity;
+      const bTime = b.ends_at ? b.ends_at.getTime() : Infinity;
+      return aTime - bTime;
+    }
+    if (sort === "starts_soon") {
+      const aTime = a.starts_at ? a.starts_at.getTime() : Infinity;
+      const bTime = b.starts_at ? b.starts_at.getTime() : Infinity;
+      return aTime - bTime;
+    }
+    if (sort === "popular") {
+      return (b.bidCount + b.purchaseCount) - (a.bidCount + a.purchaseCount);
+    }
     return b.id - a.id;
   });
 
@@ -113,6 +168,8 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
     const currentMax = Array.isArray(params.maxPrice) ? params.maxPrice[0] : params.maxPrice;
     const currentQ = Array.isArray(params.q) ? params.q[0] : params.q;
     const currentSort = Array.isArray(params.sort) ? params.sort[0] : params.sort;
+    const currentStatus = Array.isArray(params.status) ? params.status[0] : params.status;
+    const currentWithinHours = Array.isArray(params.withinHours) ? params.withinHours[0] : params.withinHours;
 
     const next = {
       perf,
@@ -122,6 +179,8 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
       maxPrice: currentMax,
       q: currentQ,
       sort: currentSort,
+      status: currentStatus,
+      withinHours: currentWithinHours,
       ...partial,
     };
 
@@ -147,7 +206,12 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <div className="rounded-xl bg-white p-4 shadow-sm sm:p-6">
-        <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">Home / Listings</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">
+          <Link href="/" className="hover:text-interactive-primary">
+            {tNav("home")}
+          </Link>{" "}
+          / {t("title")}
+        </p>
         <h1 className="mt-2 text-3xl font-black text-ink">{t("title")}</h1>
       </div>
 
@@ -192,9 +256,6 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
                 <Link href={withFilters({ minPrice: undefined, maxPrice: undefined })} className={`block rounded-md px-3 py-2 text-sm ${minPrice === undefined && maxPrice === undefined ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
                   {t("priceAny")}
                 </Link>
-                <Link href={withFilters({ minPrice: "0", maxPrice: "500" })} className={`block rounded-md px-3 py-2 text-sm ${minPrice === 0 && maxPrice === 500 ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
-                  {t("priceLow")}
-                </Link>
                 <Link href={withFilters({ minPrice: "501", maxPrice: "1000" })} className={`block rounded-md px-3 py-2 text-sm ${minPrice === 501 && maxPrice === 1000 ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
                   {t("priceMid")}
                 </Link>
@@ -219,29 +280,48 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
           <div className="flex flex-col gap-3 rounded-xl border border-border bg-white px-4 py-3 text-sm shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <p className="text-ink-light">{t("showingCount", { count: filteredListings.length })}</p>
-              {searchQuery.length > 0 && <p className="truncate text-xs text-ink-light">搜尋：{searchQuery}</p>}
+              {searchQuery.length > 0 && (
+                <p className="truncate text-xs text-ink-light">
+                  {t("searchPrefix")}
+                  {searchQuery}
+                </p>
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wide text-ink-light">排序</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-ink-light">{t("sortLabel")}</span>
               <Link
                 href={withFilters({ sort: undefined })}
                 className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "newest" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
               >
-                最新
+                {t("sortNewest")}
               </Link>
               <Link
                 href={withFilters({ sort: "price_asc" })}
                 className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "price_asc" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
               >
-                價格低→高
+                {t("sortPriceAsc")}
               </Link>
               <Link
                 href={withFilters({ sort: "price_desc" })}
                 className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "price_desc" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
               >
-                價格高→低
+                {t("sortPriceDesc")}
               </Link>
-              <p className="ml-1 font-semibold text-ink">{type ? t("filtered") : t("allLive")}</p>
+              <Link
+                href={withFilters({ sort: "ends_soon", withinHours: undefined })}
+                className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "ends_soon" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
+              >
+                {t("sortEndsSoon")}
+              </Link>
+              <Link
+                href={withFilters({ sort: "popular" })}
+                className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "popular" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
+              >
+                {t("sortPopular")}
+              </Link>
+              <p className="ml-1 font-semibold text-ink">
+                {type || statusFilter || withinHours !== undefined || sort === "popular" ? t("filtered") : t("allLive")}
+              </p>
             </div>
           </div>
 
@@ -256,9 +336,14 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
                 description={descriptionSnippet(listing.description)}
                 photo={listing.photos[0]}
                 typeBadgeLabel={TYPE_BADGE_LABEL[listing.listing_type]}
+                loftName={listing.loftName}
                 quickActionLabel={t("quickAction")}
                 viewDetailsLabel={t("viewDetails")}
-                priceText={listing.listing_type === "fixed_price" ? String(listing.price) : String(listing.current_price)}
+                priceText={formatDualPrice(
+                  listing.listing_type === "fixed_price" ? listing.price! : listing.current_price,
+                  displayCurrency,
+                  rateValue,
+                )}
                 detailLines={
                   listing.listing_type === "fixed_price"
                     ? [
@@ -276,7 +361,7 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
                         ]
                       : [
                           ...(listing.buy_it_now_price !== null
-                            ? [t("buyItNowPrice", { price: listing.buy_it_now_price })]
+                            ? [t("buyItNowPrice", { price: formatNtd(listing.buy_it_now_price) })]
                             : []),
                           listing.ends_at ? formatRemaining(listing.ends_at, tFormat) : t("timeless"),
                           listing.bidCount === 0

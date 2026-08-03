@@ -101,3 +101,68 @@ export async function copyListingPhotos(fromListingId: number, toListingId: numb
     await copyFile(join(fromDir, fileName), join(toDir, fileName));
   }
 }
+
+// Shared by every single-image CMS upload below (homepage sections, pigeon
+// gallery category covers, pigeon gallery item photos) — same validation/
+// naming/storage scheme as saveListingPhotos' per-photo loop body, just
+// factored out since these callers each only ever save exactly one file at
+// a time. Browser-side callers should run the file through
+// convertPhotoToWebp (lib/convertPhotoToWebp.ts) before upload, same as the
+// listing photo picker does — this function itself doesn't re-encode.
+async function saveSingleImage(dir: string, image: File): Promise<string> {
+  if (!isAllowedPhotoType(image.type)) {
+    throw new Error(`不支援的圖片格式：${image.type || "unknown"}`);
+  }
+  if (image.size > MAX_PHOTO_BYTES) {
+    throw new Error(`圖片檔案過大（上限 ${MAX_PHOTO_BYTES / 1024 / 1024}MB）`);
+  }
+
+  await mkdir(dir, { recursive: true });
+  const extension = ALLOWED_EXTENSIONS[image.type];
+  const fileName = `${randomBytes(16).toString("hex")}.${extension}`;
+  const buffer = Buffer.from(await image.arrayBuffer());
+  await writeFile(join(dir, fileName), buffer);
+  return fileName;
+}
+
+// homepage_sections (合作鴿舍 etc. — see lib/homepageSections.ts) — one
+// image per row, flat directory since there's no per-row id yet at upload
+// time (unlike listing photos, which are keyed by an already-inserted
+// listing id).
+export async function saveHomepageSectionImage(image: File): Promise<string> {
+  return saveSingleImage(join(UPLOADS_ROOT, "homepage-sections"), image);
+}
+
+export function homepageSectionImageUrl(fileName: string): string {
+  return `/uploads/homepage-sections/${fileName}`;
+}
+
+export async function deleteHomepageSectionImageFile(fileName: string): Promise<void> {
+  await unlink(join(UPLOADS_ROOT, "homepage-sections", fileName)).catch(() => {});
+}
+
+// pigeon_gallery_categories' cover_image_file_name (see lib/pigeonGallery.ts).
+export async function savePigeonGalleryCategoryImage(image: File): Promise<string> {
+  return saveSingleImage(join(UPLOADS_ROOT, "pigeon-gallery", "categories"), image);
+}
+
+export function pigeonGalleryCategoryImageUrl(fileName: string): string {
+  return `/uploads/pigeon-gallery/categories/${fileName}`;
+}
+
+export async function deletePigeonGalleryCategoryImageFile(fileName: string): Promise<void> {
+  await unlink(join(UPLOADS_ROOT, "pigeon-gallery", "categories", fileName)).catch(() => {});
+}
+
+// pigeon_gallery_items' image_file_name (see lib/pigeonGallery.ts).
+export async function savePigeonGalleryItemImage(image: File): Promise<string> {
+  return saveSingleImage(join(UPLOADS_ROOT, "pigeon-gallery", "items"), image);
+}
+
+export function pigeonGalleryItemImageUrl(fileName: string): string {
+  return `/uploads/pigeon-gallery/items/${fileName}`;
+}
+
+export async function deletePigeonGalleryItemImageFile(fileName: string): Promise<void> {
+  await unlink(join(UPLOADS_ROOT, "pigeon-gallery", "items", fileName)).catch(() => {});
+}

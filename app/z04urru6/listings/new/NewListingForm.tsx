@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Button from "../../../components/Button";
 import DescriptionEditor, { type DescriptionEditorHandle } from "../DescriptionEditor";
 import PhotoGalleryEditor, { type PhotoItem } from "../PhotoGalleryEditor";
+import { usePartnerLofts } from "../usePartnerLofts";
 import { ENDS_AT_MAX_DAYS, PRICE_MAX, TITLE_MAX } from "@/lib/listingValidation";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
@@ -24,9 +25,11 @@ export default function NewListingForm() {
   const [endsAt, setEndsAt] = useState("");
   const [price, setPrice] = useState("");
   const [stockQuantity, setStockQuantity] = useState("");
+  const [loftId, setLoftId] = useState("");
   const [photoItems, setPhotoItems] = useState<PhotoItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const lofts = usePartnerLofts();
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,6 +51,7 @@ export default function NewListingForm() {
       formData.set("startsAt", startsAt);
       formData.set("endsAt", endsAt);
     }
+    if (loftId) formData.set("loftId", loftId);
     for (const item of photoItems) {
       if (item.kind === "new") formData.append("photos", item.file);
     }
@@ -104,6 +108,18 @@ export default function NewListingForm() {
         <span className={counterClass(title.length, TITLE_MAX)}>
           {title.length}/{TITLE_MAX}
         </span>
+      </label>
+
+      <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+        合作鴿舍（選填）
+        <select value={loftId} onChange={(e) => setLoftId(e.target.value)} className={inputClass}>
+          <option value="">無</option>
+          {lofts.map((loft) => (
+            <option key={loft.id} value={loft.id}>
+              {loft.title}
+            </option>
+          ))}
+        </select>
       </label>
 
       <PhotoGalleryEditor items={photoItems} onChange={setPhotoItems} />

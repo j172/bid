@@ -1,5 +1,7 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { getCurrentUser } from "@/lib/auth";
+import { currencyForLocale, formatDualPrice } from "@/lib/currency";
+import { getLatestStoredRate } from "@/lib/exchangeRates";
 import { getBidHistoryForUser } from "@/lib/listings";
 import { Link, redirect } from "@/i18n/navigation";
 import StatusBadge from "../components/StatusBadge";
@@ -17,6 +19,14 @@ export default async function MyBidsPage() {
 
   const bids = await getBidHistoryForUser(user.id);
   const t = await getTranslations("myBids");
+
+  // Reference-only currency conversion (issue #45) — see the listing detail
+  // page's equivalent comment; this page is public-facing (though
+  // login-gated), unlike the admin backend which stays pure NTD.
+  const locale = await getLocale();
+  const displayCurrency = currencyForLocale(locale);
+  const displayRate = displayCurrency === "TWD" ? null : await getLatestStoredRate(displayCurrency);
+  const rateValue = displayRate?.rate ?? null;
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
@@ -43,8 +53,10 @@ export default async function MyBidsPage() {
                       {bid.listingTitle}
                     </Link>
                   </td>
-                  <td className={td}>{bid.bidAmount}</td>
-                  <td className={`${td} font-semibold`}>{bid.listingCurrentPrice}</td>
+                  <td className={td}>{formatDualPrice(bid.bidAmount, displayCurrency, rateValue)}</td>
+                  <td className={`${td} font-semibold`}>
+                    {formatDualPrice(bid.listingCurrentPrice, displayCurrency, rateValue)}
+                  </td>
                   <td className={td}>
                     <StatusBadge status={bid.listingStatus} isLeading={bid.isLeading} />
                   </td>

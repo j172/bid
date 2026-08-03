@@ -3,28 +3,15 @@
 
 import type { ErrorCode } from "@/lib/errorCodes";
 
-export interface IncrementTier {
-  /** Exclusive upper bound of current price for this tier; Infinity for the last tier. */
-  upTo: number;
-  increment: number;
-}
+// Site-wide flat minimum bid increment, regardless of the listing's current
+// price. This is a pigeon-auction site where items are typically NT$15,000+,
+// so a small-value tiered ladder doesn't make sense — every next bid (and
+// every proxy/auto-bid step) simply adds this fixed amount. Not configurable
+// per-listing in this scope (see the spec's Implementation Decisions).
+export const BID_INCREMENT = 1_000;
 
-// Global, listing-independent schedule: the minimum increment grows in
-// steps as the current price rises. Not configurable per-listing in this
-// scope (see the spec's Implementation Decisions).
-export const BID_INCREMENT_TIERS: readonly IncrementTier[] = [
-  { upTo: 100, increment: 10 },
-  { upTo: 500, increment: 25 },
-  { upTo: 1_000, increment: 50 },
-  { upTo: 5_000, increment: 100 },
-  { upTo: 10_000, increment: 250 },
-  { upTo: 50_000, increment: 500 },
-  { upTo: Infinity, increment: 1_000 },
-];
-
-export function getBidIncrement(currentPrice: number): number {
-  const tier = BID_INCREMENT_TIERS.find((t) => currentPrice < t.upTo);
-  return (tier ?? BID_INCREMENT_TIERS[BID_INCREMENT_TIERS.length - 1]).increment;
+export function getBidIncrement(_currentPrice: number): number {
+  return BID_INCREMENT;
 }
 
 export function getMinimumNextBid(currentPrice: number): number {

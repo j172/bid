@@ -2,30 +2,42 @@
 
 import { useState } from "react";
 
-type TabKey = "description" | "additional" | "reviews";
+type TabKey = "description" | "additional" | "activity";
+
+interface ActivityLine {
+  maskedName: string;
+  amountLabel: string;
+  dateLabel: string;
+}
 
 interface ListingDetailTabsProps {
   descriptionLabel: string;
   additionalLabel: string;
-  reviewsLabel: string;
+  activityLabel: string;
   descriptionTitle: string;
   additionalTitle: string;
-  reviewsTitle: string;
+  activityTitle: string;
   description: string;
   specs: Array<{ label: string; value: string }>;
-  reviewLines: string[];
+  /** Pre-formatted total bid/purchase count sentence — shown once, not per-row (see issue #45). */
+  activityTotalCountLabel: string;
+  /** Newest-first, already capped to the most recent 20 by getListingActivityFeed. */
+  activityLines: ActivityLine[];
+  activityEmptyLabel: string;
 }
 
 export default function ListingDetailTabs({
   descriptionLabel,
   additionalLabel,
-  reviewsLabel,
+  activityLabel,
   descriptionTitle,
   additionalTitle,
-  reviewsTitle,
+  activityTitle,
   description,
   specs,
-  reviewLines,
+  activityTotalCountLabel,
+  activityLines,
+  activityEmptyLabel,
 }: ListingDetailTabsProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("description");
 
@@ -56,14 +68,14 @@ export default function ListingDetailTabs({
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab("reviews")}
+          onClick={() => setActiveTab("activity")}
           className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-            activeTab === "reviews"
+            activeTab === "activity"
               ? "bg-interactive-primary text-white"
               : "bg-slate-100 text-ink-light hover:bg-slate-200"
           }`}
         >
-          {reviewsLabel}
+          {activityLabel}
         </button>
       </div>
 
@@ -95,16 +107,28 @@ export default function ListingDetailTabs({
         </div>
       )}
 
-      {activeTab === "reviews" && (
+      {activeTab === "activity" && (
         <div className="pt-6">
-          <h3 className="text-xl font-black text-ink">{reviewsTitle}</h3>
-          <div className="mt-4 space-y-3">
-            {reviewLines.map((line) => (
-              <p key={line} className="rounded-lg border border-border bg-surface px-4 py-3 text-sm text-ink-light">
-                {line}
-              </p>
-            ))}
-          </div>
+          <h3 className="text-xl font-black text-ink">{activityTitle}</h3>
+          <p className="mt-2 text-sm font-semibold text-ink-light">{activityTotalCountLabel}</p>
+          {activityLines.length === 0 ? (
+            <p className="mt-4 rounded-lg border border-border bg-surface px-4 py-3 text-sm text-ink-light">
+              {activityEmptyLabel}
+            </p>
+          ) : (
+            <div className="mt-4 space-y-2">
+              {activityLines.map((line, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3 text-sm"
+                >
+                  <span className="font-semibold text-ink">{line.maskedName}</span>
+                  <span className="font-bold text-interactive-primary">{line.amountLabel}</span>
+                  <span className="text-xs text-ink-light">{line.dateLabel}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </section>

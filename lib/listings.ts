@@ -67,13 +67,15 @@ export interface Listing {
   status: string;
   created_by: number;
   created_at: Date;
+  /** Optional 合作鴿舍 (homepage_sections.id) this listing belongs to (issue #45) — null when not set. No DB-level FK (see db/init.sql). */
+  loft_id: number | null;
 }
 
 export interface ListingWithPhotos extends Listing {
   photos: string[];
 }
 
-export type NewListingInput =
+export type NewListingInput = (
   | {
       listingType: "auction";
       title: string;
@@ -92,21 +94,36 @@ export type NewListingInput =
       price: number;
       stockQuantity: number;
       createdBy: number;
-    };
+    }
+) & {
+  /** Optional 合作鴿舍 selection (issue #45) — null/omit for none. */
+  loftId?: number | null;
+};
 
 // Split from photo storage: the listing's id (used as its photo directory
 // name) only exists after this insert, so callers must insert the listing,
 // then save photos to disk under that id, then call addListingPhotos.
 export async function insertListing(input: NewListingInput): Promise<number> {
   const db = await getDb();
+  const loftId = input.loftId ?? null;
 
   if (input.listingType === "fixed_price") {
     const [result] = await db.query(
       `INSERT INTO listings
          (title, description, listing_type, starting_price, current_price, price, stock_quantity, stock_remaining,
-          ends_at, status, created_by, created_at)
-       VALUES (?, ?, 'fixed_price', ?, ?, ?, ?, ?, NULL, 'open', ?, NOW())`,
-      [input.title, input.description, input.price, input.price, input.price, input.stockQuantity, input.stockQuantity, input.createdBy],
+          ends_at, status, created_by, created_at, loft_id)
+       VALUES (?, ?, 'fixed_price', ?, ?, ?, ?, ?, NULL, 'open', ?, NOW(), ?)`,
+      [
+        input.title,
+        input.description,
+        input.price,
+        input.price,
+        input.price,
+        input.stockQuantity,
+        input.stockQuantity,
+        input.createdBy,
+        loftId,
+      ],
     );
     return (result as { insertId: number }).insertId;
   }
@@ -118,8 +135,8 @@ export async function insertListing(input: NewListingInput): Promise<number> {
     const status = input.startsAt !== null ? "scheduled" : "open";
     [result] = await db.query(
       `INSERT INTO listings
-         (title, description, listing_type, starting_price, current_price, buy_it_now_price, starts_at, ends_at, status, created_by, created_at)
-       VALUES (?, ?, 'auction', ?, ?, ?, ?, ?, ?, ?, NOW())`,
+         (title, description, listing_type, starting_price, current_price, buy_it_now_price, starts_at, ends_at, status, created_by, created_at, loft_id)
+       VALUES (?, ?, 'auction', ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
       [
         input.title,
         input.description,
@@ -130,6 +147,7 @@ export async function insertListing(input: NewListingInput): Promise<number> {
         input.endsAt,
         status,
         input.createdBy,
+        loftId,
       ],
     );
   } else {
@@ -138,8 +156,8 @@ export async function insertListing(input: NewListingInput): Promise<number> {
     // throwing and taking down the request path.
     [result] = await db.query(
       `INSERT INTO listings
-         (title, description, listing_type, starting_price, current_price, buy_it_now_price, ends_at, status, created_by, created_at)
-       VALUES (?, ?, 'auction', ?, ?, ?, ?, 'open', ?, NOW())`,
+         (title, description, listing_type, starting_price, current_price, buy_it_now_price, ends_at, status, created_by, created_at, loft_id)
+       VALUES (?, ?, 'auction', ?, ?, ?, ?, 'open', ?, NOW(), ?)`,
       [
         input.title,
         input.description,
@@ -148,6 +166,7 @@ export async function insertListing(input: NewListingInput): Promise<number> {
         input.buyItNowPrice,
         input.endsAt,
         input.createdBy,
+        loftId,
       ],
     );
   }
@@ -466,13 +485,23 @@ export interface ListingCardExtras {
   bidCount: number;
   /** Fixed-price only. */
   purchaseCount: number;
+  /** Partner loft (homepage_sections.title) this listing belongs to, if any (issue #45) — shown as a plain-text label, never a link, on the public card. */
+  loftName: string | null;
+}
+
+export interface ListOpenListingsOptions {
+  /** Filters to listings belonging to this homepage_sections.id (合作鴿舍) — powers /listings?loft=<id> (issue #45). */
+  loftId?: number;
 }
 
 // Powers the public listings grid's cards (see app/listings/page.tsx) —
 // beyond the base listing row, each card also shows who's currently
 // leading (masked — see lib/mask.ts) and how much activity the listing has
 // had, via a LEFT JOIN + correlated subqueries rather than a per-row loop.
-export async function listOpenListings(type?: ListingType): Promise<(ListingWithPhotos & ListingCardExtras)[]> {
+export async function listOpenListings(
+  type?: ListingType,
+  options: ListOpenListingsOptions = {},
+): Promise<(ListingWithPhotos & ListingCardExtras)[]> {
   await syncListingLifecycle();
   const db = await getDb();
 
@@ -480,19 +509,24 @@ export async function listOpenListings(type?: ListingType): Promise<(ListingWith
   // publicly with a "starts at" badge instead of a bid button (bidding
   // itself stays blocked server-side, see resolveProxyBid/resolveBuyNow).
   const conditions = ["l.status IN ('open', 'scheduled')"];
-  const params: string[] = [];
+  const params: (string | number)[] = [];
   if (type) {
     conditions.push("l.listing_type = ?");
     params.push(type);
   }
+  if (options.loftId !== undefined) {
+    conditions.push("l.loft_id = ?");
+    params.push(options.loftId);
+  }
 
   const [rows] = await db.query(
     `SELECT
-       l.*, u.display_name AS leaderDisplayName,
+       l.*, u.display_name AS leaderDisplayName, loft.title AS loftName,
        (SELECT COUNT(*) FROM bids WHERE listing_id = l.id) AS bidCount,
        (SELECT COUNT(*) FROM purchases WHERE listing_id = l.id) AS purchaseCount
      FROM listings l
      LEFT JOIN users u ON u.id = l.leader_user_id
+     LEFT JOIN homepage_sections loft ON loft.id = l.loft_id
      WHERE ${conditions.join(" AND ")}
      ORDER BY l.ends_at IS NULL, l.ends_at ASC`,
     params,
@@ -656,6 +690,64 @@ export async function getBiddersForListing(listingId: number): Promise<BidderEnt
     [listingId],
   );
   return rows as BidderEntry[];
+}
+
+export interface ListingActivityEntry {
+  /** Raw (unmasked) display name — callers mask via lib/mask.ts before rendering, same convention as leaderDisplayName in ListingCardExtras. */
+  displayName: string | null;
+  amount: number;
+  createdAt: Date;
+}
+
+export interface ListingActivityFeed {
+  /** Total number of bids/purchases ever recorded for this listing — not just the entries returned below. */
+  totalCount: number;
+  /** Newest first, capped at ACTIVITY_FEED_LIMIT. */
+  entries: ListingActivityEntry[];
+}
+
+const ACTIVITY_FEED_LIMIT = 20;
+
+// Powers the public listing detail page's "出價與交易動態" tab (issue #45,
+// replacing the old static-copy reviews tab) — auction listings source from
+// `bids`, fixed_price listings from `purchases`. Public/no-login-required,
+// so unlike getBiddersForListing (admin-only, joins users.email) this joins
+// users.display_name for the page to mask via maskDisplayName instead of
+// exposing email addresses. Deliberately returns only a total count rather
+// than per-bidder sequence numbers (see issue #45's acceptance criteria).
+export async function getListingActivityFeed(
+  listingId: number,
+  listingType: ListingType,
+): Promise<ListingActivityFeed> {
+  const db = await getDb();
+
+  if (listingType === "fixed_price") {
+    const [countRows] = await db.query("SELECT COUNT(*) AS cnt FROM purchases WHERE listing_id = ?", [listingId]);
+    const totalCount = (countRows as { cnt: number }[])[0].cnt;
+    const [rows] = await db.query(
+      `SELECT u.display_name AS displayName, p.total_amount AS amount, p.created_at AS createdAt
+       FROM purchases p
+       JOIN users u ON u.id = p.buyer_id
+       WHERE p.listing_id = ?
+       ORDER BY p.created_at DESC
+       LIMIT ${ACTIVITY_FEED_LIMIT}`,
+      [listingId],
+    );
+    return { totalCount, entries: rows as ListingActivityEntry[] };
+  }
+
+  const [countRows] = await db.query("SELECT COUNT(*) AS cnt FROM bids WHERE listing_id = ?", [listingId]);
+  const totalCount = (countRows as { cnt: number }[])[0].cnt;
+  const [rows] = await db.query(
+    `SELECT u.display_name AS displayName, b.amount AS amount, b.created_at AS createdAt
+     FROM bids b
+     JOIN users u ON u.id = b.user_id
+     WHERE b.listing_id = ?
+     ORDER BY b.created_at DESC
+     LIMIT ${ACTIVITY_FEED_LIMIT}`,
+    [listingId],
+  );
+  return { totalCount, entries: rows as ListingActivityEntry[] };
 }
 
 // Admin confirms the offline payment/delivery is done — releases the
@@ -990,7 +1082,14 @@ export type UpdateFixedPriceListingOutcome = { ok: true } | { ok: false; error: 
 // goes inconsistent regardless of how many times a listing gets restocked.
 export async function updateFixedPriceListing(
   listingId: number,
-  input: { title: string; description: string; price: number; stockRemaining: number },
+  input: {
+    title: string;
+    description: string;
+    price: number;
+    stockRemaining: number;
+    /** Optional loft selection (issue #45) — like every other field here, this is a full replace: omit/null clears loft_id. */
+    loftId?: number | null;
+  },
 ): Promise<UpdateFixedPriceListingOutcome> {
   const db = await getDb();
   const connection = await db.getConnection();
@@ -1024,7 +1123,7 @@ export async function updateFixedPriceListing(
     await connection.query(
       `UPDATE listings
        SET title = ?, description = ?, price = ?, current_price = ?, starting_price = ?,
-           stock_quantity = ?, stock_remaining = ?
+           stock_quantity = ?, stock_remaining = ?, loft_id = ?
        WHERE id = ?`,
       [
         input.title,
@@ -1034,6 +1133,7 @@ export async function updateFixedPriceListing(
         input.price,
         sold + input.stockRemaining,
         input.stockRemaining,
+        input.loftId ?? null,
         listingId,
       ],
     );

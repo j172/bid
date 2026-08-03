@@ -12,8 +12,7 @@ export default async function SiteHeader() {
   const quickSearches = [
     { label: t("quickAuction"), href: "/listings?type=auction" },
     { label: t("quickFixed"), href: "/listings?type=fixed_price" },
-    { label: t("quickUnder500"), href: "/listings?minPrice=0&maxPrice=500" },
-    { label: t("quickProxy"), href: "/listings?q=proxy" },
+    { label: t("quickAutoBid"), href: "/#auto-bidding-explainer" },
   ];
 
   return (
@@ -71,11 +70,11 @@ export default async function SiteHeader() {
               <input
                 type="search"
                 name="q"
-                placeholder="搜尋商品..."
+                placeholder={t("searchPlaceholderShort")}
                 className="min-w-0 flex-1 rounded-md border border-border bg-white px-2 py-1.5 text-xs text-ink placeholder:text-ink-light focus:border-interactive-primary focus:outline-none"
               />
               <button type="submit" className="rounded-md bg-header px-2 py-1.5 text-xs font-semibold text-white">
-                Go
+                {t("searchSubmit")}
               </button>
             </form>
 
@@ -133,23 +132,23 @@ export default async function SiteHeader() {
               <input
                 type="search"
                 name="q"
-                placeholder="搜尋商品、品牌或關鍵字..."
+                placeholder={t("searchPlaceholder")}
                 className="h-full min-w-0 flex-1 px-4 text-sm text-ink placeholder:text-ink-light focus:outline-none"
               />
             </div>
             <button type="submit" className="absolute right-[5px] top-[5px] inline-flex h-[38px] items-center rounded-full bg-slate-950 px-4 text-xs font-semibold leading-none text-white hover:bg-slate-800">
-              Search
+              {t("searchSubmit")}
             </button>
           </form>
 
           <div className="shrink-0 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 leading-tight shadow-sm">
-            <p className="text-[11px] uppercase tracking-wide text-ink-light">客服專線</p>
-            <p className="text-xs font-bold text-ink">(+886) 02-1234-5678</p>
+            <p className="text-[11px] uppercase tracking-wide text-ink-light">{t("supportPhoneLabel")}</p>
+            <p className="text-xs font-bold text-ink">{t("supportPhone")}</p>
           </div>
         </div>
 
         <div className="hidden items-center gap-2 lg:flex">
-          <Link href="/cart" aria-label="Cart" className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-ink shadow-sm hover:border-interactive-primary hover:text-interactive-primary">
+          <Link href="/cart" aria-label={t("cartLabel")} className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-ink shadow-sm hover:border-interactive-primary hover:text-interactive-primary">
             <span aria-hidden>🛒</span>
             <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-header px-1 text-[10px] text-white">0</span>
           </Link>
@@ -176,31 +175,27 @@ export default async function SiteHeader() {
 
       <div className="hidden border-t border-slate-200 bg-gradient-to-b from-white to-slate-50 lg:block">
         <div className="mx-auto max-w-6xl px-4 py-2.5 sm:px-6">
-          <div className="flex items-center justify-between gap-4 text-sm">
-            <nav className="flex min-w-0 flex-wrap items-center gap-5 text-ink">
-              <Link href="/" className="font-medium hover:text-interactive-primary">
-                {t("home")}
+          <nav className="flex min-w-0 flex-wrap items-center gap-5 text-sm text-ink">
+            <Link href="/" className="font-medium hover:text-interactive-primary">
+              {t("home")}
+            </Link>
+            <Link href="/listings" className="font-medium hover:text-interactive-primary">
+              {t("browse")}
+            </Link>
+            <Link href="/contact" className="font-medium hover:text-interactive-primary">
+              {t("contact")}
+            </Link>
+            {user && (
+              <Link href="/my-bids" className="font-medium hover:text-interactive-primary">
+                {t("myBids")}
               </Link>
-              <Link href="/listings" className="font-medium hover:text-interactive-primary">
-                {t("browse")}
-              </Link>
-              <Link href="/contact" className="font-medium hover:text-interactive-primary">
-                {t("contact")}
-              </Link>
-              {user && (
-                <Link href="/my-bids" className="font-medium hover:text-interactive-primary">
-                  {t("myBids")}
-                </Link>
-              )}
-              {user?.role === "admin" && (
-                <NextLink href="/z04urru6" className="font-medium hover:text-interactive-primary">
-                  {t("admin")}
-                </NextLink>
-              )}
-            </nav>
-
-            <p className="shrink-0 rounded-full bg-muted-olive-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-interactive-primary">Premium Auction Experience</p>
-          </div>
+            )}
+            {user?.role === "admin" && (
+              <NextLink href="/z04urru6" className="font-medium hover:text-interactive-primary">
+                {t("admin")}
+              </NextLink>
+            )}
+          </nav>
 
           <div className="mt-2 flex items-center justify-between gap-3 border-t border-dashed border-slate-200 pt-2.5">
             <div className="flex min-w-0 items-center gap-2 text-xs">

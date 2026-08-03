@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 const FALLBACK_SRC = "/images/hero-placeholder.png";
 
@@ -10,6 +11,7 @@ interface ListingGalleryProps {
 }
 
 export default function ListingGallery({ title, imageUrls }: ListingGalleryProps) {
+  const t = useTranslations("listingDetail");
   const urls = useMemo(() => imageUrls.filter(Boolean), [imageUrls]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -76,7 +78,7 @@ export default function ListingGallery({ title, imageUrls }: ListingGalleryProps
         type="button"
         onClick={() => setLightboxOpen(true)}
         className="aspect-video overflow-hidden rounded-2xl border border-border bg-surface-muted shadow-sm"
-        aria-label={`放大檢視 ${title}`}
+        aria-label={t("galleryZoomLabel", { title })}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -96,7 +98,7 @@ export default function ListingGallery({ title, imageUrls }: ListingGalleryProps
                 key={url}
                 type="button"
                 onClick={() => setSelectedIndex(index)}
-                aria-label={`${title} image ${index + 1}`}
+                aria-label={t("galleryImageLabel", { title, index: index + 1 })}
                 aria-pressed={active}
                 className={`h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg border bg-white transition ${
                   active
@@ -118,13 +120,13 @@ export default function ListingGallery({ title, imageUrls }: ListingGalleryProps
       )}
 
       {urls.length > 1 && (
-        <p className="text-xs text-ink-light">Use ← / → to switch photos</p>
+        <p className="text-xs text-ink-light">{t("galleryKeyboardHint")}</p>
       )}
 
       {lightboxOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label={`${title} 大圖預覽`}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label={t("galleryLightboxLabel", { title })}>
           <button type="button" className="absolute right-4 top-4 rounded-full bg-white/90 px-3 py-1 text-sm font-semibold text-ink" onClick={() => setLightboxOpen(false)}>
-            關閉
+            {t("galleryClose")}
           </button>
           <div className="max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-2xl bg-black">
             {/* eslint-disable-next-line @next/next/no-img-element */}

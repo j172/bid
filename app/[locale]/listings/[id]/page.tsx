@@ -1,9 +1,12 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getMinimumNextBid } from "@/lib/bidding/domain";
+import { currencyForLocale, formatConvertedApprox, formatNtd } from "@/lib/currency";
+import { getLatestStoredRate } from "@/lib/exchangeRates";
 import { formatRemaining } from "@/lib/format";
-import { getListingById, listOpenListings } from "@/lib/listings";
+import { maskDisplayName } from "@/lib/mask";
+import { getListingActivityFeed, getListingById, listOpenListings } from "@/lib/listings";
 import { listingPhotoUrl } from "@/lib/uploads";
 import { Link } from "@/i18n/navigation";
 import ZoomableProductImage from "../../components/ZoomableProductImage";
@@ -43,7 +46,19 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
   const tNav = await getTranslations("nav");
   const tListings = await getTranslations("listings");
   const tFormat = await getTranslations("format");
+  const tAutoBid = await getTranslations("autoBiddingInfo");
+  const tMask = await getTranslations("mask");
+  const locale = await getLocale();
   const imageUrls = listing.photos.map((fileName) => listingPhotoUrl(listing.id, fileName));
+
+  // Reference-only currency conversion (issue #45) — public pages only
+  // (admin stays pure NTD). zh-TW visitors get "TWD" back (no conversion
+  // needed); zh-CN/en get the latest synced rate, or null before the first
+  // successful sync, in which case formatConvertedApprox below just omits
+  // the secondary line entirely.
+  const displayCurrency = currencyForLocale(locale);
+  const displayRate = displayCurrency === "TWD" ? null : await getLatestStoredRate(displayCurrency);
+  const rateValue = displayRate?.rate ?? null;
 
   const isAuction = listing.listing_type === "auction";
   const discountRate =
@@ -66,10 +81,10 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       label: t("specStatus"),
       value: isScheduled ? t("statusScheduled") : isOpen ? t("statusLive") : t("statusEnded"),
     },
-    { label: t("specCurrentPrice"), value: `${listing.current_price}` },
+    { label: t("specCurrentPrice"), value: formatNtd(listing.current_price) },
     {
       label: t("specBuyNow"),
-      value: listing.buy_it_now_price !== null ? `${listing.buy_it_now_price}` : t("specNotAvailable"),
+      value: listing.buy_it_now_price !== null ? formatNtd(listing.buy_it_now_price) : t("specNotAvailable"),
     },
     ...(listing.starts_at
       ? [{ label: t("specStartTime"), value: formatRemaining(listing.starts_at, tFormat, { prefixKey: "startsInPrefix", endedKey: "startingSoon" }) }]
@@ -84,11 +99,26 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
     },
   ];
 
-  const reviewLines = [
-    t("reviewHintOne"),
-    t("reviewHintTwo"),
-    t("reviewHintThree"),
-  ];
+  // Public bid/transaction activity feed (issue #45) — no login required.
+  // Source table auto-switches on listing type (see getListingActivityFeed's
+  // own header comment): auction listings read `bids`, fixed_price listings
+  // read `purchases`. Masked here (not in the lib layer) to match the
+  // existing convention of masking at the page level — see
+  // maskDisplayName(listing.leaderDisplayName, ...) on the listings grid.
+  const activityFeed = await getListingActivityFeed(listing.id, listing.listing_type);
+  const activityDateFormatter = new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const anonymousBuyer = tMask("anonymousBuyer");
+  const activityLines = activityFeed.entries.map((entry) => ({
+    maskedName: maskDisplayName(entry.displayName, anonymousBuyer),
+    amountLabel: `${entry.amount}`,
+    dateLabel: activityDateFormatter.format(entry.createdAt),
+  }));
 
   // Captured once per request and passed to every client component that
   // seeds a countdown from it — see useListingCountdown for why this needs
@@ -140,7 +170,6 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                   {discountRate}% {t("off")}
                 </span>
               )}
-              <span className="text-sm text-ink-light">(0 {t("customerReviews")})</span>
             </div>
             <p className="mt-4 text-sm font-semibold text-ink-light">{stockLabel}</p>
           </div>
@@ -150,19 +179,31 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
             {isFixedPrice ? (
               <div className="flex flex-col gap-1">
                 <div className="mt-2 flex items-baseline gap-3">
-                  <span className="text-4xl font-black text-interactive-primary">{listing.price}</span>
+                  <span className="text-4xl font-black text-interactive-primary">{formatNtd(listing.price!)}</span>
                   <StatusBadge status={listing.status} />
                 </div>
+                {formatConvertedApprox(listing.price!, displayCurrency, rateValue) && (
+                  <p className="text-sm font-semibold text-ink-light">
+                    {formatConvertedApprox(listing.price!, displayCurrency, rateValue)}{" "}
+                    <span className="text-xs font-normal italic">({t("currencyReferenceOnly")})</span>
+                  </p>
+                )}
                 <p className="text-sm text-ink-light">{stockLabel}</p>
               </div>
             ) : (
               <div>
                 <div className="mb-3 flex items-end gap-3">
                   {listing.buy_it_now_price !== null && (
-                    <span className="text-lg text-ink-light line-through">{listing.buy_it_now_price}</span>
+                    <span className="text-lg text-ink-light line-through">{formatNtd(listing.buy_it_now_price)}</span>
                   )}
-                  <span className="text-4xl font-black text-interactive-primary">{listing.current_price}</span>
+                  <span className="text-4xl font-black text-interactive-primary">{formatNtd(listing.current_price)}</span>
                 </div>
+                {formatConvertedApprox(listing.current_price, displayCurrency, rateValue) && (
+                  <p className="mb-3 text-sm font-semibold text-ink-light">
+                    {formatConvertedApprox(listing.current_price, displayCurrency, rateValue)}{" "}
+                    <span className="text-xs font-normal italic">({t("currencyReferenceOnly")})</span>
+                  </p>
+                )}
                 <LiveListingStatus
                   listingId={listing.id}
                   initialCurrentPrice={listing.current_price}
@@ -173,7 +214,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                 />
                 {listing.buy_it_now_price !== null && (
                   <p className="mt-3 inline-flex w-fit rounded-md bg-interactive-primary-subtle px-2 py-1 text-sm font-medium text-interactive-primary-active">
-                    {t("buyItNowPrice", { price: listing.buy_it_now_price })}
+                    {t("buyItNowPrice", { price: formatNtd(listing.buy_it_now_price) })}
                   </p>
                 )}
               </div>
@@ -203,6 +244,15 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                       <div className="rounded-xl border border-border bg-surface p-4">
                         <BidForm listingId={listing.id} minimumNextBid={minimumNextBid} />
                       </div>
+                      <div className="rounded-xl border border-interactive-primary/20 bg-interactive-primary-subtle p-4 text-xs text-ink-light">
+                        <p className="font-bold text-ink">{tAutoBid("title")}</p>
+                        <p className="mt-1">{tAutoBid("description")}</p>
+                        <ol className="mt-2 list-decimal space-y-1 pl-4">
+                          <li>{tAutoBid("step1")}</li>
+                          <li>{tAutoBid("step2")}</li>
+                          <li>{tAutoBid("step3")}</li>
+                        </ol>
+                      </div>
                       {listing.buy_it_now_price !== null && (
                         <div className="rounded-xl border border-interactive-primary/20 bg-interactive-primary-subtle p-4">
                           <BuyNowButton listingId={listing.id} buyItNowPrice={listing.buy_it_now_price} />
@@ -226,13 +276,19 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       <ListingDetailTabs
         descriptionLabel={t("descriptionTab")}
         additionalLabel={t("additionalTab")}
-        reviewsLabel={t("reviewsTab")}
+        activityLabel={t("activityTab")}
         descriptionTitle={t("descriptionHeading")}
         additionalTitle={t("additionalHeading")}
-        reviewsTitle={t("reviewsHeading")}
+        activityTitle={t("activityHeading")}
         description={listing.description}
         specs={specs}
-        reviewLines={reviewLines}
+        activityTotalCountLabel={
+          isFixedPrice
+            ? t("activityTotalPurchases", { count: activityFeed.totalCount })
+            : t("activityTotalBids", { count: activityFeed.totalCount })
+        }
+        activityLines={activityLines}
+        activityEmptyLabel={isFixedPrice ? t("activityEmptyPurchases") : t("activityEmptyBids")}
       />
 
       <section className="mt-12">
@@ -263,7 +319,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
               <div className="p-4">
                 <h3 className="truncate font-semibold text-ink">{related.title}</h3>
                 <p className="mt-2 text-lg font-black text-interactive-primary">
-                  {related.listing_type === "fixed_price" ? related.price : related.current_price}
+                  {formatNtd(related.listing_type === "fixed_price" ? related.price! : related.current_price)}
                 </p>
                 <p className="mt-2 inline-flex rounded-full bg-interactive-primary-subtle px-2 py-0.5 text-xs font-semibold text-interactive-primary">
                   {t("viewDetails")}
