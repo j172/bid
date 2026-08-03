@@ -6,7 +6,13 @@ $path = parse_url($uri, PHP_URL_PATH) ?: '/';
 $appDir = '/home/tw123457/bid_app';
 $appPort = 3001;
 $nodeBin = '/home/tw123457/.nvm/versions/node/v20.20.2/bin/node';
-$npmBin = '/home/tw123457/.nvm/versions/node/v20.20.2/bin/npm';
+// bin/npm is a shebang (`#!/usr/bin/env node`) script — fine when invoked
+// interactively where PATH has the nvm dir first, but PHP's exec() gives the
+// shell a bare PATH that resolves `env node` to some other/older system node
+// instead, which then can't require() npm's `node:`-prefixed core-module
+// specifiers. Invoking the actual JS entrypoint via $nodeBin directly (same
+// as $pm2Bin below) sidesteps the shebang/PATH lookup entirely.
+$npmCliJs = '/home/tw123457/.nvm/versions/node/v20.20.2/lib/node_modules/npm/bin/npm-cli.js';
 $pm2Bin = '/home/tw123457/.nvm/versions/node/v20.20.2/lib/node_modules/pm2/bin/pm2';
 
 // Not hardcoded/committed: this file is public (tracked in a public GitHub
@@ -31,7 +37,7 @@ if (str_starts_with($path, '/__ops/')) {
     // "just pm2 start" matches the same pattern already proven on the health
     // project, where this host has been observed silently killing long-running
     // background processes roughly once a day.
-    $buildApplyCommand = static function () use ($appDir, $appPort, $nodeBin, $npmBin, $pm2Bin): string {
+    $buildApplyCommand = static function () use ($appDir, $appPort, $nodeBin, $npmCliJs, $pm2Bin): string {
         $script = "cd {$appDir} "
             . "&& { "
             . "echo '[START] '$(date) > .apply.log; "
@@ -58,7 +64,7 @@ if (str_starts_with($path, '/__ops/')) {
             . "&& echo '[NPM_CI] start '$(date) >> .apply.log "
             . "&& rm -rf node_modules_previous >> .apply.log 2>&1 "
             . "&& { if [ -d node_modules ]; then mv node_modules node_modules_previous; fi; } "
-            . "&& {$npmBin} ci --omit=dev --no-audit --no-fund >> .apply.log 2>&1 "
+            . "&& {$nodeBin} {$npmCliJs} ci --omit=dev --no-audit --no-fund >> .apply.log 2>&1 "
             . "&& rm -rf node_modules_previous >> .apply.log 2>&1 "
             . "&& echo '[NPM_CI] done '$(date) >> .apply.log "
             . "&& ({$nodeBin} {$pm2Bin} delete bid-web >> .apply.log 2>&1 || true) "
