@@ -70,7 +70,15 @@ if (str_starts_with($path, '/__ops/')) {
             // ran that same postinstall when it built public/tinymce, which
             // ships to the host in .prebuilt-public.tgz above, so running it
             // again here would just fail on a missing file for no benefit.
-            . "&& {$nodeBin} {$npmCliJs} ci --omit=dev --ignore-scripts --no-audit --no-fund >> .apply.log 2>&1 "
+            // --no-engine-strict: a prior attempt failed here fast and
+            // silently (no visible npm error in the polled log, finishing
+            // well under the time a real install or the health probe loop
+            // would take) right after printing a non-fatal-by-default
+            // EBADENGINE warning for sanitize-html needing Node >=22 (host is
+            // v20.20.2) — consistent with this host's global npm config
+            // having engine-strict on, which promotes that warning to a hard
+            // failure. Forcing it off here removes that as a cause regardless.
+            . "&& { {$nodeBin} {$npmCliJs} ci --omit=dev --ignore-scripts --no-audit --no-fund --no-engine-strict >> .apply.log 2>&1; NPM_CI_EXIT=\$?; echo \"[NPM_CI] exit=\$NPM_CI_EXIT\" >> .apply.log; test \"\$NPM_CI_EXIT\" -eq 0; } "
             . "&& rm -rf node_modules_previous >> .apply.log 2>&1 "
             . "&& echo '[NPM_CI] done '$(date) >> .apply.log "
             . "&& ({$nodeBin} {$pm2Bin} delete bid-web >> .apply.log 2>&1 || true) "
