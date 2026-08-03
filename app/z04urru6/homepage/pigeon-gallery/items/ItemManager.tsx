@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { GalleryPriceType } from "@/lib/pigeonGallery";
+import { usePartnerLofts } from "@/app/z04urru6/listings/usePartnerLofts";
 
 interface ItemRow {
   id: number;
@@ -9,8 +9,7 @@ interface ItemRow {
   title: string;
   imageFileName: string;
   imageUrl: string;
-  priceType: GalleryPriceType;
-  referencePrice: number;
+  loftId: number | null;
   sortOrder: number;
   isActive: boolean;
 }
@@ -19,23 +18,20 @@ const th = "border-b border-border px-4 py-3 text-left text-sm font-semibold tex
 const td = "border-b border-border px-4 py-3 text-sm align-top";
 const inputClass = "w-full rounded-md border border-border px-3 py-2 text-sm focus:border-interactive-primary focus:outline-none";
 
-const PRICE_TYPE_LABEL: Record<GalleryPriceType, string> = { auction: "競標種鴿", fixed_price: "定價種鴿" };
-
 export default function ItemManager({ categoryId }: { categoryId: number }) {
   const [items, setItems] = useState<ItemRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const lofts = usePartnerLofts();
 
   const [newTitle, setNewTitle] = useState("");
-  const [newPriceType, setNewPriceType] = useState<GalleryPriceType>("auction");
-  const [newPrice, setNewPrice] = useState("");
+  const [newLoftId, setNewLoftId] = useState("");
   const [newImage, setNewImage] = useState<File | null>(null);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState("");
-  const [editPriceType, setEditPriceType] = useState<GalleryPriceType>("auction");
-  const [editPrice, setEditPrice] = useState("");
+  const [editLoftId, setEditLoftId] = useState("");
   const [editImage, setEditImage] = useState<File | null>(null);
   const [editIsActive, setEditIsActive] = useState(true);
   const [editSubmitting, setEditSubmitting] = useState(false);
@@ -68,8 +64,7 @@ export default function ItemManager({ categoryId }: { categoryId: number }) {
     const formData = new FormData();
     formData.set("categoryId", String(categoryId));
     formData.set("title", newTitle);
-    formData.set("priceType", newPriceType);
-    formData.set("referencePrice", newPrice);
+    if (newLoftId) formData.set("loftId", newLoftId);
     formData.set("image", newImage);
 
     const response = await fetch("/api/admin/pigeon-gallery/items", { method: "POST", body: formData });
@@ -81,8 +76,7 @@ export default function ItemManager({ categoryId }: { categoryId: number }) {
       return;
     }
     setNewTitle("");
-    setNewPriceType("auction");
-    setNewPrice("");
+    setNewLoftId("");
     setNewImage(null);
     await load();
   }
@@ -90,8 +84,7 @@ export default function ItemManager({ categoryId }: { categoryId: number }) {
   function startEdit(item: ItemRow) {
     setEditingId(item.id);
     setEditTitle(item.title);
-    setEditPriceType(item.priceType);
-    setEditPrice(String(item.referencePrice));
+    setEditLoftId(item.loftId ? String(item.loftId) : "");
     setEditImage(null);
     setEditIsActive(item.isActive);
     setEditError(null);
@@ -103,8 +96,7 @@ export default function ItemManager({ categoryId }: { categoryId: number }) {
 
     const formData = new FormData();
     formData.set("title", editTitle);
-    formData.set("priceType", editPriceType);
-    formData.set("referencePrice", editPrice);
+    formData.set("loftId", editLoftId);
     formData.set("sortOrder", String(item.sortOrder));
     formData.set("isActive", editIsActive ? "true" : "false");
     if (editImage) formData.set("image", editImage);
@@ -158,6 +150,7 @@ export default function ItemManager({ categoryId }: { categoryId: number }) {
   }
 
   const sortedItems = items ? [...items].sort((a, b) => a.sortOrder - b.sortOrder) : null;
+  const loftTitleById = new Map(lofts.map((loft) => [loft.id, loft.title]));
 
   return (
     <div className="space-y-6">
@@ -177,27 +170,15 @@ export default function ItemManager({ categoryId }: { categoryId: number }) {
           />
         </label>
         <label className="flex flex-col gap-1 text-xs text-ink-light">
-          類型
-          <select
-            value={newPriceType}
-            onChange={(e) => setNewPriceType(e.target.value as GalleryPriceType)}
-            className={inputClass}
-          >
-            <option value="auction">競標種鴿</option>
-            <option value="fixed_price">定價種鴿</option>
+          合作鴿舍（選填）
+          <select value={newLoftId} onChange={(e) => setNewLoftId(e.target.value)} className={inputClass}>
+            <option value="">無</option>
+            {lofts.map((loft) => (
+              <option key={loft.id} value={loft.id}>
+                {loft.title}
+              </option>
+            ))}
           </select>
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-ink-light">
-          參考價格
-          <input
-            value={newPrice}
-            onChange={(e) => setNewPrice(e.target.value)}
-            type="number"
-            min={1}
-            step={1}
-            required
-            className={inputClass}
-          />
         </label>
         <label className="flex flex-col gap-1 text-xs text-ink-light">
           圖片
@@ -226,8 +207,7 @@ export default function ItemManager({ categoryId }: { categoryId: number }) {
               <tr>
                 <th className={th}>圖片</th>
                 <th className={th}>標題</th>
-                <th className={th}>類型</th>
-                <th className={th}>參考價格</th>
+                <th className={th}>合作鴿舍</th>
                 <th className={th}>排序</th>
                 <th className={th}>狀態</th>
                 <th className={th}></th>
@@ -248,30 +228,16 @@ export default function ItemManager({ categoryId }: { categoryId: number }) {
                   </td>
                   <td className={td}>
                     {editingId === item.id ? (
-                      <select
-                        value={editPriceType}
-                        onChange={(e) => setEditPriceType(e.target.value as GalleryPriceType)}
-                        className={inputClass}
-                      >
-                        <option value="auction">競標種鴿</option>
-                        <option value="fixed_price">定價種鴿</option>
+                      <select value={editLoftId} onChange={(e) => setEditLoftId(e.target.value)} className={inputClass}>
+                        <option value="">無</option>
+                        {lofts.map((loft) => (
+                          <option key={loft.id} value={loft.id}>
+                            {loft.title}
+                          </option>
+                        ))}
                       </select>
                     ) : (
-                      PRICE_TYPE_LABEL[item.priceType]
-                    )}
-                  </td>
-                  <td className={td}>
-                    {editingId === item.id ? (
-                      <input
-                        value={editPrice}
-                        onChange={(e) => setEditPrice(e.target.value)}
-                        type="number"
-                        min={1}
-                        step={1}
-                        className={inputClass}
-                      />
-                    ) : (
-                      item.referencePrice.toLocaleString()
+                      (item.loftId ? loftTitleById.get(item.loftId) : null) ?? "—"
                     )}
                   </td>
                   <td className={td}>

@@ -146,13 +146,16 @@ CREATE TABLE IF NOT EXISTS pigeon_gallery_categories (
 -- use FK constraints anywhere — see `listings`/`listing_photos` above), so
 -- deletePigeonGalleryCategory (lib/pigeonGallery.ts) removes a category's
 -- items itself before removing the category row.
+-- price_type/reference_price were removed in issue #45's GRILL ME follow-up
+-- along with the category page's type/price-range filter UI (a deliberate
+-- simplification — the page is now pure display: photos + titles only).
+-- loft_id is the same optional 合作鴿舍 single-select as listings.loft_id.
 CREATE TABLE IF NOT EXISTS pigeon_gallery_items (
   id BIGINT NOT NULL AUTO_INCREMENT,
   category_id BIGINT NOT NULL,
   title VARCHAR(255) NOT NULL,
   image_file_name VARCHAR(255) NOT NULL,
-  price_type VARCHAR(20) NOT NULL,            -- 'auction' (競標種鴿) | 'fixed_price' (定價種鴿)
-  reference_price BIGINT NOT NULL,
+  loft_id BIGINT NULL,                        -- optional homepage_sections.id (合作鴿舍) this pigeon belongs to; plain-text label only, not a link
   sort_order INT NOT NULL DEFAULT 0,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL,

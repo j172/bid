@@ -8,7 +8,6 @@
 import { getDb } from "@/lib/db";
 
 export type GalleryType = "award" | "import";
-export type GalleryPriceType = "auction" | "fixed_price";
 
 export type PigeonGalleryOutcome = { ok: true } | { ok: false; error: string };
 
@@ -184,8 +183,10 @@ export interface PigeonGalleryItem {
   categoryId: number;
   title: string;
   imageFileName: string;
-  priceType: GalleryPriceType;
-  referencePrice: number;
+  /** Optional 合作鴿舍 (homepage_sections.id) this pigeon belongs to (issue #45) — null when not set. No DB-level FK (see db/init.sql). */
+  loftId: number | null;
+  /** Loft's title, joined in by listPigeonGalleryItems for the public plain-text label; null when loftId is null, and always null from getPigeonGalleryItemById (no join there — admin-only lookups don't need it). */
+  loftName: string | null;
   sortOrder: number;
   isActive: boolean;
   createdAt: Date;
@@ -196,8 +197,8 @@ export interface NewPigeonGalleryItemInput {
   categoryId: number;
   title: string;
   imageFileName: string;
-  priceType: GalleryPriceType;
-  referencePrice: number;
+  /** Optional — null/omit for none. */
+  loftId?: number | null;
   /** Omit to default to end-of-list (MAX(sort_order) + 1 within this categoryId). */
   sortOrder?: number;
   /** Defaults to true (visible). */
@@ -207,8 +208,8 @@ export interface NewPigeonGalleryItemInput {
 export interface UpdatePigeonGalleryItemInput {
   title: string;
   imageFileName: string;
-  priceType: GalleryPriceType;
-  referencePrice: number;
+  /** Optional — like every other field here, this is a full replace: omit/null clears loft_id. */
+  loftId?: number | null;
   sortOrder: number;
   isActive: boolean;
 }
@@ -218,12 +219,13 @@ interface ItemRow {
   category_id: number;
   title: string;
   image_file_name: string;
-  price_type: GalleryPriceType;
-  reference_price: number;
+  loft_id: number | null;
   sort_order: number;
   is_active: number;
   created_at: Date;
   updated_at: Date;
+  /** Only present when the query joins homepage_sections (see listPigeonGalleryItems) — undefined from the plain SELECT * lookups. */
+  loftName?: string | null;
 }
 
 function mapItemRow(row: ItemRow): PigeonGalleryItem {
@@ -232,8 +234,8 @@ function mapItemRow(row: ItemRow): PigeonGalleryItem {
     categoryId: row.category_id,
     title: row.title,
     imageFileName: row.image_file_name,
-    priceType: row.price_type,
-    referencePrice: row.reference_price,
+    loftId: row.loft_id,
+    loftName: row.loftName ?? null,
     sortOrder: row.sort_order,
     isActive: Boolean(row.is_active),
     createdAt: row.created_at,
@@ -242,21 +244,27 @@ function mapItemRow(row: ItemRow): PigeonGalleryItem {
 }
 
 // Powers both the admin item management list (activeOnly: false) and the
-// public per-category gallery list page (activeOnly: true, plus its own
-// price-type/price-range filtering — a later ticket's concern, out of scope
-// here) — always ordered by sort_order.
+// public per-category gallery list page (activeOnly: true — pure display
+// only as of issue #45's GRILL ME follow-up, which removed the former
+// price-type/price-range filtering entirely) — always ordered by sort_order.
+// LEFT JOINs homepage_sections for the loft's title, shown as a plain-text
+// label (never a link) on the public page.
 export async function listPigeonGalleryItems(
   categoryId: number,
   options: { activeOnly?: boolean } = {},
 ): Promise<PigeonGalleryItem[]> {
   const db = await getDb();
-  const conditions = ["category_id = ?"];
+  const conditions = ["i.category_id = ?"];
   const params: (string | number)[] = [categoryId];
   if (options.activeOnly) {
-    conditions.push("is_active = 1");
+    conditions.push("i.is_active = 1");
   }
   const [rows] = await db.query(
-    `SELECT * FROM pigeon_gallery_items WHERE ${conditions.join(" AND ")} ORDER BY sort_order ASC, id ASC`,
+    `SELECT i.*, loft.title AS loftName
+     FROM pigeon_gallery_items i
+     LEFT JOIN homepage_sections loft ON loft.id = i.loft_id
+     WHERE ${conditions.join(" AND ")}
+     ORDER BY i.sort_order ASC, i.id ASC`,
     params,
   );
   return (rows as ItemRow[]).map(mapItemRow);
@@ -283,14 +291,13 @@ export async function createPigeonGalleryItem(input: NewPigeonGalleryItemInput):
 
   const [result] = await db.query(
     `INSERT INTO pigeon_gallery_items
-       (category_id, title, image_file_name, price_type, reference_price, sort_order, is_active, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+       (category_id, title, image_file_name, loft_id, sort_order, is_active, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
     [
       input.categoryId,
       input.title,
       input.imageFileName,
-      input.priceType,
-      input.referencePrice,
+      input.loftId ?? null,
       sortOrder,
       input.isActive === false ? 0 : 1,
     ],
@@ -305,13 +312,12 @@ export async function updatePigeonGalleryItem(
   const db = await getDb();
   const [result] = await db.query(
     `UPDATE pigeon_gallery_items
-     SET title = ?, image_file_name = ?, price_type = ?, reference_price = ?, sort_order = ?, is_active = ?, updated_at = NOW()
+     SET title = ?, image_file_name = ?, loft_id = ?, sort_order = ?, is_active = ?, updated_at = NOW()
      WHERE id = ?`,
     [
       input.title,
       input.imageFileName,
-      input.priceType,
-      input.referencePrice,
+      input.loftId ?? null,
       input.sortOrder,
       input.isActive ? 1 : 0,
       id,

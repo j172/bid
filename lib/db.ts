@@ -297,6 +297,17 @@ async function ensurePartnerLoftColumns(db: mysql.Pool): Promise<void> {
   await ensureColumn(db, "listings", "loft_id", "BIGINT NULL");
 }
 
+// Same #45 GRILL ME follow-up amending #35's already-merged pigeon gallery
+// implementation: price_type/reference_price are dropped along with the
+// category page's type/price-range filter UI (a deliberate simplification —
+// see app/[locale]/pigeons/[galleryType]/[categoryId]/page.tsx). Items get
+// the same optional loft_id single-select as listings above.
+async function ensurePigeonGalleryItemColumns(db: mysql.Pool): Promise<void> {
+  await dropColumnIfExists(db, "pigeon_gallery_items", "price_type");
+  await dropColumnIfExists(db, "pigeon_gallery_items", "reference_price");
+  await ensureColumn(db, "pigeon_gallery_items", "loft_id", "BIGINT NULL");
+}
+
 function createPool(): mysql.Pool {
   return mysql.createPool({
     host: process.env.MYSQL_HOST,
@@ -317,6 +328,7 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensureBuyItNowNullable(db);
   await ensureEndsAtNullable(db);
   await ensurePartnerLoftColumns(db);
+  await ensurePigeonGalleryItemColumns(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {
