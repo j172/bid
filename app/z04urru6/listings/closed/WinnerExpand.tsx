@@ -8,11 +8,30 @@ interface Winner {
   address: string | null;
 }
 
-export default function WinnerExpand({ listingId, email }: { listingId: number; email: string }) {
+function formatDateTime(date: Date): string {
+  return new Date(date).toLocaleString("zh-TW", { hour12: false });
+}
+
+export default function WinnerExpand({
+  listingId,
+  email,
+  winnerNotifiedAt,
+}: {
+  listingId: number;
+  email: string;
+  /** Null: never sent, or the last attempt failed — see lib/listings.ts's ClosedListingSummary. */
+  winnerNotifiedAt: Date | null;
+}) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [winner, setWinner] = useState<Winner | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Local copy so a successful resend reflects immediately without a full
+  // page reload — same fetch-then-setState pattern as the winner lookup
+  // above, updated in place instead of re-fetching the whole page (issue #48).
+  const [notifiedAt, setNotifiedAt] = useState<Date | null>(winnerNotifiedAt);
+  const [resending, setResending] = useState(false);
+  const [resendError, setResendError] = useState<string | null>(null);
 
   async function handleToggle() {
     if (open) {
@@ -34,6 +53,19 @@ export default function WinnerExpand({ listingId, email }: { listingId: number; 
     setWinner(data.winner);
   }
 
+  async function handleResend() {
+    setResending(true);
+    setResendError(null);
+    const response = await fetch(`/api/admin/listings/${listingId}/notify-winner`, { method: "POST" });
+    const data = await response.json();
+    setResending(false);
+    if (!data.ok) {
+      setResendError(data.error ?? "寄送失敗");
+      return;
+    }
+    setNotifiedAt(data.winnerNotifiedAt ? new Date(data.winnerNotifiedAt) : new Date());
+  }
+
   return (
     <div>
       <button type="button" onClick={handleToggle} className="text-xs font-medium text-interactive-primary hover:underline">
@@ -50,6 +82,22 @@ export default function WinnerExpand({ listingId, email }: { listingId: number; 
               <div>地址：{winner.address ?? "—"}</div>
             </>
           )}
+          <div className="mt-1 flex flex-col gap-1 border-t border-border pt-1">
+            {notifiedAt ? (
+              <p className="text-leading">得標信已寄送 {formatDateTime(notifiedAt)}</p>
+            ) : (
+              <p className="text-ink-light">尚未寄送成功</p>
+            )}
+            {resendError && <p className="text-ended">{resendError}</p>}
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={resending}
+              className="self-start rounded-md border border-interactive-primary px-2 py-1 text-xs font-medium text-interactive-primary hover:bg-interactive-primary-subtle disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {resending ? "寄送中..." : "重新寄送得標信"}
+            </button>
+          </div>
         </div>
       )}
     </div>
