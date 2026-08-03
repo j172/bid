@@ -6,6 +6,7 @@ $path = parse_url($uri, PHP_URL_PATH) ?: '/';
 $appDir = '/home/tw123457/bid_app';
 $appPort = 3001;
 $nodeBin = '/home/tw123457/.nvm/versions/node/v20.20.2/bin/node';
+$npmBin = '/home/tw123457/.nvm/versions/node/v20.20.2/bin/npm';
 $pm2Bin = '/home/tw123457/.nvm/versions/node/v20.20.2/lib/node_modules/pm2/bin/pm2';
 
 // Not hardcoded/committed: this file is public (tracked in a public GitHub
@@ -30,7 +31,7 @@ if (str_starts_with($path, '/__ops/')) {
     // "just pm2 start" matches the same pattern already proven on the health
     // project, where this host has been observed silently killing long-running
     // background processes roughly once a day.
-    $buildApplyCommand = static function () use ($appDir, $appPort, $nodeBin, $pm2Bin): string {
+    $buildApplyCommand = static function () use ($appDir, $appPort, $nodeBin, $npmBin, $pm2Bin): string {
         $script = "cd {$appDir} "
             . "&& { "
             . "echo '[START] '$(date) > .apply.log; "
@@ -45,12 +46,28 @@ if (str_starts_with($path, '/__ops/')) {
             . "&& mv .next_stage/.next .next >> .apply.log 2>&1 "
             . "&& rmdir .next_stage >> .apply.log 2>&1 "
             . "&& echo '[BUILD_ID] '$(cat .next/BUILD_ID) >> .apply.log "
+            // package.json/package-lock.json are shipped alongside the build
+            // (see deploy-ftps.yml) purely so this can run — without it, a
+            // newly-added dependency (e.g. node-cron for #45) builds fine in
+            // CI but is missing from this host's long-lived node_modules,
+            // crashing the app at boot on the very first deploy that needs it.
+            // node_modules is renamed aside rather than deleted up front so a
+            // failed `npm ci` (network blip, disk full) can still be rolled
+            // back to a working node_modules, not just a working .next —
+            // otherwise a flaky install could brick the "previous" build too.
+            . "&& echo '[NPM_CI] start '$(date) >> .apply.log "
+            . "&& rm -rf node_modules_previous >> .apply.log 2>&1 "
+            . "&& { if [ -d node_modules ]; then mv node_modules node_modules_previous; fi; } "
+            . "&& {$npmBin} ci --omit=dev --no-audit --no-fund >> .apply.log 2>&1 "
+            . "&& rm -rf node_modules_previous >> .apply.log 2>&1 "
+            . "&& echo '[NPM_CI] done '$(date) >> .apply.log "
             . "&& ({$nodeBin} {$pm2Bin} delete bid-web >> .apply.log 2>&1 || true) "
             . "&& setsid {$nodeBin} {$pm2Bin} start ecosystem.config.cjs --only bid-web >> .apply.log 2>&1 "
             . "&& { PROBE_OK=0; for ATTEMPT in $(seq 1 30); do if curl -fsS --max-time 5 http://127.0.0.1:{$appPort}/ >/dev/null 2>&1; then PROBE_OK=1; break; fi; sleep 1; done; test \"\$PROBE_OK\" = 1; } "
             . "&& echo '[DONE]' $(date) >> .apply.log; "
             . "} || { "
             . "echo '[ROLLBACK] apply or health probe failed' >> .apply.log; "
+            . "if [ -d node_modules_previous ]; then rm -rf node_modules; mv node_modules_previous node_modules; fi; "
             . "if [ -d .next_previous ]; then rm -rf .next_failed; mv .next .next_failed 2>/dev/null; mv .next_previous .next; {$nodeBin} {$pm2Bin} restart bid-web >> .apply.log 2>&1 || true; fi; "
             . "echo '[FAIL]' $(date) >> .apply.log; "
             . "}; "

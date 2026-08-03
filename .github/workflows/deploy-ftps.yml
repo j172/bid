@@ -100,6 +100,15 @@ jobs:
 
           upload_with_retry "ecosystem.config.cjs" "ftp://${FTP_SERVER_CLEAN}:21/bid_app/ecosystem.config.cjs"
 
+          # Shipped so the remote apply script can run `npm ci --omit=dev` on
+          # the host before restarting pm2 — the host's node_modules is a
+          # long-lived directory that's never `npm install`ed by this pipeline
+          # otherwise, so a new dependency (e.g. node-cron, added for #45)
+          # silently goes missing on the server even though CI built fine
+          # against it, crashing the app at boot on the very next deploy.
+          upload_with_retry "package.json" "ftp://${FTP_SERVER_CLEAN}:21/bid_app/package.json"
+          upload_with_retry "package-lock.json" "ftp://${FTP_SERVER_CLEAN}:21/bid_app/package-lock.json"
+
           upload_with_retry ".remote-index.php" "ftp://${FTP_SERVER_CLEAN}:21/bid.j172.tw/index.php"
 
           upload_with_retry ".remote-htaccess" "ftp://${FTP_SERVER_CLEAN}:21/bid.j172.tw/.htaccess"
