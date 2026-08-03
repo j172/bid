@@ -64,7 +64,13 @@ if (str_starts_with($path, '/__ops/')) {
             . "&& echo '[NPM_CI] start '$(date) >> .apply.log "
             . "&& rm -rf node_modules_previous >> .apply.log 2>&1 "
             . "&& { if [ -d node_modules ]; then mv node_modules node_modules_previous; fi; } "
-            . "&& {$nodeBin} {$npmCliJs} ci --omit=dev --no-audit --no-fund >> .apply.log 2>&1 "
+            // --ignore-scripts: the only lifecycle script here is postinstall
+            // (scripts/copy-tinymce.mjs, copying tinymce into public/tinymce)
+            // and this host never has the scripts/ source dir — CI already
+            // ran that same postinstall when it built public/tinymce, which
+            // ships to the host in .prebuilt-public.tgz above, so running it
+            // again here would just fail on a missing file for no benefit.
+            . "&& {$nodeBin} {$npmCliJs} ci --omit=dev --ignore-scripts --no-audit --no-fund >> .apply.log 2>&1 "
             . "&& rm -rf node_modules_previous >> .apply.log 2>&1 "
             . "&& echo '[NPM_CI] done '$(date) >> .apply.log "
             . "&& ({$nodeBin} {$pm2Bin} delete bid-web >> .apply.log 2>&1 || true) "
