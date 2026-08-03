@@ -7,7 +7,7 @@ import {
   type ProxyBidOutcome,
 } from "@/lib/bidding/domain";
 import { resolvePurchase, type PurchaseOutcome } from "@/lib/purchase";
-import { notifyAuctionEnded, notifyOutbid, notifyPurchaseConfirmed } from "@/lib/notifications";
+import { notifyAuctionEnded, notifyOutbid, notifyPurchaseConfirmed, notifyWinner } from "@/lib/notifications";
 import type { ErrorCode } from "@/lib/errorCodes";
 
 let listingsStartsAtColumnExists: boolean | null = null;
@@ -437,12 +437,26 @@ export async function getOverviewStats(): Promise<OverviewStats> {
 // the right final price/winner. Called at the top of every read/write path
 // below rather than run on a schedule, since there's no background worker
 // in this deployment; cheap enough (single indexed UPDATE) to run on every
-// access.
+// access. Also fires notifyWinner (issue #48) for any listing this sweep is
+// about to close that actually has a winner (leader_user_id set) — a
+// zero-bid listing has nobody to congratulate, so it's excluded from the
+// pre-UPDATE lookup below rather than left to notifyWinner's own no-row
+// no-op, keeping the notify loop tight to only real winners.
 export async function closeExpiredListings(): Promise<void> {
   const db = await getDb();
+  const [winnerRows] = await db.query(
+    "SELECT id FROM listings WHERE status = 'open' AND ends_at <= NOW() AND leader_user_id IS NOT NULL",
+  );
+  const winningListingIds = (winnerRows as { id: number }[]).map((row) => row.id);
+
   await db.query(
     "UPDATE listings SET status = 'closed', close_reason = 'expired' WHERE status = 'open' AND ends_at <= NOW()",
   );
+
+  // Fired without awaiting — see the equivalent note in placeBid().
+  for (const listingId of winningListingIds) {
+    notifyWinner(listingId);
+  }
 }
 
 // Opens any listing whose scheduled start time has passed — the mirror image
@@ -565,6 +579,8 @@ export interface ClosedListingSummary {
   /** Set when markListingSettled is called; preserved across unsettleListing so the settle form can pre-fill it. */
   settlementAccount: string | null;
   settlementAmount: number | null;
+  /** Set on a successful notifyWinner/sendWinnerEmail send (issue #48); null if never sent or the last attempt failed — WinnerExpand offers a resend in that case. Always null when there's no winner. */
+  winnerNotifiedAt: Date | null;
 }
 
 export const CLOSE_REASON_LABELS: Record<"expired" | "buy_now" | "auto_bin", string> = {
@@ -654,6 +670,7 @@ export async function listClosedListings(
             ELSE u.email END AS winnerEmail,
        (l.settled_at IS NOT NULL) AS settled,
        l.settlement_account AS settlementAccount, l.settlement_amount AS settlementAmount,
+       l.winner_notified_at AS winnerNotifiedAt,
        (SELECT COUNT(*) FROM bids WHERE listing_id = l.id) AS bidCount
      FROM listings l
      LEFT JOIN users u ON u.id = l.leader_user_id
@@ -791,6 +808,20 @@ export async function getWinnerProfileForListing(listingId: number): Promise<Win
     [listingId],
   );
   return (rows as WinnerProfile[])[0] ?? null;
+}
+
+// Used by the admin "重新寄送得標信" resend route (issue #48,
+// app/api/admin/listings/[id]/notify-winner) to read back the freshly-set
+// winner_notified_at after sendWinnerEmail succeeds, so the response can
+// hand the client the exact DB value instead of approximating with new Date().
+export async function getWinnerNotifiedAt(listingId: number): Promise<Date | null> {
+  const db = await getDb();
+  const [rows] = await db.query(
+    "SELECT winner_notified_at AS winnerNotifiedAt FROM listings WHERE id = ? LIMIT 1",
+    [listingId],
+  );
+  const row = (rows as { winnerNotifiedAt: Date | null }[])[0];
+  return row?.winnerNotifiedAt ?? null;
 }
 
 // Used by deleteAccount (lib/auth.ts) to decide whether an account can be
@@ -1002,6 +1033,7 @@ export async function placeBid(listingId: number, userId: number, maxAmount: num
     // delay this function's return (see lib/notifications.ts).
     if (result.closedViaBuyItNow) {
       notifyAuctionEnded(listingId);
+      notifyWinner(listingId);
     } else if (result.youAreLeading && listing.leader_user_id !== null && listing.leader_user_id !== userId) {
       notifyOutbid(listingId, listing.leader_user_id);
     }
@@ -1061,6 +1093,7 @@ export async function buyNow(listingId: number, userId: number): Promise<BuyNowO
 
     // Fired without awaiting — see the equivalent note in placeBid().
     notifyAuctionEnded(listingId);
+    notifyWinner(listingId);
 
     return result;
   } catch (error) {
