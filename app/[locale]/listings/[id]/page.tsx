@@ -2,6 +2,8 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getMinimumNextBid } from "@/lib/bidding/domain";
+import { currencyForLocale, formatConvertedApprox, formatNtd } from "@/lib/currency";
+import { getLatestStoredRate } from "@/lib/exchangeRates";
 import { formatRemaining } from "@/lib/format";
 import { maskDisplayName } from "@/lib/mask";
 import { getListingActivityFeed, getListingById, listOpenListings } from "@/lib/listings";
@@ -49,6 +51,15 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
   const locale = await getLocale();
   const imageUrls = listing.photos.map((fileName) => listingPhotoUrl(listing.id, fileName));
 
+  // Reference-only currency conversion (issue #45) — public pages only
+  // (admin stays pure NTD). zh-TW visitors get "TWD" back (no conversion
+  // needed); zh-CN/en get the latest synced rate, or null before the first
+  // successful sync, in which case formatConvertedApprox below just omits
+  // the secondary line entirely.
+  const displayCurrency = currencyForLocale(locale);
+  const displayRate = displayCurrency === "TWD" ? null : await getLatestStoredRate(displayCurrency);
+  const rateValue = displayRate?.rate ?? null;
+
   const isAuction = listing.listing_type === "auction";
   const discountRate =
     isAuction && listing.buy_it_now_price && listing.buy_it_now_price > listing.current_price
@@ -70,10 +81,10 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       label: t("specStatus"),
       value: isScheduled ? t("statusScheduled") : isOpen ? t("statusLive") : t("statusEnded"),
     },
-    { label: t("specCurrentPrice"), value: `${listing.current_price}` },
+    { label: t("specCurrentPrice"), value: formatNtd(listing.current_price) },
     {
       label: t("specBuyNow"),
-      value: listing.buy_it_now_price !== null ? `${listing.buy_it_now_price}` : t("specNotAvailable"),
+      value: listing.buy_it_now_price !== null ? formatNtd(listing.buy_it_now_price) : t("specNotAvailable"),
     },
     ...(listing.starts_at
       ? [{ label: t("specStartTime"), value: formatRemaining(listing.starts_at, tFormat, { prefixKey: "startsInPrefix", endedKey: "startingSoon" }) }]
@@ -168,19 +179,31 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
             {isFixedPrice ? (
               <div className="flex flex-col gap-1">
                 <div className="mt-2 flex items-baseline gap-3">
-                  <span className="text-4xl font-black text-interactive-primary">{listing.price}</span>
+                  <span className="text-4xl font-black text-interactive-primary">{formatNtd(listing.price!)}</span>
                   <StatusBadge status={listing.status} />
                 </div>
+                {formatConvertedApprox(listing.price!, displayCurrency, rateValue) && (
+                  <p className="text-sm font-semibold text-ink-light">
+                    {formatConvertedApprox(listing.price!, displayCurrency, rateValue)}{" "}
+                    <span className="text-xs font-normal italic">({t("currencyReferenceOnly")})</span>
+                  </p>
+                )}
                 <p className="text-sm text-ink-light">{stockLabel}</p>
               </div>
             ) : (
               <div>
                 <div className="mb-3 flex items-end gap-3">
                   {listing.buy_it_now_price !== null && (
-                    <span className="text-lg text-ink-light line-through">{listing.buy_it_now_price}</span>
+                    <span className="text-lg text-ink-light line-through">{formatNtd(listing.buy_it_now_price)}</span>
                   )}
-                  <span className="text-4xl font-black text-interactive-primary">{listing.current_price}</span>
+                  <span className="text-4xl font-black text-interactive-primary">{formatNtd(listing.current_price)}</span>
                 </div>
+                {formatConvertedApprox(listing.current_price, displayCurrency, rateValue) && (
+                  <p className="mb-3 text-sm font-semibold text-ink-light">
+                    {formatConvertedApprox(listing.current_price, displayCurrency, rateValue)}{" "}
+                    <span className="text-xs font-normal italic">({t("currencyReferenceOnly")})</span>
+                  </p>
+                )}
                 <LiveListingStatus
                   listingId={listing.id}
                   initialCurrentPrice={listing.current_price}
@@ -191,7 +214,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                 />
                 {listing.buy_it_now_price !== null && (
                   <p className="mt-3 inline-flex w-fit rounded-md bg-interactive-primary-subtle px-2 py-1 text-sm font-medium text-interactive-primary-active">
-                    {t("buyItNowPrice", { price: listing.buy_it_now_price })}
+                    {t("buyItNowPrice", { price: formatNtd(listing.buy_it_now_price) })}
                   </p>
                 )}
               </div>
@@ -296,7 +319,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
               <div className="p-4">
                 <h3 className="truncate font-semibold text-ink">{related.title}</h3>
                 <p className="mt-2 text-lg font-black text-interactive-primary">
-                  {related.listing_type === "fixed_price" ? related.price : related.current_price}
+                  {formatNtd(related.listing_type === "fixed_price" ? related.price! : related.current_price)}
                 </p>
                 <p className="mt-2 inline-flex rounded-full bg-interactive-primary-subtle px-2 py-0.5 text-xs font-semibold text-interactive-primary">
                   {t("viewDetails")}

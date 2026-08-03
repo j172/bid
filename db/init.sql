@@ -155,3 +155,22 @@ CREATE TABLE IF NOT EXISTS pigeon_gallery_items (
   PRIMARY KEY (id),
   KEY idx_gallery_items_category_sort (category_id, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Daily TWD/USD + TWD/CNY exchange-rate history (issue #45), fetched from
+-- TAIFEX's open-data feed by an in-process node-cron scheduler (see
+-- lib/scheduler.ts / lib/exchangeRates.ts). rate_date is the calendar date
+-- this row was synced for (usually "today"); source_date is the trading
+-- date the `rate` value actually came from — falls behind rate_date when
+-- TAIFEX has nothing new yet (holiday / not yet published) and the sync
+-- reuses the most recent successful rate instead of leaving the day blank.
+CREATE TABLE IF NOT EXISTS exchange_rates (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  currency VARCHAR(10) NOT NULL,              -- 'USD' | 'CNY' — TWD is always the implicit base
+  rate_date DATE NOT NULL,
+  source_date DATE NOT NULL,
+  rate DECIMAL(12,6) NOT NULL,                -- TWD per 1 unit of `currency`
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_exchange_rates_currency_date (currency, rate_date),
+  KEY idx_exchange_rates_currency_date (currency, rate_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

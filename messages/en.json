@@ -209,7 +209,8 @@
     "galleryImageLabel": "{title} image {index}",
     "galleryKeyboardHint": "Use ← / → to switch photos",
     "galleryLightboxLabel": "{title} full-size preview",
-    "galleryClose": "Close"
+    "galleryClose": "Close",
+    "currencyReferenceOnly": "For reference only — all transactions are settled in New Taiwan Dollars."
   },
   "bidForm": {
     "label": "Your maximum bid (at least {minimum} — the system only raises the price enough to beat the next bidder, never charging you your full max)",
@@ -219,7 +220,8 @@
     "closedViaBinLeading": "Your bid reached the buy-it-now price — you won it outright!",
     "closedViaBinNotLeading": "The bid reached the buy-it-now price and the item has already been won by someone else.",
     "leading": "You're currently the highest bidder!",
-    "notLeading": "Bid submitted, but someone else is currently bidding higher — you're not leading."
+    "notLeading": "Bid submitted, but someone else is currently bidding higher — you're not leading.",
+    "ntdHint": "Enter the amount in New Taiwan Dollars (NTD)"
   },
   "autoBiddingInfo": {
     "title": "How Auto Bidding Works",
@@ -364,7 +366,12 @@
     "newsletterError": "Something went wrong. Please try again.",
     "newsletterInvalidEmail": "Please enter a valid email address.",
     "copyright": "© 2026 j172tw Bid. All rights reserved.",
-    "payments": "Payments: cards / bank transfer / third-party checkout"
+    "payments": "Payments: cards / bank transfer / third-party checkout",
+    "exchangeRateTitle": "Live reference exchange rate",
+    "exchangeRateUsd": "1 USD ≈ NT${rate}",
+    "exchangeRateCny": "1 CNY ≈ NT${rate}",
+    "exchangeRateDisclaimer": "Rates are for reference only — all transactions are settled in New Taiwan Dollars.",
+    "exchangeRateUnavailable": "Exchange rate updating"
   },
   "cartPage": {
     "title": "Cart",

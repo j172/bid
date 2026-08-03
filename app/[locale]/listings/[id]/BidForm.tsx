@@ -55,6 +55,9 @@ export default function BidForm({ listingId, minimumNextBid }: { listingId: numb
           required
           className="w-full rounded-xl border border-border px-4 py-3 text-base focus:border-interactive-primary focus:outline-none"
         />
+        {/* Bid amount is always NTD — the multi-currency display elsewhere on
+            this page (issue #45) is reference-only, never an input option. */}
+        <span className="text-xs font-normal text-ink-light">{t("ntdHint")}</span>
       </label>
       <div className="flex flex-col gap-2">
         <Button type="submit" disabled={submitting} className="w-full rounded-xl py-3 text-base font-bold">
