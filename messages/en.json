@@ -15,8 +15,6 @@
     "quickAuction": "Auction Zone",
     "quickFixed": "Fixed-Price Pigeons",
     "quickAutoBid": "Auto Bid Guide",
-    "dealZone": "Flash Deals",
-    "newbieZone": "Starter Picks",
     "searchAll": "All",
     "searchAuction": "Auction",
     "searchFixed": "Fixed",
@@ -91,7 +89,6 @@
     "slideNext": "Next slide",
     "quickNavTitle": "Quick Links",
     "quickNavEndingSoon": "🔥 Closing Soon",
-    "quickNavBudgetPicks": "💡 Under NT$1,000",
     "quickNavAutoBidGuide": "⚙️ How Auto Bidding Works",
     "quickNavPremiumPicks": "💎 Premium Lots",
     "quickCloseLabel": "Closing Soon",
@@ -250,7 +247,8 @@
     "closed": "Ended",
     "leading": "Leading",
     "outbid": "Outbid",
-    "bidding": "Live"
+    "bidding": "Live",
+    "onSale": "On Sale"
   },
   "login": {
     "title": "Log In",
@@ -366,7 +364,6 @@
     "newsletterError": "Something went wrong. Please try again.",
     "newsletterInvalidEmail": "Please enter a valid email address.",
     "copyright": "© 2026 j172tw Bid. All rights reserved.",
-    "payments": "Payments: cards / bank transfer / third-party checkout",
     "exchangeRateTitle": "Live reference exchange rate",
     "exchangeRateUsd": "1 USD ≈ NT${rate}",
     "exchangeRateCny": "1 CNY ≈ NT${rate}",
@@ -401,7 +398,8 @@
     "categoryTitleAward": "{name} Award Pigeon Showcase",
     "categoryTitleImport": "{name} Imported Pigeon Showcase",
     "showingCount": "{count} items",
-    "emptyState": "No showcase items yet"
+    "emptyState": "No showcase items yet",
+    "itemDescriptionHeading": "About this pigeon"
   },
   "errors": {
     "NOT_FOUND": "Listing not found",

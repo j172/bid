@@ -64,6 +64,23 @@ export function validateDescription(description: string): FieldValidationResult 
   return { ok: true };
 }
 
+// Same HTML/plain-text length caps as validateDescription above, but the
+// field itself is optional — used by the pigeon gallery item admin routes
+// (issue #49), where (unlike a listing) a description isn't required.
+export function validateOptionalDescription(description: string): FieldValidationResult {
+  const trimmed = description.trim();
+  if (trimmed.length === 0) {
+    return { ok: true };
+  }
+  if (trimmed.length > DESCRIPTION_HTML_MAX) {
+    return { ok: false, error: "描述內容過長" };
+  }
+  if (descriptionPlainTextLength(trimmed) > DESCRIPTION_MAX) {
+    return { ok: false, error: `描述不能超過 ${DESCRIPTION_MAX} 個字` };
+  }
+  return { ok: true };
+}
+
 export function validatePrice(value: number, label: string): FieldValidationResult {
   if (!Number.isFinite(value) || value <= 0) {
     return { ok: false, error: `${label}必須是正數` };

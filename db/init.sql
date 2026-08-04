@@ -151,11 +151,18 @@ CREATE TABLE IF NOT EXISTS pigeon_gallery_categories (
 -- along with the category page's type/price-range filter UI (a deliberate
 -- simplification — the page is now pure display: photos + titles only).
 -- loft_id is the same optional 合作鴿舍 single-select as listings.loft_id.
+-- image_file_name is kept as a denormalized "cover photo" (issue #49) —
+-- always kept in sync with the first row (by sort_order) of
+-- gallery_item_photos below, so existing consumers (admin list thumbnail,
+-- public category grid card) don't need to change. description is the new
+-- rich-text field (issue #49), same TinyMCE + sanitize-html pattern as
+-- listings.description — nullable since older rows never had one authored.
 CREATE TABLE IF NOT EXISTS pigeon_gallery_items (
   id BIGINT NOT NULL AUTO_INCREMENT,
   category_id BIGINT NOT NULL,
   title VARCHAR(255) NOT NULL,
   image_file_name VARCHAR(255) NOT NULL,
+  description TEXT NULL,
   loft_id BIGINT NULL,                        -- optional homepage_sections.id (合作鴿舍) this pigeon belongs to; plain-text label only, not a link
   sort_order INT NOT NULL DEFAULT 0,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
@@ -163,6 +170,25 @@ CREATE TABLE IF NOT EXISTS pigeon_gallery_items (
   updated_at DATETIME NOT NULL,
   PRIMARY KEY (id),
   KEY idx_gallery_items_category_sort (category_id, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Multi-photo gallery for pigeon_gallery_items (issue #49) — mirrors
+-- listing_photos' shape exactly (see above). pigeon_gallery_items.
+-- image_file_name is kept as a denormalized copy of this set's first photo
+-- (by sort_order) for backward-compat display; the full ordered set here is
+-- what the admin ItemManager photo editor and the public item detail page
+-- (/[locale]/pigeons/[galleryType]/[categoryId]/[itemId]) actually render.
+-- No FK/cascade (same rationale as pigeon_gallery_items above) —
+-- deletePigeonGalleryItem (lib/pigeonGallery.ts) removes a deleted item's
+-- rows here explicitly, same pattern as deleteListing/listing_photos.
+CREATE TABLE IF NOT EXISTS gallery_item_photos (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  gallery_item_id BIGINT NOT NULL,
+  file_name VARCHAR(255) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_gallery_item_photos_item (gallery_item_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Daily TWD/USD + TWD/CNY exchange-rate history (issue #45), fetched from

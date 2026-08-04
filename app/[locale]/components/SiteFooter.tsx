@@ -8,7 +8,9 @@ export default async function SiteFooter() {
 
   return (
     <footer className="mt-14 border-t border-border bg-white">
-      <div className="mx-auto max-w-6xl px-4 pt-10 sm:px-6">
+      <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 pt-10 sm:px-6">
+        <ExchangeRateStrip />
+
         <section className="rounded-2xl bg-[radial-gradient(circle_at_top_right,_#dbeafe_0,_#eff6ff_40%,_#f8fafc_100%)] px-6 py-7">
           <h3 className="text-2xl font-black text-ink">{t("newsletterTitle")}</h3>
           <p className="mt-2 text-sm text-ink-light">{t("newsletterSubtitle")}</p>
@@ -81,12 +83,9 @@ export default async function SiteFooter() {
         </section>
       </div>
 
-      <ExchangeRateStrip />
-
       <div className="border-t border-border bg-slate-50">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-4 text-xs text-ink-light sm:flex-row sm:px-6">
           <p>{t("copyright")}</p>
-          <p>{t("payments")}</p>
         </div>
       </div>
     </footer>

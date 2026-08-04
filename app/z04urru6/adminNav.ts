@@ -17,5 +17,5 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { label: "使用者列表", href: "/z04urru6/users", section: "commerce" },
   { label: "電子報", href: "/z04urru6/newsletter", section: "commerce" },
   { label: "合作鴿舍管理", href: "/z04urru6/homepage/partner-lofts", section: "content" },
-  { label: "入賞鴿／進口鴿分類", href: "/z04urru6/homepage/pigeon-gallery/categories", section: "content" },
+  { label: "入賞鴿／進口鴿管理", href: "/z04urru6/homepage/pigeon-gallery/categories", section: "content" },
 ];

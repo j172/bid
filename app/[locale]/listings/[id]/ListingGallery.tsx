@@ -77,14 +77,14 @@ export default function ListingGallery({ title, imageUrls }: ListingGalleryProps
       <button
         type="button"
         onClick={() => setLightboxOpen(true)}
-        className="aspect-video overflow-hidden rounded-2xl border border-border bg-surface-muted shadow-sm"
+        className="aspect-video cursor-zoom-in overflow-hidden rounded-2xl border border-border bg-surface-muted shadow-sm"
         aria-label={t("galleryZoomLabel", { title })}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={resolveSrc(selectedUrl)}
           alt={title}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-contain"
           onError={() => markFailed(selectedUrl)}
         />
       </button>

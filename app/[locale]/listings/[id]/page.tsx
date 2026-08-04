@@ -180,7 +180,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
               <div className="flex flex-col gap-1">
                 <div className="mt-2 flex items-baseline gap-3">
                   <span className="text-4xl font-black text-interactive-primary">{formatNtd(listing.price!)}</span>
-                  <StatusBadge status={listing.status} />
+                  <StatusBadge status={listing.status} isFixedPrice />
                 </div>
                 {formatConvertedApprox(listing.price!, displayCurrency, rateValue) && (
                   <p className="text-sm font-semibold text-ink-light">

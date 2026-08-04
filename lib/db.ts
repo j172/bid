@@ -150,6 +150,22 @@ CREATE TABLE IF NOT EXISTS exchange_rates (
   UNIQUE KEY uq_exchange_rates_currency_date (currency, rate_date),
   KEY idx_exchange_rates_currency_date (currency, rate_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Multi-photo gallery for pigeon_gallery_items (issue #49) — brand-new table
+-- introduced whole, same as exchange_rates above: mirrors listing_photos'
+-- shape exactly. pigeon_gallery_items.image_file_name stays as a
+-- denormalized copy of this set's first photo (kept in sync by
+-- lib/pigeonGallery.ts) for the admin/public thumbnail consumers that never
+-- needed to change.
+CREATE TABLE IF NOT EXISTS gallery_item_photos (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  gallery_item_id BIGINT NOT NULL,
+  file_name VARCHAR(255) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_gallery_item_photos_item (gallery_item_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
 
 // Columns added after their table's initial CREATE TABLE IF NOT EXISTS;
@@ -314,6 +330,11 @@ async function ensurePigeonGalleryItemColumns(db: mysql.Pool): Promise<void> {
   await dropColumnIfExists(db, "pigeon_gallery_items", "price_type");
   await dropColumnIfExists(db, "pigeon_gallery_items", "reference_price");
   await ensureColumn(db, "pigeon_gallery_items", "loft_id", "BIGINT NULL");
+  // Issue #49: multi-photo/description feature gap — the original #35/#45
+  // spec ("like creating a new listing: title, multiple photos, description")
+  // was never actually built; gallery_item_photos (added above in SCHEMA_SQL)
+  // holds the photo set, this is the rich-text companion column.
+  await ensureColumn(db, "pigeon_gallery_items", "description", "TEXT NULL");
 }
 
 function createPool(): mysql.Pool {

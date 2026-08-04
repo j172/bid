@@ -64,7 +64,11 @@ export default async function PigeonGalleryCategoryPage({
 
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item: PigeonGalleryItem) => (
-            <article key={item.id} className="group rounded-2xl border border-border bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-interactive-primary/60 hover:shadow-md">
+            <Link
+              key={item.id}
+              href={`/pigeons/${galleryType}/${categoryId}/${item.id}`}
+              className="group block rounded-2xl border border-border bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-interactive-primary/60 hover:shadow-md"
+            >
               <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
                 <img
                   src={pigeonGalleryItemImageUrl(item.imageFileName)}
@@ -76,7 +80,7 @@ export default async function PigeonGalleryCategoryPage({
               {/* Plain-text label — never a link (issue #45, same rule as the public listing cards). */}
               {item.loftName && <p className="mt-3 text-xs font-semibold text-ink-light">{item.loftName}</p>}
               <h3 className="mt-1 truncate text-sm font-semibold text-ink">{item.title}</h3>
-            </article>
+            </Link>
           ))}
         </div>
       </section>
