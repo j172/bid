@@ -84,7 +84,7 @@ export default function ListingGallery({ title, imageUrls }: ListingGalleryProps
         <img
           src={resolveSrc(selectedUrl)}
           alt={title}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-contain"
           onError={() => markFailed(selectedUrl)}
         />
       </button>
