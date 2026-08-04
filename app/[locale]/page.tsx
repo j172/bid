@@ -200,9 +200,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             <Link href="/listings?type=auction" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-interactive-primary hover:text-interactive-primary">
               {t("quickNavEndingSoon")}
             </Link>
-            <Link href="/listings?type=fixed_price&maxPrice=1000" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-interactive-primary hover:text-interactive-primary">
-              {t("quickNavBudgetPicks")}
-            </Link>
             <Link href="/#auto-bidding-explainer" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-interactive-primary hover:text-interactive-primary">
               {t("quickNavAutoBidGuide")}
             </Link>

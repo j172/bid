@@ -212,15 +212,6 @@ export default async function SiteHeader() {
                 ))}
               </div>
             </div>
-
-            <div className="flex shrink-0 items-center gap-2 text-xs">
-              <Link href="/listings?sort=price_asc" className="rounded-full bg-amber-50 px-3 py-1.5 font-semibold text-amber-700 hover:bg-amber-100">
-                {t("dealZone")}
-              </Link>
-              <Link href="/listings?type=fixed_price&maxPrice=1000" className="rounded-full bg-muted-olive-50 px-3 py-1.5 font-semibold text-muted-olive-700 hover:bg-muted-olive-100">
-                {t("newbieZone")}
-              </Link>
-            </div>
           </div>
         </div>
       </div>

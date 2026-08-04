@@ -86,7 +86,6 @@ export default async function SiteFooter() {
       <div className="border-t border-border bg-slate-50">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-4 text-xs text-ink-light sm:flex-row sm:px-6">
           <p>{t("copyright")}</p>
-          <p>{t("payments")}</p>
         </div>
       </div>
     </footer>
