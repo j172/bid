@@ -1,9 +1,8 @@
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { listOpenListings } from "@/lib/listings";
-import { listingPhotoUrl, homepageSectionImageUrl, pigeonGalleryCategoryImageUrl } from "@/lib/uploads";
+import { listingPhotoUrl, homepageSectionImageUrl } from "@/lib/uploads";
 import { listHomepageSections } from "@/lib/homepageSections";
-import { listPigeonGalleryCategories, type GalleryType, type PigeonGalleryCategory } from "@/lib/pigeonGallery";
 import { Link } from "@/i18n/navigation";
 import HeroSection from "./components/HeroSection";
 import ZoomableProductImage from "./components/ZoomableProductImage";
@@ -31,12 +30,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const perfMode = perfModeFromSearchParams(params);
   const t = await getTranslations("home");
   const tListings = await getTranslations("listings");
-  const tGallery = await getTranslations("pigeonGallery");
   const tAutoBid = await getTranslations("autoBiddingInfo");
-  const [awardCategories, importCategories] = await Promise.all([
-    listPigeonGalleryCategories("award", { activeOnly: true }),
-    listPigeonGalleryCategories("import", { activeOnly: true }),
-  ]);
   // listOpenListings now also returns 'scheduled' (not-yet-started) auctions
   // for the /listings browse page's benefit — the homepage's curated
   // sections below (ending soon, quick deals, etc.) all assume "actively
@@ -85,8 +79,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     .filter((item) => item.listing_type === "fixed_price")
     .sort((a, b) => b.created_at.getTime() - a.created_at.getTime())
     .slice(0, 6);
-  // "分類瀏覽" 卡片：維持「依商品狀態／熱度」瀏覽入口的定位（不是合作鴿舍／
-  // 入賞鴿／進口鴿那套 CMS 分類系統），但每張卡片都改成對 listings 真實計算
+  // "分類瀏覽" 卡片：維持「依商品狀態／熱度」瀏覽入口的定位（不是合作鴿舍
+  // 那套 CMS 分類系統），但每張卡片都改成對 listings 真實計算
   // 出來的子集合，並且連結帶對應的篩選 query，讓點進去的清單筆數跟卡片上
   // 的數字一致。
   const QUICK_CLOSE_WINDOW_HOURS = 72;
@@ -433,47 +427,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             </div>
           </div>
         </section>
-      )}
-
-      {[
-        { galleryType: "award" as GalleryType, categories: awardCategories, title: tGallery("sectionAwardTitle"), subtitle: tGallery("sectionAwardSubtitle") },
-        { galleryType: "import" as GalleryType, categories: importCategories, title: tGallery("sectionImportTitle"), subtitle: tGallery("sectionImportSubtitle") },
-      ].map(
-        (group) =>
-          group.categories.length > 0 && (
-            <section key={group.galleryType} className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
-              <div className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-interactive-primary">{group.subtitle}</p>
-                    <h3 className="mt-1 text-xl font-black text-ink">{group.title}</h3>
-                  </div>
-                </div>
-
-                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                  {group.categories.map((category: PigeonGalleryCategory) => (
-                    <Link
-                      key={category.id}
-                      href={`/pigeons/${group.galleryType}/${category.id}`}
-                      className="group overflow-hidden rounded-xl border border-border bg-slate-50 transition hover:-translate-y-0.5 hover:border-interactive-primary hover:shadow-md"
-                    >
-                      <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
-                        <img
-                          src={pigeonGalleryCategoryImageUrl(category.coverImageFileName)}
-                          alt={category.name}
-                          className="h-full w-full object-cover transition duration-200 group-hover:scale-105"
-                          loading="lazy"
-                        />
-                      </div>
-                      <p className="px-3 py-2 text-center text-sm font-extrabold tracking-wide text-ink group-hover:text-interactive-primary">
-                        {category.name}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </section>
-          ),
       )}
 
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">

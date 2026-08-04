@@ -389,18 +389,6 @@
     "messagePlaceholder": "留言内容",
     "submit": "发送留言"
   },
-  "pigeonGallery": {
-    "sectionAwardTitle": "入赏鸽展示",
-    "sectionAwardSubtitle": "Award Winning Lofts",
-    "sectionImportTitle": "进口鸽展示",
-    "sectionImportSubtitle": "Imported Bloodlines",
-    "breadcrumbHome": "首页",
-    "categoryTitleAward": "{name}入赏鸽欣赏",
-    "categoryTitleImport": "{name}原鸽欣赏",
-    "showingCount": "共 {count} 笔展示项目",
-    "emptyState": "目前尚无展示项目",
-    "itemDescriptionHeading": "鸽况介绍"
-  },
   "errors": {
     "NOT_FOUND": "找不到这个商品",
     "MUST_LOGIN": "请先登录",

@@ -389,18 +389,6 @@
     "messagePlaceholder": "訊息內容",
     "submit": "送出訊息"
   },
-  "pigeonGallery": {
-    "sectionAwardTitle": "入賞鴿展示",
-    "sectionAwardSubtitle": "Award Winning Lofts",
-    "sectionImportTitle": "進口鴿展示",
-    "sectionImportSubtitle": "Imported Bloodlines",
-    "breadcrumbHome": "首頁",
-    "categoryTitleAward": "{name}入賞鴿欣賞",
-    "categoryTitleImport": "{name}原鴿欣賞",
-    "showingCount": "共 {count} 筆展示項目",
-    "emptyState": "目前尚無展示項目",
-    "itemDescriptionHeading": "鴿況介紹"
-  },
   "errors": {
     "NOT_FOUND": "找不到這個商品",
     "MUST_LOGIN": "請先登入",

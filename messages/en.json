@@ -389,18 +389,6 @@
     "messagePlaceholder": "Message",
     "submit": "Send Message"
   },
-  "pigeonGallery": {
-    "sectionAwardTitle": "Award Pigeon Showcase",
-    "sectionAwardSubtitle": "Award Winning Lofts",
-    "sectionImportTitle": "Imported Pigeon Showcase",
-    "sectionImportSubtitle": "Imported Bloodlines",
-    "breadcrumbHome": "Home",
-    "categoryTitleAward": "{name} Award Pigeon Showcase",
-    "categoryTitleImport": "{name} Imported Pigeon Showcase",
-    "showingCount": "{count} items",
-    "emptyState": "No showcase items yet",
-    "itemDescriptionHeading": "About this pigeon"
-  },
   "errors": {
     "NOT_FOUND": "Listing not found",
     "MUST_LOGIN": "Please log in first",
