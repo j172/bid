@@ -250,7 +250,8 @@
     "closed": "已結標",
     "leading": "目前領先",
     "outbid": "已被超越",
-    "bidding": "競標中"
+    "bidding": "競標中",
+    "onSale": "販售中"
   },
   "login": {
     "title": "登入",

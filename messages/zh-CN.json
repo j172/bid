@@ -250,7 +250,8 @@
     "closed": "已结标",
     "leading": "目前领先",
     "outbid": "已被超越",
-    "bidding": "竞标中"
+    "bidding": "竞标中",
+    "onSale": "销售中"
   },
   "login": {
     "title": "登录",

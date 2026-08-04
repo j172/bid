@@ -250,7 +250,8 @@
     "closed": "Ended",
     "leading": "Leading",
     "outbid": "Outbid",
-    "bidding": "Live"
+    "bidding": "Live",
+    "onSale": "On Sale"
   },
   "login": {
     "title": "Log In",

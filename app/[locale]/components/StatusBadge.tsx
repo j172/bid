@@ -5,7 +5,16 @@ import { useTranslations } from "next-intl";
 // app/z04urru6/users/[id]/page.tsx), which sits outside next-intl's
 // NextIntlClientProvider entirely (see the ticket that introduced this
 // app/[locale]/ tree).
-export default function StatusBadge({ status, isLeading }: { status: string; isLeading?: boolean }) {
+export default function StatusBadge({
+  status,
+  isLeading,
+  isFixedPrice,
+}: {
+  status: string;
+  isLeading?: boolean;
+  /** Fixed-price ("一般商品") listings never bid/lead — an open one is just "on sale" (issue #49), not "bidding". */
+  isFixedPrice?: boolean;
+}) {
   const t = useTranslations("statusBadge");
 
   if (status === "scheduled") {
@@ -43,6 +52,14 @@ export default function StatusBadge({ status, isLeading }: { status: string; isL
     return (
       <span className="inline-block rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
         {t("outbid")}
+      </span>
+    );
+  }
+
+  if (isFixedPrice) {
+    return (
+      <span className="inline-block rounded-full bg-interactive-primary-subtle px-2.5 py-0.5 text-xs font-medium text-interactive-primary-active">
+        {t("onSale")}
       </span>
     );
   }
