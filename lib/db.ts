@@ -85,10 +85,10 @@ CREATE TABLE IF NOT EXISTS purchases (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- CMS foundation (issue #33 / #32) — see db/init.sql for the fuller
--- per-column comments; these three are brand-new tables with their whole
--- final schema from day one, so (unlike the ensureColumn migrations below,
--- which patch already-deployed columns) they can just be plain
--- CREATE TABLE IF NOT EXISTS statements here, same as listing_photos/bids/
+-- per-column comments; this is a brand-new table with its whole final
+-- schema from day one, so (unlike the ensureColumn migrations below,
+-- which patch already-deployed columns) it can just be a plain
+-- CREATE TABLE IF NOT EXISTS statement here, same as listing_photos/bids/
 -- purchases above were originally.
 CREATE TABLE IF NOT EXISTS homepage_sections (
   id BIGINT NOT NULL AUTO_INCREMENT,
@@ -104,36 +104,8 @@ CREATE TABLE IF NOT EXISTS homepage_sections (
   KEY idx_homepage_sections_type_sort (section_type, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS pigeon_gallery_categories (
-  id BIGINT NOT NULL AUTO_INCREMENT,
-  gallery_type VARCHAR(20) NOT NULL,
-  name VARCHAR(100) NOT NULL,
-  cover_image_file_name VARCHAR(255) NOT NULL,
-  sort_order INT NOT NULL DEFAULT 0,
-  is_active TINYINT(1) NOT NULL DEFAULT 1,
-  created_at DATETIME NOT NULL,
-  updated_at DATETIME NOT NULL,
-  PRIMARY KEY (id),
-  KEY idx_gallery_categories_type_sort (gallery_type, sort_order)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS pigeon_gallery_items (
-  id BIGINT NOT NULL AUTO_INCREMENT,
-  category_id BIGINT NOT NULL,
-  title VARCHAR(255) NOT NULL,
-  image_file_name VARCHAR(255) NOT NULL,
-  price_type VARCHAR(20) NOT NULL,
-  reference_price BIGINT NOT NULL,
-  sort_order INT NOT NULL DEFAULT 0,
-  is_active TINYINT(1) NOT NULL DEFAULT 1,
-  created_at DATETIME NOT NULL,
-  updated_at DATETIME NOT NULL,
-  PRIMARY KEY (id),
-  KEY idx_gallery_items_category_sort (category_id, sort_order)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- Daily TWD/USD + TWD/CNY exchange-rate history (issue #45) — a brand-new
--- table introduced whole, same as the three CMS tables above. rate_date is
+-- table introduced whole, same as the CMS table above. rate_date is
 -- the calendar date this row was synced *for* (usually "today", see
 -- lib/exchangeRates.ts's syncExchangeRates); source_date is the trading date
 -- the rate value actually came from, which can trail behind rate_date when
@@ -149,22 +121,6 @@ CREATE TABLE IF NOT EXISTS exchange_rates (
   PRIMARY KEY (id),
   UNIQUE KEY uq_exchange_rates_currency_date (currency, rate_date),
   KEY idx_exchange_rates_currency_date (currency, rate_date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Multi-photo gallery for pigeon_gallery_items (issue #49) — brand-new table
--- introduced whole, same as exchange_rates above: mirrors listing_photos'
--- shape exactly. pigeon_gallery_items.image_file_name stays as a
--- denormalized copy of this set's first photo (kept in sync by
--- lib/pigeonGallery.ts) for the admin/public thumbnail consumers that never
--- needed to change.
-CREATE TABLE IF NOT EXISTS gallery_item_photos (
-  id BIGINT NOT NULL AUTO_INCREMENT,
-  gallery_item_id BIGINT NOT NULL,
-  file_name VARCHAR(255) NOT NULL,
-  sort_order INT NOT NULL DEFAULT 0,
-  created_at DATETIME NOT NULL,
-  PRIMARY KEY (id),
-  KEY idx_gallery_item_photos_item (gallery_item_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
 
@@ -187,9 +143,9 @@ async function ensureColumn(db: mysql.Pool, table: string, column: string, defin
 
 // Counterpart to ensureColumn for columns removed after their table's
 // initial CREATE TABLE IF NOT EXISTS — used by the #45 GRILL ME follow-up to
-// drop homepage_sections.link_url and pigeon_gallery_items.price_type/
-// reference_price on already-deployed databases (this project has no
-// migration framework/history, just these idempotent boot-time checks).
+// drop homepage_sections.link_url on already-deployed databases (this
+// project has no migration framework/history, just these idempotent
+// boot-time checks).
 async function dropColumnIfExists(db: mysql.Pool, table: string, column: string): Promise<boolean> {
   const [rows] = await db.query(
     `SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS
@@ -313,28 +269,12 @@ async function ensureEndsAtNullable(db: mysql.Pool): Promise<void> {
 // /listings?loft=<id> instead of an admin-entered URL — see
 // app/[locale]/page.tsx), replaced by an optional bio/簡介 shown on both the
 // admin form and the homepage card excerpt. listings.loft_id is the new
-// nullable single-select FK (this project has no DB-level FK constraints —
-// see db/init.sql's note on pigeon_gallery_items — so it's a plain BIGINT).
+// nullable single-select FK (this project has no DB-level FK constraints,
+// so it's a plain BIGINT).
 async function ensurePartnerLoftColumns(db: mysql.Pool): Promise<void> {
   await ensureColumn(db, "homepage_sections", "bio", "TEXT NULL");
   await dropColumnIfExists(db, "homepage_sections", "link_url");
   await ensureColumn(db, "listings", "loft_id", "BIGINT NULL");
-}
-
-// Same #45 GRILL ME follow-up amending #35's already-merged pigeon gallery
-// implementation: price_type/reference_price are dropped along with the
-// category page's type/price-range filter UI (a deliberate simplification —
-// see app/[locale]/pigeons/[galleryType]/[categoryId]/page.tsx). Items get
-// the same optional loft_id single-select as listings above.
-async function ensurePigeonGalleryItemColumns(db: mysql.Pool): Promise<void> {
-  await dropColumnIfExists(db, "pigeon_gallery_items", "price_type");
-  await dropColumnIfExists(db, "pigeon_gallery_items", "reference_price");
-  await ensureColumn(db, "pigeon_gallery_items", "loft_id", "BIGINT NULL");
-  // Issue #49: multi-photo/description feature gap — the original #35/#45
-  // spec ("like creating a new listing: title, multiple photos, description")
-  // was never actually built; gallery_item_photos (added above in SCHEMA_SQL)
-  // holds the photo set, this is the rich-text companion column.
-  await ensureColumn(db, "pigeon_gallery_items", "description", "TEXT NULL");
 }
 
 function createPool(): mysql.Pool {
@@ -357,7 +297,6 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensureBuyItNowNullable(db);
   await ensureEndsAtNullable(db);
   await ensurePartnerLoftColumns(db);
-  await ensurePigeonGalleryItemColumns(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {

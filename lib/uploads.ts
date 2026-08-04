@@ -102,11 +102,10 @@ export async function copyListingPhotos(fromListingId: number, toListingId: numb
   }
 }
 
-// Shared by every single-image CMS upload below (homepage sections, pigeon
-// gallery category covers, pigeon gallery item photos) — same validation/
-// naming/storage scheme as saveListingPhotos' per-photo loop body, just
-// factored out since these callers each only ever save exactly one file at
-// a time. Browser-side callers should run the file through
+// Shared by every single-image CMS upload below (homepage sections) — same
+// validation/naming/storage scheme as saveListingPhotos' per-photo loop body,
+// just factored out since these callers each only ever save exactly one file
+// at a time. Browser-side callers should run the file through
 // convertPhotoToWebp (lib/convertPhotoToWebp.ts) before upload, same as the
 // listing photo picker does — this function itself doesn't re-encode.
 async function saveSingleImage(dir: string, image: File): Promise<string> {
@@ -139,77 +138,4 @@ export function homepageSectionImageUrl(fileName: string): string {
 
 export async function deleteHomepageSectionImageFile(fileName: string): Promise<void> {
   await unlink(join(UPLOADS_ROOT, "homepage-sections", fileName)).catch(() => {});
-}
-
-// pigeon_gallery_categories' cover_image_file_name (see lib/pigeonGallery.ts).
-export async function savePigeonGalleryCategoryImage(image: File): Promise<string> {
-  return saveSingleImage(join(UPLOADS_ROOT, "pigeon-gallery", "categories"), image);
-}
-
-export function pigeonGalleryCategoryImageUrl(fileName: string): string {
-  return `/uploads/pigeon-gallery/categories/${fileName}`;
-}
-
-export async function deletePigeonGalleryCategoryImageFile(fileName: string): Promise<void> {
-  await unlink(join(UPLOADS_ROOT, "pigeon-gallery", "categories", fileName)).catch(() => {});
-}
-
-// pigeon_gallery_items' image_file_name (see lib/pigeonGallery.ts).
-export async function savePigeonGalleryItemImage(image: File): Promise<string> {
-  return saveSingleImage(join(UPLOADS_ROOT, "pigeon-gallery", "items"), image);
-}
-
-export function pigeonGalleryItemImageUrl(fileName: string): string {
-  return `/uploads/pigeon-gallery/items/${fileName}`;
-}
-
-export async function deletePigeonGalleryItemImageFile(fileName: string): Promise<void> {
-  await unlink(join(UPLOADS_ROOT, "pigeon-gallery", "items", fileName)).catch(() => {});
-}
-
-// gallery_item_photos' file_name (issue #49) — the multi-photo companion to
-// image_file_name above. Saved into the same flat pigeon-gallery/items/
-// directory (no per-item subfolder, unlike listing photos) since each
-// randomBytes(16) file name is already effectively globally unique; this
-// keeps pigeonGalleryItemImageUrl/deletePigeonGalleryItemImageFile above
-// reusable for every photo regardless of whether it's the legacy single
-// image or one of this multi-photo set.
-export async function saveGalleryItemPhotos(photos: File[]): Promise<string[]> {
-  const dir = join(UPLOADS_ROOT, "pigeon-gallery", "items");
-  const fileNames: string[] = [];
-  for (const photo of photos) {
-    fileNames.push(await saveSingleImage(dir, photo));
-  }
-  return fileNames;
-}
-
-// Images inserted inline into a gallery item's rich-text description (see
-// DescriptionEditor, reused as-is from the listing form) — same per-id
-// subdirectory/count/size-limit split as saveDescriptionImages above, keyed
-// by gallery item id instead of listing id.
-export async function saveGalleryItemDescriptionImages(itemId: number, images: File[]): Promise<string[]> {
-  const dir = join(UPLOADS_ROOT, "pigeon-gallery", "items", String(itemId), "description");
-  await mkdir(dir, { recursive: true });
-
-  const fileNames: string[] = [];
-  for (const image of images) {
-    if (!isAllowedPhotoType(image.type)) {
-      throw new Error(`不支援的圖片格式：${image.type || "unknown"}`);
-    }
-    if (image.size > DESCRIPTION_IMAGE_MAX_BYTES) {
-      throw new Error(`描述圖片過大（上限 ${DESCRIPTION_IMAGE_MAX_BYTES / 1024 / 1024}MB）`);
-    }
-
-    const extension = ALLOWED_EXTENSIONS[image.type];
-    const fileName = `${randomBytes(16).toString("hex")}.${extension}`;
-    const buffer = Buffer.from(await image.arrayBuffer());
-    await writeFile(join(dir, fileName), buffer);
-    fileNames.push(fileName);
-  }
-
-  return fileNames;
-}
-
-export function galleryItemDescriptionImageUrl(itemId: number, fileName: string): string {
-  return `/uploads/pigeon-gallery/items/${itemId}/description/${fileName}`;
 }
