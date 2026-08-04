@@ -123,18 +123,25 @@ describe("pigeon gallery categories", () => {
   });
 
   describe("deletePigeonGalleryCategory", () => {
-    it("deletes the category's items before deleting the category row itself", async () => {
+    it("deletes the category's item photos and items before deleting the category row itself", async () => {
+      queryMock.mockResolvedValueOnce([{ affectedRows: 5 }]); // DELETE gallery_item_photos
       queryMock.mockResolvedValueOnce([{ affectedRows: 3 }]); // DELETE items
       queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]); // DELETE category
 
       const result = await deletePigeonGalleryCategory(1);
 
       expect(result).toEqual({ ok: true });
-      expect(queryMock).toHaveBeenNthCalledWith(1, "DELETE FROM pigeon_gallery_items WHERE category_id = ?", [1]);
-      expect(queryMock).toHaveBeenNthCalledWith(2, "DELETE FROM pigeon_gallery_categories WHERE id = ?", [1]);
+      expect(queryMock).toHaveBeenNthCalledWith(
+        1,
+        expect.stringContaining("DELETE FROM gallery_item_photos WHERE gallery_item_id IN"),
+        [1],
+      );
+      expect(queryMock).toHaveBeenNthCalledWith(2, "DELETE FROM pigeon_gallery_items WHERE category_id = ?", [1]);
+      expect(queryMock).toHaveBeenNthCalledWith(3, "DELETE FROM pigeon_gallery_categories WHERE id = ?", [1]);
     });
 
     it("still attempts the items cleanup even when the category itself doesn't exist, and reports not-found", async () => {
+      queryMock.mockResolvedValueOnce([{ affectedRows: 0 }]);
       queryMock.mockResolvedValueOnce([{ affectedRows: 0 }]);
       queryMock.mockResolvedValueOnce([{ affectedRows: 0 }]);
       const result = await deletePigeonGalleryCategory(999);
@@ -204,6 +211,7 @@ describe("pigeon gallery items", () => {
           categoryId: 7,
           title: "冠軍鴿",
           imageFileName: "i.webp",
+          description: null,
           loftId: 3,
           loftName: "石君鴿舍",
           sortOrder: 0,
@@ -256,6 +264,7 @@ describe("pigeon gallery items", () => {
         categoryId: 7,
         title: "t",
         imageFileName: "i.webp",
+        description: "<p>d</p>",
         loftId: 3,
         sortOrder: 2,
         isActive: false,
@@ -263,17 +272,17 @@ describe("pigeon gallery items", () => {
 
       expect(id).toBe(11);
       expect(queryMock).toHaveBeenCalledTimes(1);
-      expect(queryMock.mock.calls[0][1]).toEqual([7, "t", "i.webp", 3, 2, 0]);
+      expect(queryMock.mock.calls[0][1]).toEqual([7, "t", "i.webp", "<p>d</p>", 3, 2, 0]);
     });
 
-    it("defaults sortOrder to MAX(sort_order) + 1 within the category when omitted, and loftId to null", async () => {
+    it("defaults sortOrder to MAX(sort_order) + 1 within the category when omitted, and loftId/description to null", async () => {
       queryMock.mockResolvedValueOnce([[{ nextOrder: 3 }]]);
       queryMock.mockResolvedValueOnce([{ insertId: 12 }]);
 
       const id = await createPigeonGalleryItem({ categoryId: 7, title: "t", imageFileName: "i.webp" });
 
       expect(id).toBe(12);
-      expect(queryMock.mock.calls[1][1]).toEqual([7, "t", "i.webp", null, 3, 1]);
+      expect(queryMock.mock.calls[1][1]).toEqual([7, "t", "i.webp", null, null, 3, 1]);
     });
   });
 
@@ -283,6 +292,7 @@ describe("pigeon gallery items", () => {
       const result = await updatePigeonGalleryItem(1, {
         title: "t",
         imageFileName: "i",
+        description: "<p>d</p>",
         loftId: 3,
         sortOrder: 0,
         isActive: true,
@@ -302,22 +312,26 @@ describe("pigeon gallery items", () => {
       expect(result).toEqual({ ok: false, error: "找不到這個展示鴿項目" });
     });
 
-    it("clears loft_id to null when loftId is omitted", async () => {
+    it("clears loft_id and description to null when both are omitted", async () => {
       queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
       await updatePigeonGalleryItem(1, { title: "t", imageFileName: "i", sortOrder: 0, isActive: true });
-      expect(queryMock.mock.calls[0][1]).toEqual(["t", "i", null, 0, 1, 1]);
+      expect(queryMock.mock.calls[0][1]).toEqual(["t", "i", null, null, 0, 1, 1]);
     });
   });
 
   describe("deletePigeonGalleryItem", () => {
     it("returns ok:false when no row matched", async () => {
-      queryMock.mockResolvedValueOnce([{ affectedRows: 0 }]);
+      queryMock.mockResolvedValueOnce([{ affectedRows: 0 }]); // DELETE gallery_item_photos
+      queryMock.mockResolvedValueOnce([{ affectedRows: 0 }]); // DELETE item
       expect(await deletePigeonGalleryItem(1)).toEqual({ ok: false, error: "找不到這個展示鴿項目" });
     });
 
     it("returns ok:true when a row is deleted", async () => {
-      queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+      queryMock.mockResolvedValueOnce([{ affectedRows: 2 }]); // DELETE gallery_item_photos
+      queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]); // DELETE item
       expect(await deletePigeonGalleryItem(1)).toEqual({ ok: true });
+      expect(queryMock).toHaveBeenNthCalledWith(1, "DELETE FROM gallery_item_photos WHERE gallery_item_id = ?", [1]);
+      expect(queryMock).toHaveBeenNthCalledWith(2, "DELETE FROM pigeon_gallery_items WHERE id = ?", [1]);
     });
   });
 
