@@ -245,6 +245,14 @@ async function ensureAccountColumns(db: mysql.Pool): Promise<void> {
   // admin unsettles to fix a typo and re-settles.
   await ensureColumn(db, "listings", "settlement_account", "VARCHAR(30) NULL");
   await ensureColumn(db, "listings", "settlement_amount", "BIGINT NULL");
+  // Set when notifyWinner/sendWinnerEmail (lib/notifications.ts) successfully
+  // sends the winner-congratulations email — from closeExpiredListings,
+  // buyNow, the auto-buyout branch of placeBid, or the admin's "重新寄送得標信"
+  // resend button (issue #48). Left NULL on failure (sendEmail returning
+  // false) so the admin closed-listings page can show "尚未寄送成功" and offer
+  // a resend, rather than a multi-attempt history table (explicitly out of
+  // scope for #48).
+  await ensureColumn(db, "listings", "winner_notified_at", "DATETIME NULL");
   // 'auction' (default, existing proxy-bidding behavior) | 'fixed_price'
   // (一般商品: no bidding, fixed unit price, multi-unit stock — see
   // lib/purchase.ts and purchaseListing in lib/listings.ts). price/

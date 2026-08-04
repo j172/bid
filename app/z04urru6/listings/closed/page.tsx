@@ -137,7 +137,11 @@ export default async function ClosedListingsPage({ searchParams }: { searchParam
                     {listing.winnerEmail === null ? (
                       "無人得標"
                     ) : (
-                      <WinnerExpand listingId={listing.id} email={listing.winnerEmail} />
+                      <WinnerExpand
+                        listingId={listing.id}
+                        email={listing.winnerEmail}
+                        winnerNotifiedAt={listing.winnerNotifiedAt}
+                      />
                     )}
                   </td>
                   <td className={`${td} font-semibold`}>{listing.finalPrice}</td>
