@@ -401,7 +401,8 @@
     "categoryTitleAward": "{name}入賞鴿欣賞",
     "categoryTitleImport": "{name}原鴿欣賞",
     "showingCount": "共 {count} 筆展示項目",
-    "emptyState": "目前尚無展示項目"
+    "emptyState": "目前尚無展示項目",
+    "itemDescriptionHeading": "鴿況介紹"
   },
   "errors": {
     "NOT_FOUND": "找不到這個商品",

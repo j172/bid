@@ -401,7 +401,8 @@
     "categoryTitleAward": "{name} Award Pigeon Showcase",
     "categoryTitleImport": "{name} Imported Pigeon Showcase",
     "showingCount": "{count} items",
-    "emptyState": "No showcase items yet"
+    "emptyState": "No showcase items yet",
+    "itemDescriptionHeading": "About this pigeon"
   },
   "errors": {
     "NOT_FOUND": "Listing not found",

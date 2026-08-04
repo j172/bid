@@ -401,7 +401,8 @@
     "categoryTitleAward": "{name}入赏鸽欣赏",
     "categoryTitleImport": "{name}原鸽欣赏",
     "showingCount": "共 {count} 笔展示项目",
-    "emptyState": "目前尚无展示项目"
+    "emptyState": "目前尚无展示项目",
+    "itemDescriptionHeading": "鸽况介绍"
   },
   "errors": {
     "NOT_FOUND": "找不到这个商品",
