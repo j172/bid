@@ -360,15 +360,19 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="shrink-0 rounded bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold text-white">{t("badgeHotBidding")}</span>
+                    <span className="shrink-0 rounded bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                      {item.listing_type === "auction" ? t("badgeHotBidding") : t("badgeBestPrice")}
+                    </span>
                     <p className="truncate text-sm font-bold text-ink">{item.title}</p>
                   </div>
                   <p className="mt-1 text-xs text-ink-light">{item.listing_type === "auction" ? t("statusBidding") : t("statusFixedDeal")}</p>
                   <div className="mt-2 flex items-end gap-2">
                     <p className="text-base font-black text-ink">{item.listing_type === "auction" ? item.current_price : item.price}</p>
-                    <p className="text-[11px] text-ink-light line-through">
-                      {Math.ceil(Number(item.listing_type === "auction" ? item.current_price : item.price) * 1.15)}
-                    </p>
+                    {item.listing_type === "auction" && (
+                      <p className="text-[11px] text-ink-light line-through">
+                        {Math.ceil(Number(item.current_price) * 1.15)}
+                      </p>
+                    )}
                   </div>
                 </div>
               </Link>
