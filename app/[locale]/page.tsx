@@ -138,13 +138,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   // 買家最愛：依出價次數（競標）+ 購買次數（固定價）加總排序取熱門商品，
   // 只計入有實際出價／購買紀錄的商品，避免跟「全部商品」的數字重複。
   const popularListings = listings.filter((item) => item.bidCount + item.purchaseCount > 0);
-  // 新手友善：原本語意（低價入門）在現有 schema 下可直接用真實價格欄位計算，
-  // 取兩種商品類型皆適用的現價 <= 門檻。
-  const BEGINNER_MAX_PRICE = 1000;
-  const beginnerListings = listings.filter((item) => {
-    const price = item.listing_type === "auction" ? item.current_price : (item.price ?? item.current_price);
-    return price <= BEGINNER_MAX_PRICE;
-  });
   const visualCategories: VisualCategoryItem[] = [
     {
       label: t("categoryAuction"),
@@ -180,13 +173,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       href: "/listings?sort=popular",
       badge: "❤️",
       count: popularListings.length,
-    },
-    {
-      label: t("beginnerLabel"),
-      subtitle: t("beginnerSubtitle", { price: BEGINNER_MAX_PRICE }),
-      href: `/listings?maxPrice=${BEGINNER_MAX_PRICE}`,
-      badge: "🌟",
-      count: beginnerListings.length,
     },
   ];
   const homeEagerCount = perfMode === "aggressive" ? 2 : 1;
