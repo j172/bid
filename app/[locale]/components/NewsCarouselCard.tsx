@@ -47,7 +47,7 @@ export default function NewsCarouselCard({
     return () => clearInterval(timer);
   }, [items.length]);
 
-  const wrapperClass = "flex h-full flex-col justify-center rounded-2xl bg-gradient-to-r from-pacific-blue-500 to-pacific-blue-600 p-7 text-white";
+  const wrapperClass = "flex h-full flex-col justify-center rounded-2xl bg-gradient-to-r from-steel-azure-500 to-steel-azure-600 p-7 text-white";
 
   if (items.length === 0) {
     return (
@@ -61,12 +61,12 @@ export default function NewsCarouselCard({
   const current = items[index];
 
   return (
-    <div className="flex h-full flex-col justify-center gap-4 overflow-hidden rounded-2xl bg-gradient-to-r from-pacific-blue-500 to-pacific-blue-600 p-7 text-white sm:flex-row sm:items-center sm:gap-6">
+    <div className="flex h-full flex-col justify-center gap-4 overflow-hidden rounded-2xl bg-gradient-to-r from-steel-azure-500 to-steel-azure-600 p-7 text-white sm:flex-row sm:items-center sm:gap-6">
       <div className="min-w-0 flex-1">
         <p className="text-xs font-bold uppercase tracking-wider">{activeBadge}</p>
         <h3 className="mt-2 truncate text-3xl font-black">{current.title}</h3>
-        <p className="mt-3 max-w-xl text-sm text-pacific-blue-100">{current.excerpt}</p>
-        <Link href={`/news/${current.id}`} className="mt-5 inline-flex w-fit rounded-md bg-white px-4 py-2 text-sm font-bold text-pacific-blue-700">
+        <p className="mt-3 max-w-xl text-sm text-steel-azure-100">{current.excerpt}</p>
+        <Link href={`/news/${current.id}`} className="mt-5 inline-flex w-fit rounded-md bg-white px-4 py-2 text-sm font-bold text-steel-azure-700">
           {ctaLabel}
         </Link>
       </div>

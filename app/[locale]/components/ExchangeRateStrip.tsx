@@ -10,7 +10,7 @@ import { getAllLatestStoredRates } from "@/lib/exchangeRates";
 //
 // Restyled (issue #49) to match the newsletter card's treatment right below
 // it in SiteFooter — same rounded-2xl + gradient + large heading — using a
-// pacific-blue-tinted radial gradient (this design system's secondary/brand
+// steel-azure-tinted radial gradient (this design system's secondary/brand
 // tone, see app/styles/design-tokens.css) rather than the newsletter card's
 // blue, so the two read as related but distinct. No outer wrapper here
 // (unlike the old bg-slate-50 strip) — SiteFooter places this directly
