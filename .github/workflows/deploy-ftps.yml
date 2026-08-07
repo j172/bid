@@ -145,12 +145,42 @@ jobs:
           set -euo pipefail
           ORIGIN_IP="103.21.221.12"
 
+          # scripts/remote-apply.sh's own health probe only checks that
+          # bid-web is accepting TCP connections on 127.0.0.1 — it doesn't
+          # wait for the DB connection pool /api/health depends on to be
+          # fully warmed up. That used to be a non-issue because the old
+          # Cloudflare-polling apply step routinely took minutes, giving the
+          # freshly-restarted process plenty of idle time before this step
+          # ever ran. Now that apply completes over SSH in well under a
+          # minute (issue #64), this step can start running mere seconds
+          # after pm2 restarts the process — narrow enough to occasionally
+          # catch it between "port open" and "DB pool ready" (observed on
+          # run 31170387833: origin health check failed instantly, then
+          # passed on a manual re-check moments later). A short settle delay
+          # plus a small retry loop around the origin check (the one closest
+          # to the restart, and the one curl's own --retry can't help with
+          # since it fails on JSON content, not HTTP/connection status)
+          # closes that gap.
+          sleep 5
+
           # 1) Origin health (bypass CDN) must be OK
-          curl --fail --show-error --silent --insecure --location \
-            --connect-timeout 10 --max-time 20 --retry 2 --retry-delay 2 --retry-all-errors \
-            --header "Host: bid.j172.tw" \
-            --user-agent "bid-deploy-bot/1.0" \
-            "https://${ORIGIN_IP}/api/health?verify=$(date +%s)" | grep -q '"ok":true'
+          ORIGIN_OK=0
+          for ATTEMPT in 1 2 3 4 5; do
+            if curl --fail --show-error --silent --insecure --location \
+              --connect-timeout 10 --max-time 20 \
+              --header "Host: bid.j172.tw" \
+              --user-agent "bid-deploy-bot/1.0" \
+              "https://${ORIGIN_IP}/api/health?verify=$(date +%s)" | grep -q '"ok":true'; then
+              ORIGIN_OK=1
+              break
+            fi
+            echo "Origin health check not ready yet (attempt $ATTEMPT/5), retrying..."
+            sleep 3
+          done
+          if [ "$ORIGIN_OK" != "1" ]; then
+            echo "Origin health endpoint never reported ok=true"
+            exit 1
+          fi
 
           # 2) Public domain health (through Cloudflare) must also be OK
           PUBLIC_STATUS="$(curl --show-error --silent --location \
