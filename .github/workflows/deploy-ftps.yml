@@ -141,77 +141,18 @@ jobs:
           script_path: scripts/remote-apply.sh
 
       - name: Verify live site
-        run: |
-          set -euo pipefail
-          ORIGIN_IP="103.21.221.12"
-
-          # scripts/remote-apply.sh's own health probe only checks that
-          # bid-web is accepting TCP connections on 127.0.0.1 — it doesn't
-          # wait for the DB connection pool /api/health depends on to be
-          # fully warmed up. That used to be a non-issue because the old
-          # Cloudflare-polling apply step routinely took minutes, giving the
-          # freshly-restarted process plenty of idle time before this step
-          # ever ran. Now that apply completes over SSH in well under a
-          # minute (issue #64), this step can start running mere seconds
-          # after pm2 restarts the process — narrow enough to occasionally
-          # catch it between "port open" and "DB pool ready" (observed on
-          # run 31170387833: origin health check failed instantly, then
-          # passed on a manual re-check moments later). A short settle delay
-          # plus a small retry loop around the origin check (the one closest
-          # to the restart, and the one curl's own --retry can't help with
-          # since it fails on JSON content, not HTTP/connection status)
-          # closes that gap.
-          sleep 5
-
-          # 1) Origin health (bypass CDN) must be OK
-          ORIGIN_OK=0
-          for ATTEMPT in 1 2 3 4 5; do
-            if curl --fail --show-error --silent --insecure --location \
-              --connect-timeout 10 --max-time 20 \
-              --header "Host: bid.j172.tw" \
-              --user-agent "bid-deploy-bot/1.0" \
-              "https://${ORIGIN_IP}/api/health?verify=$(date +%s)" | grep -q '"ok":true'; then
-              ORIGIN_OK=1
-              break
-            fi
-            echo "Origin health check not ready yet (attempt $ATTEMPT/5), retrying..."
-            sleep 3
-          done
-          if [ "$ORIGIN_OK" != "1" ]; then
-            echo "Origin health endpoint never reported ok=true"
-            exit 1
-          fi
-
-          # 2) Public domain health (through Cloudflare) must also be OK
-          PUBLIC_STATUS="$(curl --show-error --silent --location \
-            --connect-timeout 10 --max-time 20 --retry 2 --retry-delay 2 --retry-all-errors \
-            --output /tmp/public-health.txt --write-out '%{http_code}' \
-            "https://bid.j172.tw/api/health?verify=$(date +%s)")"
-
-          cat /tmp/public-health.txt
-
-          if [ "$PUBLIC_STATUS" != "200" ]; then
-            echo "Public health endpoint returned HTTP $PUBLIC_STATUS"
-            exit 1
-          fi
-
-          if ! grep -q '"ok":true' /tmp/public-health.txt; then
-            echo "Public health endpoint did not report ok=true"
-            exit 1
-          fi
-
-          # 3) Public homepage must not return challenge/SSL error page
-          HOMEPAGE_STATUS="$(curl --show-error --silent --location \
-            --connect-timeout 10 --max-time 20 --retry 2 --retry-delay 2 --retry-all-errors \
-            --output /tmp/public-home.txt --write-out '%{http_code}' \
-            "https://bid.j172.tw/?verify=$(date +%s)")"
-
-          if [ "$HOMEPAGE_STATUS" != "200" ]; then
-            echo "Public homepage returned HTTP $HOMEPAGE_STATUS"
-            exit 1
-          fi
-
-          if grep -Eiq 'SSL handshake failed|Error code 525|Please wait while your request is being verified' /tmp/public-home.txt; then
-            echo "Public homepage returned Cloudflare error/challenge page"
-            exit 1
-          fi
+        # Runs scripts/remote-verify.sh over SSH instead of curling
+        # bid.j172.tw directly from the runner — confirmed (run 31170751366)
+        # that the production WAF/anti-bot layer challenges GitHub Actions'
+        # source IPs on every request to this Host, whether aimed at the
+        # public domain or straight at the origin IP, so no retry/delay from
+        # here would ever get past it. See scripts/remote-verify.sh's header
+        # comment for the full story.
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          port: ${{ secrets.DEPLOY_SSH_PORT }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          command_timeout: 3m
+          script_path: scripts/remote-verify.sh
