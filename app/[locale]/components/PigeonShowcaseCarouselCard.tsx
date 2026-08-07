@@ -50,13 +50,13 @@ export default function PigeonShowcaseCarouselCard({
 
   const isDark = variant === "dark";
   const wrapperClass = isDark
-    ? "rounded-2xl bg-gradient-to-r from-muted-olive-700 to-slate-900 p-6 text-white"
+    ? "rounded-2xl bg-gradient-to-r from-yale-blue-700 to-slate-900 p-6 text-white"
     : "rounded-2xl border border-border bg-white p-6";
   const badgeClass = isDark ? "text-xs font-bold uppercase tracking-wider" : "text-xs font-bold uppercase tracking-wider text-interactive-primary";
   const titleClass = isDark ? "mt-2 text-2xl font-black" : "mt-2 text-xl font-black text-ink";
-  const descClass = isDark ? "mt-3 text-sm text-muted-olive-100" : "mt-2 text-sm text-ink-light";
+  const descClass = isDark ? "mt-3 text-sm text-pacific-blue-100" : "mt-2 text-sm text-ink-light";
   const ctaClass = isDark
-    ? "mt-4 inline-flex rounded-md bg-white px-3 py-1.5 text-xs font-bold text-muted-olive-700"
+    ? "mt-4 inline-flex rounded-md bg-white px-3 py-1.5 text-xs font-bold text-pacific-blue-700"
     : "mt-4 inline-flex rounded-md bg-header px-3 py-1.5 text-xs font-bold text-white";
   const viewMoreClass = isDark
     ? "mt-4 inline-flex text-xs font-bold text-white/90 underline underline-offset-2 hover:text-white"

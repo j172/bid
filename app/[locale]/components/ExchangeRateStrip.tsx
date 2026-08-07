@@ -10,7 +10,7 @@ import { getAllLatestStoredRates } from "@/lib/exchangeRates";
 //
 // Restyled (issue #49) to match the newsletter card's treatment right below
 // it in SiteFooter — same rounded-2xl + gradient + large heading — using a
-// muted-olive-tinted radial gradient (this design system's secondary/brand
+// pacific-blue-tinted radial gradient (this design system's secondary/brand
 // tone, see app/styles/design-tokens.css) rather than the newsletter card's
 // blue, so the two read as related but distinct. No outer wrapper here
 // (unlike the old bg-slate-50 strip) — SiteFooter places this directly
@@ -19,7 +19,7 @@ export default async function ExchangeRateStrip() {
   const [t, rates] = await Promise.all([getTranslations("footer"), getAllLatestStoredRates()]);
 
   return (
-    <section className="rounded-2xl bg-[radial-gradient(circle_at_top_right,_#e9f0db_0,_#f4f7ed_40%,_#f8fafc_100%)] px-6 py-7">
+    <section className="rounded-2xl bg-[radial-gradient(circle_at_top_right,_#d9edf2_0,_#ecf6f9_40%,_#f8fafc_100%)] px-6 py-7">
       <h3 className="text-2xl font-black text-ink">{t("exchangeRateTitle")}</h3>
       <div className="mt-3 flex flex-col gap-1.5 text-sm font-semibold text-ink sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
         <span>{rates.USD ? t("exchangeRateUsd", { rate: rates.USD.rate.toFixed(2) }) : t("exchangeRateUnavailable")}</span>
