@@ -10,13 +10,25 @@ export type Broadcast = {
   createdAt: string | null;
 };
 
-type ErrorCode = "NOT_CONFIGURED" | "PROVIDER_ERROR";
+export type BroadcastErrorCode = "NOT_CONFIGURED" | "PROVIDER_ERROR";
+type ErrorCode = BroadcastErrorCode;
 type Result = { ok: true } | { ok: false; errorCode: ErrorCode };
 type ResultWithId = { ok: true; id: string } | { ok: false; errorCode: ErrorCode };
 type ListResult = { ok: true; broadcasts: Broadcast[] } | { ok: false; errorCode: ErrorCode };
 
 function isConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY && process.env.RESEND_AUDIENCE_ID);
+}
+
+// News → newsletter sync (issue #73): when an admin opts in at news-post
+// creation time, the API route builds a broadcast from that post using this
+// helper — the post's own (already-sanitized) content HTML as-is, plus one
+// line linking back to the post's public detail page so subscribers can
+// visit the site for the canonical version instead of only the email copy.
+// Pure/no I/O so it's directly unit-testable, same split as this project's
+// other lib/*Validation.ts-style helpers.
+export function buildNewsBroadcastHtml(contentHtml: string, detailUrl: string): string {
+  return `${contentHtml}\n<p><a href="${detailUrl}">查看完整內容</a></p>`;
 }
 
 export async function listBroadcasts(): Promise<ListResult> {
