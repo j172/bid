@@ -455,5 +455,35 @@
     "publishedLine": "发布时间：{date}",
     "sidebarLatest": "最新消息",
     "backToList": "查看更多"
+  },
+  "errorPage": {
+    "labels": {
+      "browser": "浏览器",
+      "cloudflare": "Cloudflare",
+      "host": "主机",
+      "statusOk": "正常",
+      "statusError": "错误",
+      "whatHappenedTitle": "发生了什么？",
+      "whatCanIDoTitle": "我可以怎么做？",
+      "rayId": "Ray ID",
+      "timestamp": "时间戳",
+      "yourIp": "您的 IP",
+      "ipUnknown": "无法获取",
+      "perfSecBy": "性能与安全由 Cloudflare 提供",
+      "backHome": "返回首页",
+      "tryAgain": "重试"
+    },
+    "notFound": {
+      "errorCode": "404",
+      "heading": "找不到页面",
+      "whatHappened": "您点击的链接可能已失效或过期，或者您要找的页面已被移动或删除。",
+      "whatCanIDo": "请确认网址是否正确，或返回首页重新浏览。"
+    },
+    "serverError": {
+      "errorCode": "500",
+      "heading": "发生错误",
+      "whatHappened": "加载此页面时发生了未预期的错误，我们已记录下来并会尽快处理。",
+      "whatCanIDo": "请稍后再试一次；如果问题持续发生，欢迎与我们联系并告诉我们发生问题时您正在做什么。"
+    }
   }
 }

@@ -455,5 +455,35 @@
     "publishedLine": "發布時間：{date}",
     "sidebarLatest": "最新訊息",
     "backToList": "查看更多"
+  },
+  "errorPage": {
+    "labels": {
+      "browser": "瀏覽器",
+      "cloudflare": "Cloudflare",
+      "host": "主機",
+      "statusOk": "正常",
+      "statusError": "錯誤",
+      "whatHappenedTitle": "發生了什麼事？",
+      "whatCanIDoTitle": "我可以怎麼做？",
+      "rayId": "Ray ID",
+      "timestamp": "時間戳記",
+      "yourIp": "您的 IP",
+      "ipUnknown": "無法取得",
+      "perfSecBy": "效能與安全性由 Cloudflare 提供",
+      "backHome": "回首頁",
+      "tryAgain": "重試"
+    },
+    "notFound": {
+      "errorCode": "404",
+      "heading": "找不到頁面",
+      "whatHappened": "您點擊的連結可能已失效或過期，或者您要找的頁面已經被移動或移除。",
+      "whatCanIDo": "請確認網址是否正確，或回到首頁重新瀏覽。"
+    },
+    "serverError": {
+      "errorCode": "500",
+      "heading": "發生錯誤",
+      "whatHappened": "載入這個頁面時發生未預期的錯誤，我們已經記錄下來並會盡快處理。",
+      "whatCanIDo": "請稍後再試一次；如果問題持續發生，歡迎與我們聯繫並告訴我們發生問題時您正在做什麼。"
+    }
   }
 }
