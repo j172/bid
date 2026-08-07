@@ -4,7 +4,7 @@
 // rows/results back into the module's public shapes.
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createNews, deleteNews, getNewsById, listLatestNews, listNews, updateNews } from "./news";
+import { createNews, deleteNews, getNewsById, listLatestNews, listNews, setNewsBroadcastId, updateNews } from "./news";
 
 const { queryMock } = vi.hoisted(() => ({ queryMock: vi.fn() }));
 
@@ -21,6 +21,7 @@ const ROW = {
   title: "本週競標時間異動",
   content: "<p>本週競標時間調整為晚上八點</p>",
   image_file_name: "news123.jpg",
+  broadcast_id: "bcast_1",
   created_at: new Date("2026-01-01T00:00:00Z"),
   updated_at: new Date("2026-01-02T00:00:00Z"),
 };
@@ -42,6 +43,7 @@ describe("listNews", () => {
         title: "本週競標時間異動",
         content: "<p>本週競標時間調整為晚上八點</p>",
         imageFileName: "news123.jpg",
+        broadcastId: "bcast_1",
         createdAt: ROW.created_at,
         updatedAt: ROW.updated_at,
       },
@@ -136,5 +138,23 @@ describe("deleteNews", () => {
   it("returns ok:true when a row is deleted", async () => {
     queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
     expect(await deleteNews(1)).toEqual({ ok: true });
+  });
+});
+
+describe("setNewsBroadcastId", () => {
+  it("updates broadcast_id for the given post", async () => {
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+    await setNewsBroadcastId(1, "bcast_2");
+
+    expect(queryMock).toHaveBeenCalledWith("UPDATE news_posts SET broadcast_id = ? WHERE id = ?", ["bcast_2", 1]);
+  });
+
+  it("can clear the link back to NULL", async () => {
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+    await setNewsBroadcastId(1, null);
+
+    expect(queryMock).toHaveBeenCalledWith("UPDATE news_posts SET broadcast_id = ? WHERE id = ?", [null, 1]);
   });
 });

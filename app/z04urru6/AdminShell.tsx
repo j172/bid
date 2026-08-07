@@ -83,8 +83,6 @@ export default function AdminShell({ children, email }: { children: ReactNode; e
       users: { label: "使用者列表", icon: "👤" },
       new: { label: "建立商品", icon: "➕" },
       closed: { label: "已結標結算", icon: "✅" },
-      newsletter: { label: "電子報", icon: "✉️" },
-      compose: { label: "撰寫新電子報", icon: "📝" },
       homepage: { label: "首頁內容管理", icon: "🏡" },
       "partner-lofts": { label: "合作鴿舍管理", icon: "🕊️" },
       "pigeon-showcase": { label: "入賞鴿／進口鴿管理", icon: "🏆" },
