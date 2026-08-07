@@ -14,10 +14,10 @@ const DESCRIPTION_SNIPPET_LENGTH = 30;
 type SearchParams = Record<string, string | string[] | undefined>;
 
 type CategoryKey = "auction" | "fixed_price";
-// ends_soon / starts_soon / popular power the homepage "分類瀏覽" cards
+// ends_soon / starts_soon power the homepage "分類瀏覽" cards
 // (see app/[locale]/(with-loading)/page.tsx) — real, computable subsets/orderings rather
 // than the hardcoded links that used to live there.
-type SortKey = "newest" | "price_asc" | "price_desc" | "ends_soon" | "starts_soon" | "popular";
+type SortKey = "newest" | "price_asc" | "price_desc" | "ends_soon" | "starts_soon";
 
 function inferCategoryFromListingType(type: ListingType): CategoryKey {
   return type === "auction" ? "auction" : "fixed_price";
@@ -77,8 +77,7 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
     rawSort === "price_asc" ||
     rawSort === "price_desc" ||
     rawSort === "ends_soon" ||
-    rawSort === "starts_soon" ||
-    rawSort === "popular"
+    rawSort === "starts_soon"
       ? rawSort
       : "newest";
   // Only "scheduled" is a supported value today (powers the homepage's
@@ -122,10 +121,7 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
         listing.ends_at !== null &&
         listing.ends_at.getTime() - nowMs >= 0 &&
         listing.ends_at.getTime() - nowMs <= withinHours * 60 * 60 * 1000);
-    // "popular" is a homepage-favorites sort — items with zero bids/purchases
-    // aren't "buyer favorites", so exclude them rather than just reordering.
-    const popularMatch = sort !== "popular" || listing.bidCount + listing.purchaseCount > 0;
-    return categoryMatch && minMatch && maxMatch && searchMatch && statusMatch && withinHoursMatch && popularMatch;
+    return categoryMatch && minMatch && maxMatch && searchMatch && statusMatch && withinHoursMatch;
   });
 
   const sortedListings = [...filteredListings].sort((a, b) => {
@@ -143,9 +139,6 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
       const aTime = a.starts_at ? a.starts_at.getTime() : Infinity;
       const bTime = b.starts_at ? b.starts_at.getTime() : Infinity;
       return aTime - bTime;
-    }
-    if (sort === "popular") {
-      return (b.bidCount + b.purchaseCount) - (a.bidCount + a.purchaseCount);
     }
     return b.id - a.id;
   });
@@ -313,14 +306,8 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
               >
                 {t("sortEndsSoon")}
               </Link>
-              <Link
-                href={withFilters({ sort: "popular" })}
-                className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "popular" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
-              >
-                {t("sortPopular")}
-              </Link>
               <p className="ml-1 font-semibold text-ink">
-                {type || statusFilter || withinHours !== undefined || sort === "popular" ? t("filtered") : t("allLive")}
+                {type || statusFilter || withinHours !== undefined ? t("filtered") : t("allLive")}
               </p>
             </div>
           </div>

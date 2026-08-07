@@ -138,9 +138,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   // 的 scheduled 商品（原本的「高人氣商品推薦」在 schema 上跟「買家最愛」重
   // 複，故合理替換為狀態面向的另一個真實子集合）。
   const scheduledListings = allFetchedListings.filter((item) => item.status === "scheduled");
-  // 買家最愛：依出價次數（競標）+ 購買次數（固定價）加總排序取熱門商品，
-  // 只計入有實際出價／購買紀錄的商品，避免跟「全部商品」的數字重複。
-  const popularListings = listings.filter((item) => item.bidCount + item.purchaseCount > 0);
   const visualCategories: VisualCategoryItem[] = [
     {
       label: t("categoryAuction"),
@@ -169,13 +166,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       href: "/listings?status=scheduled&sort=starts_soon",
       badge: "⏰",
       count: scheduledListings.length,
-    },
-    {
-      label: t("popularLabel"),
-      subtitle: t("popularSubtitle"),
-      href: "/listings?sort=popular",
-      badge: "❤️",
-      count: popularListings.length,
     },
   ];
   const homeEagerCount = perfMode === "aggressive" ? 2 : 1;
