@@ -25,6 +25,28 @@ CREATE TABLE IF NOT EXISTS sessions (
   KEY idx_sessions_expires (expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Self-service "forgot password" reset tokens (issue #89). token is the
+-- primary key (same 32-byte randomBytes().toString("hex") shape as
+-- sessions.id, just reused as its own lookup key rather than paired with a
+-- separate id column). One row per requested reset — never updated back to
+-- unused, so used_at NOT NULL also means "one-time use, permanently spent"
+-- and expires_at NOW()-comparison means "30 minutes came and went"; see
+-- lib/passwordReset.ts's isResetTokenValid. request_ip is the requesting
+-- client's IP (lib/clientIp.ts) recorded purely so the forgot-password route
+-- can count recent rows per IP for its 5-per-15-minutes abuse limit — it is
+-- never used to look up or validate a token.
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  token VARCHAR(64) NOT NULL,
+  user_id BIGINT NOT NULL,
+  request_ip VARCHAR(45) NULL,
+  expires_at DATETIME NOT NULL,
+  used_at DATETIME NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (token),
+  KEY idx_password_reset_tokens_user (user_id),
+  KEY idx_password_reset_tokens_ip_created (request_ip, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS listings (
   id BIGINT NOT NULL AUTO_INCREMENT,
   title VARCHAR(255) NOT NULL,

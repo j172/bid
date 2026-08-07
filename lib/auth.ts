@@ -78,6 +78,7 @@ interface UserRow {
   password_salt: string;
   role: Role;
   suspended_at: Date | null;
+  locale: string;
 }
 
 export async function findUserByEmail(email: string): Promise<UserRow | null> {
@@ -351,6 +352,13 @@ export async function updateProfile(
 
 export type ChangePasswordOutcome = { ok: true } | { ok: false; errorCode: ErrorCode };
 
+// Same "kick every other session" treatment as suspendUser/deleteAccount and
+// the forgot-password flow's resetPassword (lib/passwordReset.ts) — a
+// changed password should invalidate any session an attacker (or a stale
+// device) might still be holding. Unlike those two, this one is triggered by
+// the logged-in owner themselves from an active session, so it deliberately
+// keeps *that* session alive (read from the request's own cookie) rather
+// than logging the caller out of the request they just made.
 export async function changePassword(
   userId: number,
   oldPassword: string,
@@ -368,6 +376,15 @@ export async function changePassword(
 
   const { hash, salt } = await hashPassword(newPassword);
   await db.query("UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?", [hash, salt, userId]);
+
+  const cookieStore = await cookies();
+  const currentToken = cookieStore.get(SESSION_COOKIE)?.value;
+  if (currentToken) {
+    await db.query("DELETE FROM sessions WHERE user_id = ? AND id != ?", [userId, currentToken]);
+  } else {
+    await db.query("DELETE FROM sessions WHERE user_id = ?", [userId]);
+  }
+
   return { ok: true };
 }
 

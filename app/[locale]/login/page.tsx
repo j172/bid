@@ -74,6 +74,9 @@ export default function LoginPage() {
               className={inputClass}
             />
           </label>
+          <Link href="/forgot-password" className="text-sm text-interactive-primary hover:underline">
+            {t("forgotPasswordLink")}
+          </Link>
     </AuthFormShell>
   );
 }

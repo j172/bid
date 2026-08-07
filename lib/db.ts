@@ -32,6 +32,21 @@ CREATE TABLE IF NOT EXISTS sessions (
   KEY idx_sessions_expires (expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Self-service "forgot password" reset tokens (issue #89) — see db/init.sql
+-- for the fuller header comment. Brand-new table, whole final schema from
+-- day one, same as homepage_sections/exchange_rates above.
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  token VARCHAR(64) NOT NULL,
+  user_id BIGINT NOT NULL,
+  request_ip VARCHAR(45) NULL,
+  expires_at DATETIME NOT NULL,
+  used_at DATETIME NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (token),
+  KEY idx_password_reset_tokens_user (user_id),
+  KEY idx_password_reset_tokens_ip_created (request_ip, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS listings (
   id BIGINT NOT NULL AUTO_INCREMENT,
   title VARCHAR(255) NOT NULL,
