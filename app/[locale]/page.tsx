@@ -4,11 +4,13 @@ import { listOpenListings } from "@/lib/listings";
 import { listingPhotoUrl, homepageSectionImageUrl } from "@/lib/uploads";
 import { listHomepageSections } from "@/lib/homepageSections";
 import { listLatestPigeonShowcase } from "@/lib/pigeonShowcase";
+import { listLatestNews } from "@/lib/news";
 import { excerptHtml } from "@/lib/htmlText";
 import { Link } from "@/i18n/navigation";
 import HeroSection from "./components/HeroSection";
 import ZoomableProductImage from "./components/ZoomableProductImage";
 import PigeonShowcaseCarouselCard from "./components/PigeonShowcaseCarouselCard";
+import NewsCarouselCard from "./components/NewsCarouselCard";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +63,19 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     id: pigeon.id,
     name: pigeon.name,
     excerpt: excerptHtml(pigeon.description, PIGEON_CAROUSEL_EXCERPT_LENGTH),
+  }));
+
+  // 最新訊息首頁輪播 (issue #56) — latest 10 posts, replacing the large
+  // "現正競標／熱門競標正在進行" promo card below with a rotating
+  // title+excerpt showcase (falls back to that card's original marketing
+  // copy when there are currently zero news_posts rows; see
+  // NewsCarouselCard's own fallback branch).
+  const NEWS_CAROUSEL_EXCERPT_LENGTH = 30;
+  const latestNews = await listLatestNews(10);
+  const newsCarouselItems = latestNews.map((post) => ({
+    id: post.id,
+    title: post.title,
+    excerpt: excerptHtml(post.content, NEWS_CAROUSEL_EXCERPT_LENGTH),
   }));
 
   const heroRenderedAt = new Date().toISOString();
@@ -539,13 +554,17 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-          <div className="rounded-2xl bg-gradient-to-r from-muted-olive-500 to-muted-olive-600 p-7 text-white lg:col-span-2">
-            <p className="text-xs font-bold uppercase tracking-wider">{t("promoAuctionBadge")}</p>
-            <h3 className="mt-2 text-3xl font-black">{t("promoAuctionTitle")}</h3>
-            <p className="mt-3 max-w-xl text-sm text-muted-olive-100">{t("promoAuctionDesc")}</p>
-            <Link href={`/listings?type=auction${perfSuffix}`} className="mt-5 inline-flex rounded-md bg-white px-4 py-2 text-sm font-bold text-muted-olive-700">
-              {t("promoAuctionCta")}
-            </Link>
+          <div className="lg:col-span-2">
+            <NewsCarouselCard
+              items={newsCarouselItems}
+              activeBadge={t("newsCarouselBadge")}
+              ctaLabel={t("newsCarouselCta")}
+              fallbackBadge={t("promoAuctionBadge")}
+              fallbackTitle={t("promoAuctionTitle")}
+              fallbackDesc={t("promoAuctionDesc")}
+              fallbackCtaLabel={t("promoAuctionCta")}
+              fallbackCtaHref={`/listings?type=auction${perfSuffix}`}
+            />
           </div>
 
           <div className="grid gap-5">

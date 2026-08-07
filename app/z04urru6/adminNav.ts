@@ -20,4 +20,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   // top of the new pigeon_showcase table (two fixed categories, no
   // custom-category management).
   { label: "入賞鴿／進口鴿管理", href: "/z04urru6/pigeon-showcase", section: "content" },
+  // 最新訊息管理 (issue #56) — public announcement CRUD, independent from
+  // the "電子報" (Newsletter, subscription send) item above.
+  { label: "最新訊息管理", href: "/z04urru6/news", section: "content" },
 ];
