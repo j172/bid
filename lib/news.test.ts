@@ -20,6 +20,7 @@ const ROW = {
   id: 1,
   title: "本週競標時間異動",
   content: "<p>本週競標時間調整為晚上八點</p>",
+  image_file_name: "news123.jpg",
   created_at: new Date("2026-01-01T00:00:00Z"),
   updated_at: new Date("2026-01-02T00:00:00Z"),
 };
@@ -40,6 +41,7 @@ describe("listNews", () => {
         id: 1,
         title: "本週競標時間異動",
         content: "<p>本週競標時間調整為晚上八點</p>",
+        imageFileName: "news123.jpg",
         createdAt: ROW.created_at,
         updatedAt: ROW.updated_at,
       },
@@ -104,23 +106,23 @@ describe("createNews", () => {
   it("inserts and returns the new id", async () => {
     queryMock.mockResolvedValueOnce([{ insertId: 42 }]);
 
-    const result = await createNews({ title: "t", content: "c" });
+    const result = await createNews({ title: "t", content: "c", imageFileName: "img.jpg" });
 
     expect(result).toEqual({ ok: true, id: 42 });
-    expect(queryMock.mock.calls[0][1]).toEqual(["t", "c"]);
+    expect(queryMock.mock.calls[0][1]).toEqual(["t", "img.jpg", "c"]);
   });
 });
 
 describe("updateNews", () => {
   it("returns ok:false when no row matched (deleted or bad id)", async () => {
     queryMock.mockResolvedValueOnce([{ affectedRows: 0 }]);
-    const result = await updateNews(1, { title: "t", content: "c" });
+    const result = await updateNews(1, { title: "t", content: "c", imageFileName: "img.jpg" });
     expect(result).toEqual({ ok: false, error: "找不到這則訊息" });
   });
 
   it("returns ok:true when a row is updated", async () => {
     queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
-    const result = await updateNews(1, { title: "t", content: "c" });
+    const result = await updateNews(1, { title: "t", content: "c", imageFileName: "img.jpg" });
     expect(result).toEqual({ ok: true });
   });
 });

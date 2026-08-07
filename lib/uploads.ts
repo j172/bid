@@ -139,3 +139,34 @@ export function homepageSectionImageUrl(fileName: string): string {
 export async function deleteHomepageSectionImageFile(fileName: string): Promise<void> {
   await unlink(join(UPLOADS_ROOT, "homepage-sections", fileName)).catch(() => {});
 }
+
+// pigeon_showcase (issue #70's 主圖 addition) — same flat single-image
+// storage scheme as saveHomepageSectionImage above. Unlike homepage
+// sections' image (optional to replace on edit), the admin form requires an
+// upload on every create/edit (PigeonShowcaseFormModal.tsx), so callers never
+// need to fall back to an existing file name mid-request.
+export async function savePigeonShowcaseImage(image: File): Promise<string> {
+  return saveSingleImage(join(UPLOADS_ROOT, "pigeon-showcase"), image);
+}
+
+export function pigeonShowcaseImageUrl(fileName: string): string {
+  return `/uploads/pigeon-showcase/${fileName}`;
+}
+
+export async function deletePigeonShowcaseImageFile(fileName: string): Promise<void> {
+  await unlink(join(UPLOADS_ROOT, "pigeon-showcase", fileName)).catch(() => {});
+}
+
+// news_posts (issue #70's 主圖 addition) — same story as
+// savePigeonShowcaseImage above, just its own subdirectory.
+export async function saveNewsImage(image: File): Promise<string> {
+  return saveSingleImage(join(UPLOADS_ROOT, "news"), image);
+}
+
+export function newsImageUrl(fileName: string): string {
+  return `/uploads/news/${fileName}`;
+}
+
+export async function deleteNewsImageFile(fileName: string): Promise<void> {
+  await unlink(join(UPLOADS_ROOT, "news", fileName)).catch(() => {});
+}

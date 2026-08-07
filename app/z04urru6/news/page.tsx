@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DEFAULT_NEWS_PAGE_SIZE, NEWS_PAGE_SIZES, isNewsPageSize, listNews } from "@/lib/news";
+import { newsImageUrl } from "@/lib/uploads";
 import AdminPageIntro from "../AdminPageIntro";
 import NewsFormModal from "./NewsFormModal";
 import DeleteButton from "./DeleteButton";
@@ -73,6 +74,7 @@ export default async function NewsAdminPage({ searchParams }: { searchParams: Pr
           <table className="w-full border-collapse">
             <thead>
               <tr>
+                <th className={th}>主圖</th>
                 <th className={th}>標題</th>
                 <th className={th}>內容</th>
                 <th className={th}>發布時間</th>
@@ -80,19 +82,26 @@ export default async function NewsAdminPage({ searchParams }: { searchParams: Pr
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => (
-                <tr key={item.id} className="transition hover:bg-surface-muted/80">
-                  <td className={`${td} font-medium`}>{item.title}</td>
-                  <td className={`${td} max-w-xs truncate text-ink-light`}>{item.content.replace(/<[^>]*>/g, " ").trim()}</td>
-                  <td className={`${td} whitespace-nowrap text-ink-light`}>{item.createdAt.toLocaleString("zh-TW")}</td>
-                  <td className={`${td} text-right`}>
-                    <div className="flex items-center justify-end gap-2">
-                      <NewsFormModal mode="edit" item={{ id: item.id, title: item.title, content: item.content }} />
-                      <DeleteButton id={item.id} title={item.title} />
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {items.map((item) => {
+                const imageUrl = item.imageFileName ? newsImageUrl(item.imageFileName) : "/images/hero-placeholder.png";
+                return (
+                  <tr key={item.id} className="transition hover:bg-surface-muted/80">
+                    <td className={td}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={imageUrl} alt={item.title} className="h-14 w-14 rounded-lg border border-border object-cover" />
+                    </td>
+                    <td className={`${td} font-medium`}>{item.title}</td>
+                    <td className={`${td} max-w-xs truncate text-ink-light`}>{item.content.replace(/<[^>]*>/g, " ").trim()}</td>
+                    <td className={`${td} whitespace-nowrap text-ink-light`}>{item.createdAt.toLocaleString("zh-TW")}</td>
+                    <td className={`${td} text-right`}>
+                      <div className="flex items-center justify-end gap-2">
+                        <NewsFormModal mode="edit" item={{ id: item.id, title: item.title, content: item.content, imageUrl }} />
+                        <DeleteButton id={item.id} title={item.title} />
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

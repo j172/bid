@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { createNews, isNewsPageSize, listNews, type NewsPostInput } from "@/lib/news";
 import { validateNewsContent, validateNewsTitle } from "@/lib/newsValidation";
 import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
+import { deleteNewsImageFile, saveNewsImage } from "@/lib/uploads";
 
 // Admin list view — matches the filters issue #56 asks for: title substring
 // search, selectable page size (30/50/100). No JOIN-only public equivalent
@@ -28,6 +29,8 @@ export async function GET(request: Request) {
   return NextResponse.json({ ok: true, items, total });
 }
 
+// Submits FormData (not JSON) as of issue #70 — 主圖 upload is required on
+// every create, front and back end both (see NewsFormModal.tsx).
 export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) {
@@ -37,13 +40,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
   }
 
-  const body = await request.json().catch(() => null);
-  if (!body || typeof body !== "object") {
-    return NextResponse.json({ ok: false, error: "請求格式不正確" }, { status: 400 });
-  }
-
-  const title = String(body.title ?? "").trim();
-  const content = String(body.content ?? "").trim();
+  const form = await request.formData();
+  const title = String(form.get("title") ?? "").trim();
+  const content = String(form.get("content") ?? "").trim();
+  const image = form.get("image");
 
   const titleResult = validateNewsTitle(title);
   if (!titleResult.ok) {
@@ -53,10 +53,23 @@ export async function POST(request: Request) {
   if (!contentResult.ok) {
     return NextResponse.json({ ok: false, error: contentResult.error }, { status: 400 });
   }
+  if (!(image instanceof File) || image.size === 0) {
+    return NextResponse.json({ ok: false, error: "請上傳主圖" }, { status: 400 });
+  }
 
-  const input: NewsPostInput = { title, content: sanitizeDescriptionHtml(content) };
+  let imageFileName: string;
+  try {
+    imageFileName = await saveNewsImage(image);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "圖片上傳失敗";
+    return NextResponse.json({ ok: false, error: message }, { status: 400 });
+  }
+
+  const input: NewsPostInput = { title, content: sanitizeDescriptionHtml(content), imageFileName };
   const result = await createNews(input);
   if (!result.ok) {
+    // Row was never created — don't leave the just-uploaded file orphaned.
+    await deleteNewsImageFile(imageFileName);
     return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
   }
   return NextResponse.json({ ok: true, id: result.id });

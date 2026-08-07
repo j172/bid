@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { DEFAULT_NEWS_PAGE_SIZE, NEWS_PAGE_SIZES, isNewsPageSize, listNews } from "@/lib/news";
+import { newsImageUrl } from "@/lib/uploads";
 import { excerptHtml } from "@/lib/htmlText";
 import { Link } from "@/i18n/navigation";
 
@@ -66,12 +67,20 @@ export default async function NewsListPage({ searchParams }: { searchParams: Pro
             <Link
               key={item.id}
               href={`/news/${item.id}`}
-              className="group flex flex-col rounded-xl border border-border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              className="group flex flex-col overflow-hidden rounded-xl border border-border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
             >
-              <p className="text-xs font-semibold text-ink-light">{item.createdAt.toLocaleDateString()}</p>
-              <h2 className="mt-1 truncate text-lg font-bold text-ink">{item.title}</h2>
-              <p className="mt-3 line-clamp-3 text-sm text-ink-light">{excerptHtml(item.content, LIST_EXCERPT_LENGTH)}</p>
-              <span className="mt-4 text-xs font-bold text-interactive-primary group-hover:underline">{t("viewDetails")}</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={item.imageFileName ? newsImageUrl(item.imageFileName) : "/images/hero-placeholder.png"}
+                alt={item.title}
+                className="h-40 w-full object-cover"
+              />
+              <div className="flex flex-1 flex-col p-5">
+                <p className="text-xs font-semibold text-ink-light">{item.createdAt.toLocaleDateString()}</p>
+                <h2 className="mt-1 truncate text-lg font-bold text-ink">{item.title}</h2>
+                <p className="mt-3 line-clamp-3 text-sm text-ink-light">{excerptHtml(item.content, LIST_EXCERPT_LENGTH)}</p>
+                <span className="mt-4 text-xs font-bold text-interactive-primary group-hover:underline">{t("viewDetails")}</span>
+              </div>
             </Link>
           ))}
         </div>

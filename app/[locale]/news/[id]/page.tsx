@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { getNewsById, listLatestNews } from "@/lib/news";
+import { newsImageUrl } from "@/lib/uploads";
 import { Link } from "@/i18n/navigation";
 
 export const dynamic = "force-dynamic";
@@ -43,7 +44,13 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
 
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[2fr_1fr]">
         <article className="min-w-0 rounded-2xl border border-border bg-white p-6 shadow-sm sm:p-8">
-          <h1 className="text-3xl font-black text-ink">{item.title}</h1>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={item.imageFileName ? newsImageUrl(item.imageFileName) : "/images/hero-placeholder.png"}
+            alt={item.title}
+            className="max-h-96 w-full rounded-xl object-cover"
+          />
+          <h1 className="mt-6 text-3xl font-black text-ink">{item.title}</h1>
           <p className="mt-2 text-sm font-semibold text-ink-light">{t("publishedLine", { date: item.createdAt.toLocaleString() })}</p>
 
           {/* content is stored pre-sanitized (lib/sanitizeDescriptionHtml.ts, applied

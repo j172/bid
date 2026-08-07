@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TITLE_MAX } from "@/lib/newsValidation";
 import NewsDescriptionEditor from "./NewsDescriptionEditor";
@@ -11,6 +11,8 @@ type EditItem = {
   id: number;
   title: string;
   content: string;
+  /** Resolved to the site placeholder when the row has no image yet (pre-issue-#70 data) — see newsImageUrl/hero-placeholder.png in the caller. */
+  imageUrl: string;
 };
 
 type Props = { mode: "create" } | { mode: "edit"; item: EditItem };
@@ -18,33 +20,60 @@ type Props = { mode: "create" } | { mode: "edit"; item: EditItem };
 // Same create/edit modal split pattern as
 // app/z04urru6/pigeon-showcase/PigeonShowcaseFormModal.tsx — one component
 // doubles as both forms, differing only in submit verb/URL and initial
-// values. Submits JSON (not FormData) since news_posts has no file upload.
+// values. Submits FormData (not JSON) as of issue #70's required 主圖 field
+// — must be (re)selected on every submit, create or edit alike, per issue
+// #70's explicit "新增／編輯時前後端都強制要求上傳" requirement.
 export default function NewsFormModal(props: Props) {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const isEdit = props.mode === "edit";
 
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(isEdit ? props.item.title : "");
   const [content, setContent] = useState(isEdit ? props.item.content : "");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(isEdit ? props.item.imageUrl : null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   function resetForm() {
     setTitle(isEdit ? props.item.title : "");
     setContent(isEdit ? props.item.content : "");
+    setPreviewUrl((prev) => {
+      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+      return isEdit ? props.item.imageUrl : null;
+    });
     setError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setPreviewUrl((prev) => {
+      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    setSubmitting(true);
 
-    const payload = { title, content };
+    const file = fileInputRef.current?.files?.[0];
+    if (!file) {
+      setError("請上傳主圖");
+      return;
+    }
+
+    setSubmitting(true);
+    const formData = new FormData();
+    formData.set("title", title);
+    formData.set("content", content);
+    formData.set("image", file);
+
     const response = await fetch(isEdit ? `/api/admin/news/${props.item.id}` : "/api/admin/news", {
       method: isEdit ? "PATCH" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: formData,
     });
     const data = await response.json().catch(() => ({ ok: false, error: "儲存失敗" }));
 
@@ -82,6 +111,21 @@ export default function NewsFormModal(props: Props) {
                 標題
                 <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={TITLE_MAX} required className={inputClass} />
               </label>
+
+              <div className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+                主圖
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handleFileChange}
+                  className="text-sm"
+                />
+                {previewUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={previewUrl} alt="" className="mt-2 h-24 w-24 rounded-md border border-border object-cover" />
+                )}
+              </div>
 
               <div className="flex flex-col gap-1 text-sm font-medium text-ink-light">
                 內容

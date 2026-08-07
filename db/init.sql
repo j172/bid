@@ -153,11 +153,18 @@ CREATE TABLE IF NOT EXISTS exchange_rates (
 -- lib/homepageSections.ts. MySQL foreign keys can't be scoped to only rows
 -- matching section_type = 'partner_loft' — that check is enforced at the
 -- application layer (lib/pigeonShowcase.ts) on write instead.
+-- image_file_name (issue #70) is the 主圖 (main image), stored/served the
+-- same way as homepage_sections.image_file_name (see lib/uploads.ts's
+-- savePigeonShowcaseImage/pigeonShowcaseImageUrl). NULL-able at the DB level
+-- only so rows created before #70 don't need a synthetic backfill value —
+-- the admin form (PigeonShowcaseFormModal.tsx) and its API routes require an
+-- upload on every create/edit, so every row written after #70 always has one.
 CREATE TABLE IF NOT EXISTS pigeon_showcase (
   id BIGINT NOT NULL AUTO_INCREMENT,
   category ENUM('award','imported') NOT NULL,  -- 'award' 入賞鴿 | 'imported' 進口鴿
   name VARCHAR(100) NOT NULL,
   loft_id BIGINT NOT NULL,
+  image_file_name VARCHAR(255) NULL,            -- 主圖 (issue #70); NULL only on pre-#70 rows
   description TEXT NOT NULL,                   -- sanitizeDescriptionHtml'd TinyMCE HTML, 2000-char plain-text cap
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
@@ -174,9 +181,12 @@ CREATE TABLE IF NOT EXISTS pigeon_showcase (
 -- plus a homepage carousel. Simpler than pigeon_showcase above — no FK, no
 -- dropdown/category dependency, id is never shown publicly (U/D operate on
 -- it from the admin list only).
+-- image_file_name (issue #70) is the 主圖 (main image) — same NULL-able-only-
+-- for-pre-#70-rows story as pigeon_showcase.image_file_name above.
 CREATE TABLE IF NOT EXISTS news_posts (
   id BIGINT NOT NULL AUTO_INCREMENT,
   title VARCHAR(100) NOT NULL,
+  image_file_name VARCHAR(255) NULL,  -- 主圖 (issue #70); NULL only on pre-#70 rows
   content TEXT NOT NULL,           -- sanitizeDescriptionHtml'd TinyMCE HTML, 2000-char plain-text cap
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
