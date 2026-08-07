@@ -102,7 +102,7 @@ function EndTimeCountdown({
           className="flex min-w-[1.85rem] flex-1 flex-col items-center rounded-md bg-white/15 py-1"
         >
           <span className="text-sm font-black leading-none text-white">{String(tile.value).padStart(2, "0")}</span>
-          <span className="mt-0.5 text-[8px] uppercase tracking-wide text-pacific-blue-200">{tile.label}</span>
+          <span className="mt-0.5 text-[8px] uppercase tracking-wide text-steel-azure-200">{tile.label}</span>
         </div>
       ))}
     </div>
@@ -143,19 +143,19 @@ export default function HeroSection({
     <section className="bg-gradient-to-b from-[#eef4ff] via-[#f4f7fb] to-[#f8fafc]">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-12">
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-          <article className="relative isolate overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-yale-blue-950 to-yale-blue-900 p-7 text-white shadow-[0_25px_70px_rgba(15,23,42,0.22)] lg:col-span-2 lg:min-h-[440px] lg:p-9">
+          <article className="relative isolate overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-baltic-blue-950 to-baltic-blue-900 p-7 text-white shadow-[0_25px_70px_rgba(15,23,42,0.22)] lg:col-span-2 lg:min-h-[440px] lg:p-9">
             <div className="pointer-events-none absolute -left-20 -top-20 h-56 w-56 rounded-full bg-white/10 blur-2xl" />
-            <div className="pointer-events-none absolute -bottom-24 left-1/3 h-56 w-56 rounded-full bg-pacific-blue-400/20 blur-2xl" />
+            <div className="pointer-events-none absolute -bottom-24 left-1/3 h-56 w-56 rounded-full bg-steel-azure-400/20 blur-2xl" />
             <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-white/5 to-transparent" />
 
             {activeCard ? (
               <>
                 <div className="relative z-10 max-w-[33rem]">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-pacific-blue-100 backdrop-blur-sm">
+                    <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-steel-azure-100 backdrop-blur-sm">
                       {tHome("topBadge", { rank: activeIndex + 1 })}
                     </span>
-                    <span className="inline-flex rounded-full border border-pacific-blue-300/30 bg-pacific-blue-400/10 px-3 py-1 text-[11px] font-semibold text-pacific-blue-100 backdrop-blur-sm">
+                    <span className="inline-flex rounded-full border border-steel-azure-300/30 bg-steel-azure-400/10 px-3 py-1 text-[11px] font-semibold text-steel-azure-100 backdrop-blur-sm">
                       <RemainingText key={activeCard.id} endsAt={activeCard.endsAt} renderedAt={renderedAt} t={tFormat} />
                     </span>
                   </div>
@@ -164,7 +164,7 @@ export default function HeroSection({
                     {activeCard.title}
                   </h1>
 
-                  <p className="mt-4 max-w-[29rem] text-base leading-[1.65] text-pacific-blue-100 sm:text-lg">
+                  <p className="mt-4 max-w-[29rem] text-base leading-[1.65] text-steel-azure-100 sm:text-lg">
                     {activeCard.bidCount === 0
                       ? tListings("noBidsYet")
                       : tListings("totalBids", { count: activeCard.bidCount })}
@@ -191,7 +191,7 @@ export default function HeroSection({
                 <div className="relative z-10 mt-6 flex max-w-[33rem] flex-wrap gap-3">
                   <Link
                     href={activeCard.href}
-                    className="rounded-full bg-white px-6 py-3 text-sm font-bold text-pacific-blue-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-pacific-blue-50"
+                    className="rounded-full bg-white px-6 py-3 text-sm font-bold text-steel-azure-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-steel-azure-50"
                   >
                     {tHome("promoAuctionCta")}
                   </Link>
@@ -203,13 +203,13 @@ export default function HeroSection({
                   </Link>
                 </div>
 
-                <div className="relative z-10 mt-12 grid max-w-xl gap-2 text-xs text-pacific-blue-100 sm:grid-cols-3 sm:text-sm">
+                <div className="relative z-10 mt-12 grid max-w-xl gap-2 text-xs text-steel-azure-100 sm:grid-cols-3 sm:text-sm">
                   <div className="rounded-xl border border-white/10 bg-white/12 px-4 py-3 backdrop-blur-sm">
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-pacific-blue-200">{tDetail("specCurrentPrice")}</p>
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-steel-azure-200">{tDetail("specCurrentPrice")}</p>
                     <p className="mt-1 text-base font-bold text-white">{numberFormatter.format(activeCard.currentPrice)}</p>
                   </div>
                   <div className="rounded-xl border border-white/10 bg-white/12 px-4 py-3 backdrop-blur-sm">
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-pacific-blue-200">{tDetail("specBuyNow")}</p>
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-steel-azure-200">{tDetail("specBuyNow")}</p>
                     <p className="mt-1 text-base font-bold text-white">
                       {activeCard.buyItNowPrice === null
                         ? tDetail("specNotAvailable")
@@ -217,7 +217,7 @@ export default function HeroSection({
                     </p>
                   </div>
                   <div className="rounded-xl border border-white/10 bg-white/12 px-4 py-3 backdrop-blur-sm">
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-pacific-blue-200">{tDetail("specEndTime")}</p>
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-steel-azure-200">{tDetail("specEndTime")}</p>
                     <EndTimeCountdown key={activeCard.id} endsAt={activeCard.endsAt} renderedAt={renderedAt} t={tFormat} />
                   </div>
                 </div>
@@ -260,17 +260,17 @@ export default function HeroSection({
               </>
             ) : (
               <div className="relative z-10 max-w-xl">
-                <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-pacific-blue-100 backdrop-blur-sm">
+                <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-steel-azure-100 backdrop-blur-sm">
                   {tHome("heroEmptyBadge")}
                 </span>
                 <h1 className="mt-5 text-4xl font-black leading-[1.05] text-white sm:text-5xl lg:text-6xl">
                   {tListings("noListings")}
                 </h1>
-                <p className="mt-4 max-w-lg text-base leading-7 text-pacific-blue-100 sm:text-lg">
+                <p className="mt-4 max-w-lg text-base leading-7 text-steel-azure-100 sm:text-lg">
                   {tHome("promoAuctionDesc")}
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <Link href={browseHref} className="rounded-full bg-white px-6 py-3 text-sm font-bold text-pacific-blue-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-pacific-blue-50">
+                  <Link href={browseHref} className="rounded-full bg-white px-6 py-3 text-sm font-bold text-steel-azure-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-steel-azure-50">
                     {tHome("browseButton")}
                   </Link>
                 </div>
@@ -288,7 +288,7 @@ export default function HeroSection({
                 <div
                   className={`pointer-events-none absolute inset-0 opacity-80 ${
                     index === 0
-                      ? "bg-gradient-to-br from-pacific-blue-50 via-white to-pacific-blue-50"
+                      ? "bg-gradient-to-br from-steel-azure-50 via-white to-steel-azure-50"
                       : "bg-gradient-to-br from-amber-50 via-white to-rose-50"
                   }`}
                 />

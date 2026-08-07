@@ -243,28 +243,28 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
         <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-border bg-white shadow-sm md:grid-cols-2 lg:grid-cols-4">
           <article className="flex items-center gap-3 border-b border-border px-5 py-4 md:border-r lg:border-b-0">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-pacific-blue-50 text-lg">🚚</span>
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-steel-azure-50 text-lg">🚚</span>
             <div>
               <p className="text-sm font-bold text-ink">{t("serviceFast")}</p>
               <p className="text-xs text-ink-light">{t("serviceFastDesc")}</p>
             </div>
           </article>
           <article className="flex items-center gap-3 border-b border-border px-5 py-4 lg:border-b-0 lg:border-r">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-pacific-blue-50 text-lg">🔒</span>
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-steel-azure-50 text-lg">🔒</span>
             <div>
               <p className="text-sm font-bold text-ink">{t("serviceSecure")}</p>
               <p className="text-xs text-ink-light">{t("serviceSecureDesc")}</p>
             </div>
           </article>
           <article className="flex items-center gap-3 border-b border-border px-5 py-4 md:border-b-0 md:border-r">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-pacific-blue-50 text-lg">🎧</span>
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-steel-azure-50 text-lg">🎧</span>
             <div>
               <p className="text-sm font-bold text-ink">{t("serviceSupport")}</p>
               <p className="text-xs text-ink-light">{t("serviceSupportDesc")}</p>
             </div>
           </article>
           <article className="flex items-center gap-3 px-5 py-4">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-pacific-blue-50 text-lg">✅</span>
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-steel-azure-50 text-lg">✅</span>
             <div>
               <p className="text-sm font-bold text-ink">{t("serviceVerified")}</p>
               <p className="text-xs text-ink-light">{t("serviceVerifiedDesc")}</p>
@@ -664,14 +664,14 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       </section>
 
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
-        <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-yale-blue-900 to-slate-900 p-7 text-white shadow-lg">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-pacific-blue-200">{t("trustEyebrow")}</p>
+        <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-baltic-blue-900 to-slate-900 p-7 text-white shadow-lg">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-steel-azure-200">{t("trustEyebrow")}</p>
           <h2 className="mt-2 text-3xl font-black">{t("trustTitle")}</h2>
-          <p className="mt-4 max-w-3xl text-sm text-pacific-blue-100">
+          <p className="mt-4 max-w-3xl text-sm text-steel-azure-100">
             {t("trustDesc")}
           </p>
 
-          <Link href="/listings" className="mt-6 inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-bold text-pacific-blue-800 transition hover:bg-pacific-blue-50">
+          <Link href="/listings" className="mt-6 inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-bold text-steel-azure-800 transition hover:bg-steel-azure-50">
             {t("trustCta")}
             <span aria-hidden>→</span>
           </Link>

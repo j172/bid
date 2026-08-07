@@ -1,7 +1,7 @@
 // Shared presentational shell for this site's error pages (404 / 500-class
 // errors / admin 403), styled after Cloudflare's own error pages — see
 // issue #65 for the reasoning: this is a deliberate, confirmed exception to
-// the rest of the site's pacific-blue/frozen-water/yale-blue brand palette
+// the rest of the site's steel-azure/twilight-indigo/baltic-blue brand palette
 // (see app/styles/design-tokens.css), so every color below is a literal
 // Cloudflare-style hex value rather than one of those design tokens.
 //
