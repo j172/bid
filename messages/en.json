@@ -455,5 +455,35 @@
     "publishedLine": "Published: {date}",
     "sidebarLatest": "Latest News",
     "backToList": "View More"
+  },
+  "errorPage": {
+    "labels": {
+      "browser": "Browser",
+      "cloudflare": "Cloudflare",
+      "host": "Host",
+      "statusOk": "Working",
+      "statusError": "Error",
+      "whatHappenedTitle": "What happened?",
+      "whatCanIDoTitle": "What can I do?",
+      "rayId": "Ray ID",
+      "timestamp": "Timestamp",
+      "yourIp": "Your IP",
+      "ipUnknown": "Unavailable",
+      "perfSecBy": "Performance & security by Cloudflare",
+      "backHome": "Back to homepage",
+      "tryAgain": "Try again"
+    },
+    "notFound": {
+      "errorCode": "404",
+      "heading": "Page not found",
+      "whatHappened": "You've followed a broken or outdated link, or the page you're looking for may have been moved or removed.",
+      "whatCanIDo": "Double-check the address, or head back to the homepage and browse from there."
+    },
+    "serverError": {
+      "errorCode": "500",
+      "heading": "Something went wrong",
+      "whatHappened": "An unexpected error occurred while trying to load this page. This has been logged and we'll look into it.",
+      "whatCanIDo": "Please try again in a few minutes. If the problem keeps happening, get in touch and let us know what you were doing when it occurred."
+    }
   }
 }
