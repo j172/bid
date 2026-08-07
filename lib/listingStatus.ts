@@ -1,5 +1,6 @@
 // Shared contract for the live listing-status poll (see
-// app/api/listings/[id]/status/route.ts and app/listings/[id]/LiveListingStatus.tsx).
+// app/api/listings/[id]/status/route.ts and
+// app/[locale]/listings/(no-loading)/[id]/LiveListingStatus.tsx).
 // Kept dependency-free (no DB, no React) so it's usable from both the client
 // bundle and plain vitest, and so the client can defensively validate
 // whatever comes back over the wire instead of trusting it blindly.

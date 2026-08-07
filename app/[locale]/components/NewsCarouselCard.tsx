@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Link } from "@/i18n/navigation";
 
 // Homepage carousel card (issue #56) — replaces the static "現正競標/熱門
-// 競標正在進行" promo card (app/[locale]/page.tsx, the lg:col-span-2 card)
+// 競標正在進行" promo card (app/[locale]/(with-loading)/page.tsx, the lg:col-span-2 card)
 // with a rotating showcase of the latest 最新訊息 posts. Rotates every 5s
 // via setInterval, same mechanism as
 // app/[locale]/components/PigeonShowcaseCarouselCard.tsx; falls back to the

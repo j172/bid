@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Link } from "@/i18n/navigation";
 
 // Homepage carousel card (issue #54) — replaces the static "即刻入手"/"本週
-//精選" promo cards (app/[locale]/page.tsx) with a rotating showcase of the
+//精選" promo cards (app/[locale]/(with-loading)/page.tsx) with a rotating showcase of the
 // latest 入賞鴿/進口鴿 entries. Rotates every 5s via setInterval; falls back
 // to the original static marketing copy when this category currently has
 // zero pigeon_showcase rows (see the `items.length === 0` branch) rather

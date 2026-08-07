@@ -10,9 +10,9 @@ const SIDEBAR_LATEST_LIMIT = 5;
 // Layout reference: NextMerce's "blog-details-with-sidebar" (issue #56) —
 // main column carries the title/published time/full content, sidebar
 // carries a "最新訊息" list, same structure as
-// app/[locale]/pigeon-showcase/[id]/page.tsx. notFound() on a bad/missing id
-// mirrors that page's own pattern (no custom not-found.tsx exists anywhere
-// in this app — Next's default 404 applies).
+// app/[locale]/(no-loading)/pigeon-showcase/[id]/page.tsx. notFound() on a
+// bad/missing id mirrors that page's own pattern (no custom not-found.tsx
+// exists anywhere in this app — Next's default 404 applies).
 export default async function NewsDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const newsId = Number(id);
@@ -50,7 +50,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
               by both the create and edit API routes) before ever reaching here. No
               @tailwindcss/typography plugin in this project, so rich-text tags are styled
               via explicit child selectors — same convention as
-              app/[locale]/pigeon-showcase/[id]/page.tsx. */}
+              app/[locale]/(no-loading)/pigeon-showcase/[id]/page.tsx. */}
           <div
             className="mt-6 max-w-none border-t border-border pt-6 leading-7 text-ink-light [&_a]:text-interactive-primary [&_a]:underline [&_h2]:mt-4 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-ink [&_h3]:mt-3 [&_h3]:text-base [&_h3]:font-bold [&_h3]:text-ink [&_img]:my-2 [&_img]:max-w-full [&_img]:rounded-md [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-border [&_td]:p-2 [&_th]:border [&_th]:border-border [&_th]:p-2 [&_ul]:list-disc [&_ul]:pl-5"
             dangerouslySetInnerHTML={{ __html: item.content }}

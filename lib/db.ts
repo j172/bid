@@ -311,7 +311,7 @@ async function ensureEndsAtNullable(db: mysql.Pool): Promise<void> {
 // GRILL ME follow-up (issue #45) amending #34's already-merged partner-loft
 // (合作鴿舍) implementation: link_url is dropped (homepage cards now link to
 // /listings?loft=<id> instead of an admin-entered URL — see
-// app/[locale]/page.tsx), replaced by an optional bio/簡介 shown on both the
+// app/[locale]/(with-loading)/page.tsx), replaced by an optional bio/簡介 shown on both the
 // admin form and the homepage card excerpt. listings.loft_id is the new
 // nullable single-select FK (this project has no DB-level FK constraints,
 // so it's a plain BIGINT).

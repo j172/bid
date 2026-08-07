@@ -5,7 +5,7 @@ import { getLatestStoredRate } from "@/lib/exchangeRates";
 import { formatRemaining } from "@/lib/format";
 import { maskDisplayName } from "@/lib/mask";
 import { Link } from "@/i18n/navigation";
-import ProductCard from "../components/ProductCard";
+import ProductCard from "../../components/ProductCard";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,7 @@ type SearchParams = Record<string, string | string[] | undefined>;
 
 type CategoryKey = "auction" | "fixed_price";
 // ends_soon / starts_soon / popular power the homepage "分類瀏覽" cards
-// (see app/[locale]/page.tsx) — real, computable subsets/orderings rather
+// (see app/[locale]/(with-loading)/page.tsx) — real, computable subsets/orderings rather
 // than the hardcoded links that used to live there.
 type SortKey = "newest" | "price_asc" | "price_desc" | "ends_soon" | "starts_soon" | "popular";
 
