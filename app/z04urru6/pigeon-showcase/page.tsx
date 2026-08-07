@@ -8,6 +8,7 @@ import {
   type PigeonShowcaseCategory,
 } from "@/lib/pigeonShowcase";
 import { isPigeonShowcaseCategory } from "@/lib/pigeonShowcaseValidation";
+import { pigeonShowcaseImageUrl } from "@/lib/uploads";
 import AdminPageIntro from "../AdminPageIntro";
 import PigeonShowcaseFormModal from "./PigeonShowcaseFormModal";
 import DeleteButton from "./DeleteButton";
@@ -113,6 +114,7 @@ export default async function PigeonShowcaseAdminPage({ searchParams }: { search
           <table className="w-full border-collapse">
             <thead>
               <tr>
+                <th className={th}>主圖</th>
                 <th className={th}>鴿種</th>
                 <th className={th}>名稱</th>
                 <th className={th}>鴿舍</th>
@@ -121,24 +123,38 @@ export default async function PigeonShowcaseAdminPage({ searchParams }: { search
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => (
-                <tr key={item.id} className="transition hover:bg-surface-muted/80">
-                  <td className={td}>{CATEGORY_LABEL[item.category]}</td>
-                  <td className={`${td} font-medium`}>{item.name}</td>
-                  <td className={td}>{item.loftTitle}</td>
-                  <td className={`${td} max-w-xs truncate text-ink-light`}>{item.description.replace(/<[^>]*>/g, " ").trim()}</td>
-                  <td className={`${td} text-right`}>
-                    <div className="flex items-center justify-end gap-2">
-                      <PigeonShowcaseFormModal
-                        mode="edit"
-                        lofts={loftOptions}
-                        item={{ id: item.id, category: item.category, name: item.name, loftId: item.loftId, description: item.description }}
-                      />
-                      <DeleteButton id={item.id} name={item.name} />
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {items.map((item) => {
+                const imageUrl = item.imageFileName ? pigeonShowcaseImageUrl(item.imageFileName) : "/images/hero-placeholder.png";
+                return (
+                  <tr key={item.id} className="transition hover:bg-surface-muted/80">
+                    <td className={td}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={imageUrl} alt={item.name} className="h-14 w-14 rounded-lg border border-border object-cover" />
+                    </td>
+                    <td className={td}>{CATEGORY_LABEL[item.category]}</td>
+                    <td className={`${td} font-medium`}>{item.name}</td>
+                    <td className={td}>{item.loftTitle}</td>
+                    <td className={`${td} max-w-xs truncate text-ink-light`}>{item.description.replace(/<[^>]*>/g, " ").trim()}</td>
+                    <td className={`${td} text-right`}>
+                      <div className="flex items-center justify-end gap-2">
+                        <PigeonShowcaseFormModal
+                          mode="edit"
+                          lofts={loftOptions}
+                          item={{
+                            id: item.id,
+                            category: item.category,
+                            name: item.name,
+                            loftId: item.loftId,
+                            description: item.description,
+                            imageUrl,
+                          }}
+                        />
+                        <DeleteButton id={item.id} name={item.name} />
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

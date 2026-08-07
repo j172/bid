@@ -20,6 +20,8 @@ export interface PigeonShowcaseCarouselItem {
   id: number;
   name: string;
   excerpt: string;
+  /** Pre-resolved by the caller (app/[locale]/page.tsx) to the site placeholder when the item has no 主圖 yet (issue #70). */
+  imageUrl: string;
 }
 
 const ROTATE_INTERVAL_MS = 5000;
@@ -78,9 +80,15 @@ export default function PigeonShowcaseCarouselCard({
 
   return (
     <div className={wrapperClass}>
-      <p className={badgeClass}>{badgeLabel}</p>
-      <h3 className={`${titleClass} truncate`}>{current.name}</h3>
-      <p className={`${descClass} line-clamp-2`}>{current.excerpt}</p>
+      <div className="flex items-start gap-4">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={current.imageUrl} alt={current.name} className="h-16 w-16 flex-shrink-0 rounded-lg object-cover" />
+        <div className="min-w-0 flex-1">
+          <p className={badgeClass}>{badgeLabel}</p>
+          <h3 className={`${titleClass} truncate`}>{current.name}</h3>
+          <p className={`${descClass} line-clamp-2`}>{current.excerpt}</p>
+        </div>
+      </div>
       <div className="flex flex-wrap items-center gap-x-4">
         <Link href={`/pigeon-showcase/${current.id}`} className={ctaClass}>
           {viewCtaLabel}

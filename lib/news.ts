@@ -12,6 +12,8 @@ export interface NewsPost {
   title: string;
   /** Sanitized HTML (see lib/sanitizeDescriptionHtml.ts) — sanitizing is the caller's (API route's) responsibility, not this module's. */
   content: string;
+  /** 主圖 file name under uploads/news/ (see lib/uploads.ts); NULL only on rows created before issue #70 — every create/edit after #70 requires one. */
+  imageFileName: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,6 +21,8 @@ export interface NewsPost {
 export interface NewsPostInput {
   title: string;
   content: string;
+  /** Required — the admin form/API route enforce an upload on every create/edit (issue #70). */
+  imageFileName: string;
 }
 
 export type NewsPostOutcome = { ok: true } | { ok: false; error: string };
@@ -42,6 +46,7 @@ interface NewsPostRow {
   id: number;
   title: string;
   content: string;
+  image_file_name: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -51,12 +56,13 @@ function mapRow(row: NewsPostRow): NewsPost {
     id: row.id,
     title: row.title,
     content: row.content,
+    imageFileName: row.image_file_name,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
 
-const SELECT = `SELECT id, title, content, created_at, updated_at FROM news_posts`;
+const SELECT = `SELECT id, title, content, image_file_name, created_at, updated_at FROM news_posts`;
 
 // Powers the admin list (title search + pagination) and the public /news
 // list page (same filters, minus admin-only concerns). Always newest-first
@@ -107,19 +113,18 @@ export async function getNewsById(id: number): Promise<NewsPost | null> {
 export async function createNews(input: NewsPostInput): Promise<NewsPostOutcome & { id?: number }> {
   const db = await getDb();
   const [result] = await db.query(
-    `INSERT INTO news_posts (title, content, created_at, updated_at) VALUES (?, ?, NOW(), NOW())`,
-    [input.title, input.content],
+    `INSERT INTO news_posts (title, image_file_name, content, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())`,
+    [input.title, input.imageFileName, input.content],
   );
   return { ok: true, id: (result as { insertId: number }).insertId };
 }
 
 export async function updateNews(id: number, input: NewsPostInput): Promise<NewsPostOutcome> {
   const db = await getDb();
-  const [result] = await db.query(`UPDATE news_posts SET title = ?, content = ?, updated_at = NOW() WHERE id = ?`, [
-    input.title,
-    input.content,
-    id,
-  ]);
+  const [result] = await db.query(
+    `UPDATE news_posts SET title = ?, image_file_name = ?, content = ?, updated_at = NOW() WHERE id = ?`,
+    [input.title, input.imageFileName, input.content, id],
+  );
   if ((result as { affectedRows: number }).affectedRows === 0) {
     return { ok: false, error: "找不到這則訊息" };
   }

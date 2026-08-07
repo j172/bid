@@ -20,6 +20,8 @@ export interface NewsCarouselItem {
   id: number;
   title: string;
   excerpt: string;
+  /** Pre-resolved by the caller (app/[locale]/page.tsx) to the site placeholder when the item has no 主圖 yet (issue #70). */
+  imageUrl: string;
 }
 
 const ROTATE_INTERVAL_MS = 5000;
@@ -59,13 +61,17 @@ export default function NewsCarouselCard({
   const current = items[index];
 
   return (
-    <div className={wrapperClass}>
-      <p className="text-xs font-bold uppercase tracking-wider">{activeBadge}</p>
-      <h3 className="mt-2 truncate text-3xl font-black">{current.title}</h3>
-      <p className="mt-3 max-w-xl text-sm text-pacific-blue-100">{current.excerpt}</p>
-      <Link href={`/news/${current.id}`} className="mt-5 inline-flex w-fit rounded-md bg-white px-4 py-2 text-sm font-bold text-pacific-blue-700">
-        {ctaLabel}
-      </Link>
+    <div className="flex h-full flex-col justify-center gap-4 overflow-hidden rounded-2xl bg-gradient-to-r from-pacific-blue-500 to-pacific-blue-600 p-7 text-white sm:flex-row sm:items-center sm:gap-6">
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-bold uppercase tracking-wider">{activeBadge}</p>
+        <h3 className="mt-2 truncate text-3xl font-black">{current.title}</h3>
+        <p className="mt-3 max-w-xl text-sm text-pacific-blue-100">{current.excerpt}</p>
+        <Link href={`/news/${current.id}`} className="mt-5 inline-flex w-fit rounded-md bg-white px-4 py-2 text-sm font-bold text-pacific-blue-700">
+          {ctaLabel}
+        </Link>
+      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={current.imageUrl} alt={current.title} className="h-32 w-32 flex-shrink-0 self-center rounded-xl object-cover sm:h-40 sm:w-40" />
     </div>
   );
 }

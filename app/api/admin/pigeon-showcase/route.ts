@@ -12,6 +12,7 @@ import {
   validatePigeonShowcaseName,
 } from "@/lib/pigeonShowcaseValidation";
 import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
+import { deletePigeonShowcaseImageFile, savePigeonShowcaseImage } from "@/lib/uploads";
 
 // Admin list view — matches the filters issue #54 asks for: category
 // dropdown, name substring search, loft dropdown, selectable page size
@@ -42,6 +43,8 @@ export async function GET(request: Request) {
   return NextResponse.json({ ok: true, items, total });
 }
 
+// Submits FormData (not JSON) as of issue #70 — 主圖 upload is required on
+// every create, front and back end both (see PigeonShowcaseFormModal.tsx).
 export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) {
@@ -51,15 +54,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
   }
 
-  const body = await request.json().catch(() => null);
-  if (!body || typeof body !== "object") {
-    return NextResponse.json({ ok: false, error: "請求格式不正確" }, { status: 400 });
-  }
-
-  const category = body.category;
-  const name = String(body.name ?? "").trim();
-  const description = String(body.description ?? "").trim();
-  const loftId = Number(body.loftId);
+  const form = await request.formData();
+  const category = form.get("category");
+  const name = String(form.get("name") ?? "").trim();
+  const description = String(form.get("description") ?? "").trim();
+  const loftId = Number(form.get("loftId"));
+  const image = form.get("image");
 
   if (!isPigeonShowcaseCategory(category)) {
     return NextResponse.json({ ok: false, error: "請選擇鴿種" }, { status: 400 });
@@ -75,10 +75,29 @@ export async function POST(request: Request) {
   if (!Number.isFinite(loftId) || !Number.isInteger(loftId) || loftId <= 0) {
     return NextResponse.json({ ok: false, error: "請選擇鴿舍" }, { status: 400 });
   }
+  if (!(image instanceof File) || image.size === 0) {
+    return NextResponse.json({ ok: false, error: "請上傳主圖" }, { status: 400 });
+  }
 
-  const input: PigeonShowcaseInput = { category, name, loftId, description: sanitizeDescriptionHtml(description) };
+  let imageFileName: string;
+  try {
+    imageFileName = await savePigeonShowcaseImage(image);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "圖片上傳失敗";
+    return NextResponse.json({ ok: false, error: message }, { status: 400 });
+  }
+
+  const input: PigeonShowcaseInput = {
+    category,
+    name,
+    loftId,
+    description: sanitizeDescriptionHtml(description),
+    imageFileName,
+  };
   const result = await createPigeonShowcase(input);
   if (!result.ok) {
+    // Row was never created — don't leave the just-uploaded file orphaned.
+    await deletePigeonShowcaseImageFile(imageFileName);
     return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
   }
   return NextResponse.json({ ok: true, id: result.id });

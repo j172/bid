@@ -30,6 +30,7 @@ const ROW = {
   loft_id: 5,
   loft_title: "石君鴿舍",
   description: "<p>血統優良</p>",
+  image_file_name: "abc123.jpg",
   created_at: new Date("2026-01-01T00:00:00Z"),
   updated_at: new Date("2026-01-02T00:00:00Z"),
 };
@@ -53,6 +54,7 @@ describe("listPigeonShowcase", () => {
         loftId: 5,
         loftTitle: "石君鴿舍",
         description: "<p>血統優良</p>",
+        imageFileName: "abc123.jpg",
         createdAt: ROW.created_at,
         updatedAt: ROW.updated_at,
       },
@@ -121,7 +123,7 @@ describe("createPigeonShowcase", () => {
   it("rejects when loftId isn't a partner_loft-typed homepage_sections row", async () => {
     queryMock.mockResolvedValueOnce([[]]); // isPartnerLoft check finds nothing
 
-    const result = await createPigeonShowcase({ category: "award", name: "n", loftId: 99, description: "d" });
+    const result = await createPigeonShowcase({ category: "award", name: "n", loftId: 99, description: "d", imageFileName: "img.jpg" });
 
     expect(result).toEqual({ ok: false, error: "找不到這個合作鴿舍" });
     expect(queryMock).toHaveBeenCalledTimes(1); // no INSERT fired
@@ -131,17 +133,17 @@ describe("createPigeonShowcase", () => {
     queryMock.mockResolvedValueOnce([[{ 1: 1 }]]); // isPartnerLoft check succeeds
     queryMock.mockResolvedValueOnce([{ insertId: 42 }]);
 
-    const result = await createPigeonShowcase({ category: "imported", name: "n", loftId: 5, description: "d" });
+    const result = await createPigeonShowcase({ category: "imported", name: "n", loftId: 5, description: "d", imageFileName: "img.jpg" });
 
     expect(result).toEqual({ ok: true, id: 42 });
-    expect(queryMock.mock.calls[1][1]).toEqual(["imported", "n", 5, "d"]);
+    expect(queryMock.mock.calls[1][1]).toEqual(["imported", "n", 5, "img.jpg", "d"]);
   });
 });
 
 describe("updatePigeonShowcase", () => {
   it("rejects when loftId isn't a partner_loft-typed homepage_sections row", async () => {
     queryMock.mockResolvedValueOnce([[]]);
-    const result = await updatePigeonShowcase(1, { category: "award", name: "n", loftId: 99, description: "d" });
+    const result = await updatePigeonShowcase(1, { category: "award", name: "n", loftId: 99, description: "d", imageFileName: "img.jpg" });
     expect(result).toEqual({ ok: false, error: "找不到這個合作鴿舍" });
     expect(queryMock).toHaveBeenCalledTimes(1);
   });
@@ -149,14 +151,14 @@ describe("updatePigeonShowcase", () => {
   it("returns ok:false when no row matched (deleted or bad id)", async () => {
     queryMock.mockResolvedValueOnce([[{ 1: 1 }]]);
     queryMock.mockResolvedValueOnce([{ affectedRows: 0 }]);
-    const result = await updatePigeonShowcase(1, { category: "award", name: "n", loftId: 5, description: "d" });
+    const result = await updatePigeonShowcase(1, { category: "award", name: "n", loftId: 5, description: "d", imageFileName: "img.jpg" });
     expect(result).toEqual({ ok: false, error: "找不到這筆鴿況資料" });
   });
 
   it("returns ok:true when a row is updated", async () => {
     queryMock.mockResolvedValueOnce([[{ 1: 1 }]]);
     queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
-    const result = await updatePigeonShowcase(1, { category: "award", name: "n", loftId: 5, description: "d" });
+    const result = await updatePigeonShowcase(1, { category: "award", name: "n", loftId: 5, description: "d", imageFileName: "img.jpg" });
     expect(result).toEqual({ ok: true });
   });
 });

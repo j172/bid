@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { listOpenListings } from "@/lib/listings";
-import { listingPhotoUrl, homepageSectionImageUrl } from "@/lib/uploads";
+import { listingPhotoUrl, homepageSectionImageUrl, pigeonShowcaseImageUrl, newsImageUrl } from "@/lib/uploads";
 import { listHomepageSections } from "@/lib/homepageSections";
 import { listLatestPigeonShowcase } from "@/lib/pigeonShowcase";
 import { listLatestNews } from "@/lib/news";
@@ -58,11 +58,13 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     id: pigeon.id,
     name: pigeon.name,
     excerpt: excerptHtml(pigeon.description, PIGEON_CAROUSEL_EXCERPT_LENGTH),
+    imageUrl: pigeon.imageFileName ? pigeonShowcaseImageUrl(pigeon.imageFileName) : "/images/hero-placeholder.png",
   }));
   const importedCarouselItems = importedPigeons.map((pigeon) => ({
     id: pigeon.id,
     name: pigeon.name,
     excerpt: excerptHtml(pigeon.description, PIGEON_CAROUSEL_EXCERPT_LENGTH),
+    imageUrl: pigeon.imageFileName ? pigeonShowcaseImageUrl(pigeon.imageFileName) : "/images/hero-placeholder.png",
   }));
 
   // 最新訊息首頁輪播 (issue #56) — latest 10 posts, replacing the large
@@ -76,6 +78,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     id: post.id,
     title: post.title,
     excerpt: excerptHtml(post.content, NEWS_CAROUSEL_EXCERPT_LENGTH),
+    imageUrl: post.imageFileName ? newsImageUrl(post.imageFileName) : "/images/hero-placeholder.png",
   }));
 
   const heroRenderedAt = new Date().toISOString();
