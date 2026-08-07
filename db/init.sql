@@ -166,3 +166,20 @@ CREATE TABLE IF NOT EXISTS pigeon_showcase (
   KEY idx_pigeon_showcase_loft (loft_id),
   CONSTRAINT fk_pigeon_showcase_loft FOREIGN KEY (loft_id) REFERENCES homepage_sections (id) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 最新訊息 announcements (issue #56) — a public, browsable news/announcement
+-- list, deliberately separate from the subscription Newsletter feature
+-- (lib/newsletter.ts / app/z04urru6/newsletter/): no send/subscriber
+-- machinery here, just plain CRUD content rendered on /news and /news/[id]
+-- plus a homepage carousel. Simpler than pigeon_showcase above — no FK, no
+-- dropdown/category dependency, id is never shown publicly (U/D operate on
+-- it from the admin list only).
+CREATE TABLE IF NOT EXISTS news_posts (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  title VARCHAR(100) NOT NULL,
+  content TEXT NOT NULL,           -- sanitizeDescriptionHtml'd TinyMCE HTML, 2000-char plain-text cap
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_news_posts_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

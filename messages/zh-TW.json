@@ -118,6 +118,8 @@
     "weeklyPicksDesc": "從競標標的到定價種鴿，本週焦點鴿況一次掌握。",
     "pigeonShowcaseViewCta": "查看鴿況",
     "pigeonShowcaseViewMore": "查看更多",
+    "newsCarouselBadge": "最新消息",
+    "newsCarouselCta": "閱讀更多",
     "bestSellersTitle": "熱門成交排行",
     "trustEyebrow": "透明可信",
     "trustTitle": "依真實成交資料掌握熱門鴿況",
@@ -435,6 +437,23 @@
     "loftLine": "鴿舍：{loft}",
     "sidebarLatestAward": "最新入賞鴿",
     "sidebarLatestImported": "最新進口鴿",
+    "backToList": "查看更多"
+  },
+  "news": {
+    "title": "最新訊息",
+    "subtitle": "掌握最新公告與消息，點選卡片查看完整內容。",
+    "searchLabel": "標題搜尋",
+    "searchPlaceholder": "搜尋標題",
+    "searchSubmit": "搜尋",
+    "noItems": "目前沒有相關訊息。",
+    "viewDetails": "閱讀更多",
+    "pageSizeLabel": "每頁顯示：",
+    "prevPage": "上一頁",
+    "nextPage": "下一頁",
+    "pageInfo": "第 {page} / {totalPages} 頁（共 {total} 筆）",
+    "breadcrumbHome": "首頁",
+    "publishedLine": "發布時間：{date}",
+    "sidebarLatest": "最新訊息",
     "backToList": "查看更多"
   }
 }

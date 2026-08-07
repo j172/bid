@@ -118,6 +118,8 @@
     "weeklyPicksDesc": "From live auctions to fixed-price pigeons — this week's highlights in one place.",
     "pigeonShowcaseViewCta": "View Pigeon",
     "pigeonShowcaseViewMore": "View More",
+    "newsCarouselBadge": "Latest News",
+    "newsCarouselCta": "Read More",
     "bestSellersTitle": "Top Performing Lots",
     "trustEyebrow": "Built on Real Data",
     "trustTitle": "Real listings, real bidding activity",
@@ -435,6 +437,23 @@
     "loftLine": "Loft: {loft}",
     "sidebarLatestAward": "Latest Award Pigeons",
     "sidebarLatestImported": "Latest Imported Pigeons",
+    "backToList": "View More"
+  },
+  "news": {
+    "title": "Latest News",
+    "subtitle": "Stay up to date with the latest announcements — tap a card for the full story.",
+    "searchLabel": "Search title",
+    "searchPlaceholder": "Search by title",
+    "searchSubmit": "Search",
+    "noItems": "No news yet.",
+    "viewDetails": "Read More",
+    "pageSizeLabel": "Per page:",
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "pageInfo": "Page {page} of {totalPages} ({total} total)",
+    "breadcrumbHome": "Home",
+    "publishedLine": "Published: {date}",
+    "sidebarLatest": "Latest News",
     "backToList": "View More"
   }
 }

@@ -88,6 +88,7 @@ export default function AdminShell({ children, email }: { children: ReactNode; e
       homepage: { label: "首頁內容管理", icon: "🏡" },
       "partner-lofts": { label: "合作鴿舍管理", icon: "🕊️" },
       "pigeon-showcase": { label: "入賞鴿／進口鴿管理", icon: "🏆" },
+      news: { label: "最新訊息管理", icon: "📰" },
     };
 
     let runningPath = "";

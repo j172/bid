@@ -118,6 +118,8 @@
     "weeklyPicksDesc": "从竞标标的到定价种鸽，本周焦点鸽况一次掌握。",
     "pigeonShowcaseViewCta": "查看鸽况",
     "pigeonShowcaseViewMore": "查看更多",
+    "newsCarouselBadge": "最新消息",
+    "newsCarouselCta": "阅读更多",
     "bestSellersTitle": "热门成交排行",
     "trustEyebrow": "透明可信",
     "trustTitle": "依真实成交资料掌握热门鸽况",
@@ -435,6 +437,23 @@
     "loftLine": "鸽舍：{loft}",
     "sidebarLatestAward": "最新入赏鸽",
     "sidebarLatestImported": "最新进口鸽",
+    "backToList": "查看更多"
+  },
+  "news": {
+    "title": "最新消息",
+    "subtitle": "掌握最新公告与消息，点选卡片查看完整内容。",
+    "searchLabel": "标题搜索",
+    "searchPlaceholder": "搜索标题",
+    "searchSubmit": "搜索",
+    "noItems": "目前没有相关消息。",
+    "viewDetails": "阅读更多",
+    "pageSizeLabel": "每页显示：",
+    "prevPage": "上一页",
+    "nextPage": "下一页",
+    "pageInfo": "第 {page} / {totalPages} 页（共 {total} 笔）",
+    "breadcrumbHome": "首页",
+    "publishedLine": "发布时间：{date}",
+    "sidebarLatest": "最新消息",
     "backToList": "查看更多"
   }
 }
