@@ -70,8 +70,20 @@ export function parseTaifexCsv(csvText: string): TaifexRow[] {
 // OOM issue), so a single failed attempt shouldn't immediately give up for
 // the day — retry a few times with a short delay before treating it as a
 // real failure.
-const TAIFEX_FETCH_MAX_ATTEMPTS = 3;
-const TAIFEX_FETCH_RETRY_DELAY_MS = 3000;
+//
+// issue #81: production evidence (30 host-triggered process restarts over
+// 5.5 days, one every ~4.4h) shows the boot-time startup sync in
+// scheduler.ts is currently the *only* sync path that ever actually runs on
+// this host — the 08:10 Asia/Taipei cron tick has never once logged a
+// failure, but the table is still empty, meaning the process doesn't
+// reliably stay alive long enough to see 08:10 at all. That makes the few
+// seconds right after boot this app's one real chance per restart, so it's
+// worth spending more of them here: more attempts, spaced further apart, to
+// ride out whatever makes the host's networking briefly unreliable
+// immediately post-restart (see startScheduler()'s own boot-delay for the
+// other half of that mitigation).
+const TAIFEX_FETCH_MAX_ATTEMPTS = 5;
+const TAIFEX_FETCH_RETRY_DELAY_MS = 5000;
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -95,8 +107,35 @@ async function fetchTaifexCsvText(): Promise<string> {
     } catch (error) {
       lastError = error;
       const message = error instanceof Error ? error.message : String(error);
+      // issue #81: production pm2 logs for every one of 8 observed
+      // startup-sync failures showed nothing but `TypeError: fetch failed`
+      // plus a stack trace pointing at undici internals — never the actual
+      // reason. Node's undici-backed fetch() wraps the real lower-level
+      // network error (ENOTFOUND/ETIMEDOUT/ECONNREFUSED/...) in `error.cause`
+      // rather than `error.message`, and errno/code live as non-standard
+      // properties on that cause (Node's system errors, not part of the
+      // Error type — hence the casts below). Folding all of that into the
+      // log line itself means a stuck sync can be diagnosed straight from
+      // `pm2 logs`, without SSHing in to reproduce it by hand.
+      const name = error instanceof Error ? error.name : undefined;
+      const code = (error as NodeJS.ErrnoException)?.code;
+      const errno = (error as NodeJS.ErrnoException)?.errno;
+      const cause = error instanceof Error ? error.cause : undefined;
+      const causeDetail =
+        cause instanceof Error
+          ? ` cause=${cause.name}: ${cause.message}` +
+            ((cause as NodeJS.ErrnoException).code ? ` cause.code=${(cause as NodeJS.ErrnoException).code}` : "") +
+            ((cause as NodeJS.ErrnoException).errno !== undefined
+              ? ` cause.errno=${(cause as NodeJS.ErrnoException).errno}`
+              : "")
+          : cause !== undefined
+            ? ` cause=${String(cause)}`
+            : "";
       console.error(
-        `[exchangeRates] TAIFEX fetch attempt ${attempt}/${TAIFEX_FETCH_MAX_ATTEMPTS} failed: ${message}`,
+        `[exchangeRates] TAIFEX fetch attempt ${attempt}/${TAIFEX_FETCH_MAX_ATTEMPTS} failed: ${name ?? "Error"}: ${message}` +
+          (code ? ` code=${code}` : "") +
+          (errno !== undefined ? ` errno=${errno}` : "") +
+          causeDetail,
         error,
       );
       if (attempt < TAIFEX_FETCH_MAX_ATTEMPTS) {
