@@ -6,6 +6,7 @@
 // has no ORM).
 
 import { getDb } from "@/lib/db";
+import { isForeignKeyConstraintError } from "@/lib/dbErrors";
 
 export interface HomepageSection {
   id: number;
@@ -148,11 +149,26 @@ export async function updateHomepageSection(
 
 export async function deleteHomepageSection(id: number): Promise<HomepageSectionOutcome> {
   const db = await getDb();
-  const [result] = await db.query("DELETE FROM homepage_sections WHERE id = ?", [id]);
-  if ((result as { affectedRows: number }).affectedRows === 0) {
-    return { ok: false, error: "找不到這個首頁區塊項目" };
+  try {
+    const [result] = await db.query("DELETE FROM homepage_sections WHERE id = ?", [id]);
+    if ((result as { affectedRows: number }).affectedRows === 0) {
+      return { ok: false, error: "找不到這個首頁區塊項目" };
+    }
+    return { ok: true };
+  } catch (error) {
+    // A row elsewhere still references this section via a DB-level FK — e.g.
+    // pigeon_showcase.loft_id (issue #54) — and MySQL raised
+    // ER_ROW_IS_REFERENCED_2 (errno 1451) rather than silently cascading or
+    // nulling it out (the schema uses ON DELETE RESTRICT everywhere). Surfaced
+    // as a normal ok:false outcome instead of a 500 so the admin delete
+    // button can show a real message. Kept generic here (no
+    // pigeon_showcase-specific wording) since this module stays
+    // section-type-agnostic — see its header comment.
+    if (isForeignKeyConstraintError(error)) {
+      return { ok: false, error: "這個項目仍被其他資料引用中（例如入賞鴿／進口鴿資料），請先處理相關資料後再刪除" };
+    }
+    throw error;
   }
-  return { ok: true };
 }
 
 // Bulk re-sequences every row named in orderedIds to sort_order = its index

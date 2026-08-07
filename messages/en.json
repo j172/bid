@@ -116,6 +116,8 @@
     "weeklyPicksEyebrow": "This Week's Picks",
     "weeklyPicksTitle": "This Week's Featured Lots",
     "weeklyPicksDesc": "From live auctions to fixed-price pigeons — this week's highlights in one place.",
+    "pigeonShowcaseViewCta": "View Pigeon",
+    "pigeonShowcaseViewMore": "View More",
     "bestSellersTitle": "Top Performing Lots",
     "trustEyebrow": "Built on Real Data",
     "trustTitle": "Real listings, real bidding activity",
@@ -417,5 +419,21 @@
     "LEADING_OPEN_LISTING": "You're currently leading an open listing — you can't delete your account until that's no longer the case",
     "UNSETTLED_WIN": "You have a won item that hasn't been marked settled yet — please wait for the admin to confirm it before deleting your account",
     "UNSETTLED_PURCHASE": "You have a purchase that hasn't been marked settled yet — please wait for the admin to confirm it before deleting your account"
+  },
+  "pigeonShowcase": {
+    "awardTitle": "Award Pigeons",
+    "importedTitle": "Imported Pigeons",
+    "listSubtitle": "Browse the latest award and imported pigeons — tap a card for full details.",
+    "noItems": "No entries yet.",
+    "viewDetails": "View Details",
+    "pageSizeLabel": "Per page:",
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "pageInfo": "Page {page} of {totalPages} ({total} total)",
+    "breadcrumbHome": "Home",
+    "loftLine": "Loft: {loft}",
+    "sidebarLatestAward": "Latest Award Pigeons",
+    "sidebarLatestImported": "Latest Imported Pigeons",
+    "backToList": "View More"
   }
 }

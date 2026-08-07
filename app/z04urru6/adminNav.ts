@@ -15,4 +15,9 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { label: "使用者列表", href: "/z04urru6/users", section: "commerce" },
   { label: "電子報", href: "/z04urru6/newsletter", section: "commerce" },
   { label: "合作鴿舍管理", href: "/z04urru6/homepage/partner-lofts", section: "content" },
+  // 入賞鴿／進口鴿管理 (issue #54) — deliberately NOT a revival of the
+  // pigeon_gallery_* admin UI removed by #52; a brand-new, simpler CRUD on
+  // top of the new pigeon_showcase table (two fixed categories, no
+  // custom-category management).
+  { label: "入賞鴿／進口鴿管理", href: "/z04urru6/pigeon-showcase", section: "content" },
 ];

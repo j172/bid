@@ -116,6 +116,8 @@
     "weeklyPicksEyebrow": "本週精選",
     "weeklyPicksTitle": "本週精選鴿況",
     "weeklyPicksDesc": "從競標標的到定價種鴿，本週焦點鴿況一次掌握。",
+    "pigeonShowcaseViewCta": "查看鴿況",
+    "pigeonShowcaseViewMore": "查看更多",
     "bestSellersTitle": "熱門成交排行",
     "trustEyebrow": "透明可信",
     "trustTitle": "依真實成交資料掌握熱門鴿況",
@@ -417,5 +419,21 @@
     "LEADING_OPEN_LISTING": "你目前正在領先某個開放中的商品，請等到不再領先才能刪除帳號",
     "UNSETTLED_WIN": "你有已得標但尚未完成交易的商品，請等待管理員確認交易完成後再刪除帳號",
     "UNSETTLED_PURCHASE": "你有已購買但尚未完成交易的商品，請等待管理員確認交易完成後再刪除帳號"
+  },
+  "pigeonShowcase": {
+    "awardTitle": "入賞鴿",
+    "importedTitle": "進口鴿",
+    "listSubtitle": "掌握最新入賞鴿／進口鴿資訊，點選卡片查看完整介紹。",
+    "noItems": "目前沒有相關資料。",
+    "viewDetails": "查看鴿況",
+    "pageSizeLabel": "每頁顯示：",
+    "prevPage": "上一頁",
+    "nextPage": "下一頁",
+    "pageInfo": "第 {page} / {totalPages} 頁（共 {total} 筆）",
+    "breadcrumbHome": "首頁",
+    "loftLine": "鴿舍：{loft}",
+    "sidebarLatestAward": "最新入賞鴿",
+    "sidebarLatestImported": "最新進口鴿",
+    "backToList": "查看更多"
   }
 }

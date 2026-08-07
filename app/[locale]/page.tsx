@@ -3,9 +3,12 @@ import { getTranslations } from "next-intl/server";
 import { listOpenListings } from "@/lib/listings";
 import { listingPhotoUrl, homepageSectionImageUrl } from "@/lib/uploads";
 import { listHomepageSections } from "@/lib/homepageSections";
+import { listLatestPigeonShowcase } from "@/lib/pigeonShowcase";
+import { excerptHtml } from "@/lib/htmlText";
 import { Link } from "@/i18n/navigation";
 import HeroSection from "./components/HeroSection";
 import ZoomableProductImage from "./components/ZoomableProductImage";
+import PigeonShowcaseCarouselCard from "./components/PigeonShowcaseCarouselCard";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +44,24 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const allFetchedListings = await listOpenListings();
   const listings = allFetchedListings.filter((item) => item.status === "open");
   const partnerLofts = await listHomepageSections("partner_loft", { activeOnly: true });
+  // 入賞鴿／進口鴿首頁輪播 (issue #54) — latest 10 per category, feeding the
+  // two small promo cards below (replacing their static marketing copy when
+  // non-empty; see PigeonShowcaseCarouselCard's own fallback branch).
+  const PIGEON_CAROUSEL_EXCERPT_LENGTH = 60;
+  const [awardPigeons, importedPigeons] = await Promise.all([
+    listLatestPigeonShowcase("award", 10),
+    listLatestPigeonShowcase("imported", 10),
+  ]);
+  const awardCarouselItems = awardPigeons.map((pigeon) => ({
+    id: pigeon.id,
+    name: pigeon.name,
+    excerpt: excerptHtml(pigeon.description, PIGEON_CAROUSEL_EXCERPT_LENGTH),
+  }));
+  const importedCarouselItems = importedPigeons.map((pigeon) => ({
+    id: pigeon.id,
+    name: pigeon.name,
+    excerpt: excerptHtml(pigeon.description, PIGEON_CAROUSEL_EXCERPT_LENGTH),
+  }));
 
   const heroRenderedAt = new Date().toISOString();
   const auctionsByEndingSoon = [...listings]
@@ -528,23 +549,31 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           </div>
 
           <div className="grid gap-5">
-            <div className="rounded-2xl bg-gradient-to-r from-muted-olive-700 to-slate-900 p-6 text-white">
-              <p className="text-xs font-bold uppercase tracking-wider">{t("promoFixedBadge")}</p>
-              <h3 className="mt-2 text-2xl font-black">{t("promoFixedTitle")}</h3>
-              <p className="mt-3 text-sm text-muted-olive-100">{t("promoFixedDesc")}</p>
-              <Link href={`/listings?type=fixed_price${perfSuffix}`} className="mt-4 inline-flex rounded-md bg-white px-3 py-1.5 text-xs font-bold text-muted-olive-700">
-                {t("promoFixedCta")}
-              </Link>
-            </div>
+            <PigeonShowcaseCarouselCard
+              items={awardCarouselItems}
+              variant="dark"
+              badgeLabel={t("promoFixedBadge")}
+              fallbackTitle={t("promoFixedTitle")}
+              fallbackDesc={t("promoFixedDesc")}
+              fallbackCtaLabel={t("promoFixedCta")}
+              fallbackCtaHref={`/listings?type=fixed_price${perfSuffix}`}
+              viewCtaLabel={t("pigeonShowcaseViewCta")}
+              viewMoreLabel={t("pigeonShowcaseViewMore")}
+              viewMoreHref="/pigeon-showcase?category=award"
+            />
 
-            <div className="rounded-2xl border border-border bg-white p-6">
-              <p className="text-xs font-bold uppercase tracking-wider text-interactive-primary">{t("weeklyPicksEyebrow")}</p>
-              <h3 className="mt-2 text-xl font-black text-ink">{t("weeklyPicksTitle")}</h3>
-              <p className="mt-2 text-sm text-ink-light">{t("weeklyPicksDesc")}</p>
-              <Link href="/listings" className="mt-4 inline-flex rounded-md bg-header px-3 py-1.5 text-xs font-bold text-white">
-                {t("viewAll")}
-              </Link>
-            </div>
+            <PigeonShowcaseCarouselCard
+              items={importedCarouselItems}
+              variant="light"
+              badgeLabel={t("weeklyPicksEyebrow")}
+              fallbackTitle={t("weeklyPicksTitle")}
+              fallbackDesc={t("weeklyPicksDesc")}
+              fallbackCtaLabel={t("viewAll")}
+              fallbackCtaHref="/listings"
+              viewCtaLabel={t("pigeonShowcaseViewCta")}
+              viewMoreLabel={t("pigeonShowcaseViewMore")}
+              viewMoreHref="/pigeon-showcase?category=imported"
+            />
           </div>
         </div>
       </section>

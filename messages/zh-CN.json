@@ -116,6 +116,8 @@
     "weeklyPicksEyebrow": "本周精选",
     "weeklyPicksTitle": "本周精选鸽况",
     "weeklyPicksDesc": "从竞标标的到定价种鸽，本周焦点鸽况一次掌握。",
+    "pigeonShowcaseViewCta": "查看鸽况",
+    "pigeonShowcaseViewMore": "查看更多",
     "bestSellersTitle": "热门成交排行",
     "trustEyebrow": "透明可信",
     "trustTitle": "依真实成交资料掌握热门鸽况",
@@ -417,5 +419,21 @@
     "LEADING_OPEN_LISTING": "你目前正在领先某个开放中的商品，请等到不再领先才能删除账号",
     "UNSETTLED_WIN": "你有已得标但尚未完成交易的商品，请等待管理员确认交易完成后再删除账号",
     "UNSETTLED_PURCHASE": "你有已购买但尚未完成交易的商品，请等待管理员确认交易完成后再删除账号"
+  },
+  "pigeonShowcase": {
+    "awardTitle": "入赏鸽",
+    "importedTitle": "进口鸽",
+    "listSubtitle": "掌握最新入赏鸽／进口鸽信息，点选卡片查看完整介绍。",
+    "noItems": "目前没有相关数据。",
+    "viewDetails": "查看鸽况",
+    "pageSizeLabel": "每页显示：",
+    "prevPage": "上一页",
+    "nextPage": "下一页",
+    "pageInfo": "第 {page} / {totalPages} 页（共 {total} 笔）",
+    "breadcrumbHome": "首页",
+    "loftLine": "鸽舍：{loft}",
+    "sidebarLatestAward": "最新入赏鸽",
+    "sidebarLatestImported": "最新进口鸽",
+    "backToList": "查看更多"
   }
 }
