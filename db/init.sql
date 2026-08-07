@@ -174,20 +174,27 @@ CREATE TABLE IF NOT EXISTS pigeon_showcase (
   CONSTRAINT fk_pigeon_showcase_loft FOREIGN KEY (loft_id) REFERENCES homepage_sections (id) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 最新訊息 announcements (issue #56) — a public, browsable news/announcement
--- list, deliberately separate from the subscription Newsletter feature
--- (lib/newsletter.ts / app/z04urru6/newsletter/): no send/subscriber
--- machinery here, just plain CRUD content rendered on /news and /news/[id]
--- plus a homepage carousel. Simpler than pigeon_showcase above — no FK, no
--- dropdown/category dependency, id is never shown publicly (U/D operate on
--- it from the admin list only).
+-- 最新訊息 announcements (issue #56) — public, browsable news/announcement
+-- content rendered on /news and /news/[id] plus a homepage carousel.
+-- Simpler than pigeon_showcase above — no FK, no dropdown/category
+-- dependency, id is never shown publicly (U/D operate on it from the admin
+-- list only).
 -- image_file_name (issue #70) is the 主圖 (main image) — same NULL-able-only-
 -- for-pre-#70-rows story as pigeon_showcase.image_file_name above.
+-- broadcast_id (issue #80) links a post to the Resend broadcast sent for it
+-- when an admin opts in via NewsFormModal's "同時發送電子報" checkbox — the
+-- newsletter feature (lib/newsletter.ts) is no longer a standalone
+-- compose/send flow (app/z04urru6/newsletter/ removed) and only ever sends
+-- broadcasts tied to a news_posts row. NULL when no newsletter has ever been
+-- associated with the post. Status/schedule/subject are never cached here —
+-- always read live from Resend via lib/newsletter.ts's listBroadcasts/
+-- getBroadcast so there's a single source of truth.
 CREATE TABLE IF NOT EXISTS news_posts (
   id BIGINT NOT NULL AUTO_INCREMENT,
   title VARCHAR(100) NOT NULL,
   image_file_name VARCHAR(255) NULL,  -- 主圖 (issue #70); NULL only on pre-#70 rows
   content TEXT NOT NULL,           -- sanitizeDescriptionHtml'd TinyMCE HTML, 2000-char plain-text cap
+  broadcast_id VARCHAR(255) NULL,  -- Resend broadcast id (issue #80); NULL until a newsletter is sent/scheduled for this post
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
   PRIMARY KEY (id),

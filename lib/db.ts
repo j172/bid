@@ -154,19 +154,21 @@ CREATE TABLE IF NOT EXISTS pigeon_showcase (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 最新訊息 announcements (issue #56) — a public, browsable news/announcement
--- list, deliberately separate from the subscription Newsletter feature
--- (lib/newsletter.ts / app/z04urru6/newsletter/): no send/subscriber
--- machinery here, just plain CRUD content rendered on /news and /news/[id]
--- plus a homepage carousel. Simpler than pigeon_showcase above — no FK, no
--- dropdown/category dependency, id is never shown publicly (U/D operate on
--- it from the admin list only).
+-- list rendered on /news and /news/[id] plus a homepage carousel. Simpler
+-- than pigeon_showcase above — no FK, no dropdown/category dependency, id is
+-- never shown publicly (U/D operate on it from the admin list only).
 -- image_file_name (issue #70) is the 主圖 — same NULL-only-for-pre-#70-rows
 -- story as pigeon_showcase.image_file_name above.
+-- broadcast_id (issue #80) — see ensureNewsBroadcastColumn below for how
+-- it's added to already-deployed databases; the newsletter feature
+-- (lib/newsletter.ts) no longer has a standalone compose/send flow and only
+-- ever broadcasts a post it's linked to from here.
 CREATE TABLE IF NOT EXISTS news_posts (
   id BIGINT NOT NULL AUTO_INCREMENT,
   title VARCHAR(100) NOT NULL,
   image_file_name VARCHAR(255) NULL,  -- 主圖 (issue #70); NULL only on pre-#70 rows
   content TEXT NOT NULL,           -- sanitizeDescriptionHtml'd TinyMCE HTML, 2000-char plain-text cap
+  broadcast_id VARCHAR(255) NULL,  -- Resend broadcast id (issue #80); NULL until a newsletter is sent/scheduled for this post
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
   PRIMARY KEY (id),
@@ -339,6 +341,14 @@ async function ensureShowcaseNewsImageColumns(db: mysql.Pool): Promise<void> {
   await ensureColumn(db, "news_posts", "image_file_name", "VARCHAR(255) NULL");
 }
 
+// Issue #80: 電子報功能合併進最新訊息管理 — the standalone Newsletter admin
+// pages (app/z04urru6/newsletter/) are gone; every broadcast is now sent
+// from the news form and tied to the news_posts row it was sent for. This
+// column is the link; see lib/news.ts's setNewsBroadcastId.
+async function ensureNewsBroadcastColumn(db: mysql.Pool): Promise<void> {
+  await ensureColumn(db, "news_posts", "broadcast_id", "VARCHAR(255) NULL");
+}
+
 function createPool(): mysql.Pool {
   return mysql.createPool({
     host: process.env.MYSQL_HOST,
@@ -360,6 +370,7 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensureEndsAtNullable(db);
   await ensurePartnerLoftColumns(db);
   await ensureShowcaseNewsImageColumns(db);
+  await ensureNewsBroadcastColumn(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {

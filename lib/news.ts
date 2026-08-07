@@ -1,9 +1,10 @@
 // CRUD for `news_posts` (see db/init.sql / lib/db.ts's SCHEMA_SQL) — public
 // "最新訊息" announcements (issue #56). Hand-written SQL via mysql2, same
 // style as lib/pigeonShowcase.ts / lib/listings.ts (this project has no
-// ORM). Deliberately independent from lib/newsletter.ts's subscription
-// send/subscriber machinery — this is a plain browsable announcement list,
-// not an email feature.
+// ORM). broadcastId (issue #80) links a row to the Resend broadcast sent for
+// it — see lib/newsletter.ts, which owns everything about what that id's
+// current status/schedule actually is; this module only stores/clears the
+// pointer.
 
 import { getDb } from "@/lib/db";
 
@@ -14,6 +15,8 @@ export interface NewsPost {
   content: string;
   /** 主圖 file name under uploads/news/ (see lib/uploads.ts); NULL only on rows created before issue #70 — every create/edit after #70 requires one. */
   imageFileName: string | null;
+  /** Resend broadcast id (issue #80) — NULL until an admin opts in to send a newsletter for this post. See lib/newsletter.ts for what its live status/schedule actually is. */
+  broadcastId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -47,6 +50,7 @@ interface NewsPostRow {
   title: string;
   content: string;
   image_file_name: string | null;
+  broadcast_id: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -57,12 +61,13 @@ function mapRow(row: NewsPostRow): NewsPost {
     title: row.title,
     content: row.content,
     imageFileName: row.image_file_name,
+    broadcastId: row.broadcast_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
 
-const SELECT = `SELECT id, title, content, image_file_name, created_at, updated_at FROM news_posts`;
+const SELECT = `SELECT id, title, content, image_file_name, broadcast_id, created_at, updated_at FROM news_posts`;
 
 // Powers the admin list (title search + pagination) and the public /news
 // list page (same filters, minus admin-only concerns). Always newest-first
@@ -138,4 +143,15 @@ export async function deleteNews(id: number): Promise<NewsPostOutcome> {
     return { ok: false, error: "找不到這則訊息" };
   }
   return { ok: true };
+}
+
+// Points/re-points/clears which Resend broadcast (if any) this post's
+// newsletter send is tied to (issue #80). Called by the news API routes
+// after createBroadcast succeeds (link) or when an admin swaps in a brand
+// new broadcast to replace an unsent one (re-point) — never by the news
+// content update itself, since a broadcast can outlive several content
+// edits (see the "sent" lock rule in NewsFormModal).
+export async function setNewsBroadcastId(id: number, broadcastId: string | null): Promise<void> {
+  const db = await getDb();
+  await db.query("UPDATE news_posts SET broadcast_id = ? WHERE id = ?", [broadcastId, id]);
 }

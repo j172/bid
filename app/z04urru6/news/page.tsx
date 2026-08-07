@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { DEFAULT_NEWS_PAGE_SIZE, NEWS_PAGE_SIZES, isNewsPageSize, listNews } from "@/lib/news";
 import { newsImageUrl } from "@/lib/uploads";
+import { listBroadcasts, type Broadcast } from "@/lib/newsletter";
+import { BROADCAST_STATUS_LABEL } from "@/lib/broadcastStatusLabel";
 import AdminPageIntro from "../AdminPageIntro";
 import NewsFormModal from "./NewsFormModal";
 import DeleteButton from "./DeleteButton";
+import CancelBroadcastButton from "./CancelBroadcastButton";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +38,18 @@ export default async function NewsAdminPage({ searchParams }: { searchParams: Pr
 
   const { items, total } = await listNews({ search, page, pageSize });
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  // 電子報狀態 column (issue #80) — status/schedule are never cached on the
+  // news_posts row, only the broadcast_id pointer is (see lib/news.ts), so
+  // this is resolved live against Resend every render, same "single source
+  // of truth" story the old standalone /z04urru6/newsletter status page had.
+  // One list call regardless of how many rows are opted in; a fetch failure
+  // (not configured / provider error) just means the column shows "—"
+  // instead of breaking the whole page.
+  const broadcastsResult = await listBroadcasts();
+  const broadcastsById = new Map<string, Broadcast>(
+    broadcastsResult.ok ? broadcastsResult.broadcasts.map((broadcast) => [broadcast.id, broadcast]) : [],
+  );
 
   return (
     <main>
@@ -78,12 +93,14 @@ export default async function NewsAdminPage({ searchParams }: { searchParams: Pr
                 <th className={th}>標題</th>
                 <th className={th}>內容</th>
                 <th className={th}>發布時間</th>
+                <th className={th}>電子報狀態</th>
                 <th className={th}></th>
               </tr>
             </thead>
             <tbody>
               {items.map((item) => {
                 const imageUrl = item.imageFileName ? newsImageUrl(item.imageFileName) : "/images/hero-placeholder.png";
+                const broadcast = item.broadcastId ? broadcastsById.get(item.broadcastId) : undefined;
                 return (
                   <tr key={item.id} className="transition hover:bg-surface-muted/80">
                     <td className={td}>
@@ -93,9 +110,32 @@ export default async function NewsAdminPage({ searchParams }: { searchParams: Pr
                     <td className={`${td} font-medium`}>{item.title}</td>
                     <td className={`${td} max-w-xs truncate text-ink-light`}>{item.content.replace(/<[^>]*>/g, " ").trim()}</td>
                     <td className={`${td} whitespace-nowrap text-ink-light`}>{item.createdAt.toLocaleString("zh-TW")}</td>
+                    <td className={td}>
+                      {!item.broadcastId ? (
+                        <span className="text-xs text-ink-light">—</span>
+                      ) : broadcast ? (
+                        <div className="flex flex-col items-start gap-1">
+                          <span className="text-ink-light">{BROADCAST_STATUS_LABEL[broadcast.status] ?? broadcast.status}</span>
+                          {(broadcast.status === "draft" || broadcast.status === "scheduled") && (
+                            <CancelBroadcastButton broadcastId={broadcast.id} />
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-ink-light">無法讀取</span>
+                      )}
+                    </td>
                     <td className={`${td} text-right`}>
                       <div className="flex items-center justify-end gap-2">
-                        <NewsFormModal mode="edit" item={{ id: item.id, title: item.title, content: item.content, imageUrl }} />
+                        <NewsFormModal
+                          mode="edit"
+                          item={{
+                            id: item.id,
+                            title: item.title,
+                            content: item.content,
+                            imageUrl,
+                            broadcast: broadcast ? { id: broadcast.id, status: broadcast.status, scheduledAt: broadcast.scheduledAt } : null,
+                          }}
+                        />
                         <DeleteButton id={item.id} title={item.title} />
                       </div>
                     </td>

@@ -10,11 +10,12 @@ export type Broadcast = {
   createdAt: string | null;
 };
 
-export type BroadcastErrorCode = "NOT_CONFIGURED" | "PROVIDER_ERROR";
+export type BroadcastErrorCode = "NOT_CONFIGURED" | "PROVIDER_ERROR" | "NOT_FOUND";
 type ErrorCode = BroadcastErrorCode;
 type Result = { ok: true } | { ok: false; errorCode: ErrorCode };
 type ResultWithId = { ok: true; id: string } | { ok: false; errorCode: ErrorCode };
 type ListResult = { ok: true; broadcasts: Broadcast[] } | { ok: false; errorCode: ErrorCode };
+type GetResult = { ok: true; broadcast: Broadcast } | { ok: false; errorCode: ErrorCode };
 
 function isConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY && process.env.RESEND_AUDIENCE_ID);
@@ -52,6 +53,38 @@ export async function listBroadcasts(): Promise<ListResult> {
     return { ok: true, broadcasts };
   } catch (error) {
     console.error("Failed to list broadcasts:", error);
+    return { ok: false, errorCode: "PROVIDER_ERROR" };
+  }
+}
+
+// Single-broadcast status lookup (issue #80) — used by the news edit route
+// to decide whether a post's linked broadcast is still editable (anything
+// short of "sent") without pulling every broadcast on the account the way
+// listBroadcasts()/the old standalone status page did.
+export async function getBroadcast(id: string): Promise<GetResult> {
+  if (!isConfigured()) return { ok: false, errorCode: "NOT_CONFIGURED" };
+
+  try {
+    const { status, body } = await resendRequest("GET", `/broadcasts/${id}`);
+    if (status === 404) return { ok: false, errorCode: "NOT_FOUND" };
+    if (status < 200 || status >= 300) {
+      console.error(`Failed to get broadcast ${id} (${status}): ${body}`);
+      return { ok: false, errorCode: "PROVIDER_ERROR" };
+    }
+
+    const item = JSON.parse(body) as Record<string, unknown>;
+    return {
+      ok: true,
+      broadcast: {
+        id: String(item.id),
+        subject: (item.subject as string | undefined) ?? null,
+        status: (item.status as BroadcastStatus | undefined) ?? "draft",
+        scheduledAt: (item.scheduled_at as string | undefined) ?? null,
+        createdAt: (item.created_at as string | undefined) ?? null,
+      },
+    };
+  } catch (error) {
+    console.error(`Failed to get broadcast ${id}:`, error);
     return { ok: false, errorCode: "PROVIDER_ERROR" };
   }
 }

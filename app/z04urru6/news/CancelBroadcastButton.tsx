@@ -3,6 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+// Moved here from app/z04urru6/newsletter/ (issue #80) — the standalone
+// newsletter status list is gone, so this is now the news admin list's
+// inline "取消" action for a row's 電子報狀態 column (draft/scheduled only,
+// see page.tsx). Logic unchanged: still just DELETEs the Resend broadcast
+// via the same /api/admin/newsletter/[id] route.
 export default function CancelBroadcastButton({ broadcastId }: { broadcastId: string }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);

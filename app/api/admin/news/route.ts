@@ -1,32 +1,11 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { createNews, isNewsPageSize, listNews, type NewsPostInput } from "@/lib/news";
+import { createNews, isNewsPageSize, listNews, setNewsBroadcastId, type NewsPostInput } from "@/lib/news";
 import { validateNewsContent, validateNewsTitle } from "@/lib/newsValidation";
 import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
 import { deleteNewsImageFile, saveNewsImage } from "@/lib/uploads";
-import { buildNewsBroadcastHtml, createBroadcast, sendBroadcast, type BroadcastErrorCode } from "@/lib/newsletter";
-
-// This host's reverse proxy (.remote-index.php) forwards the original
-// public Host/protocol as X-Forwarded-Host / X-Forwarded-Proto (Node itself
-// only ever sees plain http://127.0.0.1 — see that file's header comment),
-// so those take priority when building the absolute /news/[id] link that
-// goes out in the newsletter. Falls back to the request's own URL for local
-// dev, where neither forwarded header is present.
-function resolveOrigin(request: Request): string {
-  const forwardedHost = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
-  if (!forwardedHost) return new URL(request.url).origin;
-  const forwardedProto = request.headers.get("x-forwarded-proto") ?? "https";
-  return `${forwardedProto}://${forwardedHost}`;
-}
-
-function newsletterErrorMessage(errorCode: BroadcastErrorCode, stage: "create" | "send"): string {
-  if (errorCode === "NOT_CONFIGURED") {
-    return "電子報寄送失敗：尚未設定 RESEND_API_KEY / RESEND_AUDIENCE_ID。";
-  }
-  return stage === "create"
-    ? "電子報建立失敗，請至「電子報」頁面手動處理。"
-    : "電子報已建立但寄送失敗，請至「電子報」頁面確認草稿狀態。";
-}
+import { buildNewsBroadcastHtml, createBroadcast, sendBroadcast } from "@/lib/newsletter";
+import { newsletterErrorMessage, parseScheduledAt, resolveOrigin } from "@/lib/newsNewsletterSync";
 
 // Admin list view — matches the filters issue #56 asks for: title substring
 // search, selectable page size (30/50/100). No JOIN-only public equivalent
@@ -67,11 +46,12 @@ export async function POST(request: Request) {
   const title = String(form.get("title") ?? "").trim();
   const content = String(form.get("content") ?? "").trim();
   const image = form.get("image");
-  // create-mode-only opt-in (issue #73) — NewsFormModal never sends this
-  // field when editing, so absence here just means "no newsletter action".
-  // Sent as a FormData string ("true") rather than JSON boolean since issue
-  // #70 switched this endpoint to multipart submission for the image field.
+  // Sent as FormData strings ("true"/ISO datetime) rather than JSON since
+  // issue #70 switched this endpoint to multipart submission for the image
+  // field. scheduledAt is only meaningful when sendNewsletter is set —
+  // absent/empty means "send immediately" (issue #80).
   const sendNewsletter = form.get("sendNewsletter") === "true";
+  const scheduledAtRaw = String(form.get("scheduledAt") ?? "").trim();
 
   const titleResult = validateNewsTitle(title);
   if (!titleResult.ok) {
@@ -100,23 +80,37 @@ export async function POST(request: Request) {
     await deleteNewsImageFile(imageFileName);
     return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
   }
+  // createNews always sets id alongside ok:true — NewsPostOutcome's `id` is
+  // typed optional only because the ok:false branch above never has one.
+  const newsId = result.id as number;
 
   // The news post and the newsletter broadcast are deliberately independent
-  // (issue #73): the post is already committed at this point, so a
-  // broadcast failure (e.g. Resend not configured) must never roll it back
-  // or turn this response into a failure — it's reported separately via
-  // `newsletterError` for the client to surface as its own notice.
+  // (issue #73, extended by #80): the post is already committed at this
+  // point, so a broadcast failure (e.g. Resend not configured, bad schedule)
+  // must never roll it back or turn this response into a failure — it's
+  // reported separately via `newsletterError` for the client to surface as
+  // its own notice.
   let newsletterError: string | undefined;
   if (sendNewsletter) {
-    const detailUrl = `${resolveOrigin(request)}/news/${result.id}`;
-    const html = buildNewsBroadcastHtml(input.content, detailUrl);
-    const created = await createBroadcast(title, html);
-    if (!created.ok) {
-      newsletterError = newsletterErrorMessage(created.errorCode, "create");
+    const schedule = parseScheduledAt(scheduledAtRaw);
+    if (!schedule.ok) {
+      newsletterError = "排程時間必須是有效的未來時間，電子報未寄送。";
     } else {
-      const sent = await sendBroadcast(created.id);
-      if (!sent.ok) {
-        newsletterError = newsletterErrorMessage(sent.errorCode, "send");
+      const detailUrl = `${resolveOrigin(request)}/news/${newsId}`;
+      const html = buildNewsBroadcastHtml(input.content, detailUrl);
+      const created = await createBroadcast(title, html);
+      if (!created.ok) {
+        newsletterError = newsletterErrorMessage(created.errorCode, "create");
+      } else {
+        // Persisted as soon as the broadcast exists — even if the send
+        // below fails, the post stays linked to this (still-draft)
+        // broadcast so a later edit can retry/cancel it instead of orphaning
+        // a Resend draft nothing ever points back to.
+        await setNewsBroadcastId(newsId, created.id);
+        const sent = await sendBroadcast(created.id, schedule.scheduledAt);
+        if (!sent.ok) {
+          newsletterError = newsletterErrorMessage(sent.errorCode, "send");
+        }
       }
     }
   }
