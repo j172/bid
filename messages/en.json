@@ -322,6 +322,7 @@
     "days": "{count}d",
     "hours": "{count}h",
     "minutes": "{count}m",
+    "seconds": "{count}s",
     "lessThanMinute": "less than a minute left",
     "unitDays": "Days",
     "unitHours": "Hours",
