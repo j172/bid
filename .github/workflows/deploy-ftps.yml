@@ -116,54 +116,29 @@ jobs:
           upload_with_retry ".ops-key" "ftp://${FTP_SERVER_CLEAN}:21/bid.j172.tw/.ops-key"
 
       - name: Trigger apply and wait for completion
-        env:
-          OPS_KEY: ${{ secrets.OPS_KEY }}
-        run: |
-          set -euo pipefail
-          OPS_KEY_CLEAN="$(printf '%s' "$OPS_KEY" | tr -d '\r\n')"
-          ORIGIN_IP="103.21.221.12"
-
-          ops_curl() {
-            local url_path="$1"
-            curl --fail --show-error --silent --insecure \
-              --connect-timeout 10 --max-time 30 --retry 2 --retry-delay 2 --retry-all-errors \
-              --header "Host: bid.j172.tw" \
-              --user-agent "bid-deploy-bot/1.0" \
-              "https://${ORIGIN_IP}${url_path}"
-          }
-
-          ops_curl "/__ops/apply?key=$OPS_KEY_CLEAN&cb=$(date +%s)"
-
-          CHALLENGE_HITS=0
-
-          for ATTEMPT in $(seq 1 120); do
-            STATUS="$(ops_curl "/__ops/status?key=$OPS_KEY_CLEAN&cb=$(date +%s)")"
-
-            echo "$STATUS"
-
-            if printf '%s' "$STATUS" | grep -Fq '[DONE]'; then
-              exit 0
-            fi
-
-            if printf '%s' "$STATUS" | grep -Fq 'Please wait while your request is being verified'; then
-              CHALLENGE_HITS=$((CHALLENGE_HITS + 1))
-              echo "status endpoint returned CDN challenge page ($CHALLENGE_HITS)"
-              # Treat challenge as transient; keep polling until overall timeout.
-              sleep 5
-              continue
-            fi
-
-            if printf '%s' "$STATUS" | grep -Eiq '\[FAIL\]|\[ROLLBACK\]'; then
-              echo "apply status indicates failure"
-              exit 1
-            fi
-
-            echo "Waiting for apply completion ($ATTEMPT/120)..."
-            sleep 3
-          done
-
-          echo "Timed out waiting for [DONE]"
-          exit 1
+        # Runs scripts/remote-apply.sh directly on the host over SSH instead
+        # of going through /__ops/apply + polling /__ops/status on the
+        # public domain. That HTTP path goes through Cloudflare, and the
+        # WAF/anti-bot layer there serves GitHub Actions runners a JS
+        # challenge page instead of real content — /__ops/apply likely never
+        # reached the PHP deploy logic, and /__ops/status polling just
+        # collected challenge pages until timeout (see issue #64). SSH
+        # bypasses Cloudflare entirely, and scripts/remote-apply.sh runs
+        # synchronously, so this step's own exit code (from the SSH session)
+        # already tells us whether the apply + health probe succeeded — no
+        # separate polling loop needed.
+        #
+        # The /__ops/apply, /__ops/status, /__ops/pm2-status endpoints in
+        # .remote-index.php are left in place for manual/browser debugging;
+        # they're just no longer on this workflow's critical path.
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          port: ${{ secrets.DEPLOY_SSH_PORT }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          command_timeout: 15m
+          script_path: scripts/remote-apply.sh
 
       - name: Verify live site
         run: |
