@@ -30,13 +30,17 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-// fetchLatestTaifexRow (issue #55) retries up to 3 times with a real delay
-// between attempts. vi.advanceTimersByTimeAsync flushes the microtasks in
-// between each timer tick, so this lets tests exercise the retry path
-// without actually waiting on wall-clock time.
-async function advanceThroughRetries(delays = 2): Promise<void> {
+// fetchLatestTaifexRow (issue #55, retry count/delay increased by #81)
+// retries up to TAIFEX_FETCH_MAX_ATTEMPTS (5) times with a real delay
+// (TAIFEX_FETCH_RETRY_DELAY_MS, 5s) between attempts. Not imported directly
+// since they're internal to lib/exchangeRates.ts — kept in sync with that
+// module's constants by hand, same as before #81 bumped them.
+// vi.advanceTimersByTimeAsync flushes the microtasks in between each timer
+// tick, so this lets tests exercise the retry path without actually waiting
+// on wall-clock time.
+async function advanceThroughRetries(delays = 4): Promise<void> {
   for (let i = 0; i < delays; i++) {
-    await vi.advanceTimersByTimeAsync(3000);
+    await vi.advanceTimersByTimeAsync(5000);
   }
 }
 
@@ -86,10 +90,10 @@ describe("fetchLatestTaifexRow", () => {
     const row = await promise;
 
     expect(row).toBeNull();
-    expect(fetch).toHaveBeenCalledTimes(3);
-    expect(errorSpy).toHaveBeenCalledTimes(3);
-    expect(errorSpy.mock.calls[0][0]).toContain("attempt 1/3");
-    expect(errorSpy.mock.calls[2][0]).toContain("HTTP 500");
+    expect(fetch).toHaveBeenCalledTimes(5);
+    expect(errorSpy).toHaveBeenCalledTimes(5);
+    expect(errorSpy.mock.calls[0][0]).toContain("attempt 1/5");
+    expect(errorSpy.mock.calls[4][0]).toContain("HTTP 500");
     errorSpy.mockRestore();
   });
 
@@ -103,11 +107,43 @@ describe("fetchLatestTaifexRow", () => {
     const row = await promise;
 
     expect(row).toBeNull();
-    expect(fetch).toHaveBeenCalledTimes(3);
-    expect(errorSpy).toHaveBeenCalledTimes(3);
+    expect(fetch).toHaveBeenCalledTimes(5);
+    expect(errorSpy).toHaveBeenCalledTimes(5);
     // Each log call must carry the real error object (message/name/cause all inspectable).
     expect(errorSpy.mock.calls[0][1]).toBe(networkError);
     expect(errorSpy.mock.calls[0][0]).toContain("network down");
+    errorSpy.mockRestore();
+  });
+
+  // issue #81: production logs only ever showed the generic outer
+  // "TypeError: fetch failed" — undici wraps the real DNS/connect/timeout
+  // error under `.cause`, and any errno/code live as non-standard
+  // properties on that cause. The log line itself must surface all of that
+  // (not just the object passed as console.error's 2nd arg, which pm2's log
+  // capture doesn't reliably render in full) so a stuck sync is diagnosable
+  // straight from `pm2 logs` without SSHing in to reproduce it by hand.
+  it("surfaces error.cause / error.name / errno / code in the log line when fetch throws a wrapped network error", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const dnsFailure = Object.assign(new Error("getaddrinfo ENOTFOUND www.taifex.com.tw"), {
+      name: "Error",
+      code: "ENOTFOUND",
+      errno: -3008,
+    });
+    // This is exactly the shape undici's fetch() produces for a lower-level
+    // network failure: a generic TypeError whose .cause is the real error.
+    const fetchFailedError = new TypeError("fetch failed", { cause: dnsFailure });
+    vi.mocked(fetch).mockRejectedValue(fetchFailedError);
+
+    const promise = fetchLatestTaifexRow();
+    await advanceThroughRetries();
+    await promise;
+
+    const [logLine] = errorSpy.mock.calls[0];
+    expect(logLine).toContain("TypeError");
+    expect(logLine).toContain("fetch failed");
+    expect(logLine).toContain("ENOTFOUND");
+    expect(logLine).toContain("-3008");
+    expect(logLine).toContain("getaddrinfo ENOTFOUND www.taifex.com.tw");
     errorSpy.mockRestore();
   });
 
