@@ -17,8 +17,9 @@ type Props = { mode: "create" } | { mode: "edit"; item: EditItem };
 
 // Same create/edit modal split pattern as
 // app/z04urru6/pigeon-showcase/PigeonShowcaseFormModal.tsx — one component
-// doubles as both forms, differing only in submit verb/URL and initial
-// values. Submits JSON (not FormData) since news_posts has no file upload.
+// doubles as both forms, differing only in submit verb/URL, initial values,
+// and (create-mode only, issue #73) the newsletter sync checkbox. Submits
+// JSON (not FormData) since news_posts has no file upload.
 export default function NewsFormModal(props: Props) {
   const router = useRouter();
   const isEdit = props.mode === "edit";
@@ -26,12 +27,19 @@ export default function NewsFormModal(props: Props) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(isEdit ? props.item.title : "");
   const [content, setContent] = useState(isEdit ? props.item.content : "");
+  // Create-mode-only opt-in (issue #73): checking this at creation time IS
+  // the confirmation to broadcast — no separate review/test-send step like
+  // the standalone NewsletterComposer has, so it always defaults unchecked
+  // and is never offered while editing an existing post (to avoid
+  // re-sending or accidentally triggering a send on an edit).
+  const [sendNewsletter, setSendNewsletter] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   function resetForm() {
     setTitle(isEdit ? props.item.title : "");
     setContent(isEdit ? props.item.content : "");
+    setSendNewsletter(false);
     setError(null);
   }
 
@@ -40,7 +48,7 @@ export default function NewsFormModal(props: Props) {
     setError(null);
     setSubmitting(true);
 
-    const payload = { title, content };
+    const payload = isEdit ? { title, content } : { title, content, sendNewsletter };
     const response = await fetch(isEdit ? `/api/admin/news/${props.item.id}` : "/api/admin/news", {
       method: isEdit ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
@@ -56,6 +64,14 @@ export default function NewsFormModal(props: Props) {
     setOpen(false);
     if (!isEdit) resetForm();
     router.refresh();
+
+    // Newsletter send is best-effort and independent of the news post
+    // itself (issue #73) — the post above is already saved successfully by
+    // this point, so a broadcast failure surfaces here as its own notice
+    // instead of blocking/rolling back the save.
+    if (!isEdit && sendNewsletter && data.newsletterError) {
+      alert(`最新訊息已成功儲存，但電子報寄送失敗：${data.newsletterError}`);
+    }
   }
 
   return (
@@ -87,6 +103,18 @@ export default function NewsFormModal(props: Props) {
                 內容
                 <NewsDescriptionEditor value={content} onChange={setContent} />
               </div>
+
+              {!isEdit && (
+                <label className="flex items-center gap-2 text-sm font-medium text-ink-light">
+                  <input
+                    type="checkbox"
+                    checked={sendNewsletter}
+                    onChange={(e) => setSendNewsletter(e.target.checked)}
+                    disabled={submitting}
+                  />
+                  同步發送電子報
+                </label>
+              )}
 
               {error && <p className="text-sm text-ended">{error}</p>}
               <div className="mt-2 flex justify-end gap-3">
