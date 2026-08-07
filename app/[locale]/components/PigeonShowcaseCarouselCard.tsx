@@ -5,10 +5,17 @@ import { Link } from "@/i18n/navigation";
 
 // Homepage carousel card (issue #54) — replaces the static "即刻入手"/"本週
 //精選" promo cards (app/[locale]/page.tsx) with a rotating showcase of the
-// latest 入賞鴿/進口鴿 entries. Rotates every 5s via setInterval; falls back
-// to the original static marketing copy when this category currently has
-// zero pigeon_showcase rows (see the `items.length === 0` branch) rather
-// than rendering an empty card.
+// latest 入賞鴿/進口鴿 entries. Rotates every 5s via setInterval.
+//
+// When this category currently has zero pigeon_showcase rows, this used to
+// fall back to that original static marketing copy (issue #54) instead of
+// rendering an empty card. Issue #71 removes that — "即刻入手"/"本週精選"
+// read as stale promo copy once the real carousel shipped, and (unlike
+// NewsCarouselCard) `badgeLabel` doubled as both the fallback's badge and
+// the active carousel's category badge, so the empty branch below drops the
+// badge entirely rather than keep showing it over a blank state. The layout
+// slot itself stays occupied — see the `items.length === 0` branch — with a
+// neutral "尚無內容" placeholder instead of a fully-empty card.
 export interface PigeonShowcaseCarouselItem {
   id: number;
   name: string;
@@ -21,10 +28,8 @@ export default function PigeonShowcaseCarouselCard({
   items,
   variant,
   badgeLabel,
-  fallbackTitle,
-  fallbackDesc,
-  fallbackCtaLabel,
-  fallbackCtaHref,
+  emptyStateTitle,
+  emptyStateDesc,
   viewCtaLabel,
   viewMoreLabel,
   viewMoreHref,
@@ -32,10 +37,8 @@ export default function PigeonShowcaseCarouselCard({
   items: PigeonShowcaseCarouselItem[];
   variant: "dark" | "light";
   badgeLabel: string;
-  fallbackTitle: string;
-  fallbackDesc: string;
-  fallbackCtaLabel: string;
-  fallbackCtaHref: string;
+  emptyStateTitle: string;
+  emptyStateDesc: string;
   viewCtaLabel: string;
   viewMoreLabel: string;
   viewMoreHref: string;
@@ -64,13 +67,9 @@ export default function PigeonShowcaseCarouselCard({
 
   if (items.length === 0) {
     return (
-      <div className={wrapperClass}>
-        <p className={badgeClass}>{badgeLabel}</p>
-        <h3 className={titleClass}>{fallbackTitle}</h3>
-        <p className={descClass}>{fallbackDesc}</p>
-        <Link href={fallbackCtaHref} className={ctaClass}>
-          {fallbackCtaLabel}
-        </Link>
+      <div className="flex h-full min-h-[160px] flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-slate-50 p-6 text-center">
+        <p className="text-sm font-bold text-ink-light">{emptyStateTitle}</p>
+        <p className="mt-1 text-xs text-ink-light">{emptyStateDesc}</p>
       </div>
     );
   }
