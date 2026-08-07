@@ -7,10 +7,10 @@ import { listLatestPigeonShowcase } from "@/lib/pigeonShowcase";
 import { listLatestNews } from "@/lib/news";
 import { excerptHtml } from "@/lib/htmlText";
 import { Link } from "@/i18n/navigation";
-import HeroSection from "./components/HeroSection";
-import ZoomableProductImage from "./components/ZoomableProductImage";
-import PigeonShowcaseCarouselCard from "./components/PigeonShowcaseCarouselCard";
-import NewsCarouselCard from "./components/NewsCarouselCard";
+import HeroSection from "../components/HeroSection";
+import ZoomableProductImage from "../components/ZoomableProductImage";
+import PigeonShowcaseCarouselCard from "../components/PigeonShowcaseCarouselCard";
+import NewsCarouselCard from "../components/NewsCarouselCard";
 
 export const dynamic = "force-dynamic";
 

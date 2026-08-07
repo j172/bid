@@ -1,4 +1,4 @@
-import LiveListingStatus from "../listings/[id]/LiveListingStatus";
+import LiveListingStatus from "../listings/(no-loading)/[id]/LiveListingStatus";
 
 // THROWAWAY visual-verification route — not part of the app, delete after use.
 export default function DevPreviewHeroCountdown() {

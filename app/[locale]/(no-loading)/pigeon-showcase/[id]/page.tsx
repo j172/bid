@@ -13,8 +13,9 @@ const CATEGORY_LABEL_KEY = { award: "awardTitle", imported: "importedTitle" } as
 // Layout reference: NextMerce's "blog-details-with-sidebar" (issue #54) —
 // main column carries the category tag/name/loft/full description, sidebar
 // carries a "latest in this category" list. notFound() on a bad/missing id
-// mirrors app/[locale]/listings/[id]/page.tsx's own pattern (no custom
-// not-found.tsx exists anywhere in this app — Next's default 404 applies).
+// mirrors app/[locale]/listings/(no-loading)/[id]/page.tsx's own pattern (no
+// custom not-found.tsx exists anywhere in this app — Next's default 404
+// applies).
 export default async function PigeonShowcaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const showcaseId = Number(id);

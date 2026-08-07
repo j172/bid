@@ -3,7 +3,8 @@ import { getListingStatus } from "@/lib/listings";
 
 // Plain, unauthenticated GET — browsing/watching a listing is already
 // public, so there's no reason to gate the live-status poll behind login.
-// Polled every few seconds by app/listings/[id]/LiveListingStatus.tsx while
+// Polled every few seconds by
+// app/[locale]/listings/(no-loading)/[id]/LiveListingStatus.tsx while
 // a listing is open; deliberately cheap (see getListingStatus) since it's
 // hit repeatedly by every viewer's tab.
 export const dynamic = "force-dynamic";

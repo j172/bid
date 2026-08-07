@@ -9,8 +9,11 @@ import { maskDisplayName } from "@/lib/mask";
 import { getListingActivityFeed, getListingById, listOpenListings } from "@/lib/listings";
 import { listingPhotoUrl } from "@/lib/uploads";
 import { Link } from "@/i18n/navigation";
-import ZoomableProductImage from "../../components/ZoomableProductImage";
-import StatusBadge from "../../components/StatusBadge";
+// Absolute imports (rather than relative "../../../components/...") because
+// this page moved into the (no-loading) route group (issue #74) — see that
+// group's sibling (with-loading)/ folder for why.
+import ZoomableProductImage from "@/app/[locale]/components/ZoomableProductImage";
+import StatusBadge from "@/app/[locale]/components/StatusBadge";
 import BidForm from "./BidForm";
 import BuyNowButton from "./BuyNowButton";
 import HeroCountdownStrip from "./HeroCountdownStrip";

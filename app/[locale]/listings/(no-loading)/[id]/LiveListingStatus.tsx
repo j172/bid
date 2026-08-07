@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { formatRemainingMs } from "@/lib/format";
 import { useListingCountdown } from "@/lib/useListingCountdown";
-import StatusBadge from "../../components/StatusBadge";
+import StatusBadge from "@/app/[locale]/components/StatusBadge";
 
 // Plain-text rendering of the three fields that can change after the page
 // has already loaded (current price, remaining time, status). See
