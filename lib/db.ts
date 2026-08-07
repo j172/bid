@@ -122,6 +122,33 @@ CREATE TABLE IF NOT EXISTS exchange_rates (
   UNIQUE KEY uq_exchange_rates_currency_date (currency, rate_date),
   KEY idx_exchange_rates_currency_date (currency, rate_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 入賞鴿／進口鴿 showcase entries (issue #54) — deliberately NOT a revival of
+-- the pigeon_gallery_* tables removed in #52 ("方向錯誤"): only two fixed
+-- categories (no custom category table), admin CRUD + a homepage carousel/
+-- category list/detail page instead of a standalone gallery. loft_id is a
+-- real DB-level FK to homepage_sections(id) (unlike listings.loft_id, which
+-- stays a plain BIGINT per its own comment above) because this ticket
+-- explicitly requires deletes of a still-referenced 合作鴿舍 to be rejected
+-- rather than silently cascaded/nulled — see ON DELETE/UPDATE RESTRICT below
+-- (RESTRICT is InnoDB's default when unspecified too; spelled out here for
+-- clarity) and deleteHomepageSection's ER_ROW_IS_REFERENCED_2 handling in
+-- lib/homepageSections.ts. MySQL foreign keys can't be scoped to only rows
+-- matching section_type = 'partner_loft' — that check is enforced at the
+-- application layer (lib/pigeonShowcase.ts) on write instead.
+CREATE TABLE IF NOT EXISTS pigeon_showcase (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  category ENUM('award','imported') NOT NULL,  -- 'award' 入賞鴿 | 'imported' 進口鴿
+  name VARCHAR(100) NOT NULL,
+  loft_id BIGINT NOT NULL,
+  description TEXT NOT NULL,                   -- sanitizeDescriptionHtml'd TinyMCE HTML, 2000-char plain-text cap
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_pigeon_showcase_category_created (category, created_at),
+  KEY idx_pigeon_showcase_loft (loft_id),
+  CONSTRAINT fk_pigeon_showcase_loft FOREIGN KEY (loft_id) REFERENCES homepage_sections (id) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
 
 // Columns added after their table's initial CREATE TABLE IF NOT EXISTS;

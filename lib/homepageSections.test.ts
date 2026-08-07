@@ -210,6 +210,25 @@ describe("deleteHomepageSection", () => {
     queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
     expect(await deleteHomepageSection(1)).toEqual({ ok: true });
   });
+
+  // issue #54: pigeon_showcase.loft_id is a real DB-level FK (ON DELETE
+  // RESTRICT) to this table — deleting a still-referenced 合作鴿舍 must
+  // surface a real error instead of a 500 or a silent no-op.
+  it("returns a friendly ok:false (not a throw) when a FK constraint blocks the delete", async () => {
+    const fkError = Object.assign(new Error("Cannot delete or update a parent row"), {
+      errno: 1451,
+      code: "ER_ROW_IS_REFERENCED_2",
+    });
+    queryMock.mockRejectedValueOnce(fkError);
+    const result = await deleteHomepageSection(1);
+    expect(result.ok).toBe(false);
+    expect(result).toEqual({ ok: false, error: expect.stringContaining("仍被其他資料引用") });
+  });
+
+  it("re-throws non-FK errors instead of swallowing them", async () => {
+    queryMock.mockRejectedValueOnce(new Error("connection lost"));
+    await expect(deleteHomepageSection(1)).rejects.toThrow("connection lost");
+  });
 });
 
 describe("reorderHomepageSections", () => {
