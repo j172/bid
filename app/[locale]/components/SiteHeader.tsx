@@ -17,7 +17,7 @@ export default async function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 text-ink shadow-[0_10px_30px_rgba(15,23,42,0.06)] backdrop-blur">
-      <div className="border-b border-slate-200 bg-gradient-to-r from-slate-950 via-muted-olive-950 to-slate-950 text-slate-100">
+      <div className="border-b border-slate-200 bg-gradient-to-r from-slate-950 via-yale-blue-950 to-slate-950 text-slate-100">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2 text-xs sm:px-6">
           <p>{t("topbarNotice")}</p>
           <span className="inline-flex rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium text-white lg:hidden">
@@ -30,7 +30,7 @@ export default async function SiteHeader() {
           </div>
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
-            <Link href="/account" className="font-medium text-white hover:text-muted-olive-200">
+            <Link href="/account" className="font-medium text-white hover:text-pacific-blue-200">
               {t("account")}
             </Link>
           </div>
@@ -113,7 +113,7 @@ export default async function SiteHeader() {
         </details>
 
         <div className="hidden min-w-0 flex-1 items-center gap-3 lg:flex">
-          <button type="button" className="inline-flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-muted-olive-500 to-muted-olive-700 px-4 py-2.5 text-xs font-semibold text-white shadow-sm">
+          <button type="button" className="inline-flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-pacific-blue-500 to-pacific-blue-700 px-4 py-2.5 text-xs font-semibold text-white shadow-sm">
             {t("allCategories")}
             <span aria-hidden>▾</span>
           </button>
