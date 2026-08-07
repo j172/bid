@@ -65,21 +65,67 @@ export function parseTaifexCsv(csvText: string): TaifexRow[] {
   return rows;
 }
 
+// issue #55: the TAIFEX host has occasionally been flaky under this
+// process's memory pressure (see lib/convertPhotoToWebp.ts's unrelated WASM
+// OOM issue), so a single failed attempt shouldn't immediately give up for
+// the day — retry a few times with a short delay before treating it as a
+// real failure.
+const TAIFEX_FETCH_MAX_ATTEMPTS = 3;
+const TAIFEX_FETCH_RETRY_DELAY_MS = 3000;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Performs the network fetch (with retries) and returns the raw CSV text.
+// Throws the last attempt's error once every attempt has been exhausted —
+// each failed attempt is logged as it happens (issue #55: previously every
+// error here was swallowed silently, making the failure impossible to
+// diagnose from server logs).
+async function fetchTaifexCsvText(): Promise<string> {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= TAIFEX_FETCH_MAX_ATTEMPTS; attempt++) {
+    try {
+      const response = await fetch(TAIFEX_URL);
+      if (!response.ok) {
+        throw new Error(`TAIFEX responded with HTTP ${response.status} ${response.statusText}`);
+      }
+      return await response.text();
+    } catch (error) {
+      lastError = error;
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(
+        `[exchangeRates] TAIFEX fetch attempt ${attempt}/${TAIFEX_FETCH_MAX_ATTEMPTS} failed: ${message}`,
+        error,
+      );
+      if (attempt < TAIFEX_FETCH_MAX_ATTEMPTS) {
+        await delay(TAIFEX_FETCH_RETRY_DELAY_MS);
+      }
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("TAIFEX fetch failed after retries", { cause: lastError });
+}
+
 // Fetches the TAIFEX feed and returns its most recent row (the feed is
 // already oldest-first for the current month, so the last row is the
-// latest published trading day) — or null on any network/parse failure, in
-// which case syncExchangeRates falls back to the last successfully stored
-// rate instead.
+// latest published trading day) — or null once all retries are exhausted or
+// the response can't be parsed into any rows, in which case
+// syncExchangeRates falls back to the last successfully stored rate instead.
+// Every failed attempt is logged before this returns null, so a real outage
+// is always visible in server logs (issue #55).
 export async function fetchLatestTaifexRow(): Promise<TaifexRow | null> {
+  let text: string;
   try {
-    const response = await fetch(TAIFEX_URL);
-    if (!response.ok) return null;
-    const text = await response.text();
-    const rows = parseTaifexCsv(text);
-    return rows.length > 0 ? rows[rows.length - 1] : null;
+    text = await fetchTaifexCsvText();
   } catch {
+    // Already logged per-attempt inside fetchTaifexCsvText.
     return null;
   }
+
+  const rows = parseTaifexCsv(text);
+  return rows.length > 0 ? rows[rows.length - 1] : null;
 }
 
 export interface StoredExchangeRate {
@@ -145,6 +191,29 @@ function todayDateString(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+export interface SyncExchangeRatesResult {
+  /** Whether this run got a fresh row from TAIFEX (vs. relying on fallback). */
+  fetchedFresh: boolean;
+  /** Currencies that ended up written to the table this run, fresh or fallback. */
+  updated: { currency: CurrencyCode; rate: number; sourceDate: string; usedFallback: boolean }[];
+  /** Currencies with neither a fresh TAIFEX row nor any previously stored rate. */
+  failed: CurrencyCode[];
+}
+
+// issue #55: previously a currency with no fresh row *and* no fallback was
+// silently skipped, so a caller (scheduler.ts, the admin manual-sync route)
+// had no way to know the sync had actually failed. Thrown by
+// syncExchangeRates() so both call sites' existing try/catch actually fires.
+export class SyncExchangeRatesError extends Error {
+  readonly result: SyncExchangeRatesResult;
+
+  constructor(result: SyncExchangeRatesResult) {
+    super(`Exchange rate sync failed for: ${result.failed.join(", ")} (no TAIFEX row and no stored fallback)`);
+    this.name = "SyncExchangeRatesError";
+    this.result = result;
+  }
+}
+
 // Runs once per scheduled tick (see lib/scheduler.ts) — fetches today's
 // TWD/USD and TWD/CNY rates from TAIFEX and records them under today's
 // calendar date. If TAIFEX has nothing new yet (holiday, not-yet-published,
@@ -152,7 +221,12 @@ function todayDateString(): string {
 // currency instead of leaving the day blank, but keeps that rate's original
 // source_date rather than pretending it's fresh — so a caller inspecting the
 // row can tell a fallback happened.
-export async function syncExchangeRates(): Promise<void> {
+//
+// If a currency has neither a fresh row nor any fallback to reuse (e.g. a
+// fresh DB whose very first sync fails), this throws a SyncExchangeRatesError
+// carrying the partial result instead of silently doing nothing — see issue
+// #55: without this, a total failure never surfaced anywhere.
+export async function syncExchangeRates(): Promise<SyncExchangeRatesResult> {
   const today = todayDateString();
   const latest = await fetchLatestTaifexRow();
 
@@ -161,18 +235,30 @@ export async function syncExchangeRates(): Promise<void> {
     { currency: "CNY", freshRate: latest?.cnyTwd },
   ];
 
+  const updated: SyncExchangeRatesResult["updated"] = [];
+  const failed: CurrencyCode[] = [];
+
   for (const target of targets) {
     if (latest && target.freshRate !== undefined) {
       await upsertRate(target.currency, today, latest.date, target.freshRate);
+      updated.push({ currency: target.currency, rate: target.freshRate, sourceDate: latest.date, usedFallback: false });
       continue;
     }
 
     const fallback = await getLatestStoredRate(target.currency);
     if (fallback) {
       await upsertRate(target.currency, today, fallback.sourceDate, fallback.rate);
+      updated.push({ currency: target.currency, rate: fallback.rate, sourceDate: fallback.sourceDate, usedFallback: true });
+      continue;
     }
-    // No fallback available either (fresh DB, first-ever sync failed): skip
-    // — getLatestStoredRate simply returns null and callers show NTD-only
-    // until the next successful sync.
+
+    // No fallback available either (fresh DB, first-ever sync failed).
+    failed.push(target.currency);
   }
+
+  const result: SyncExchangeRatesResult = { fetchedFresh: latest !== null, updated, failed };
+  if (failed.length > 0) {
+    throw new SyncExchangeRatesError(result);
+  }
+  return result;
 }

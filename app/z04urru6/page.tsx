@@ -9,11 +9,13 @@ import {
   getTopCustomersBySpend,
   getTopListingsByGmv,
 } from "@/lib/dashboard";
+import { getAllLatestStoredRates } from "@/lib/exchangeRates";
 import { GmvSplitBar, GmvTrendChart, NewUserTrendChart } from "./DashboardCharts";
 import PendingActions from "./PendingActions";
 import Leaderboards from "./Leaderboards";
 import RecentActivity from "./RecentActivity";
 import AdminPageIntro from "./AdminPageIntro";
+import ExchangeRateSyncPanel from "./ExchangeRateSyncPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +32,7 @@ export default async function AdminOverviewPage() {
     topBidders,
     topCustomers,
     activity,
+    exchangeRates,
   ] = await Promise.all([
     getOverviewStats(),
     getDailyGmvTrend(),
@@ -40,6 +43,7 @@ export default async function AdminOverviewPage() {
     getTopBiddersByCount(),
     getTopCustomersBySpend(),
     getRecentActivity(),
+    getAllLatestStoredRates(),
   ]);
 
   const cards = [
@@ -105,6 +109,8 @@ export default async function AdminOverviewPage() {
           <RecentActivity activity={activity} />
         </div>
       </div>
+
+      <ExchangeRateSyncPanel initialRates={exchangeRates} />
     </main>
   );
 }
