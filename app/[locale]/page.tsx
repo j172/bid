@@ -545,11 +545,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               items={newsCarouselItems}
               activeBadge={t("newsCarouselBadge")}
               ctaLabel={t("newsCarouselCta")}
-              fallbackBadge={t("promoAuctionBadge")}
-              fallbackTitle={t("promoAuctionTitle")}
-              fallbackDesc={t("promoAuctionDesc")}
-              fallbackCtaLabel={t("promoAuctionCta")}
-              fallbackCtaHref={`/listings?type=auction${perfSuffix}`}
+              emptyStateTitle={t("emptyStateTitle")}
+              emptyStateDesc={t("newsCarouselEmptyDesc")}
             />
           </div>
 
@@ -558,10 +555,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               items={awardCarouselItems}
               variant="dark"
               badgeLabel={t("promoFixedBadge")}
-              fallbackTitle={t("promoFixedTitle")}
-              fallbackDesc={t("promoFixedDesc")}
-              fallbackCtaLabel={t("promoFixedCta")}
-              fallbackCtaHref={`/listings?type=fixed_price${perfSuffix}`}
+              emptyStateTitle={t("emptyStateTitle")}
+              emptyStateDesc={t("pigeonShowcaseEmptyDesc")}
               viewCtaLabel={t("pigeonShowcaseViewCta")}
               viewMoreLabel={t("pigeonShowcaseViewMore")}
               viewMoreHref="/pigeon-showcase?category=award"
@@ -571,10 +566,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               items={importedCarouselItems}
               variant="light"
               badgeLabel={t("weeklyPicksEyebrow")}
-              fallbackTitle={t("weeklyPicksTitle")}
-              fallbackDesc={t("weeklyPicksDesc")}
-              fallbackCtaLabel={t("viewAll")}
-              fallbackCtaHref="/listings"
+              emptyStateTitle={t("emptyStateTitle")}
+              emptyStateDesc={t("pigeonShowcaseEmptyDesc")}
               viewCtaLabel={t("pigeonShowcaseViewCta")}
               viewMoreLabel={t("pigeonShowcaseViewMore")}
               viewMoreHref="/pigeon-showcase?category=imported"
