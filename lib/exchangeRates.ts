@@ -16,6 +16,7 @@
 // Column 1 is YYYYMMDD; column 2 is TWD per 1 USD; column 3 is TWD per 1
 // CNY. Only those three columns matter here — the rest (EUR/USD, USD/JPY,
 // etc.) are irrelevant to this site's zh-TW/zh-CN/en currency display.
+import { request } from "https";
 import { getDb } from "@/lib/db";
 
 export type CurrencyCode = "USD" | "CNY";
@@ -66,10 +67,9 @@ export function parseTaifexCsv(csvText: string): TaifexRow[] {
 }
 
 // issue #55: the TAIFEX host has occasionally been flaky under this
-// process's memory pressure (see lib/convertPhotoToWebp.ts's unrelated WASM
-// OOM issue), so a single failed attempt shouldn't immediately give up for
-// the day — retry a few times with a short delay before treating it as a
-// real failure.
+// process's memory pressure, so a single failed attempt shouldn't
+// immediately give up for the day — retry a few times with a short delay
+// before treating it as a real failure.
 //
 // issue #81: production evidence (30 host-triggered process restarts over
 // 5.5 days, one every ~4.4h) shows the boot-time startup sync in
@@ -82,11 +82,45 @@ export function parseTaifexCsv(csvText: string): TaifexRow[] {
 // ride out whatever makes the host's networking briefly unreliable
 // immediately post-restart (see startScheduler()'s own boot-delay for the
 // other half of that mitigation).
+//
+// issue #86: #81's error logging then caught the *actual* root cause, and
+// it wasn't a boot-time timing issue at all — every failure was
+// `TypeError: fetch failed` / `cause=RangeError: WebAssembly.instantiate():
+// Out of memory`. That's the exact same failure lib/email.ts's
+// resendRequest() comment already documents: global fetch()'s undici
+// implementation instantiates a WASM module that reliably fails under this
+// host's LVE memory ceiling once the process has real memory footprint
+// (i.e. always, in production — not just right after boot). The retry
+// mechanism above is still worth keeping (real transient network failures
+// remain possible), but no amount of retrying fixes an every-single-time
+// WASM OOM, so fetchTaifexCsvText() below now uses node:https instead of
+// fetch(), the same swap resendRequest() already proved fixes this.
 const TAIFEX_FETCH_MAX_ATTEMPTS = 5;
 const TAIFEX_FETCH_RETRY_DELAY_MS = 5000;
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Deliberately node:https instead of the global fetch(), mirroring
+// lib/email.ts's resendRequest() (see its comment for the full root-cause
+// writeup) — not reused directly since it's shaped for Resend's POST-JSON
+// API (auth header, request body) and this is an unauthenticated GET for a
+// CSV body from a different host, so a shared helper would just be
+// conditionals for the parts that differ. Resolves with the full response
+// body once the response ends, or rejects with node:https's raw error
+// (never fetch()'s `TypeError: fetch failed` wrapper — see the catch block
+// below for how that changes the error-logging shape).
+function taifexGet(url: string): Promise<{ status: number; body: string }> {
+  return new Promise((resolve, reject) => {
+    const req = request(url, { method: "GET" }, (res) => {
+      let data = "";
+      res.on("data", (chunk) => (data += chunk));
+      res.on("end", () => resolve({ status: res.statusCode ?? 0, body: data }));
+    });
+    req.on("error", reject);
+    req.end();
+  });
 }
 
 // Performs the network fetch (with retries) and returns the raw CSV text.
@@ -99,43 +133,33 @@ async function fetchTaifexCsvText(): Promise<string> {
 
   for (let attempt = 1; attempt <= TAIFEX_FETCH_MAX_ATTEMPTS; attempt++) {
     try {
-      const response = await fetch(TAIFEX_URL);
-      if (!response.ok) {
-        throw new Error(`TAIFEX responded with HTTP ${response.status} ${response.statusText}`);
+      const { status, body } = await taifexGet(TAIFEX_URL);
+      if (status < 200 || status >= 300) {
+        throw new Error(`TAIFEX responded with HTTP ${status}`);
       }
-      return await response.text();
+      return body;
     } catch (error) {
       lastError = error;
       const message = error instanceof Error ? error.message : String(error);
-      // issue #81: production pm2 logs for every one of 8 observed
-      // startup-sync failures showed nothing but `TypeError: fetch failed`
-      // plus a stack trace pointing at undici internals — never the actual
-      // reason. Node's undici-backed fetch() wraps the real lower-level
-      // network error (ENOTFOUND/ETIMEDOUT/ECONNREFUSED/...) in `error.cause`
-      // rather than `error.message`, and errno/code live as non-standard
-      // properties on that cause (Node's system errors, not part of the
-      // Error type — hence the casts below). Folding all of that into the
-      // log line itself means a stuck sync can be diagnosed straight from
-      // `pm2 logs`, without SSHing in to reproduce it by hand.
+      // issue #81 introduced this detailed logging while fetchTaifexCsvText
+      // still used fetch(); issue #86 swapped the transport to node:https
+      // (see TAIFEX_FETCH_MAX_ATTEMPTS's comment above for why), which
+      // changes the error shape being logged here. fetch()'s undici
+      // implementation wraps the real underlying error in `error.cause`
+      // (with errno/code living on *that* nested object) — node:https has
+      // no such wrapping: req.on("error", ...) rejects directly with
+      // Node's raw system error, so code/errno/syscall already sit on
+      // `error` itself. There's deliberately no `.cause` handling below
+      // anymore; on a node:https error it would only ever log undefined.
       const name = error instanceof Error ? error.name : undefined;
       const code = (error as NodeJS.ErrnoException)?.code;
       const errno = (error as NodeJS.ErrnoException)?.errno;
-      const cause = error instanceof Error ? error.cause : undefined;
-      const causeDetail =
-        cause instanceof Error
-          ? ` cause=${cause.name}: ${cause.message}` +
-            ((cause as NodeJS.ErrnoException).code ? ` cause.code=${(cause as NodeJS.ErrnoException).code}` : "") +
-            ((cause as NodeJS.ErrnoException).errno !== undefined
-              ? ` cause.errno=${(cause as NodeJS.ErrnoException).errno}`
-              : "")
-          : cause !== undefined
-            ? ` cause=${String(cause)}`
-            : "";
+      const syscall = (error as NodeJS.ErrnoException)?.syscall;
       console.error(
         `[exchangeRates] TAIFEX fetch attempt ${attempt}/${TAIFEX_FETCH_MAX_ATTEMPTS} failed: ${name ?? "Error"}: ${message}` +
           (code ? ` code=${code}` : "") +
           (errno !== undefined ? ` errno=${errno}` : "") +
-          causeDetail,
+          (syscall ? ` syscall=${syscall}` : ""),
         error,
       );
       if (attempt < TAIFEX_FETCH_MAX_ATTEMPTS) {

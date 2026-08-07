@@ -1,8 +1,16 @@
 // parseTaifexCsv is pure (see its own header comment) and tested directly.
 // Everything else touches @/lib/db (mocked, same vi.hoisted pattern as
-// lib/homepageSections.test.ts) and/or global fetch (mocked per test), since
-// this module is raw-SQL + HTTP rather than pure logic.
+// lib/homepageSections.test.ts) and/or the network, since this module is
+// raw-SQL + HTTP rather than pure logic.
+//
+// issue #86: fetchTaifexCsvText() moved from the global fetch() to
+// node:https's request() (see that function's comment in exchangeRates.ts
+// for why), so the network layer under test here is now the "https" module
+// rather than global fetch — mocked via vi.mock("https", ...) below,
+// simulating the req/res EventEmitter pair node:https actually hands back
+// instead of a Response object.
 
+import { EventEmitter } from "events";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   fetchLatestTaifexRow,
@@ -13,20 +21,23 @@ import {
   syncExchangeRates,
 } from "./exchangeRates";
 
-const { queryMock } = vi.hoisted(() => ({ queryMock: vi.fn() }));
+const { queryMock, requestMock } = vi.hoisted(() => ({ queryMock: vi.fn(), requestMock: vi.fn() }));
 
 vi.mock("@/lib/db", () => ({
   getDb: async () => ({ query: queryMock }),
 }));
 
+// Only `request` is used by lib/exchangeRates.ts (see its `import { request }
+// from "https"`), so that's all this mock needs to provide.
+vi.mock("https", () => ({ request: requestMock }));
+
 beforeEach(() => {
   queryMock.mockReset();
-  vi.stubGlobal("fetch", vi.fn());
+  requestMock.mockReset();
   vi.useFakeTimers();
 });
 
 afterEach(() => {
-  vi.unstubAllGlobals();
   vi.useRealTimers();
 });
 
@@ -42,6 +53,60 @@ async function advanceThroughRetries(delays = 4): Promise<void> {
   for (let i = 0; i < delays; i++) {
     await vi.advanceTimersByTimeAsync(5000);
   }
+}
+
+// Minimal fake of the http.ClientRequest/IncomingMessage pair node:https's
+// request() hands back — just enough for taifexGet() in exchangeRates.ts
+// (which only calls req.on("error", ...)/req.end() and res.on("data"|"end",
+// ...)/res.statusCode). Queues one canned response or error onto requestMock
+// per call, mirroring how the old fetch mocks used mockResolvedValueOnce /
+// mockRejectedValueOnce.
+function queueHttpsSuccess(status: number, body: string): void {
+  requestMock.mockImplementationOnce((_url: string, _options: unknown, callback: (res: EventEmitter) => void) => {
+    const req = new EventEmitter() as EventEmitter & { end: () => void };
+    req.end = () => {
+      const res = new EventEmitter() as EventEmitter & { statusCode?: number };
+      res.statusCode = status;
+      callback(res);
+      res.emit("data", body);
+      res.emit("end");
+    };
+    return req;
+  });
+}
+
+function queueHttpsSuccessRepeating(status: number, body: string): void {
+  requestMock.mockImplementation((_url: string, _options: unknown, callback: (res: EventEmitter) => void) => {
+    const req = new EventEmitter() as EventEmitter & { end: () => void };
+    req.end = () => {
+      const res = new EventEmitter() as EventEmitter & { statusCode?: number };
+      res.statusCode = status;
+      callback(res);
+      res.emit("data", body);
+      res.emit("end");
+    };
+    return req;
+  });
+}
+
+function queueHttpsErrorOnce(error: Error): void {
+  requestMock.mockImplementationOnce(() => {
+    const req = new EventEmitter() as EventEmitter & { end: () => void };
+    req.end = () => {
+      req.emit("error", error);
+    };
+    return req;
+  });
+}
+
+function queueHttpsErrorRepeating(error: Error): void {
+  requestMock.mockImplementation(() => {
+    const req = new EventEmitter() as EventEmitter & { end: () => void };
+    req.end = () => {
+      req.emit("error", error);
+    };
+    return req;
+  });
 }
 
 const SAMPLE_CSV = [
@@ -76,97 +141,98 @@ describe("parseTaifexCsv", () => {
 
 describe("fetchLatestTaifexRow", () => {
   it("returns the last row of the feed (the feed is oldest-first)", async () => {
-    vi.mocked(fetch).mockResolvedValueOnce({ ok: true, text: async () => SAMPLE_CSV } as Response);
+    queueHttpsSuccess(200, SAMPLE_CSV);
     const row = await fetchLatestTaifexRow();
     expect(row).toEqual({ date: "2026-08-03", usdTwd: 32.438, cnyTwd: 4.80303 });
   });
 
   it("returns null after exhausting retries on a non-ok response, logging each attempt", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    vi.mocked(fetch).mockResolvedValue({ ok: false, status: 500, statusText: "Internal Server Error" } as Response);
+    queueHttpsSuccessRepeating(500, "");
 
     const promise = fetchLatestTaifexRow();
     await advanceThroughRetries();
     const row = await promise;
 
     expect(row).toBeNull();
-    expect(fetch).toHaveBeenCalledTimes(5);
+    expect(requestMock).toHaveBeenCalledTimes(5);
     expect(errorSpy).toHaveBeenCalledTimes(5);
     expect(errorSpy.mock.calls[0][0]).toContain("attempt 1/5");
     expect(errorSpy.mock.calls[4][0]).toContain("HTTP 500");
     errorSpy.mockRestore();
   });
 
-  it("returns null after exhausting retries when fetch throws (network error), logging the real error", async () => {
+  it("returns null after exhausting retries when the request errors (network error), logging the real error", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const networkError = new Error("network down");
-    vi.mocked(fetch).mockRejectedValue(networkError);
+    queueHttpsErrorRepeating(networkError);
 
     const promise = fetchLatestTaifexRow();
     await advanceThroughRetries();
     const row = await promise;
 
     expect(row).toBeNull();
-    expect(fetch).toHaveBeenCalledTimes(5);
+    expect(requestMock).toHaveBeenCalledTimes(5);
     expect(errorSpy).toHaveBeenCalledTimes(5);
-    // Each log call must carry the real error object (message/name/cause all inspectable).
+    // Each log call must carry the real error object (message/name inspectable).
     expect(errorSpy.mock.calls[0][1]).toBe(networkError);
     expect(errorSpy.mock.calls[0][0]).toContain("network down");
     errorSpy.mockRestore();
   });
 
-  // issue #81: production logs only ever showed the generic outer
-  // "TypeError: fetch failed" — undici wraps the real DNS/connect/timeout
-  // error under `.cause`, and any errno/code live as non-standard
-  // properties on that cause. The log line itself must surface all of that
-  // (not just the object passed as console.error's 2nd arg, which pm2's log
-  // capture doesn't reliably render in full) so a stuck sync is diagnosable
+  // issue #81 established this detailed logging while the transport was
+  // still fetch(), whose undici implementation wraps the real DNS/connect
+  // error under `.cause`. issue #86 swapped the transport to node:https,
+  // which rejects with Node's raw system error directly — no wrapper, no
+  // `.cause` — so code/errno/syscall now come straight off the error
+  // itself. The log line must still surface all of that (not just the
+  // object passed as console.error's 2nd arg, which pm2's log capture
+  // doesn't reliably render in full) so a stuck sync is diagnosable
   // straight from `pm2 logs` without SSHing in to reproduce it by hand.
-  it("surfaces error.cause / error.name / errno / code in the log line when fetch throws a wrapped network error", async () => {
+  it("surfaces error.name / code / errno / syscall in the log line when the https request errors", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const dnsFailure = Object.assign(new Error("getaddrinfo ENOTFOUND www.taifex.com.tw"), {
-      name: "Error",
       code: "ENOTFOUND",
       errno: -3008,
+      syscall: "getaddrinfo",
     });
-    // This is exactly the shape undici's fetch() produces for a lower-level
-    // network failure: a generic TypeError whose .cause is the real error.
-    const fetchFailedError = new TypeError("fetch failed", { cause: dnsFailure });
-    vi.mocked(fetch).mockRejectedValue(fetchFailedError);
+    // This is the shape node:https actually produces for a lower-level
+    // network failure: the raw system error, not fetch()'s generic
+    // TypeError("fetch failed") wrapper.
+    queueHttpsErrorRepeating(dnsFailure);
 
     const promise = fetchLatestTaifexRow();
     await advanceThroughRetries();
     await promise;
 
     const [logLine] = errorSpy.mock.calls[0];
-    expect(logLine).toContain("TypeError");
-    expect(logLine).toContain("fetch failed");
+    expect(logLine).toContain("Error");
+    expect(logLine).toContain("getaddrinfo ENOTFOUND www.taifex.com.tw");
     expect(logLine).toContain("ENOTFOUND");
     expect(logLine).toContain("-3008");
-    expect(logLine).toContain("getaddrinfo ENOTFOUND www.taifex.com.tw");
+    expect(logLine).toContain("getaddrinfo");
     errorSpy.mockRestore();
   });
 
   it("succeeds on a later attempt after earlier attempts fail (retry recovers)", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    vi.mocked(fetch)
-      .mockRejectedValueOnce(new Error("first attempt down"))
-      .mockResolvedValueOnce({ ok: true, text: async () => SAMPLE_CSV } as Response);
+    queueHttpsErrorOnce(new Error("first attempt down"));
+    queueHttpsSuccess(200, SAMPLE_CSV);
 
     const promise = fetchLatestTaifexRow();
     await advanceThroughRetries(1);
     const row = await promise;
 
     expect(row).toEqual({ date: "2026-08-03", usdTwd: 32.438, cnyTwd: 4.80303 });
-    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(requestMock).toHaveBeenCalledTimes(2);
     expect(errorSpy).toHaveBeenCalledTimes(1);
     errorSpy.mockRestore();
   });
 
   it("returns null immediately (no retry) when the feed has no parseable rows", async () => {
-    vi.mocked(fetch).mockResolvedValueOnce({ ok: true, text: async () => "日期,美元_新台幣(匯率)\n" } as Response);
+    queueHttpsSuccess(200, "日期,美元_新台幣(匯率)\n");
     expect(await fetchLatestTaifexRow()).toBeNull();
-    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(requestMock).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -200,7 +266,7 @@ describe("getAllLatestStoredRates", () => {
 
 describe("syncExchangeRates", () => {
   it("upserts today's row for both currencies from a fresh TAIFEX fetch", async () => {
-    vi.mocked(fetch).mockResolvedValueOnce({ ok: true, text: async () => SAMPLE_CSV } as Response);
+    queueHttpsSuccess(200, SAMPLE_CSV);
     queryMock.mockResolvedValue([{ affectedRows: 1 }]);
 
     const result = await syncExchangeRates();
@@ -225,7 +291,7 @@ describe("syncExchangeRates", () => {
 
   it("falls back to the most recent stored rate (keeping its original source_date) when the fetch fails, and resolves when a fallback exists for every currency", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    vi.mocked(fetch).mockRejectedValue(new Error("network down"));
+    queueHttpsErrorRepeating(new Error("network down"));
     // USD fallback lookup
     queryMock.mockResolvedValueOnce([[{ currency: "USD", rate: "31.9", rate_date: "2026-08-01", source_date: "2026-07-31" }]]);
     queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]); // USD upsert
@@ -256,7 +322,7 @@ describe("syncExchangeRates", () => {
   // log line — and the admin manual-sync button — can surface the failure.
   it("throws SyncExchangeRatesError when a currency has neither a fresh row nor any fallback", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    vi.mocked(fetch).mockRejectedValue(new Error("network down"));
+    queueHttpsErrorRepeating(new Error("network down"));
     // USD fallback lookup
     queryMock.mockResolvedValueOnce([[{ currency: "USD", rate: "31.9", rate_date: "2026-08-01", source_date: "2026-07-31" }]]);
     queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]); // USD upsert
@@ -277,7 +343,7 @@ describe("syncExchangeRates", () => {
 
   it("SyncExchangeRatesError carries the partial result (which currencies failed)", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    vi.mocked(fetch).mockRejectedValue(new Error("network down"));
+    queueHttpsErrorRepeating(new Error("network down"));
     queryMock.mockResolvedValueOnce([[]]); // USD: no fallback either
     queryMock.mockResolvedValueOnce([[]]); // CNY: no fallback either
 
