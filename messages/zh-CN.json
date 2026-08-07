@@ -322,6 +322,7 @@
     "days": "{count} 天",
     "hours": "{count} 小时",
     "minutes": "{count} 分钟",
+    "seconds": "{count} 秒",
     "lessThanMinute": "不到 1 分钟",
     "unitDays": "天",
     "unitHours": "时",

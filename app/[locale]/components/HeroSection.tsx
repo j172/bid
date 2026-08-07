@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import ProgressiveImage from "@/app/components/ProgressiveImage";
 import ZoomableProductImage from "./ZoomableProductImage";
+import { useHeroCountdown } from "@/lib/useHeroCountdown";
 
 interface HeroCardItem {
   id: number;
@@ -25,35 +26,87 @@ interface HeroSectionProps {
   renderedAt: string;
 }
 
-const AUTOPLAY_INTERVAL_MS = 5_000;
-const REMAINING_TICK_MS = 30_000;
+type FormatTranslator = (key: string, values?: Record<string, string | number>) => string;
 
-function formatRemainingFromNow(
-  endsAt: string,
-  nowMs: number,
-  t: (key: string, values?: Record<string, string | number>) => string,
-) {
-  const remainingMs = new Date(endsAt).getTime() - nowMs;
-  if (remainingMs <= 0) {
-    return t("ended");
+const AUTOPLAY_INTERVAL_MS = 5_000;
+
+// Sentence-style "剩餘 X 天 X 小時" / "剩餘 X 小時 X 分 X 秒" countdown text,
+// used for the active card's top pill badge and each secondary card in the
+// list. Isolated as its own component (rather than lifting a `nowMs` tick
+// into HeroSection's own state, as the previous implementation did) so the
+// per-second re-render this causes when under a day remains stays scoped to
+// this small text node — see useHeroCountdown for why.
+function RemainingText({
+  endsAt,
+  renderedAt,
+  t,
+}: {
+  endsAt: string;
+  renderedAt: string;
+  t: FormatTranslator;
+}) {
+  const { ended, days, hours, minutes, seconds } = useHeroCountdown(endsAt, renderedAt);
+
+  if (ended) {
+    return <>{t("ended")}</>;
   }
 
-  const totalMinutes = Math.floor(remainingMs / 60_000);
-  const days = Math.floor(totalMinutes / (60 * 24));
-  const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
-  const minutes = totalMinutes % 60;
-
+  // >= 1 day remaining: keep the original day/hour granularity — no minutes
+  // or seconds, so this text doesn't jitter while there's still a long time
+  // left. < 1 day: precise to the second, per issue #58.
   const parts: string[] = [];
-  if (days > 0) parts.push(t("days", { count: days }));
-  if (hours > 0) parts.push(t("hours", { count: hours }));
-  if (days === 0 && minutes > 0) parts.push(t("minutes", { count: minutes }));
-
-  if (parts.length === 0) {
-    return t("lessThanMinute");
+  if (days > 0) {
+    parts.push(t("days", { count: days }));
+    if (hours > 0) parts.push(t("hours", { count: hours }));
+  } else {
+    parts.push(t("hours", { count: hours }));
+    parts.push(t("minutes", { count: minutes }));
+    parts.push(t("seconds", { count: seconds }));
   }
 
   const prefix = t("remainingPrefix");
-  return prefix ? `${prefix} ${parts.join(" ")}` : parts.join(" ");
+  return <>{prefix ? `${prefix} ${parts.join(" ")}` : parts.join(" ")}</>;
+}
+
+// Digit-tile countdown (days/hours/minutes/seconds, ticking every second)
+// for the active card's "結標時間/剩餘時間" stat box — modeled after the
+// listing detail page's HeroCountdownStrip tiles. Isolated as its own
+// component for the same re-render-scoping reason as RemainingText above.
+function EndTimeCountdown({
+  endsAt,
+  renderedAt,
+  t,
+}: {
+  endsAt: string;
+  renderedAt: string;
+  t: FormatTranslator;
+}) {
+  const { ended, days, hours, minutes, seconds } = useHeroCountdown(endsAt, renderedAt);
+
+  if (ended) {
+    return <p className="mt-1 text-base font-bold text-white">{t("ended")}</p>;
+  }
+
+  const tiles = [
+    { value: days, label: t("unitDays") },
+    { value: hours, label: t("unitHours") },
+    { value: minutes, label: t("unitMinutes") },
+    { value: seconds, label: t("unitSeconds") },
+  ];
+
+  return (
+    <div className="mt-1.5 flex gap-1">
+      {tiles.map((tile) => (
+        <div
+          key={tile.label}
+          className="flex min-w-[1.85rem] flex-1 flex-col items-center rounded-md bg-white/15 py-1"
+        >
+          <span className="text-sm font-black leading-none text-white">{String(tile.value).padStart(2, "0")}</span>
+          <span className="mt-0.5 text-[8px] uppercase tracking-wide text-muted-olive-200">{tile.label}</span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function HeroSection({
@@ -68,7 +121,6 @@ export default function HeroSection({
   const tDetail = useTranslations("listingDetail");
   const tFormat = useTranslations("format");
   const [activeIndex, setActiveIndex] = useState(0);
-  const [nowMs, setNowMs] = useState(() => new Date(renderedAt).getTime());
 
   useEffect(() => {
     setActiveIndex((index) => (cards.length === 0 ? 0 : Math.min(index, cards.length - 1)));
@@ -84,26 +136,7 @@ export default function HeroSection({
     return () => window.clearInterval(intervalId);
   }, [cards.length]);
 
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setNowMs(Date.now());
-    }, REMAINING_TICK_MS);
-
-    return () => window.clearInterval(intervalId);
-  }, []);
-
   const numberFormatter = useMemo(() => new Intl.NumberFormat(locale), [locale]);
-  const dateTimeFormatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale, {
-        month: "numeric",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      }),
-    [locale],
-  );
 
   const activeCard = cards[activeIndex];
   return (
@@ -123,7 +156,7 @@ export default function HeroSection({
                       {tHome("topBadge", { rank: activeIndex + 1 })}
                     </span>
                     <span className="inline-flex rounded-full border border-muted-olive-300/30 bg-muted-olive-400/10 px-3 py-1 text-[11px] font-semibold text-muted-olive-100 backdrop-blur-sm">
-                      {formatRemainingFromNow(activeCard.endsAt, nowMs, tFormat)}
+                      <RemainingText key={activeCard.id} endsAt={activeCard.endsAt} renderedAt={renderedAt} t={tFormat} />
                     </span>
                   </div>
 
@@ -185,7 +218,7 @@ export default function HeroSection({
                   </div>
                   <div className="rounded-xl border border-white/10 bg-white/12 px-4 py-3 backdrop-blur-sm">
                     <p className="text-[11px] uppercase tracking-[0.16em] text-muted-olive-200">{tDetail("specEndTime")}</p>
-                    <p className="mt-1 text-base font-bold text-white">{dateTimeFormatter.format(new Date(activeCard.endsAt))}</p>
+                    <EndTimeCountdown key={activeCard.id} endsAt={activeCard.endsAt} renderedAt={renderedAt} t={tFormat} />
                   </div>
                 </div>
 
@@ -273,7 +306,7 @@ export default function HeroSection({
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <span className="rounded-full border border-slate-200 bg-white/85 px-3 py-1.5 text-sm font-medium tracking-[0.01em] text-ink-light shadow-[0_4px_10px_rgba(15,23,42,0.08)]">
-                      {formatRemainingFromNow(item.endsAt, nowMs, tFormat)}
+                      <RemainingText endsAt={item.endsAt} renderedAt={renderedAt} t={tFormat} />
                     </span>
                   </div>
                   <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1.5 text-sm font-semibold text-header shadow-sm">
