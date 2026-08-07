@@ -2,7 +2,26 @@
 
 import { useEffect, useState } from "react";
 
-const DAY_MS = 86_400_000;
+// Fixed 1s tick, matching lib/useListingCountdown.ts's COUNTDOWN_TICK_MS.
+//
+// issue #71 regression: an earlier version of this hook computed a variable
+// tick rate — 1s once under a day remained, 60s above that — reasoning that
+// a day/hour-granularity display "won't visibly move" between ticks, so
+// ticking it every second would be wasted work. That reasoning doesn't hold
+// for either of this hook's two call sites in HeroSection.tsx:
+//  - EndTimeCountdown (the digit tiles) always renders a seconds tile, so
+//    throttling to a 60s tick left that tile visibly frozen for up to a
+//    minute at a stretch on any listing with >= 1 day remaining — which, in
+//    practice, is most listings most of the time. That's the "static, not
+//    ticking" regression reported against #58's original acceptance.
+//  - RemainingText (the "剩餘 X 天 X 小時" sentence) already drops the
+//    minutes/seconds fields from its own *rendered text* once a day or more
+//    remains (see the `days > 0` branch in HeroSection.tsx) — so ticking
+//    its state every second regardless just re-runs a cheap string format
+//    that produces the same output most of the time. No visible churn, and
+//    per useListingCountdown's own comment on LiveListingStatus: not worth
+//    maintaining two tick rates for one shared hook.
+const TICK_MS = 1_000;
 
 export interface HeroCountdownState {
   /** Milliseconds remaining until the target, clamped to >= 0. */
@@ -25,13 +44,11 @@ export interface HeroCountdownState {
  * listing detail page at this hook, and do not fold this into
  * useListingCountdown; they're intentionally two hooks for two call sites.
  *
- * Ticks every second once under a day remains, so a seconds display can
- * visibly count down; ticks once a minute above that, since a day/hour
- * display doesn't change more often and there's no reason to force a
- * re-render every second for something that won't visibly move. Each call
- * to this hook owns its own interval and its own re-renders — mount it only
- * inside a small leaf component (never inside HeroSection's own state) so a
- * tick re-renders just that leaf, not the hero's autoplay carousel/images.
+ * Ticks every second, unconditionally (see TICK_MS above for why a
+ * remaining-time-dependent tick rate doesn't work here). Each call to this
+ * hook owns its own interval and its own re-renders — mount it only inside
+ * a small leaf component (never inside HeroSection's own state) so a tick
+ * re-renders just that leaf, not the hero's autoplay carousel/images.
  *
  * Seeded from `renderedAt` (captured once by the server component that
  * rendered this tree, so it's identical on the server-render pass and the
@@ -40,19 +57,17 @@ export interface HeroCountdownState {
  */
 export function useHeroCountdown(targetIso: string, renderedAt: string): HeroCountdownState {
   const [nowMs, setNowMs] = useState(() => new Date(renderedAt).getTime());
-  const targetMs = new Date(targetIso).getTime();
-  const remainingMs = Math.max(0, targetMs - nowMs);
-  const tickMs = remainingMs < DAY_MS ? 1_000 : 60_000;
 
   useEffect(() => {
     setNowMs(Date.now());
-    const intervalId = window.setInterval(() => setNowMs(Date.now()), tickMs);
+    const intervalId = window.setInterval(() => setNowMs(Date.now()), TICK_MS);
     return () => window.clearInterval(intervalId);
     // Re-sync immediately and restart the interval whenever the target
-    // changes (e.g. the carousel switches to a different card) or the tick
-    // rate itself changes (crossing the 1-day threshold).
-  }, [targetIso, tickMs]);
+    // changes (e.g. the carousel switches to a different card).
+  }, [targetIso]);
 
+  const targetMs = new Date(targetIso).getTime();
+  const remainingMs = Math.max(0, targetMs - nowMs);
   const totalSeconds = Math.floor(remainingMs / 1000);
   return {
     remainingMs,

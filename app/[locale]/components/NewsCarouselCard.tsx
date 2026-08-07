@@ -7,19 +7,21 @@ import { Link } from "@/i18n/navigation";
 // 競標正在進行" promo card (app/[locale]/(with-loading)/page.tsx, the lg:col-span-2 card)
 // with a rotating showcase of the latest 最新訊息 posts. Rotates every 5s
 // via setInterval, same mechanism as
-// app/[locale]/components/PigeonShowcaseCarouselCard.tsx; falls back to the
-// original static marketing copy (fallbackBadge/Title/Desc/Cta) when there
-// are currently zero news_posts rows, rather than rendering an empty card.
+// app/[locale]/components/PigeonShowcaseCarouselCard.tsx.
 //
-// Unlike PigeonShowcaseCarouselCard, the badge text differs between the two
-// branches (activeBadge vs fallbackBadge) instead of being shared — the
-// fallback branch needs to reproduce the *original* card copy verbatim
-// (issue #56: "0 筆時 fallback 顯示原本的靜態行銷文案"), which includes its
-// own badge, not a news-flavored one.
+// When there are currently zero news_posts rows, this used to fall back to
+// that original static marketing copy (issue #56) instead of rendering an
+// empty card. Issue #71 removes that — leftover promo copy ("現正競標") had
+// no relationship to this section (最新訊息) and read as stale/broken once
+// the real carousel shipped. The empty branch below keeps the same layout
+// slot occupied (so the surrounding grid doesn't reflow) but shows a
+// neutral "尚無內容" placeholder instead.
 export interface NewsCarouselItem {
   id: number;
   title: string;
   excerpt: string;
+  /** Pre-resolved by the caller (app/[locale]/page.tsx) to the site placeholder when the item has no 主圖 yet (issue #70). */
+  imageUrl: string;
 }
 
 const ROTATE_INTERVAL_MS = 5000;
@@ -28,20 +30,14 @@ export default function NewsCarouselCard({
   items,
   activeBadge,
   ctaLabel,
-  fallbackBadge,
-  fallbackTitle,
-  fallbackDesc,
-  fallbackCtaLabel,
-  fallbackCtaHref,
+  emptyStateTitle,
+  emptyStateDesc,
 }: {
   items: NewsCarouselItem[];
   activeBadge: string;
   ctaLabel: string;
-  fallbackBadge: string;
-  fallbackTitle: string;
-  fallbackDesc: string;
-  fallbackCtaLabel: string;
-  fallbackCtaHref: string;
+  emptyStateTitle: string;
+  emptyStateDesc: string;
 }) {
   const [index, setIndex] = useState(0);
 
@@ -55,13 +51,9 @@ export default function NewsCarouselCard({
 
   if (items.length === 0) {
     return (
-      <div className={wrapperClass}>
-        <p className="text-xs font-bold uppercase tracking-wider">{fallbackBadge}</p>
-        <h3 className="mt-2 text-3xl font-black">{fallbackTitle}</h3>
-        <p className="mt-3 max-w-xl text-sm text-pacific-blue-100">{fallbackDesc}</p>
-        <Link href={fallbackCtaHref} className="mt-5 inline-flex w-fit rounded-md bg-white px-4 py-2 text-sm font-bold text-pacific-blue-700">
-          {fallbackCtaLabel}
-        </Link>
+      <div className="flex h-full min-h-[220px] flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-slate-50 p-7 text-center">
+        <p className="text-sm font-bold text-ink-light">{emptyStateTitle}</p>
+        <p className="mt-2 max-w-xs text-xs text-ink-light">{emptyStateDesc}</p>
       </div>
     );
   }
@@ -69,13 +61,17 @@ export default function NewsCarouselCard({
   const current = items[index];
 
   return (
-    <div className={wrapperClass}>
-      <p className="text-xs font-bold uppercase tracking-wider">{activeBadge}</p>
-      <h3 className="mt-2 truncate text-3xl font-black">{current.title}</h3>
-      <p className="mt-3 max-w-xl text-sm text-pacific-blue-100">{current.excerpt}</p>
-      <Link href={`/news/${current.id}`} className="mt-5 inline-flex w-fit rounded-md bg-white px-4 py-2 text-sm font-bold text-pacific-blue-700">
-        {ctaLabel}
-      </Link>
+    <div className="flex h-full flex-col justify-center gap-4 overflow-hidden rounded-2xl bg-gradient-to-r from-pacific-blue-500 to-pacific-blue-600 p-7 text-white sm:flex-row sm:items-center sm:gap-6">
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-bold uppercase tracking-wider">{activeBadge}</p>
+        <h3 className="mt-2 truncate text-3xl font-black">{current.title}</h3>
+        <p className="mt-3 max-w-xl text-sm text-pacific-blue-100">{current.excerpt}</p>
+        <Link href={`/news/${current.id}`} className="mt-5 inline-flex w-fit rounded-md bg-white px-4 py-2 text-sm font-bold text-pacific-blue-700">
+          {ctaLabel}
+        </Link>
+      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={current.imageUrl} alt={current.title} className="h-32 w-32 flex-shrink-0 self-center rounded-xl object-cover sm:h-40 sm:w-40" />
     </div>
   );
 }

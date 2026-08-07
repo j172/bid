@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { listOpenListings } from "@/lib/listings";
-import { listingPhotoUrl, homepageSectionImageUrl } from "@/lib/uploads";
+import { listingPhotoUrl, homepageSectionImageUrl, pigeonShowcaseImageUrl, newsImageUrl } from "@/lib/uploads";
 import { listHomepageSections } from "@/lib/homepageSections";
 import { listLatestPigeonShowcase } from "@/lib/pigeonShowcase";
 import { listLatestNews } from "@/lib/news";
@@ -58,11 +58,13 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     id: pigeon.id,
     name: pigeon.name,
     excerpt: excerptHtml(pigeon.description, PIGEON_CAROUSEL_EXCERPT_LENGTH),
+    imageUrl: pigeon.imageFileName ? pigeonShowcaseImageUrl(pigeon.imageFileName) : "/images/hero-placeholder.png",
   }));
   const importedCarouselItems = importedPigeons.map((pigeon) => ({
     id: pigeon.id,
     name: pigeon.name,
     excerpt: excerptHtml(pigeon.description, PIGEON_CAROUSEL_EXCERPT_LENGTH),
+    imageUrl: pigeon.imageFileName ? pigeonShowcaseImageUrl(pigeon.imageFileName) : "/images/hero-placeholder.png",
   }));
 
   // 最新訊息首頁輪播 (issue #56) — latest 10 posts, replacing the large
@@ -76,6 +78,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     id: post.id,
     title: post.title,
     excerpt: excerptHtml(post.content, NEWS_CAROUSEL_EXCERPT_LENGTH),
+    imageUrl: post.imageFileName ? newsImageUrl(post.imageFileName) : "/images/hero-placeholder.png",
   }));
 
   const heroRenderedAt = new Date().toISOString();
@@ -138,13 +141,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   // 買家最愛：依出價次數（競標）+ 購買次數（固定價）加總排序取熱門商品，
   // 只計入有實際出價／購買紀錄的商品，避免跟「全部商品」的數字重複。
   const popularListings = listings.filter((item) => item.bidCount + item.purchaseCount > 0);
-  // 新手友善：原本語意（低價入門）在現有 schema 下可直接用真實價格欄位計算，
-  // 取兩種商品類型皆適用的現價 <= 門檻。
-  const BEGINNER_MAX_PRICE = 1000;
-  const beginnerListings = listings.filter((item) => {
-    const price = item.listing_type === "auction" ? item.current_price : (item.price ?? item.current_price);
-    return price <= BEGINNER_MAX_PRICE;
-  });
   const visualCategories: VisualCategoryItem[] = [
     {
       label: t("categoryAuction"),
@@ -180,13 +176,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       href: "/listings?sort=popular",
       badge: "❤️",
       count: popularListings.length,
-    },
-    {
-      label: t("beginnerLabel"),
-      subtitle: t("beginnerSubtitle", { price: BEGINNER_MAX_PRICE }),
-      href: `/listings?maxPrice=${BEGINNER_MAX_PRICE}`,
-      badge: "🌟",
-      count: beginnerListings.length,
     },
   ];
   const homeEagerCount = perfMode === "aggressive" ? 2 : 1;
@@ -559,11 +548,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               items={newsCarouselItems}
               activeBadge={t("newsCarouselBadge")}
               ctaLabel={t("newsCarouselCta")}
-              fallbackBadge={t("promoAuctionBadge")}
-              fallbackTitle={t("promoAuctionTitle")}
-              fallbackDesc={t("promoAuctionDesc")}
-              fallbackCtaLabel={t("promoAuctionCta")}
-              fallbackCtaHref={`/listings?type=auction${perfSuffix}`}
+              emptyStateTitle={t("emptyStateTitle")}
+              emptyStateDesc={t("newsCarouselEmptyDesc")}
             />
           </div>
 
@@ -572,10 +558,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               items={awardCarouselItems}
               variant="dark"
               badgeLabel={t("promoFixedBadge")}
-              fallbackTitle={t("promoFixedTitle")}
-              fallbackDesc={t("promoFixedDesc")}
-              fallbackCtaLabel={t("promoFixedCta")}
-              fallbackCtaHref={`/listings?type=fixed_price${perfSuffix}`}
+              emptyStateTitle={t("emptyStateTitle")}
+              emptyStateDesc={t("pigeonShowcaseEmptyDesc")}
               viewCtaLabel={t("pigeonShowcaseViewCta")}
               viewMoreLabel={t("pigeonShowcaseViewMore")}
               viewMoreHref="/pigeon-showcase?category=award"
@@ -585,10 +569,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               items={importedCarouselItems}
               variant="light"
               badgeLabel={t("weeklyPicksEyebrow")}
-              fallbackTitle={t("weeklyPicksTitle")}
-              fallbackDesc={t("weeklyPicksDesc")}
-              fallbackCtaLabel={t("viewAll")}
-              fallbackCtaHref="/listings"
+              emptyStateTitle={t("emptyStateTitle")}
+              emptyStateDesc={t("pigeonShowcaseEmptyDesc")}
               viewCtaLabel={t("pigeonShowcaseViewCta")}
               viewMoreLabel={t("pigeonShowcaseViewMore")}
               viewMoreHref="/pigeon-showcase?category=imported"

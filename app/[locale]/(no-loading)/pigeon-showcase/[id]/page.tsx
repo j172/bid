@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { getPigeonShowcaseById, listLatestPigeonShowcase } from "@/lib/pigeonShowcase";
+import { pigeonShowcaseImageUrl } from "@/lib/uploads";
 import { Link } from "@/i18n/navigation";
 
 export const dynamic = "force-dynamic";
@@ -47,7 +48,13 @@ export default async function PigeonShowcaseDetailPage({ params }: { params: Pro
 
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[2fr_1fr]">
         <article className="min-w-0 rounded-2xl border border-border bg-white p-6 shadow-sm sm:p-8">
-          <span className="inline-flex rounded-full bg-interactive-primary-subtle px-3 py-1 text-xs font-bold uppercase tracking-wide text-interactive-primary">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={item.imageFileName ? pigeonShowcaseImageUrl(item.imageFileName) : "/images/hero-placeholder.png"}
+            alt={item.name}
+            className="max-h-96 w-full rounded-xl object-cover"
+          />
+          <span className="mt-6 inline-flex rounded-full bg-interactive-primary-subtle px-3 py-1 text-xs font-bold uppercase tracking-wide text-interactive-primary">
             {t(CATEGORY_LABEL_KEY[item.category])}
           </span>
           <h1 className="mt-4 text-3xl font-black text-ink">{item.name}</h1>

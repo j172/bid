@@ -7,6 +7,7 @@ import {
   type PigeonShowcaseCategory,
 } from "@/lib/pigeonShowcase";
 import { isPigeonShowcaseCategory } from "@/lib/pigeonShowcaseValidation";
+import { pigeonShowcaseImageUrl } from "@/lib/uploads";
 import { excerptHtml } from "@/lib/htmlText";
 import { Link } from "@/i18n/navigation";
 
@@ -72,14 +73,22 @@ export default async function PigeonShowcaseListPage({ searchParams }: { searchP
             <Link
               key={item.id}
               href={`/pigeon-showcase/${item.id}`}
-              className="group flex flex-col rounded-xl border border-border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              className="group flex flex-col overflow-hidden rounded-xl border border-border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
             >
-              <h2 className="truncate text-lg font-bold text-ink">{item.name}</h2>
-              <p className="mt-1 inline-flex w-fit rounded-full bg-interactive-primary-subtle px-2 py-0.5 text-xs font-semibold text-interactive-primary">
-                {item.loftTitle}
-              </p>
-              <p className="mt-3 line-clamp-3 text-sm text-ink-light">{excerptHtml(item.description, LIST_EXCERPT_LENGTH)}</p>
-              <span className="mt-4 text-xs font-bold text-interactive-primary group-hover:underline">{t("viewDetails")}</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={item.imageFileName ? pigeonShowcaseImageUrl(item.imageFileName) : "/images/hero-placeholder.png"}
+                alt={item.name}
+                className="h-40 w-full object-cover"
+              />
+              <div className="flex flex-1 flex-col p-5">
+                <h2 className="truncate text-lg font-bold text-ink">{item.name}</h2>
+                <p className="mt-1 inline-flex w-fit rounded-full bg-interactive-primary-subtle px-2 py-0.5 text-xs font-semibold text-interactive-primary">
+                  {item.loftTitle}
+                </p>
+                <p className="mt-3 line-clamp-3 text-sm text-ink-light">{excerptHtml(item.description, LIST_EXCERPT_LENGTH)}</p>
+                <span className="mt-4 text-xs font-bold text-interactive-primary group-hover:underline">{t("viewDetails")}</span>
+              </div>
             </Link>
           ))}
         </div>

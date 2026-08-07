@@ -136,11 +136,14 @@ CREATE TABLE IF NOT EXISTS exchange_rates (
 -- lib/homepageSections.ts. MySQL foreign keys can't be scoped to only rows
 -- matching section_type = 'partner_loft' — that check is enforced at the
 -- application layer (lib/pigeonShowcase.ts) on write instead.
+-- image_file_name (issue #70) is the 主圖; see ensureShowcaseNewsImageColumns
+-- below for how it's added to already-deployed databases.
 CREATE TABLE IF NOT EXISTS pigeon_showcase (
   id BIGINT NOT NULL AUTO_INCREMENT,
   category ENUM('award','imported') NOT NULL,  -- 'award' 入賞鴿 | 'imported' 進口鴿
   name VARCHAR(100) NOT NULL,
   loft_id BIGINT NOT NULL,
+  image_file_name VARCHAR(255) NULL,            -- 主圖 (issue #70); NULL only on pre-#70 rows
   description TEXT NOT NULL,                   -- sanitizeDescriptionHtml'd TinyMCE HTML, 2000-char plain-text cap
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
@@ -157,9 +160,12 @@ CREATE TABLE IF NOT EXISTS pigeon_showcase (
 -- plus a homepage carousel. Simpler than pigeon_showcase above — no FK, no
 -- dropdown/category dependency, id is never shown publicly (U/D operate on
 -- it from the admin list only).
+-- image_file_name (issue #70) is the 主圖 — same NULL-only-for-pre-#70-rows
+-- story as pigeon_showcase.image_file_name above.
 CREATE TABLE IF NOT EXISTS news_posts (
   id BIGINT NOT NULL AUTO_INCREMENT,
   title VARCHAR(100) NOT NULL,
+  image_file_name VARCHAR(255) NULL,  -- 主圖 (issue #70); NULL only on pre-#70 rows
   content TEXT NOT NULL,           -- sanitizeDescriptionHtml'd TinyMCE HTML, 2000-char plain-text cap
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
@@ -321,6 +327,18 @@ async function ensurePartnerLoftColumns(db: mysql.Pool): Promise<void> {
   await ensureColumn(db, "listings", "loft_id", "BIGINT NULL");
 }
 
+// GRILL ME follow-up (issue #70) amending #54/#56's already-merged
+// pigeon_showcase / news_posts implementations: both gain a required-at-the-
+// app-layer 主圖 (main image), following the same image_file_name convention
+// as homepage_sections (see lib/uploads.ts's savePigeonShowcaseImage/
+// saveNewsImage). NULL-able at the DB level since already-deployed rows have
+// no image and backfilling them for real is explicitly out of scope for #70
+// — the public site falls back to a placeholder image wherever one is NULL.
+async function ensureShowcaseNewsImageColumns(db: mysql.Pool): Promise<void> {
+  await ensureColumn(db, "pigeon_showcase", "image_file_name", "VARCHAR(255) NULL");
+  await ensureColumn(db, "news_posts", "image_file_name", "VARCHAR(255) NULL");
+}
+
 function createPool(): mysql.Pool {
   return mysql.createPool({
     host: process.env.MYSQL_HOST,
@@ -341,6 +359,7 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensureBuyItNowNullable(db);
   await ensureEndsAtNullable(db);
   await ensurePartnerLoftColumns(db);
+  await ensureShowcaseNewsImageColumns(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {

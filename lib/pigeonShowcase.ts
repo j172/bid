@@ -23,6 +23,8 @@ export interface PigeonShowcase {
   loftTitle: string;
   /** Sanitized HTML (see lib/sanitizeDescriptionHtml.ts) — sanitizing is the caller's (API route's) responsibility, not this module's. */
   description: string;
+  /** 主圖 file name under uploads/pigeon-showcase/ (see lib/uploads.ts); NULL only on rows created before issue #70 — every create/edit after #70 requires one. */
+  imageFileName: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -32,6 +34,8 @@ export interface PigeonShowcaseInput {
   name: string;
   loftId: number;
   description: string;
+  /** Required — the admin form/API route enforce an upload on every create/edit (issue #70). */
+  imageFileName: string;
 }
 
 export type PigeonShowcaseOutcome = { ok: true } | { ok: false; error: string };
@@ -60,6 +64,7 @@ interface PigeonShowcaseRow {
   loft_id: number;
   loft_title: string;
   description: string;
+  image_file_name: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -72,13 +77,14 @@ function mapRow(row: PigeonShowcaseRow): PigeonShowcase {
     loftId: row.loft_id,
     loftTitle: row.loft_title,
     description: row.description,
+    imageFileName: row.image_file_name,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
 
 const SELECT_WITH_LOFT = `
-  SELECT ps.id, ps.category, ps.name, ps.loft_id, hs.title AS loft_title, ps.description, ps.created_at, ps.updated_at
+  SELECT ps.id, ps.category, ps.name, ps.loft_id, hs.title AS loft_title, ps.description, ps.image_file_name, ps.created_at, ps.updated_at
   FROM pigeon_showcase ps
   JOIN homepage_sections hs ON hs.id = ps.loft_id
 `;
@@ -162,9 +168,9 @@ export async function createPigeonShowcase(input: PigeonShowcaseInput): Promise<
   }
   const db = await getDb();
   const [result] = await db.query(
-    `INSERT INTO pigeon_showcase (category, name, loft_id, description, created_at, updated_at)
-     VALUES (?, ?, ?, ?, NOW(), NOW())`,
-    [input.category, input.name, input.loftId, input.description],
+    `INSERT INTO pigeon_showcase (category, name, loft_id, image_file_name, description, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
+    [input.category, input.name, input.loftId, input.imageFileName, input.description],
   );
   return { ok: true, id: (result as { insertId: number }).insertId };
 }
@@ -175,8 +181,8 @@ export async function updatePigeonShowcase(id: number, input: PigeonShowcaseInpu
   }
   const db = await getDb();
   const [result] = await db.query(
-    `UPDATE pigeon_showcase SET category = ?, name = ?, loft_id = ?, description = ?, updated_at = NOW() WHERE id = ?`,
-    [input.category, input.name, input.loftId, input.description, id],
+    `UPDATE pigeon_showcase SET category = ?, name = ?, loft_id = ?, image_file_name = ?, description = ?, updated_at = NOW() WHERE id = ?`,
+    [input.category, input.name, input.loftId, input.imageFileName, input.description, id],
   );
   if ((result as { affectedRows: number }).affectedRows === 0) {
     return { ok: false, error: "找不到這筆鴿況資料" };
