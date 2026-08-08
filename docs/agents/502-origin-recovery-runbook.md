@@ -25,7 +25,7 @@
 
 3. 若無法走 ops endpoint：登入主機手動確認 PM2
    - 確認 `bid-web` 狀態（應為 `online`）
-   - 若不在線，按 `ecosystem.config.cjs` 啟動（Node 20 + port 3001）
+   - 若不在線，按 `ecosystem.config.cjs` 啟動（Node 24 + port 3001）
 
 ## 驗證完成條件
 

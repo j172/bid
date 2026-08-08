@@ -12,8 +12,9 @@
 // at all. See issue #127 for the full design.
 //
 // Uses the Web Crypto API (`globalThis.crypto`), which is available both in
-// the browser and in Node 20+ (this project's minimum, see package.json
-// engines) without any import — so this fallback works unchanged from a
+// the browser and in Node 20+ (well under this project's current Node 24+
+// minimum, see package.json engines) without any import — so this fallback
+// works unchanged from a
 // Server Component and from a Client Component (error.tsx, global-error.tsx
 // call it directly as a last resort; see lib/actions/getRayId.ts for how
 // they get the real, header-derived value instead).

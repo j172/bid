@@ -25,13 +25,13 @@ set -u
 
 APP_DIR="/home/tw123457/bid_app"
 APP_PORT=3001
-NODE_BIN="/home/tw123457/.nvm/versions/node/v20.20.2/bin/node"
+NODE_BIN="/home/tw123457/.nvm/versions/node/v24.19.0/bin/node"
 # bin/npm's shebang (`#!/usr/bin/env node`) resolves to whatever `node` is
 # first on PATH in a non-interactive shell, which may not be the nvm-managed
 # version this app needs (see the matching comment in .remote-index.php).
 # Invoking npm-cli.js directly via $NODE_BIN sidesteps that.
-NPM_CLI_JS="/home/tw123457/.nvm/versions/node/v20.20.2/lib/node_modules/npm/bin/npm-cli.js"
-PM2_BIN="/home/tw123457/.nvm/versions/node/v20.20.2/lib/node_modules/pm2/bin/pm2"
+NPM_CLI_JS="/home/tw123457/.nvm/versions/node/v24.19.0/lib/node_modules/npm/bin/npm-cli.js"
+PM2_BIN="/home/tw123457/.nvm/versions/node/v24.19.0/lib/node_modules/pm2/bin/pm2"
 
 cd "$APP_DIR" || exit 1
 

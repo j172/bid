@@ -5,15 +5,15 @@ $path = parse_url($uri, PHP_URL_PATH) ?: '/';
 
 $appDir = '/home/tw123457/bid_app';
 $appPort = 3001;
-$nodeBin = '/home/tw123457/.nvm/versions/node/v20.20.2/bin/node';
+$nodeBin = '/home/tw123457/.nvm/versions/node/v24.19.0/bin/node';
 // bin/npm is a shebang (`#!/usr/bin/env node`) script — fine when invoked
 // interactively where PATH has the nvm dir first, but PHP's exec() gives the
 // shell a bare PATH that resolves `env node` to some other/older system node
 // instead, which then can't require() npm's `node:`-prefixed core-module
 // specifiers. Invoking the actual JS entrypoint via $nodeBin directly (same
 // as $pm2Bin below) sidesteps the shebang/PATH lookup entirely.
-$npmCliJs = '/home/tw123457/.nvm/versions/node/v20.20.2/lib/node_modules/npm/bin/npm-cli.js';
-$pm2Bin = '/home/tw123457/.nvm/versions/node/v20.20.2/lib/node_modules/pm2/bin/pm2';
+$npmCliJs = '/home/tw123457/.nvm/versions/node/v24.19.0/lib/node_modules/npm/bin/npm-cli.js';
+$pm2Bin = '/home/tw123457/.nvm/versions/node/v24.19.0/lib/node_modules/pm2/bin/pm2';
 
 // Cloudflare's published edge-node IP ranges — source:
 // https://www.cloudflare.com/ips-v4 and https://www.cloudflare.com/ips-v6,
@@ -157,8 +157,10 @@ if (str_starts_with($path, '/__ops/')) {
             // ships to the host in .prebuilt-public.tgz above, so running it
             // again here would just fail on a missing file for no benefit.
             // --no-engine-strict: this host's global npm config promotes
-            // EBADENGINE warnings (e.g. sanitize-html wanting Node >=22 on
-            // this v20.20.2 host) to hard failures otherwise.
+            // EBADENGINE warnings to hard failures otherwise; kept as a
+            // defensive guard against future engines mismatches even though
+            // this v24.19.0 host already satisfies today's dependencies
+            // (e.g. sanitize-html's Node >=22 requirement).
             . "&& { {$nodeBin} {$npmCliJs} install --omit=dev --ignore-scripts --no-audit --no-fund --no-engine-strict --prefer-offline >> .apply.log 2>&1; NPM_INSTALL_EXIT=\$?; echo \"[NPM_INSTALL] exit=\$NPM_INSTALL_EXIT\" >> .apply.log; test \"\$NPM_INSTALL_EXIT\" -eq 0; } "
             . "&& echo '[NPM_INSTALL] done '$(date) >> .apply.log "
             . "&& ({$nodeBin} {$pm2Bin} delete bid-web >> .apply.log 2>&1 || true) "
