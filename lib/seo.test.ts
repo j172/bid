@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   absoluteUrl,
+  buildListingProductJsonLd,
   canonicalListingsUrl,
   canonicalUrl,
   hreflangAlternates,
+  type ListingJsonLdInput,
   localizedUrls,
   stripHtmlToPlainText,
   truncateForMetaDescription,
@@ -127,6 +129,86 @@ describe("canonicalListingsUrl", () => {
     expect(canonicalListingsUrl("zh-TW", { type: ["auction", "fixed_price"] })).toBe(
       "https://bid.j172.tw/listings?type=auction",
     );
+  });
+});
+
+describe("buildListingProductJsonLd", () => {
+  const baseListing: ListingJsonLdInput = {
+    id: 42,
+    title: "冠軍血統種鴿",
+    description: "<p>優秀血統，體況良好。</p>",
+    listing_type: "auction",
+    status: "open",
+    price: null,
+    current_price: 5000,
+    stock_remaining: null,
+    ends_at: new Date("2026-12-31T12:00:00Z"),
+    photos: ["a.jpg", "b.jpg"],
+  };
+
+  it("builds a schema.org Product with an Offer for an open auction", () => {
+    const jsonLd = buildListingProductJsonLd(baseListing, "/listings/42");
+    expect(jsonLd["@context"]).toBe("https://schema.org");
+    expect(jsonLd["@type"]).toBe("Product");
+    expect(jsonLd.name).toBe("冠軍血統種鴿");
+    expect(jsonLd.description).toBe("優秀血統，體況良好。");
+    expect(jsonLd.image).toEqual([
+      "https://bid.j172.tw/uploads/listings/42/a.jpg",
+      "https://bid.j172.tw/uploads/listings/42/b.jpg",
+    ]);
+    expect(jsonLd.url).toBe("https://bid.j172.tw/listings/42");
+
+    const offers = jsonLd.offers as Record<string, unknown>;
+    expect(offers["@type"]).toBe("Offer");
+    expect(offers.priceCurrency).toBe("TWD");
+    expect(offers.price).toBe(5000);
+    expect(offers.availability).toBe("https://schema.org/InStock");
+    expect(offers.priceValidUntil).toBe("2026-12-31");
+  });
+
+  it("falls back to the placeholder image when the listing has no photos", () => {
+    const jsonLd = buildListingProductJsonLd({ ...baseListing, photos: [] }, "/listings/42");
+    expect(jsonLd.image).toEqual(["https://bid.j172.tw/images/hero-placeholder.png"]);
+  });
+
+  it("uses `price` (not current_price) for a fixed_price listing", () => {
+    const jsonLd = buildListingProductJsonLd(
+      { ...baseListing, listing_type: "fixed_price", price: 1200, current_price: 1200, stock_remaining: 5 },
+      "/listings/42",
+    );
+    const offers = jsonLd.offers as Record<string, unknown>;
+    expect(offers.price).toBe(1200);
+    expect(offers.availability).toBe("https://schema.org/InStock");
+  });
+
+  it("marks a sold-out fixed_price listing OutOfStock even though status is still 'open'", () => {
+    const jsonLd = buildListingProductJsonLd(
+      { ...baseListing, listing_type: "fixed_price", price: 1200, stock_remaining: 0 },
+      "/listings/42",
+    );
+    const offers = jsonLd.offers as Record<string, unknown>;
+    expect(offers.availability).toBe("https://schema.org/OutOfStock");
+  });
+
+  it("marks a scheduled (not-yet-open) listing PreOrder", () => {
+    const jsonLd = buildListingProductJsonLd({ ...baseListing, status: "scheduled" }, "/listings/42");
+    const offers = jsonLd.offers as Record<string, unknown>;
+    expect(offers.availability).toBe("https://schema.org/PreOrder");
+  });
+
+  it("marks a closed listing OutOfStock", () => {
+    const jsonLd = buildListingProductJsonLd({ ...baseListing, status: "closed" }, "/listings/42");
+    const offers = jsonLd.offers as Record<string, unknown>;
+    expect(offers.availability).toBe("https://schema.org/OutOfStock");
+  });
+
+  it("omits priceValidUntil for a fixed_price listing (no ends_at)", () => {
+    const jsonLd = buildListingProductJsonLd(
+      { ...baseListing, listing_type: "fixed_price", price: 1200, ends_at: null },
+      "/listings/42",
+    );
+    const offers = jsonLd.offers as Record<string, unknown>;
+    expect(offers).not.toHaveProperty("priceValidUntil");
   });
 });
 

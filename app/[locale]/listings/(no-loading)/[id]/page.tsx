@@ -8,9 +8,9 @@ import { getLatestStoredRate } from "@/lib/exchangeRates";
 import { formatRemaining } from "@/lib/format";
 import { maskDisplayName } from "@/lib/mask";
 import { getListingActivityFeed, getListingById, listOpenListings } from "@/lib/listings";
-import { absoluteUrl, stripHtmlToPlainText, truncateForMetaDescription } from "@/lib/seo";
+import { absoluteUrl, buildListingProductJsonLd, stripHtmlToPlainText, truncateForMetaDescription } from "@/lib/seo";
 import { listingPhotoUrl } from "@/lib/uploads";
-import { Link } from "@/i18n/navigation";
+import { getPathname, Link } from "@/i18n/navigation";
 // Absolute imports (rather than relative "../../../components/...") because
 // this page moved into the (no-loading) route group (issue #74) — see that
 // group's sibling (with-loading)/ folder for why.
@@ -171,8 +171,17 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
   // Date.now() itself (hydration mismatch).
   const renderedAt = new Date().toISOString();
 
+  // schema.org Product/Offer JSON-LD (issue #107 item 3) — lets Google show
+  // rich-result price/availability and gives AI/GEO crawlers a structured
+  // read on the listing. See lib/seo.ts's buildListingProductJsonLd for the
+  // field mapping/availability rules.
+  const listingPathname = getPathname({ href: `/listings/${listing.id}`, locale });
+  const productJsonLd = buildListingProductJsonLd(listing, listingPathname);
+
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+      {/* JSON-LD requires raw <script> content; productJsonLd is server-built from trusted DB fields, not user-supplied markup. */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />
       <div className="rounded-2xl bg-white px-5 py-4 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">
           <Link href="/" className="hover:text-interactive-primary">

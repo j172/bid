@@ -16,6 +16,7 @@
 import sanitizeHtml from "sanitize-html";
 import { routing } from "@/i18n/routing";
 import { SITE_URL } from "@/lib/siteUrl";
+import { listingPhotoUrl } from "@/lib/uploads";
 
 /** Query params that survive canonicalization because they change the actual
  * content set shown (much like a real category page would), as opposed to
@@ -121,4 +122,83 @@ export function canonicalListingsUrl(
 // preserve) — just the locale-prefixed pathname, absolute.
 export function canonicalUrl(locale: string, pathname: string): string {
   return absoluteUrl(localizedPathname(pathname, locale));
+}
+
+export type JsonLdAvailability =
+  | "https://schema.org/InStock"
+  | "https://schema.org/OutOfStock"
+  | "https://schema.org/PreOrder";
+
+// Only the lib/listings.ts Listing fields buildListingProductJsonLd actually
+// needs — kept as its own narrow shape (rather than importing the full
+// ListingWithPhotos type) so this stays a plain data-in/data-out function
+// callers can pass a listing straight into.
+export interface ListingJsonLdInput {
+  id: number;
+  title: string;
+  description: string;
+  listing_type: "auction" | "fixed_price";
+  status: string;
+  price: number | null;
+  current_price: number;
+  stock_remaining: number | null;
+  ends_at: Date | null;
+  photos: string[];
+}
+
+// schema.org Offer.availability for a listing — 'scheduled' listings are
+// visible but not yet biddable/buyable (PreOrder), 'open' fixed_price
+// listings that have sold through their stock are OutOfStock despite
+// status still being 'open' (see lib/listings.ts's listOpenListings, which
+// doesn't filter on stock), and anything else non-'open' (closed,
+// cancelled) is OutOfStock — schema.org has no dedicated "auction ended"
+// value, and OutOfStock communicates the same "can't actually buy this
+// right now" fact to both search engines and GEO/AI crawlers.
+function listingAvailability(
+  listing: Pick<ListingJsonLdInput, "status" | "listing_type" | "stock_remaining">,
+): JsonLdAvailability {
+  if (listing.status === "scheduled") return "https://schema.org/PreOrder";
+  if (listing.status !== "open") return "https://schema.org/OutOfStock";
+  if (listing.listing_type === "fixed_price" && (listing.stock_remaining ?? 0) <= 0) {
+    return "https://schema.org/OutOfStock";
+  }
+  return "https://schema.org/InStock";
+}
+
+// Builds schema.org Product/Offer JSON-LD for a listing detail page (issue
+// #107 item 3) — lets Google show rich-result price/availability, and gives
+// AI/GEO crawlers a structured, unambiguous read on what's for sale versus
+// having to parse it out of the rendered page. `pathname` is this listing's
+// site-relative detail-page path for the current locale (e.g.
+// "/listings/42" or "/en/listings/42") — callers build it once and pass it
+// in rather than this function reaching for locale/routing concerns itself.
+export function buildListingProductJsonLd(listing: ListingJsonLdInput, pathname: string): Record<string, unknown> {
+  const price = listing.listing_type === "fixed_price" ? (listing.price ?? listing.current_price) : listing.current_price;
+  const images =
+    listing.photos.length > 0
+      ? listing.photos.map((fileName) => absoluteUrl(listingPhotoUrl(listing.id, fileName)))
+      : [absoluteUrl("/images/hero-placeholder.png")];
+  const url = absoluteUrl(pathname);
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: listing.title,
+    description: truncateForMetaDescription(stripHtmlToPlainText(listing.description), 300),
+    image: images,
+    url,
+    offers: {
+      "@type": "Offer",
+      url,
+      priceCurrency: "TWD",
+      price,
+      availability: listingAvailability(listing),
+      // Only auction listings have a real deadline (fixed_price listings
+      // sell indefinitely until stock runs out — see lib/listings.ts's
+      // Listing.ends_at comment) — omitted entirely rather than emitted as
+      // null, since JSON-LD consumers generally treat a present-but-null
+      // field as "unknown" rather than "not applicable".
+      ...(listing.ends_at ? { priceValidUntil: listing.ends_at.toISOString().slice(0, 10) } : {}),
+    },
+  };
 }
