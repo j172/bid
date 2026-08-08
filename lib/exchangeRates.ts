@@ -235,8 +235,26 @@ export async function getLatestStoredRate(currency: CurrencyCode): Promise<Store
   return row ? mapRow(row) : null;
 }
 
+// Callers (ExchangeRateStrip in the footer, rendered on every page) already
+// treat a null rate as "show the 'unavailable'/'updating' placeholder", so a
+// DB outage here should degrade the same way rather than take down the
+// whole page — this matters in particular for Next's static export step,
+// which now (as of the Next 16.3 bump, #128) attempts to statically
+// prerender some routes that pull in this component; with no DB reachable
+// during `next build` (no MySQL service in CI/build environments), an
+// unhandled connection error here used to abort the entire build (see
+// #133). Catching per-currency keeps one bad connection from blanking both.
+async function getLatestStoredRateOrNull(currency: CurrencyCode): Promise<StoredExchangeRate | null> {
+  try {
+    return await getLatestStoredRate(currency);
+  } catch (error) {
+    console.error(`[exchangeRates] failed to read stored ${currency} rate`, error);
+    return null;
+  }
+}
+
 export async function getAllLatestStoredRates(): Promise<Record<CurrencyCode, StoredExchangeRate | null>> {
-  const [usd, cny] = await Promise.all([getLatestStoredRate("USD"), getLatestStoredRate("CNY")]);
+  const [usd, cny] = await Promise.all([getLatestStoredRateOrNull("USD"), getLatestStoredRateOrNull("CNY")]);
   return { USD: usd, CNY: cny };
 }
 
