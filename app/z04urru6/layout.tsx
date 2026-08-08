@@ -21,6 +21,10 @@ export const metadata: Metadata = {
     shortcut: "/images/hero-placeholder.png",
     apple: "/images/hero-placeholder.png",
   },
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export const dynamic = "force-dynamic";
