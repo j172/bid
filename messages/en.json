@@ -471,6 +471,7 @@
     "refund": "Refund Policy",
     "terms": "Terms of Use",
     "faq": "FAQs",
+    "gdpr": "GDPR",
     "contact": "Contact",
     "assuranceTitle": "Trading Assurance",
     "assuranceItem1": "Pedigree & bidding data verified",
@@ -629,5 +630,437 @@
     "weak": "Weak",
     "medium": "Medium",
     "strong": "Strong"
+  },
+  "cookieBanner": {
+    "message": "This site only uses the cookies strictly necessary to keep you signed in. We currently use no tracking or analytics cookies. You can accept, or decline any non-essential cookies we might add in the future.",
+    "policyLink": "Read our cookie & GDPR notice",
+    "accept": "Accept",
+    "reject": "Decline non-essential cookies",
+    "ariaLabel": "Cookie consent"
+  },
+  "privacyPage": {
+    "title": "Privacy Policy",
+    "metaDescription": "Our privacy policy for this pigeon auction platform: what personal data we collect, how we use and retain it, and the rights you can exercise.",
+    "intro": "This policy explains how [Registered Company Name] (\"we\", \"the site\") collects, uses, stores, and protects your personal data when providing pigeon auction and fixed-price marketplace services.",
+    "lastUpdated": "Last updated: 8 August 2026",
+    "notice": "This page is generic template wording and has not been reviewed by a qualified lawyer. Fields marked with [square brackets] are placeholders awaiting our official registration details.",
+    "sections": [
+      {
+        "title": "1. Scope",
+        "paragraphs": [
+          "This policy covers this website, member accounts, the bidding and checkout flows, the contact form, and the newsletter. Third-party websites or services reached from here are governed by their own privacy policies and fall outside this one."
+        ]
+      },
+      {
+        "title": "2. Data we collect",
+        "paragraphs": [
+          "We only collect what is necessary to run the service:"
+        ],
+        "bullets": [
+          "Account data: email address, display name, hashed password, and the status of your two-factor authentication and passkey settings.",
+          "Transaction data: bids, auto-bid limits, purchases and won-auction records, plus the contact and delivery details needed to settle a transaction.",
+          "Contact data: the name, email, subject, and message you choose to send us through the contact form, by phone, or by email.",
+          "Technical logs: IP address, browser and device information, access times, and page activity, used for security and abuse detection."
+        ]
+      },
+      {
+        "title": "3. How we use your data",
+        "paragraphs": [
+          "We use the data above only to:"
+        ],
+        "bullets": [
+          "Create and maintain your account and verify your identity and email address.",
+          "Run bidding, auto bidding, buy-it-now, auction close, and payment flows.",
+          "Send notifications directly tied to your transactions (outbid alerts, auction results, payment reminders).",
+          "Send the newsletter, if and only if you subscribed — you can unsubscribe at any time.",
+          "Detect and prevent fraud, bid rigging, account takeover, and other abuse, and keep the marketplace secure.",
+          "Comply with legal obligations and requests from competent authorities."
+        ]
+      },
+      {
+        "title": "4. Cookies and similar technologies",
+        "paragraphs": [
+          "This site currently uses only the session cookie strictly necessary to keep you signed in. We do not use Google Analytics, advertising trackers, or any other analytics or marketing cookies. If we ever introduce non-essential cookies, we will update this policy first and collect your choice through the cookie banner on the site.",
+          "You can block or delete cookies in your browser settings, but doing so will prevent you from staying signed in, and therefore from bidding or completing a purchase."
+        ]
+      },
+      {
+        "title": "5. Sharing and third parties",
+        "paragraphs": [
+          "We never sell or rent your personal data. We share it only where necessary, and only to the minimum extent needed:"
+        ],
+        "bullets": [
+          "To complete a transaction: with your counterparty, the partner loft, payment providers, and shipping or transport providers.",
+          "To operate the service: with hosting, email delivery, and anti-abuse providers, all of whom are bound by equivalent confidentiality obligations.",
+          "Where required by law, a court, or a competent authority, or to protect the rights of the site and its users."
+        ]
+      },
+      {
+        "title": "6. Retention",
+        "paragraphs": [
+          "Account data is kept for as long as your account exists. After account deletion we erase or anonymise your personal data within a reasonable period, except for transaction and accounting records we are legally required to retain (such as tax documentation). Technical logs are kept only as long as security purposes require."
+        ]
+      },
+      {
+        "title": "7. Your rights",
+        "paragraphs": [
+          "In respect of the personal data we hold about you, you may:"
+        ],
+        "bullets": [
+          "Ask what we hold, review it, and request a copy.",
+          "Ask us to complete or correct inaccurate data.",
+          "Ask us to stop collecting, processing, or using it.",
+          "Ask us to delete it — account settings also include a self-service delete option.",
+          "Withdraw consent you previously gave, for example by unsubscribing from the newsletter."
+        ],
+        "footnote": "To exercise any of these rights, contact us using the details at the end of this page. To protect your data we may need to verify your identity first. EU and UK users should also see our GDPR notice."
+      },
+      {
+        "title": "8. Security",
+        "paragraphs": [
+          "Passwords are stored hashed, traffic is served over HTTPS, and optional account protections such as two-factor authentication and passkeys are available. No method of transmission or storage is ever completely secure, so please also keep your own credentials safe and never share them."
+        ]
+      },
+      {
+        "title": "9. Minors",
+        "paragraphs": [
+          "This service involves monetary transactions. Anyone under 18 should use it only with the consent and supervision of a legal guardian. We do not knowingly collect personal data from children, and will delete it if we find it."
+        ]
+      },
+      {
+        "title": "10. Changes to this policy",
+        "paragraphs": [
+          "We may revise this policy as the law or the service changes. Revisions are published on this page with an updated \"last updated\" date. For material changes we will also notify you by email or an on-site notice."
+        ]
+      },
+      {
+        "title": "11. Contact us",
+        "paragraphs": [
+          "If you have any question about this policy or how we handle personal data:"
+        ],
+        "bullets": [
+          "Registered name: [Registered Company Name] (Company/Tax ID: [Company Registration Number])",
+          "Email: j172@j172.tw",
+          "Phone: (+886) 0909-256-829",
+          "Address: No. 100, Shifan Rd., Taipei, Taiwan",
+          "Data protection contact: [Data Protection Contact / DPO]"
+        ]
+      }
+    ]
+  },
+  "refundPage": {
+    "title": "Refund Policy",
+    "metaDescription": "Refund policy for pigeon auctions and fixed-price purchases: when refunds are and are not available, deadlines, refund methods, and dispute handling.",
+    "intro": "This policy explains when you can request a refund after completing an auction or fixed-price purchase on this site, how to request one, and how long it takes.",
+    "lastUpdated": "Last updated: 8 August 2026",
+    "notice": "This page is generic template wording and has not been reviewed by a qualified lawyer. Fields marked with [square brackets] are placeholders awaiting our official registration details.",
+    "sections": [
+      {
+        "title": "1. Scope",
+        "paragraphs": [
+          "This policy applies to every auction (including auto bidding) and fixed-price \"buy it now\" purchase completed through this site. Where an individual listing page states different terms, that listing page prevails."
+        ]
+      },
+      {
+        "title": "2. Bids and winning bids are binding",
+        "paragraphs": [
+          "A bid is binding as soon as it is submitted and cannot be withdrawn at will. Winning an auction forms a contract of sale: you must pay and take delivery as agreed. The refund grounds below are therefore limited to defects in the bird or in performance of the transaction — a simple change of mind is not one of them."
+        ]
+      },
+      {
+        "title": "3. When you can request a refund",
+        "bullets": [
+          "The bird materially differs from the listing description (for example, pedigree, ring number, sex, or age clearly do not match).",
+          "The bird died, was seriously injured, or shows clear health problems before delivery, through no fault of the buyer.",
+          "The seller or partner loft cannot deliver within the agreed period.",
+          "A duplicate payment, incorrect amount, or erroneous charge caused by a system or processing error.",
+          "Any other case where the law gives the buyer a right to cancel or to a refund."
+        ]
+      },
+      {
+        "title": "4. When refunds are not available",
+        "bullets": [
+          "A change of mind, a duplicate bid, a mistyped bid amount, or deciding afterwards that the price was too high.",
+          "Changes in condition after the bird has been delivered and accepted, caused by husbandry, training, transport, or environment.",
+          "Race results, breeding performance, or offspring quality falling short of expectations — outcomes that cannot be guaranteed by their nature.",
+          "Cancellations caused by the buyer failing to pay on time or failing to cooperate with settlement (which may also be handled under our site rules).",
+          "Transaction fees, shipping, and handling charges already incurred, unless the cause is attributable to us."
+        ]
+      },
+      {
+        "title": "5. How and when to request",
+        "paragraphs": [
+          "Contact us by email or phone within 7 calendar days of delivery, or within 7 calendar days of discovering a payment error. Include the order or listing number, a description of the problem, and any supporting evidence (photos, video, veterinary certificate, transfer records). Late requests are still reviewed, but may be impossible to verify and therefore to accept."
+        ]
+      },
+      {
+        "title": "6. Review and refund method",
+        "paragraphs": [
+          "We complete our review and notify you of the outcome within 7 business days of receiving a complete request. Approved refunds are normally returned via the original payment method; where that is not possible, to an account in your own name that you nominate. Depending on the payment provider or bank, funds usually arrive within 7 to 14 business days. All transactions settle in New Taiwan Dollars — foreign-currency amounts shown on the site are indicative conversions only and are not used to calculate refunds."
+        ]
+      },
+      {
+        "title": "7. Returns and shipping costs",
+        "paragraphs": [
+          "If the bird has to be returned, please agree the method and timing with us first rather than sending it back on your own. Where the cause is a description mismatch, non-delivery, or our own processing error, the seller or the site bears the shipping cost. In other mutually agreed refunds, the buyer normally bears it."
+        ]
+      },
+      {
+        "title": "8. Disputes",
+        "paragraphs": [
+          "If you disagree with our decision you may submit additional evidence and request a re-review within 14 days of being notified. Where no agreement can be reached, the matter is handled under [Governing Law] before [Court of Jurisdiction], without prejudice to statutory consumer dispute mediation routes."
+        ]
+      },
+      {
+        "title": "9. Contact us",
+        "bullets": [
+          "Email: j172@j172.tw",
+          "Phone: (+886) 0909-256-829",
+          "Address: No. 100, Shifan Rd., Taipei, Taiwan"
+        ]
+      }
+    ]
+  },
+  "termsPage": {
+    "title": "Terms of Use",
+    "metaDescription": "Terms of use for this pigeon auction platform: account registration, bidding and purchase rules, payment and settlement, prohibited conduct, liability, and jurisdiction.",
+    "intro": "Welcome. Please read these terms carefully before using the site — by registering an account or using any feature, you confirm that you have read and accepted them.",
+    "lastUpdated": "Last updated: 8 August 2026",
+    "notice": "This page is generic template wording and has not been reviewed by a qualified lawyer. Fields marked with [square brackets] are placeholders awaiting our official registration details.",
+    "sections": [
+      {
+        "title": "1. Who provides this service",
+        "bullets": [
+          "Registered name: [Registered Company Name]",
+          "Company/Tax ID: [Company Registration Number]",
+          "Registered address: [Registered Business Address] (current contact address: No. 100, Shifan Rd., Taipei, Taiwan)",
+          "Support email: j172@j172.tw / Phone: (+886) 0909-256-829"
+        ]
+      },
+      {
+        "title": "2. Acceptance and changes",
+        "paragraphs": [
+          "These terms form the contract between you and us. We may revise them as the law, our operations, or the features of the site change; revisions are published here with an updated \"last updated\" date. Continuing to use the site after a change means you accept the revised terms. If you do not accept them, please stop using the site — you may also ask us to delete your account."
+        ]
+      },
+      {
+        "title": "3. Registration and verification",
+        "paragraphs": [
+          "You must provide true, accurate, and current registration details, and verify your email address before you can sign in. Accounts are personal: they may not be transferred, lent, or shared, and every bid or purchase made under an account is treated as made by its holder. Tell us immediately if you suspect your account has been compromised."
+        ]
+      },
+      {
+        "title": "4. Bidding and purchase rules",
+        "bullets": [
+          "A bid is binding as soon as it is submitted and cannot be withdrawn or amended at will.",
+          "Auto bidding raises your bid automatically to the minimum amount needed to lead, up to the maximum you set.",
+          "An auction closes at the time shown on the listing page; the highest valid bid at that moment wins.",
+          "Fixed-price listings are sold \"buy it now\" — the first buyer to complete payment gets the bird while stock lasts.",
+          "We may cancel an individual bid or an entire auction in cases of obvious system error, mispricing, bid rigging, or other improper bidding.",
+          "All amounts settle in New Taiwan Dollars; USD and CNY figures shown on the site are indicative conversions only."
+        ]
+      },
+      {
+        "title": "5. Seller and partner loft obligations",
+        "paragraphs": [
+          "Anyone listing a bird must have the right to sell it, must ensure the listed information (pedigree, ring number, race results, health) is true, and must deliver as agreed. Quality, pedigree, and health are the lister's responsibility; we perform the formal checks needed on listing data but do not thereby assume warranty liability for the bird itself."
+        ]
+      },
+      {
+        "title": "6. Payment and settlement",
+        "paragraphs": [
+          "After winning or purchasing, pay within the period and by the method stated in your notification. If payment is late we may cancel the transaction, relist the bird, and restrict or terminate account access depending on the circumstances. Handover, transport, and quarantine are arranged between buyer and seller with our assistance."
+        ]
+      },
+      {
+        "title": "7. Prohibited conduct",
+        "bullets": [
+          "Providing false information, impersonating someone else, or registering multiple accounts to evade restrictions.",
+          "Bid rigging, shill bidding, colluding to manipulate the closing price, or bidding with no intention of paying.",
+          "Scraping, harvesting, or otherwise interfering with the service through automated means.",
+          "Attempting unauthorised access to other accounts, the admin backend, or the database, or otherwise compromising security.",
+          "Listing birds that are illegal to trade, of unclear provenance, or that infringe the rights of others."
+        ]
+      },
+      {
+        "title": "8. Intellectual property",
+        "paragraphs": [
+          "The interface, code, text, images, and databases of this site belong to us or our licensors, except for listing photos and descriptions, which are supplied by the lister and licensed to us for use here. None of it may be reproduced, adapted, distributed, or used commercially without our prior written consent."
+        ]
+      },
+      {
+        "title": "9. Disclaimer and limitation of liability",
+        "paragraphs": [
+          "The service is provided \"as is\"; we do not guarantee uninterrupted or error-free operation. Race results, breeding performance, and offspring quality are inherently uncertain and we make no promises about them. To the fullest extent permitted by law we are not liable for indirect, incidental, or consequential loss, and where we are liable, our total liability is capped at the amount actually paid for the transaction concerned."
+        ]
+      },
+      {
+        "title": "10. Suspension and termination",
+        "paragraphs": [
+          "We may suspend part or all of the service for maintenance, upgrades, or reasons beyond our control. We may suspend or terminate an account that breaches these terms or the law, and reserve all remedies available to us."
+        ]
+      },
+      {
+        "title": "11. Personal data",
+        "paragraphs": [
+          "We collect, process, and use personal data in accordance with our Privacy Policy. EU and UK users should also read our GDPR notice."
+        ]
+      },
+      {
+        "title": "12. Governing law and jurisdiction",
+        "paragraphs": [
+          "These terms are governed by and construed under [Governing Law]. For any dispute arising from these terms or the service, the parties agree to [Court of Jurisdiction] as the court of first instance, without prejudice to any jurisdictional protections consumers enjoy by law."
+        ]
+      },
+      {
+        "title": "13. Contact us",
+        "bullets": [
+          "Email: j172@j172.tw",
+          "Phone: (+886) 0909-256-829",
+          "Address: No. 100, Shifan Rd., Taipei, Taiwan"
+        ]
+      }
+    ]
+  },
+  "faqPage": {
+    "title": "FAQs",
+    "metaDescription": "Frequently asked questions about this pigeon auction platform: registration and verification, bidding and auto bidding, buy it now, payment, refunds, shipping, and pedigree checks.",
+    "intro": "The questions we are asked most often. If your answer is not here, please get in touch.",
+    "lastUpdated": "Last updated: 8 August 2026",
+    "notice": "These answers are sample content and may be added to or revised at any time as the service evolves.",
+    "items": [
+      {
+        "question": "How do I register and start bidding?",
+        "answer": "Click \"Log in / Sign up\" at the top right and create an account with your email, a display name, and a password. Once you have verified your email and signed in, you can bid on any live listing or use \"buy it now\"."
+      },
+      {
+        "question": "Why do I have to verify my email before signing in?",
+        "answer": "Bidding creates binding financial commitments, so email verification confirms the account is real and reachable, and lets us reliably send auction results and payment reminders. After registering, click the link we email you; if it does not arrive, check your spam folder or resend it from the sign-in page."
+      },
+      {
+        "question": "How does an auction work, and can I cancel a bid?",
+        "answer": "Each listing page shows the current highest bid and the closing time; you simply enter a valid amount above the current price. Bids are binding once submitted and generally cannot be cancelled — we only intervene in exceptional cases such as a system error or an obvious mispricing."
+      },
+      {
+        "question": "What is auto bidding (proxy bidding)?",
+        "answer": "You set the maximum you are willing to pay and the system bids on your behalf, raising your bid by the smallest amount needed to stay in front, up to your maximum. You do not have to watch the auction. If someone bids past your maximum you will be notified and can decide whether to raise it."
+      },
+      {
+        "question": "How is \"buy it now\" different from an auction?",
+        "answer": "Fixed-price listings are sold at a set price with no closing time — the first buyer to pay gets the bird. Auctions run until their closing time and go to the highest bidder. A given bird is normally listed one way or the other, not both."
+      },
+      {
+        "question": "When do I have to pay after winning, and how?",
+        "answer": "You will receive a notification when the auction closes; pay by the deadline and using the method stated in it. Payment is currently by bank transfer, with the account details supplied in the notification. Late payment may lead to the transaction being cancelled and can affect your account."
+      },
+      {
+        "question": "Can I get a refund after winning?",
+        "answer": "Not for a simple change of mind. Refunds are available if the bird materially differs from the listing, dies or is seriously injured before delivery, cannot be delivered by the seller, or if there was a payment error such as a duplicate charge. See the Refund Policy for the full conditions and deadlines."
+      },
+      {
+        "question": "How are birds shipped, and what does it cost?",
+        "answer": "After an auction closes we help buyer and seller arrange handover or transport — you can collect in person or use a dedicated courier or air freight. Shipping is priced by distance and method, and confirmed with you before settlement. Cross-border shipments must also meet quarantine and import/export rules."
+      },
+      {
+        "question": "How are pedigrees and race results verified?",
+        "answer": "Listers must supply the ring number, pedigree details, and a verifiable source for race results; we run the formal checks needed and display the information on the listing page. Accuracy remains the listing loft's responsibility — if something looks wrong, contact us before the auction closes."
+      },
+      {
+        "question": "Are the USD and CNY prices shown the amount I actually pay?",
+        "answer": "No. Every transaction settles in New Taiwan Dollars. The USD and CNY figures are converted at an indicative reference rate for guidance only; payments and refunds are always calculated in NTD."
+      },
+      {
+        "question": "What if I forget my password or cannot sign in?",
+        "answer": "Use \"Forgot password\" on the sign-in page and follow the link we email you. If you have two-factor authentication or a passkey enabled and cannot complete verification, email us from your registered address and we will help once we have confirmed your identity."
+      },
+      {
+        "question": "Who do I contact about anything else?",
+        "answer": "Use the form on our Contact page, email j172@j172.tw, or call (+886) 0909-256-829. We reply as quickly as we can."
+      }
+    ]
+  },
+  "gdprPage": {
+    "title": "GDPR Notice",
+    "metaDescription": "Our GDPR notice: the legal bases we rely on, our current cookie position, and the data subject rights you can exercise and how.",
+    "intro": "This notice supplements our Privacy Policy for users protected by the EU General Data Protection Regulation (GDPR) and the UK GDPR.",
+    "lastUpdated": "Last updated: 8 August 2026",
+    "notice": "This page is generic template wording and has not been reviewed by a qualified lawyer. Fields marked with [square brackets] are placeholders awaiting our official registration details.",
+    "sections": [
+      {
+        "title": "1. Purpose of this page",
+        "paragraphs": [
+          "This page supplements the Privacy Policy. Where the two conflict on a matter within GDPR scope, this page prevails. For general information (what we collect, how long we keep it, how we secure it), see the Privacy Policy."
+        ]
+      },
+      {
+        "title": "2. Data controller",
+        "paragraphs": [
+          "The controller for personal data processed through this service is:"
+        ],
+        "bullets": [
+          "[Registered Company Name] (Company/Tax ID: [Company Registration Number])",
+          "Address: No. 100, Shifan Rd., Taipei, Taiwan",
+          "Email: j172@j172.tw",
+          "Phone: (+886) 0909-256-829",
+          "Data protection contact: [Data Protection Contact / DPO]"
+        ]
+      },
+      {
+        "title": "3. Legal bases for processing",
+        "paragraphs": [
+          "Under Article 6 GDPR we rely on the following bases, depending on the purpose:"
+        ],
+        "bullets": [
+          "Performance of a contract: creating and maintaining your account, and running bidding, auction close, payment, and settlement.",
+          "Legal obligation: keeping accounting and tax records and responding to competent authorities.",
+          "Legitimate interests: preventing fraud, bid rigging, and account takeover, and keeping the marketplace secure.",
+          "Consent: the newsletter, and any non-essential cookies we may introduce in future. You can withdraw consent at any time; withdrawal does not affect processing carried out beforehand."
+        ]
+      },
+      {
+        "title": "4. Our current cookie position",
+        "paragraphs": [
+          "This site currently sets only the strictly necessary cookie that keeps you signed in. There are no tracking, analytics, or advertising cookies, and no Google Analytics, advertising pixels, or cross-site tracking tools embedded anywhere on the site.",
+          "The cookie banner shown on your first visit exists to record your choice about non-essential cookies. Because there are none today, choosing \"decline non-essential cookies\" changes nothing about how the site works — it simply stores your preference. If we ever introduce non-essential cookies, we will update this page and the Privacy Policy first, and enable them only after obtaining consent."
+        ]
+      },
+      {
+        "title": "5. Your rights under the GDPR",
+        "bullets": [
+          "Access: confirm whether we process your data and obtain a copy.",
+          "Rectification: have inaccurate or incomplete data corrected.",
+          "Erasure (right to be forgotten): have your data deleted, except where we must retain it by law.",
+          "Restriction: have processing paused in certain circumstances.",
+          "Portability: receive the data you provided in a structured, commonly used, machine-readable format.",
+          "Objection: object to processing based on legitimate interests.",
+          "Withdraw consent: withdraw any consent you previously gave, at any time.",
+          "Complain: lodge a complaint with your local data protection supervisory authority."
+        ]
+      },
+      {
+        "title": "6. How to exercise your rights",
+        "paragraphs": [
+          "Email j172@j172.tw with \"GDPR request\" in the subject line, telling us which right you want to exercise and the email address registered with your account. To avoid disclosing data to the wrong person we may need to verify your identity first. We aim to respond within 30 days of receiving a request; complex cases may be extended, and we will tell you within the original period if that happens. There is no charge, though we may charge a reasonable fee or refuse to act on manifestly unfounded or excessive requests."
+        ]
+      },
+      {
+        "title": "7. International transfers",
+        "paragraphs": [
+          "Our servers and database are located in [Server Location / Region]. If you use the site from the EU or UK, your data is transferred there for processing. For such transfers we apply the appropriate safeguards required by Chapter V GDPR (for example, standard contractual clauses): [Transfer Safeguard Mechanism]."
+        ]
+      },
+      {
+        "title": "8. Automated decision-making",
+        "paragraphs": [
+          "We do not carry out solely automated decision-making or profiling that produces legal effects concerning you or similarly significantly affects you. Auto bidding only raises bids up to the maximum you set yourself — it acts on your instruction and does not score or categorise you."
+        ]
+      },
+      {
+        "title": "9. Complaints to a supervisory authority",
+        "paragraphs": [
+          "If you believe our processing breaches the GDPR you can contact us directly, and you also have the right to lodge a complaint with the data protection supervisory authority where you live, where you work, or where the alleged infringement took place: [Competent Supervisory Authority]."
+        ]
+      }
+    ]
   }
 }
