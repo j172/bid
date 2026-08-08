@@ -1,13 +1,6 @@
 import { getCurrentUser } from "@/lib/auth";
+import { csvEscape } from "@/lib/csv";
 import { CLOSE_REASON_LABELS, listClosedListings, type ListClosedListingsOptions } from "@/lib/listings";
-
-function csvEscape(value: string | number): string {
-  const text = String(value);
-  if (/[",\n]/.test(text)) {
-    return `"${text.replace(/"/g, '""')}"`;
-  }
-  return text;
-}
 
 function formatDate(date: Date): string {
   return new Date(date).toLocaleString("zh-TW", { hour12: false });

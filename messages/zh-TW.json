@@ -283,7 +283,8 @@
     "resendVerificationPrompt": "你的信箱尚未完成驗證。",
     "resendVerificationButton": "重新寄送驗證信",
     "resendVerificationSubmitting": "寄送中...",
-    "resendVerificationSent": "若該信箱已註冊且尚未驗證，我們已寄送新的驗證信，請至信箱查看。"
+    "resendVerificationSent": "若該信箱已註冊且尚未驗證，我們已寄送新的驗證信，請至信箱查看。",
+    "turnstileNotReady": "請先完成人機驗證後再送出"
   },
   "register": {
     "title": "註冊",
@@ -536,6 +537,7 @@
     "PASSWORD_TOO_SHORT": "密碼至少需要 8 個字元",
     "EMAIL_ALREADY_REGISTERED": "這個 email 已經註冊過了",
     "EMAIL_OR_PASSWORD_INCORRECT": "email 或密碼錯誤",
+    "LOGIN_RATE_LIMITED": "登入失敗次數過多，請 15 分鐘後再試",
     "ACCOUNT_SUSPENDED": "此帳號已被停權，請聯繫網站管理員",
     "WRONG_OLD_PASSWORD": "舊密碼不正確",
     "NEW_PASSWORD_TOO_SHORT": "新密碼至少需要 8 個字元",
