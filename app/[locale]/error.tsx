@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { getClientIpAction } from "@/lib/actions/getClientIp";
+import { getRayIdAction } from "@/lib/actions/getRayId";
 import { routing } from "@/i18n/routing";
 import { formatUtcTimestamp } from "@/lib/formatUtcTimestamp";
 import { generateRayId } from "@/lib/rayId";
@@ -18,13 +19,15 @@ import CloudflareErrorPage from "../components/CloudflareErrorPage";
 //
 // Ray ID and client IP are filled in after mount rather than during the
 // initial render: this component is still server-rendered for the first
-// HTML response when the triggering error happens during SSR, and
-// computing a random Ray ID or awaiting the client-IP server action
-// synchronously there would make that server-rendered value disagree with
-// the value produced when the same component re-runs during client
-// hydration — a React hydration mismatch. Starting from null on both sides
-// and filling in via useEffect (which only runs after hydration) avoids
-// that entirely.
+// HTML response when the triggering error happens during SSR, and awaiting
+// either server action (getRayIdAction, getClientIpAction — see issue #127
+// for why Ray ID also went through a server action rather than
+// generateRayId() directly, once it needed request headers to find the real
+// Cloudflare Ray ID) synchronously there would make that server-rendered
+// value disagree with the value produced when the same component re-runs
+// during client hydration — a React hydration mismatch. Starting from null
+// on both sides and filling in via useEffect (which only runs after
+// hydration) avoids that entirely.
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const locale = useLocale();
   const t = useTranslations("errorPage");
@@ -38,7 +41,12 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
     // shows the visitor a generic message, never `error.message` itself.
     console.error(error);
 
-    setRayId(generateRayId());
+    getRayIdAction()
+      .then((id) => setRayId(id))
+      // Server Action unreachable (e.g. offline) — fall back to the same
+      // cosmetic random id this page always showed before issue #127
+      // rather than leaving the "…" placeholder up forever.
+      .catch(() => setRayId(generateRayId()));
     setTimestamp(formatUtcTimestamp(new Date()));
     getClientIpAction()
       .then((ip) => setClientIp(ip))

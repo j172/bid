@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getClientIpAction } from "@/lib/actions/getClientIp";
+import { getRayIdAction } from "@/lib/actions/getRayId";
 import { DEFAULT_GLOBAL_ERROR_LOCALE, GLOBAL_ERROR_COPY, detectGlobalErrorLocale } from "@/lib/globalErrorCopy";
 import { formatUtcTimestamp } from "@/lib/formatUtcTimestamp";
 import { generateRayId } from "@/lib/rayId";
@@ -30,7 +31,12 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
     console.error(error);
 
     setLocale(detectGlobalErrorLocale(typeof navigator === "undefined" ? undefined : navigator.languages));
-    setRayId(generateRayId());
+    getRayIdAction()
+      .then((id) => setRayId(id))
+      // Server Action unreachable (e.g. offline) — fall back to the same
+      // cosmetic random id this page always showed before issue #127
+      // rather than leaving the "…" placeholder up forever.
+      .catch(() => setRayId(generateRayId()));
     setTimestamp(formatUtcTimestamp(new Date()));
     getClientIpAction()
       .then((ip) => setClientIp(ip))
