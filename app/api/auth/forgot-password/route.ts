@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { findUserByEmail } from "@/lib/auth";
-import { createPasswordResetToken, isPasswordResetRateLimited } from "@/lib/passwordReset";
+import { createPasswordResetToken, isPasswordResetRateLimited, resetPasswordPath } from "@/lib/passwordReset";
 import { sendPasswordResetEmail } from "@/lib/notifications";
 import { getClientIpFromHeaders } from "@/lib/clientIp";
 import { resolveOrigin } from "@/lib/newsNewsletterSync";
@@ -16,16 +16,6 @@ import { routing } from "@/i18n/routing";
 // only be consumed once.
 function neutralResponse() {
   return NextResponse.json({ ok: true });
-}
-
-// The default locale (zh-TW) keeps unprefixed URLs under this project's
-// "as-needed" localePrefix routing (see i18n/routing.ts) — every other
-// locale gets a /{locale} prefix. Mirrors how next-intl's own Link/
-// getPathname resolve this, done by hand here since this runs outside any
-// component tree (an outbound email, not a page render).
-function resetPasswordPath(locale: string, token: string): string {
-  const prefix = locale === routing.defaultLocale ? "" : `/${locale}`;
-  return `${prefix}/reset-password?token=${encodeURIComponent(token)}`;
 }
 
 export async function POST(request: Request) {

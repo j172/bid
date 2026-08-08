@@ -13,7 +13,13 @@ vi.mock("@/lib/db", () => ({
   getDb: async () => ({ query: queryMock }),
 }));
 
-import { createPasswordResetToken, isPasswordResetRateLimited, isResetTokenValid, resetPassword } from "./passwordReset";
+import {
+  createPasswordResetToken,
+  isPasswordResetRateLimited,
+  isResetTokenValid,
+  resetPassword,
+  resetPasswordPath,
+} from "./passwordReset";
 
 beforeEach(() => {
   queryMock.mockReset();
@@ -39,6 +45,21 @@ describe("isResetTokenValid", () => {
   it("accepts an unused, not-yet-expired row", () => {
     const row = { user_id: 1, expires_at: new Date("2026-08-08T12:00:01Z"), used_at: null };
     expect(isResetTokenValid(row, now)).toBe(true);
+  });
+});
+
+describe("resetPasswordPath", () => {
+  it("omits the locale prefix for the default locale (zh-TW)", () => {
+    expect(resetPasswordPath("zh-TW", "abc123")).toBe("/reset-password?token=abc123");
+  });
+
+  it("prefixes non-default locales with /{locale}", () => {
+    expect(resetPasswordPath("en", "abc123")).toBe("/en/reset-password?token=abc123");
+    expect(resetPasswordPath("zh-CN", "abc123")).toBe("/zh-CN/reset-password?token=abc123");
+  });
+
+  it("URL-encodes the token", () => {
+    expect(resetPasswordPath("zh-TW", "a b/c")).toBe("/reset-password?token=a%20b%2Fc");
   });
 });
 

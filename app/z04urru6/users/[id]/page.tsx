@@ -5,6 +5,7 @@ import { getBidHistoryForUser, getListingsCreatedByUser } from "@/lib/listings";
 import StatusBadge from "../../../components/StatusBadge";
 import RoleToggleButton from "../RoleToggleButton";
 import SuspendToggleButton from "../SuspendToggleButton";
+import ResetPasswordButton from "../ResetPasswordButton";
 import AdminPageIntro from "../../AdminPageIntro";
 
 export const dynamic = "force-dynamic";
@@ -71,6 +72,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
                 isSuspended={detail.status === "suspended"}
                 isSelf={detail.id === currentUser?.id}
               />
+              <ResetPasswordButton userId={detail.id} email={detail.email} />
             </div>
           )}
         </div>
