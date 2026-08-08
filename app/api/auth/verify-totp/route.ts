@@ -3,6 +3,7 @@ import { createSession, findUserByEmail, verifyPassword } from "@/lib/auth";
 import { clearLoginFailures, isLoginRateLimited, recordLoginFailure } from "@/lib/loginRateLimit";
 import { verifyTotpLogin } from "@/lib/totp";
 import { getClientIpFromHeaders } from "@/lib/clientIp";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 
 // Second step of the TOTP login flow (issue #97) — the counterpart to
 // app/api/auth/login/route.ts's twoFactorRequired branch. Unlike
@@ -21,6 +22,7 @@ export async function POST(request: Request) {
   const email = typeof body?.email === "string" ? body.email.trim() : "";
   const password = typeof body?.password === "string" ? body.password : "";
   const code = typeof body?.code === "string" ? body.code : "";
+  const turnstileToken = typeof body?.turnstileToken === "string" ? body.turnstileToken : "";
   const ip = getClientIpFromHeaders(request.headers);
 
   // Because this route re-verifies email+password itself (see above), it is a
@@ -31,6 +33,17 @@ export async function POST(request: Request) {
   // *codes* on an account whose password is already known-correct.
   if (await isLoginRateLimited(email, ip)) {
     return NextResponse.json({ ok: false, errorCode: "LOGIN_RATE_LIMITED" }, { status: 429 });
+  }
+
+  // Cloudflare Turnstile, same second layer the login route now applies and
+  // for the same reason this route already duplicates the brute-force guard:
+  // it re-verifies email+password itself, so leaving it without a token
+  // requirement would just move the cheap-attempt surface over here. The
+  // login page renders a *separate* widget instance for this step — a
+  // Turnstile token is single-use, so the one spent on POST /api/auth/login
+  // cannot be replayed here.
+  if (!(await verifyTurnstileToken(turnstileToken, ip))) {
+    return NextResponse.json({ ok: false, errorCode: "TURNSTILE_VERIFICATION_FAILED" }, { status: 400 });
   }
 
   const user = await findUserByEmail(email);

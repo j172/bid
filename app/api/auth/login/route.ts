@@ -4,11 +4,13 @@ import { createEmailOtpChallenge, isEmailOtpRateLimited } from "@/lib/emailOtp";
 import { clearLoginFailures, isLoginRateLimited, recordLoginFailure } from "@/lib/loginRateLimit";
 import { sendEmailOtpEmail } from "@/lib/notifications";
 import { getClientIpFromHeaders } from "@/lib/clientIp";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const email = typeof body?.email === "string" ? body.email.trim() : "";
   const password = typeof body?.password === "string" ? body.password : "";
+  const turnstileToken = typeof body?.turnstileToken === "string" ? body.turnstileToken : "";
   const ip = getClientIpFromHeaders(request.headers);
 
   // Password brute-force guard (issue #140 H-1) — checked before the scrypt
@@ -18,6 +20,22 @@ export async function POST(request: Request) {
   // EMAIL_OTP_RATE_LIMITED: "come back later", not "your input was wrong".
   if (await isLoginRateLimited(email, ip)) {
     return NextResponse.json({ ok: false, errorCode: "LOGIN_RATE_LIMITED" }, { status: 429 });
+  }
+
+  // Cloudflare Turnstile (issue #140 H-1, second layer): every login attempt
+  // must carry a fresh, valid token — always on, not something that only
+  // switches on after N failures. The rate limit above caps how fast one
+  // email/IP may guess; this caps how cheaply an attacker can generate the
+  // attempts at all, across many IPs. Deliberately checked *after* the rate
+  // limit (a locked-out attempt still costs no outbound siteverify call) and
+  // *before* findUserByEmail/verifyPassword, so a request without a valid
+  // token never reaches the password comparison — and, being neither a
+  // password guess nor a lockout, it records no login failure. Same 400 +
+  // TURNSTILE_VERIFICATION_FAILED shape app/api/contact/route.ts already
+  // returns; verifyTurnstileToken never throws and fails closed (see
+  // lib/turnstile.ts).
+  if (!(await verifyTurnstileToken(turnstileToken, ip))) {
+    return NextResponse.json({ ok: false, errorCode: "TURNSTILE_VERIFICATION_FAILED" }, { status: 400 });
   }
 
   const user = await findUserByEmail(email);

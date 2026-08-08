@@ -51,6 +51,19 @@ vi.mock("@/lib/clientIp", () => ({
   getClientIpFromHeaders: () => "203.0.113.7",
 }));
 
+// lib/turnstile.ts talks to challenges.cloudflare.com over node:https, so it
+// is mocked here the same way every other dependency of this route is — the
+// module's own behaviour (fail-closed parsing, missing secret, non-2xx) is
+// covered by lib/turnstile.test.ts. Defaults to "verified" in beforeEach so
+// the pre-existing cases below stay about what they were written for.
+const { verifyTurnstileTokenMock } = vi.hoisted(() => ({
+  verifyTurnstileTokenMock: vi.fn(),
+}));
+
+vi.mock("@/lib/turnstile", () => ({
+  verifyTurnstileToken: verifyTurnstileTokenMock,
+}));
+
 import { POST } from "./route";
 
 function loginRequest(body: unknown) {
@@ -80,6 +93,8 @@ beforeEach(() => {
   isLoginRateLimitedMock.mockResolvedValue(false);
   recordLoginFailureMock.mockReset();
   clearLoginFailuresMock.mockReset();
+  verifyTurnstileTokenMock.mockReset();
+  verifyTurnstileTokenMock.mockResolvedValue(true);
 });
 
 describe("POST /api/auth/login — email verification gate (issue #118)", () => {
@@ -195,5 +210,69 @@ describe("POST /api/auth/login — brute-force guard (issue #140 H-1)", () => {
 
     expect(data).toEqual({ ok: true, twoFactorRequired: true, twoFactorMethod: "totp" });
     expect(clearLoginFailuresMock).toHaveBeenCalledWith(baseUser.email);
+  });
+});
+
+// Issue #140 H-1, second layer: every login attempt must carry a valid
+// Cloudflare Turnstile token, always — not only after some number of
+// failures. These cover the route's own responsibility only (consult the
+// verifier, block everything downstream when it says no); lib/turnstile.ts's
+// own fail-closed behaviour is tested in lib/turnstile.test.ts.
+describe("POST /api/auth/login — Turnstile (issue #140 H-1)", () => {
+  it("rejects a request whose Turnstile token fails verification, before the password is ever checked", async () => {
+    verifyTurnstileTokenMock.mockResolvedValue(false);
+
+    const response = await POST(loginRequest({ email: baseUser.email, password: "correct-password", turnstileToken: "stale-token" }));
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data).toEqual({ ok: false, errorCode: "TURNSTILE_VERIFICATION_FAILED" });
+    expect(verifyTurnstileTokenMock).toHaveBeenCalledWith("stale-token", "203.0.113.7");
+    expect(findUserByEmailMock).not.toHaveBeenCalled();
+    expect(verifyPasswordMock).not.toHaveBeenCalled();
+    expect(createSessionMock).not.toHaveBeenCalled();
+  });
+
+  it("does not count a failed Turnstile check as a password failure", async () => {
+    verifyTurnstileTokenMock.mockResolvedValue(false);
+
+    await POST(loginRequest({ email: baseUser.email, password: "correct-password", turnstileToken: "stale-token" }));
+
+    expect(recordLoginFailureMock).not.toHaveBeenCalled();
+    expect(clearLoginFailuresMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a request with no token at all, so the widget can't simply be skipped", async () => {
+    verifyTurnstileTokenMock.mockResolvedValue(false);
+
+    const response = await POST(loginRequest({ email: baseUser.email, password: "correct-password" }));
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data).toEqual({ ok: false, errorCode: "TURNSTILE_VERIFICATION_FAILED" });
+    expect(verifyTurnstileTokenMock).toHaveBeenCalledWith("", "203.0.113.7");
+  });
+
+  it("checks the rate limit first, so a locked-out attempt costs no siteverify call", async () => {
+    isLoginRateLimitedMock.mockResolvedValue(true);
+
+    const response = await POST(loginRequest({ email: baseUser.email, password: "any-password", turnstileToken: "fresh-token" }));
+
+    expect(response.status).toBe(429);
+    expect(verifyTurnstileTokenMock).not.toHaveBeenCalled();
+  });
+
+  it("carries on with the normal login flow once the token verifies", async () => {
+    findUserByEmailMock.mockResolvedValue({ ...baseUser, email_verified: 1 });
+    verifyPasswordMock.mockResolvedValue(true);
+    createSessionMock.mockResolvedValue("session-token");
+
+    const response = await POST(loginRequest({ email: baseUser.email, password: "correct-password", turnstileToken: "fresh-token" }));
+    const data = await response.json();
+
+    expect(data).toEqual({ ok: true, user: { id: baseUser.id, email: baseUser.email, role: baseUser.role } });
+    expect(verifyTurnstileTokenMock).toHaveBeenCalledWith("fresh-token", "203.0.113.7");
+    expect(verifyPasswordMock).toHaveBeenCalled();
+    expect(createSessionMock).toHaveBeenCalledWith(baseUser.id);
   });
 });
