@@ -30,9 +30,6 @@ export default async function SiteHeader() {
           </div>
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
-            <Link href="/account" className="font-medium text-white hover:text-steel-azure-200">
-              {t("account")}
-            </Link>
           </div>
         </div>
       </div>
