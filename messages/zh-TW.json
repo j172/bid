@@ -288,7 +288,8 @@
     "submitting": "註冊中...",
     "defaultError": "註冊失敗",
     "haveAccount": "已經有帳號？",
-    "loginLink": "登入"
+    "loginLink": "登入",
+    "displayNameOptionalHint": "選填，未填寫將自動產生預設名稱"
   },
   "forgotPassword": {
     "title": "忘記密碼",
@@ -591,5 +592,10 @@
       "whatHappened": "載入這個頁面時發生未預期的錯誤，我們已經記錄下來並會盡快處理。",
       "whatCanIDo": "請稍後再試一次；如果問題持續發生，歡迎與我們聯繫並告訴我們發生問題時您正在做什麼。"
     }
+  },
+  "passwordStrength": {
+    "weak": "弱",
+    "medium": "中",
+    "strong": "強"
   }
 }
