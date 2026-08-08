@@ -283,7 +283,8 @@
     "resendVerificationPrompt": "你的邮箱尚未完成验证。",
     "resendVerificationButton": "重新发送验证邮件",
     "resendVerificationSubmitting": "发送中...",
-    "resendVerificationSent": "若该邮箱已注册且尚未验证，我们已发送新的验证邮件，请至邮箱查看。"
+    "resendVerificationSent": "若该邮箱已注册且尚未验证，我们已发送新的验证邮件，请至邮箱查看。",
+    "turnstileNotReady": "请先完成人机验证后再送出"
   },
   "register": {
     "title": "注册",

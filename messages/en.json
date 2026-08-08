@@ -283,7 +283,8 @@
     "resendVerificationPrompt": "Your email address hasn't been verified yet.",
     "resendVerificationButton": "Resend verification email",
     "resendVerificationSubmitting": "Sending...",
-    "resendVerificationSent": "If that email is registered and still unverified, a new verification link has been sent — please check your inbox."
+    "resendVerificationSent": "If that email is registered and still unverified, a new verification link has been sent — please check your inbox.",
+    "turnstileNotReady": "Please complete the human verification before submitting"
   },
   "register": {
     "title": "Sign Up",
