@@ -4,6 +4,7 @@ import { startAuthentication } from "@simplewebauthn/browser";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
+import Button from "@/app/components/Button";
 import AuthFormShell from "../components/AuthFormShell";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
@@ -27,6 +28,23 @@ export default function LoginPage() {
   const [code, setCode] = useState("");
   const [verifying, setVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState<string | null>(null);
+
+  // TOTP (issue #97) — parallel branch to the Email OTP step above, entered
+  // when the login response's twoFactorMethod is "totp" instead of
+  // "email_otp". There's no challengeToken here (see
+  // app/api/auth/login/route.ts's totp branch): POST /api/auth/verify-totp
+  // re-verifies email+password itself, so this step resubmits the same
+  // email/password state the form above already collected, alongside
+  // whatever the visitor types into totpCode (accepts either a 6-digit app
+  // code or a backup code — the backend tells them apart by format). A
+  // successful backup-code verify doesn't navigate away immediately; it
+  // shows how many backup codes remain first (totpBackupNotice) since that's
+  // the only time the visitor finds out, then a second click continues on.
+  const [totpRequired, setTotpRequired] = useState(false);
+  const [totpCode, setTotpCode] = useState("");
+  const [totpVerifying, setTotpVerifying] = useState(false);
+  const [totpError, setTotpError] = useState<string | null>(null);
+  const [totpBackupNotice, setTotpBackupNotice] = useState<string | null>(null);
 
   // Passkey login (issue #95) — a separate, parallel entry point to the
   // password form above, not a replacement for it. Usernameless/discoverable-
@@ -58,7 +76,36 @@ export default function LoginPage() {
       return;
     }
     if (data.twoFactorRequired) {
-      setChallengeToken(data.challengeToken);
+      if (data.twoFactorMethod === "totp") {
+        setTotpRequired(true);
+      } else {
+        setChallengeToken(data.challengeToken);
+      }
+      return;
+    }
+    router.push("/");
+    router.refresh();
+  }
+
+  async function handleTotpSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setTotpVerifying(true);
+    setTotpError(null);
+
+    const response = await fetch("/api/auth/verify-totp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, code: totpCode }),
+    });
+    const data = await response.json();
+
+    setTotpVerifying(false);
+    if (!data.ok) {
+      setTotpError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
+      return;
+    }
+    if (data.usedBackupCode) {
+      setTotpBackupNotice(t("totpBackupCodeUsedNotice", { count: data.remainingBackupCodes }));
       return;
     }
     router.push("/");
@@ -125,6 +172,71 @@ export default function LoginPage() {
     } finally {
       setPasskeySubmitting(false);
     }
+  }
+
+  if (totpRequired) {
+    if (totpBackupNotice) {
+      return (
+        <main className="mx-auto max-w-md px-4 py-16 sm:px-6">
+          <div className="rounded-lg border border-border bg-surface p-8 shadow-sm">
+            <h1 className="text-2xl font-bold">{t("totpTitle")}</h1>
+            <p className="mt-6 text-sm text-ink-light">{totpBackupNotice}</p>
+            <Button
+              type="button"
+              onClick={() => {
+                router.push("/");
+                router.refresh();
+              }}
+              className="mt-6 w-full"
+            >
+              {t("totpContinue")}
+            </Button>
+          </div>
+        </main>
+      );
+    }
+
+    return (
+      <AuthFormShell
+        title={t("totpTitle")}
+        onSubmit={handleTotpSubmit}
+        submitting={totpVerifying}
+        submitLabel={t("totpSubmit")}
+        submittingLabel={t("totpSubmitting")}
+        error={totpError}
+        footer={
+          <p className="mt-4 text-sm text-ink-light">
+            <button
+              type="button"
+              onClick={() => {
+                setTotpRequired(false);
+                setTotpCode("");
+                setTotpError(null);
+              }}
+              className="font-medium text-interactive-primary hover:underline"
+            >
+              {t("otpBackToLogin")}
+            </button>
+          </p>
+        }
+      >
+        <p className="text-sm text-ink-light">{t("totpDescription")}</p>
+        <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+          {t("totpCodeLabel")}
+          <input
+            type="text"
+            inputMode="text"
+            maxLength={11}
+            required
+            autoFocus
+            value={totpCode}
+            onChange={(e) => setTotpCode(e.target.value)}
+            placeholder={t("totpCodePlaceholder")}
+            className={inputClass}
+          />
+        </label>
+      </AuthFormShell>
+    );
   }
 
   if (challengeToken) {

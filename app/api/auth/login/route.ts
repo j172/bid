@@ -30,7 +30,20 @@ export async function POST(request: Request) {
     const { token, code } = await createEmailOtpChallenge(user.id, ip);
     await sendEmailOtpEmail(user.email, user.locale, code);
 
-    return NextResponse.json({ ok: true, twoFactorRequired: true, challengeToken: token });
+    return NextResponse.json({ ok: true, twoFactorRequired: true, twoFactorMethod: "email_otp", challengeToken: token });
+  }
+
+  // TOTP (issue #97) — parallel to the email_otp branch above, but with no
+  // challenge to issue or email to send: the secret already lives on the
+  // visitor's own device, so this response just tells the front end "collect
+  // a TOTP/backup code next" (twoFactorMethod, no challengeToken). Unlike
+  // Email OTP, there is no pending-challenge row identifying which account
+  // is mid-login — POST /api/auth/verify-totp re-verifies the email/password
+  // pair itself instead (see that route's header comment), so this branch
+  // deliberately does nothing more than report which second factor is
+  // required.
+  if (user.two_factor_method === "totp") {
+    return NextResponse.json({ ok: true, twoFactorRequired: true, twoFactorMethod: "totp" });
   }
 
   await createSession(user.id);
