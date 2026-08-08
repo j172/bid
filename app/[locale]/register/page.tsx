@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import AuthFormShell from "../components/AuthFormShell";
+import PasswordStrengthMeter from "@/app/components/PasswordStrengthMeter";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
 
@@ -79,15 +80,16 @@ export default function RegisterPage() {
               className={inputClass}
             />
           </label>
+          <PasswordStrengthMeter password={password} />
           <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
             {t("displayName")}
             <input
               type="text"
-              required
               maxLength={50}
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               className={inputClass}
+              placeholder={t("displayNameOptionalHint")}
             />
           </label>
           <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">

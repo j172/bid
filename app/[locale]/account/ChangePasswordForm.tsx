@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import Button from "@/app/components/Button";
+import PasswordStrengthMeter from "@/app/components/PasswordStrengthMeter";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
 
@@ -60,6 +61,7 @@ export default function ChangePasswordForm() {
           onChange={(e) => setNewPassword(e.target.value)}
           className={inputClass}
         />
+        <PasswordStrengthMeter password={newPassword} />
       </label>
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={submitting}>

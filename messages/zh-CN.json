@@ -292,7 +292,8 @@
     "submitting": "注册中...",
     "defaultError": "注册失败",
     "haveAccount": "已经有账号？",
-    "loginLink": "登录"
+    "loginLink": "登录",
+    "displayNameOptionalHint": "选填，未填写将自动生成默认名称"
   },
   "forgotPassword": {
     "title": "忘记密码",
@@ -493,7 +494,10 @@
     "emailPlaceholder": "你的 Email",
     "subjectPlaceholder": "主题",
     "messagePlaceholder": "留言内容",
-    "submit": "发送留言"
+    "submit": "发送留言",
+    "submitting": "发送中...",
+    "success": "已送出，感谢你的留言，我们会尽快回复。",
+    "defaultError": "发送失败，请稍后再试"
   },
   "errors": {
     "NOT_FOUND": "找不到这个商品",
@@ -531,7 +535,15 @@
     "TOTP_LOGIN_LOCKED": "验证失败次数过多，请 15 分钟后再试",
     "LEADING_OPEN_LISTING": "你目前正在领先某个开放中的商品，请等到不再领先才能删除账号",
     "UNSETTLED_WIN": "你有已得标但尚未完成交易的商品，请等待管理员确认交易完成后再删除账号",
-    "UNSETTLED_PURCHASE": "你有已购买但尚未完成交易的商品，请等待管理员确认交易完成后再删除账号"
+    "UNSETTLED_PURCHASE": "你有已购买但尚未完成交易的商品，请等待管理员确认交易完成后再删除账号",
+    "CONTACT_NAME_REQUIRED": "请输入姓名",
+    "CONTACT_NAME_TOO_LONG": "姓名不能超过 100 个字",
+    "CONTACT_SUBJECT_REQUIRED": "请输入主题",
+    "CONTACT_SUBJECT_TOO_LONG": "主题不能超过 200 个字",
+    "CONTACT_MESSAGE_REQUIRED": "请输入留言内容",
+    "CONTACT_MESSAGE_TOO_LONG": "留言内容不能超过 2000 个字",
+    "TURNSTILE_VERIFICATION_FAILED": "验证失败，请重新完成验证后再送出",
+    "CONTACT_SUBMIT_FAILED": "发送失败，请稍后再试"
   },
   "pigeonShowcase": {
     "awardTitle": "入赏鸽",
@@ -595,5 +607,10 @@
       "whatHappened": "加载此页面时发生了未预期的错误，我们已记录下来并会尽快处理。",
       "whatCanIDo": "请稍后再试一次；如果问题持续发生，欢迎与我们联系并告诉我们发生问题时您正在做什么。"
     }
+  },
+  "passwordStrength": {
+    "weak": "弱",
+    "medium": "中",
+    "strong": "强"
   }
 }

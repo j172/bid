@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import ProgressiveImage from "@/app/components/ProgressiveImage";
 import ZoomableProductImage from "./ZoomableProductImage";
 import { useHeroCountdown } from "@/lib/useHeroCountdown";
+import { formatDualPrice, type DisplayCurrency } from "@/lib/currency";
 
 interface HeroCardItem {
   id: number;
@@ -24,6 +25,13 @@ interface HeroSectionProps {
   cards: HeroCardItem[];
   topPriceCards: HeroCardItem[];
   renderedAt: string;
+  // Reference-only currency conversion (issue #45, wired into the hero
+  // section for issue #103) — computed server-side (see HomePage) from the
+  // visitor's locale + the latest synced rate, then passed down here since
+  // this is a client component. NTD stays the authoritative price either
+  // way; formatDualPrice only ever appends a secondary "≈" amount.
+  displayCurrency: DisplayCurrency;
+  rateValue: number | null;
 }
 
 type FormatTranslator = (key: string, values?: Record<string, string | number>) => string;
@@ -114,8 +122,9 @@ export default function HeroSection({
   cards,
   topPriceCards,
   renderedAt,
+  displayCurrency,
+  rateValue,
 }: HeroSectionProps) {
-  const locale = useLocale();
   const tHome = useTranslations("home");
   const tListings = useTranslations("listings");
   const tDetail = useTranslations("listingDetail");
@@ -135,8 +144,6 @@ export default function HeroSection({
 
     return () => window.clearInterval(intervalId);
   }, [cards.length]);
-
-  const numberFormatter = useMemo(() => new Intl.NumberFormat(locale), [locale]);
 
   const activeCard = cards[activeIndex];
   return (
@@ -206,14 +213,16 @@ export default function HeroSection({
                 <div className="relative z-10 mt-12 grid max-w-xl gap-2 text-xs text-steel-azure-100 sm:grid-cols-3 sm:text-sm">
                   <div className="rounded-xl border border-white/10 bg-white/12 px-4 py-3 backdrop-blur-sm">
                     <p className="text-[11px] uppercase tracking-[0.16em] text-steel-azure-200">{tDetail("specCurrentPrice")}</p>
-                    <p className="mt-1 text-base font-bold text-white">{numberFormatter.format(activeCard.currentPrice)}</p>
+                    <p className="mt-1 text-base font-bold text-white">
+                      {formatDualPrice(activeCard.currentPrice, displayCurrency, rateValue)}
+                    </p>
                   </div>
                   <div className="rounded-xl border border-white/10 bg-white/12 px-4 py-3 backdrop-blur-sm">
                     <p className="text-[11px] uppercase tracking-[0.16em] text-steel-azure-200">{tDetail("specBuyNow")}</p>
                     <p className="mt-1 text-base font-bold text-white">
                       {activeCard.buyItNowPrice === null
                         ? tDetail("specNotAvailable")
-                        : numberFormatter.format(activeCard.buyItNowPrice)}
+                        : formatDualPrice(activeCard.buyItNowPrice, displayCurrency, rateValue)}
                     </p>
                   </div>
                   <div className="rounded-xl border border-white/10 bg-white/12 px-4 py-3 backdrop-blur-sm">
@@ -297,10 +306,9 @@ export default function HeroSection({
                   <h2 className="mt-2 line-clamp-2 text-xl font-extrabold leading-tight text-ink">{item.title}</h2>
                   <div className="mt-4 rounded-2xl border border-amber-200/70 bg-gradient-to-r from-amber-50 via-white to-yellow-50 px-4 py-3 shadow-[0_8px_20px_rgba(217,119,6,0.12)] ring-1 ring-white/70">
                     <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-700 drop-shadow-[0_1px_0_rgba(255,255,255,0.78)]">{tDetail("specCurrentPrice")}</p>
-                    <div className="mt-1 flex items-end gap-2">
-                      <span className="text-sm font-semibold text-amber-700">NT$</span>
+                    <div className="mt-1 flex flex-wrap items-end gap-2">
                       <span className="text-3xl font-black leading-none text-amber-900 sm:text-[2rem]">
-                        {numberFormatter.format(item.currentPrice)}
+                        {formatDualPrice(item.currentPrice, displayCurrency, rateValue)}
                       </span>
                     </div>
                   </div>

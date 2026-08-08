@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { listOpenListings } from "@/lib/listings";
 import { listingPhotoUrl, homepageSectionImageUrl, pigeonShowcaseImageUrl, newsImageUrl } from "@/lib/uploads";
 import { listHomepageSections } from "@/lib/homepageSections";
@@ -8,6 +8,8 @@ import { listLatestPigeonShowcase } from "@/lib/pigeonShowcase";
 import { listLatestNews } from "@/lib/news";
 import { excerptHtml } from "@/lib/htmlText";
 import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
+import { currencyForLocale, formatDualPrice, formatNtd } from "@/lib/currency";
+import { getLatestStoredRate } from "@/lib/exchangeRates";
 import { Link } from "@/i18n/navigation";
 import HeroSection from "../components/HeroSection";
 import ZoomableProductImage from "../components/ZoomableProductImage";
@@ -67,6 +69,15 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const allFetchedListings = await listOpenListings();
   const listings = allFetchedListings.filter((item) => item.status === "open");
   const partnerLofts = await listHomepageSections("partner_loft", { activeOnly: true });
+
+  // Reference-only currency conversion (issue #45, wired into the homepage
+  // for issue #103) — same pattern as the listings page and listing detail
+  // page: NTD is always the authoritative price, this only picks which
+  // secondary "≈" currency (if any) to show alongside it for this locale.
+  const locale = await getLocale();
+  const displayCurrency = currencyForLocale(locale);
+  const displayRate = displayCurrency === "TWD" ? null : await getLatestStoredRate(displayCurrency);
+  const rateValue = displayRate?.rate ?? null;
   // 入賞鴿／進口鴿首頁輪播 (issue #54) — latest 10 per category, feeding the
   // two small promo cards below (replacing their static marketing copy when
   // non-empty; see PigeonShowcaseCarouselCard's own fallback branch).
@@ -221,6 +232,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         cards={heroCards}
         topPriceCards={topPriceHeroCards}
         renderedAt={heroRenderedAt}
+        displayCurrency={displayCurrency}
+        rateValue={rateValue}
       />
 
       <section className="mx-auto mt-5 max-w-6xl px-4 sm:px-6">
@@ -397,10 +410,16 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                   </div>
                   <p className="mt-1 text-xs text-ink-light">{item.listing_type === "auction" ? t("statusBidding") : t("statusFixedDeal")}</p>
                   <div className="mt-2 flex items-end gap-2">
-                    <p className="text-base font-black text-ink">{item.listing_type === "auction" ? item.current_price : item.price}</p>
+                    <p className="text-base font-black text-ink">
+                      {formatDualPrice(
+                        item.listing_type === "auction" ? item.current_price : item.price!,
+                        displayCurrency,
+                        rateValue,
+                      )}
+                    </p>
                     {item.listing_type === "auction" && (
                       <p className="text-[11px] text-ink-light line-through">
-                        {Math.ceil(Number(item.current_price) * 1.15)}
+                        {formatNtd(Math.ceil(Number(item.current_price) * 1.15))}
                       </p>
                     )}
                   </div>
@@ -454,7 +473,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                           : t("fixedPriceSectionItemLabel")}
                       </p>
                       <div className="mt-2 flex items-end gap-2">
-                        <p className="text-base font-black text-ink">{item.price}</p>
+                        <p className="text-base font-black text-ink">{formatDualPrice(item.price!, displayCurrency, rateValue)}</p>
                       </div>
                     </div>
                   </Link>
@@ -537,7 +556,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                 </span>
               </div>
               <div className="mt-2 flex items-end gap-2">
-                <p className="text-lg font-black text-ink">{item.listing_type === "auction" ? item.current_price : item.price}</p>
+                <p className="text-lg font-black text-ink">{formatDualPrice(item.listing_type === "auction" ? item.current_price : item.price!, displayCurrency, rateValue)}</p>
               </div>
               <div className="mt-3 flex items-center gap-2 text-[11px]">
                 <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold text-ink">{tListings("quickAction")}</span>
@@ -636,7 +655,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                 </span>
               </div>
               <div className="mt-2 flex items-end gap-2">
-                <p className="text-lg font-black text-ink">{item.listing_type === "auction" ? item.current_price : item.price}</p>
+                <p className="text-lg font-black text-ink">{formatDualPrice(item.listing_type === "auction" ? item.current_price : item.price!, displayCurrency, rateValue)}</p>
               </div>
 
               <div className="mt-3 flex items-center gap-2 text-[11px]">
@@ -661,7 +680,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                     <p className="truncate text-sm font-semibold">{item.title}</p>
                     <p className="text-xs text-ink-light">{item.bidCount === 0 ? tListings("noBidsYet") : tListings("totalBids", { count: item.bidCount })}</p>
                   </div>
-                  <p className="ml-3 shrink-0 text-sm font-bold text-interactive-primary">{item.current_price}</p>
+                  <p className="ml-3 shrink-0 text-sm font-bold text-interactive-primary">{formatDualPrice(item.current_price, displayCurrency, rateValue)}</p>
                 </Link>
               ))}
             </div>
@@ -676,7 +695,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                     <p className="truncate text-sm font-semibold">{item.title}</p>
                     <p className="text-xs text-ink-light">{t("purchaseCountShort", { count: item.purchaseCount })}</p>
                   </div>
-                  <p className="ml-3 shrink-0 text-sm font-bold text-interactive-primary">{item.price}</p>
+                  <p className="ml-3 shrink-0 text-sm font-bold text-interactive-primary">{formatDualPrice(item.price!, displayCurrency, rateValue)}</p>
                 </Link>
               ))}
             </div>

@@ -9,6 +9,7 @@ import {
 import { resolvePurchase, type PurchaseOutcome } from "@/lib/purchase";
 import { notifyAuctionEnded, notifyOutbid, notifyPurchaseConfirmed, notifyWinner } from "@/lib/notifications";
 import type { ErrorCode } from "@/lib/errorCodes";
+import { tokenizeSearchQuery } from "@/lib/search";
 
 let listingsStartsAtColumnExists: boolean | null = null;
 
@@ -368,8 +369,18 @@ export async function getOpenListingsForAdmin(
   const params: string[] = [];
   const search = options.search?.trim();
   if (search) {
-    conditions.push("title LIKE ?");
-    params.push(`%${search}%`);
+    // Segment into keywords so a multi-word query like "石君 回血" matches
+    // listings containing both words rather than failing on the literal
+    // space (see issue #105). Each keyword must match title OR description;
+    // keywords are AND'd together. Falls back to the previous whole-string
+    // match if segmentation yields no usable tokens (e.g. all punctuation),
+    // so search never silently drops the filter and returns everything.
+    const tokens = tokenizeSearchQuery(search);
+    const searchTerms = tokens.length > 0 ? tokens : [search];
+    for (const term of searchTerms) {
+      conditions.push("(title LIKE ? OR description LIKE ?)");
+      params.push(`%${term}%`, `%${term}%`);
+    }
   }
   if (options.type) {
     conditions.push("listing_type = ?");
@@ -381,6 +392,10 @@ export async function getOpenListingsForAdmin(
   const total = (countRows as { cnt: number }[])[0].cnt;
 
   const orderBy = OPEN_LISTINGS_SORT_CLAUSES[options.sort ?? "ends_asc"];
+  // Rank title/description hits on the full original query above everything
+  // else that only matched via individual keyword segments.
+  const orderByExpr = search ? `CASE WHEN title LIKE ? THEN 0 ELSE 1 END, ${orderBy}` : orderBy;
+  const selectParams = search ? [...params, `%${search}%`] : params;
   const page = Math.max(1, options.page ?? 1);
   const offset = (page - 1) * OPEN_LISTINGS_PAGE_SIZE;
 
@@ -391,9 +406,9 @@ export async function getOpenListingsForAdmin(
        stock_quantity AS stockQuantity, stock_remaining AS stockRemaining
      FROM listings
      ${where}
-     ORDER BY ${orderBy}
+     ORDER BY ${orderByExpr}
      LIMIT ${OPEN_LISTINGS_PAGE_SIZE} OFFSET ${offset}`,
-    params,
+    selectParams,
   );
   const listings = (rows as (Omit<OpenListingForAdmin, "hasBids" | "canCancel"> & { hasBids: number })[]).map((row) => ({
     ...row,
@@ -615,8 +630,14 @@ function closedListingsWhereClause(options: ListClosedListingsOptions): { where:
 
   const search = options.search?.trim();
   if (search) {
-    conditions.push("l.title LIKE ?");
-    params.push(`%${search}%`);
+    // See getOpenListingsForAdmin's comment for why this segments the query
+    // and matches title/description per keyword (issue #105).
+    const tokens = tokenizeSearchQuery(search);
+    const searchTerms = tokens.length > 0 ? tokens : [search];
+    for (const term of searchTerms) {
+      conditions.push("(l.title LIKE ? OR l.description LIKE ?)");
+      params.push(`%${term}%`, `%${term}%`);
+    }
   }
   const winnerEmail = options.winnerEmail?.trim();
   if (winnerEmail) {
@@ -657,7 +678,12 @@ export async function listClosedListings(
   );
   const total = (countRows as { cnt: number }[])[0].cnt;
 
+  const search = options.search?.trim();
   const orderBy = CLOSED_LISTINGS_SORT_CLAUSES[options.sort ?? "ends_desc"];
+  // Rank title/description hits on the full original query above everything
+  // else that only matched via individual keyword segments.
+  const orderByExpr = search ? `CASE WHEN l.title LIKE ? THEN 0 ELSE 1 END, ${orderBy}` : orderBy;
+  const selectParams = search ? [...params, `%${search}%`] : params;
   const page = Math.max(1, options.page ?? 1);
   const offset = (page - 1) * CLOSED_LISTINGS_PAGE_SIZE;
   const limitClause = options.all ? "" : `LIMIT ${CLOSED_LISTINGS_PAGE_SIZE} OFFSET ${offset}`;
@@ -675,9 +701,9 @@ export async function listClosedListings(
      FROM listings l
      LEFT JOIN users u ON u.id = l.leader_user_id
      ${where}
-     ORDER BY ${orderBy}
+     ORDER BY ${orderByExpr}
      ${limitClause}`,
-    params,
+    selectParams,
   );
   const listings = (rows as (Omit<ClosedListingSummary, "settled"> & { settled: number })[]).map((row) => ({
     ...row,
@@ -1328,8 +1354,14 @@ export async function getOrdersForAdmin(
 
   const search = options.search?.trim();
   if (search) {
-    conditions.push("l.title LIKE ?");
-    params.push(`%${search}%`);
+    // See getOpenListingsForAdmin's comment for why this segments the query
+    // and matches title/description per keyword (issue #105).
+    const tokens = tokenizeSearchQuery(search);
+    const searchTerms = tokens.length > 0 ? tokens : [search];
+    for (const term of searchTerms) {
+      conditions.push("(l.title LIKE ? OR l.description LIKE ?)");
+      params.push(`%${term}%`, `%${term}%`);
+    }
   }
   const buyerEmail = options.buyerEmail?.trim();
   if (buyerEmail) {
@@ -1359,6 +1391,10 @@ export async function getOrdersForAdmin(
   const total = (countRows as { cnt: number }[])[0].cnt;
 
   const orderBy = ORDER_SORT_CLAUSES[options.sort ?? "created_desc"];
+  // Rank title/description hits on the full original query above everything
+  // else that only matched via individual keyword segments.
+  const orderByExpr = search ? `CASE WHEN l.title LIKE ? THEN 0 ELSE 1 END, ${orderBy}` : orderBy;
+  const selectParams = search ? [...params, `%${search}%`] : params;
   const page = Math.max(1, options.page ?? 1);
   const offset = (page - 1) * ORDERS_PAGE_SIZE;
 
@@ -1373,9 +1409,9 @@ export async function getOrdersForAdmin(
      JOIN listings l ON l.id = p.listing_id
      LEFT JOIN users u ON u.id = p.buyer_id
      ${where}
-     ORDER BY ${orderBy}
+     ORDER BY ${orderByExpr}
      LIMIT ${ORDERS_PAGE_SIZE} OFFSET ${offset}`,
-    params,
+    selectParams,
   );
   const orders = (rows as (Omit<OrderSummary, "settled"> & { settled: number })[]).map((row) => ({
     ...row,

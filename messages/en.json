@@ -292,7 +292,8 @@
     "submitting": "Signing up...",
     "defaultError": "Sign up failed",
     "haveAccount": "Already have an account?",
-    "loginLink": "Log in"
+    "loginLink": "Log in",
+    "displayNameOptionalHint": "Optional — a default name will be generated if left blank"
   },
   "forgotPassword": {
     "title": "Forgot Password",
@@ -493,7 +494,10 @@
     "emailPlaceholder": "Your email",
     "subjectPlaceholder": "Subject",
     "messagePlaceholder": "Message",
-    "submit": "Send Message"
+    "submit": "Send Message",
+    "submitting": "Sending...",
+    "success": "Sent — thanks for your message, we'll get back to you soon.",
+    "defaultError": "Failed to send, please try again later"
   },
   "errors": {
     "NOT_FOUND": "Listing not found",
@@ -531,7 +535,15 @@
     "TOTP_LOGIN_LOCKED": "Too many failed attempts — please try again in 15 minutes",
     "LEADING_OPEN_LISTING": "You're currently leading an open listing — you can't delete your account until that's no longer the case",
     "UNSETTLED_WIN": "You have a won item that hasn't been marked settled yet — please wait for the admin to confirm it before deleting your account",
-    "UNSETTLED_PURCHASE": "You have a purchase that hasn't been marked settled yet — please wait for the admin to confirm it before deleting your account"
+    "UNSETTLED_PURCHASE": "You have a purchase that hasn't been marked settled yet — please wait for the admin to confirm it before deleting your account",
+    "CONTACT_NAME_REQUIRED": "Please enter your name",
+    "CONTACT_NAME_TOO_LONG": "Name can't be longer than 100 characters",
+    "CONTACT_SUBJECT_REQUIRED": "Please enter a subject",
+    "CONTACT_SUBJECT_TOO_LONG": "Subject can't be longer than 200 characters",
+    "CONTACT_MESSAGE_REQUIRED": "Please enter a message",
+    "CONTACT_MESSAGE_TOO_LONG": "Message can't be longer than 2000 characters",
+    "TURNSTILE_VERIFICATION_FAILED": "Verification failed, please complete the challenge again and resubmit",
+    "CONTACT_SUBMIT_FAILED": "Failed to send, please try again later"
   },
   "pigeonShowcase": {
     "awardTitle": "Award Pigeons",
@@ -595,5 +607,10 @@
       "whatHappened": "An unexpected error occurred while trying to load this page. This has been logged and we'll look into it.",
       "whatCanIDo": "Please try again in a few minutes. If the problem keeps happening, get in touch and let us know what you were doing when it occurred."
     }
+  },
+  "passwordStrength": {
+    "weak": "Weak",
+    "medium": "Medium",
+    "strong": "Strong"
   }
 }
