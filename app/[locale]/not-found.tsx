@@ -3,7 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { getClientIpFromHeaders } from "@/lib/clientIp";
 import { formatUtcTimestamp } from "@/lib/formatUtcTimestamp";
-import { generateRayId } from "@/lib/rayId";
+import { resolveRayId } from "@/lib/rayId";
 import CloudflareErrorPage from "../components/CloudflareErrorPage";
 
 // Rendered whenever a route under [locale] doesn't match anything, or a
@@ -12,16 +12,17 @@ import CloudflareErrorPage from "../components/CloudflareErrorPage";
 // already-rendered <NextIntlClientProvider>, and that layout already called
 // setRequestLocale(locale) for this request, so getLocale()/getTranslations()
 // resolve the current locale here without needing params. See
-// app/components/CloudflareErrorPage.tsx for the shared visual shell and
+// app/components/CloudflareErrorPage.tsx for the shared visual shell,
 // issue #65 for why this deliberately looks like a Cloudflare error page
-// instead of using the site's own brand colors.
+// instead of using the site's own brand colors, and issue #127 for how
+// rayId below can now be a real, verified Cloudflare Ray ID.
 export default async function NotFound() {
   const locale = await getLocale();
   const t = await getTranslations("errorPage");
 
   const headersList = await headers();
   const clientIp = getClientIpFromHeaders(headersList);
-  const rayId = generateRayId();
+  const rayId = resolveRayId(headersList);
   const timestamp = formatUtcTimestamp(new Date());
   const homeHref = locale === routing.defaultLocale ? "/" : `/${locale}`;
 

@@ -15,6 +15,85 @@ $nodeBin = '/home/tw123457/.nvm/versions/node/v20.20.2/bin/node';
 $npmCliJs = '/home/tw123457/.nvm/versions/node/v20.20.2/lib/node_modules/npm/bin/npm-cli.js';
 $pm2Bin = '/home/tw123457/.nvm/versions/node/v20.20.2/lib/node_modules/pm2/bin/pm2';
 
+// Cloudflare's published edge-node IP ranges — source:
+// https://www.cloudflare.com/ips-v4 and https://www.cloudflare.com/ips-v6,
+// fetched 2026-08-08. Hardcoded (rather than fetched per-request, or even
+// cached) because this list changes rarely and this proxy runs on every
+// single request; re-fetch the two URLs above and update these arrays
+// manually if Cloudflare ever rotates its edge ranges. See issue #127.
+$cloudflareIpv4Ranges = [
+    '173.245.48.0/20',
+    '103.21.244.0/22',
+    '103.22.200.0/22',
+    '103.31.4.0/22',
+    '141.101.64.0/18',
+    '108.162.192.0/18',
+    '190.93.240.0/20',
+    '188.114.96.0/20',
+    '197.234.240.0/22',
+    '198.41.128.0/17',
+    '162.158.0.0/15',
+    '104.16.0.0/13',
+    '104.24.0.0/14',
+    '172.64.0.0/13',
+    '131.0.72.0/22',
+];
+$cloudflareIpv6Ranges = [
+    '2400:cb00::/32',
+    '2606:4700::/32',
+    '2803:f800::/32',
+    '2405:b500::/32',
+    '2405:8100::/32',
+    '2a06:98c0::/29',
+    '2c0f:f248::/32',
+];
+
+// Generic CIDR containment check — works for both IPv4 and IPv6 since both
+// inet_pton() outputs and the mask are compared as raw bytes rather than
+// via any IPv4-specific integer arithmetic.
+function ipInCidrRange(string $ip, string $cidr): bool
+{
+    $parts = explode('/', $cidr, 2);
+    if (count($parts) !== 2) {
+        return false;
+    }
+    [$subnet, $maskBitsRaw] = $parts;
+    $maskBits = (int) $maskBitsRaw;
+
+    $ipBin = @inet_pton($ip);
+    $subnetBin = @inet_pton($subnet);
+    if ($ipBin === false || $subnetBin === false || strlen($ipBin) !== strlen($subnetBin)) {
+        return false;
+    }
+
+    $fullBytes = intdiv($maskBits, 8);
+    $remainderBits = $maskBits % 8;
+
+    if ($fullBytes > 0 && substr($ipBin, 0, $fullBytes) !== substr($subnetBin, 0, $fullBytes)) {
+        return false;
+    }
+    if ($remainderBits === 0) {
+        return true;
+    }
+
+    $mask = chr((0xFF << (8 - $remainderBits)) & 0xFF);
+    return (substr($ipBin, $fullBytes, 1) & $mask) === (substr($subnetBin, $fullBytes, 1) & $mask);
+}
+
+// Whether $ip (expected to be the raw TCP peer address, i.e.
+// $_SERVER['REMOTE_ADDR'] before any rewriting) is a genuine Cloudflare
+// edge node per the ranges above.
+function isCloudflareEdgeIp(string $ip, array $ipv4Ranges, array $ipv6Ranges): bool
+{
+    $ranges = strpos($ip, ':') !== false ? $ipv6Ranges : $ipv4Ranges;
+    foreach ($ranges as $cidr) {
+        if (ipInCidrRange($ip, $cidr)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // Not hardcoded/committed: this file is public (tracked in a public GitHub
 // repo), so the key lives in a sibling file that's uploaded separately by
 // the deploy workflow from a GitHub secret and never committed.
@@ -232,7 +311,39 @@ foreach ($_SERVER as $key => $value) {
 $headers[] = 'Host: ' . ($_SERVER['HTTP_HOST'] ?? 'bid.j172.tw');
 $headers[] = 'X-Forwarded-Host: ' . ($_SERVER['HTTP_HOST'] ?? 'bid.j172.tw');
 $headers[] = 'X-Forwarded-Proto: https';
-$headers[] = 'X-Forwarded-For: ' . ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
+
+// $_SERVER['REMOTE_ADDR'] here is the raw TCP peer address — whatever
+// LiteSpeed itself saw, unmodified by any of this script's own logic — so
+// this is exactly the "direct connection source" check issue #127 asks
+// for. Origin IP is public (see deploy-ftps.yml / the 502 runbook), so a
+// forged CF-Connecting-IP/CF-Ray sent straight to origin (bypassing
+// Cloudflare) must NOT be trusted just because the header is present —
+// only trust them when the TCP peer that actually opened this connection
+// is a genuine Cloudflare edge node per the ranges above.
+$remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+$realClientIp = $remoteAddr;
+$realRayId = null;
+if (isCloudflareEdgeIp($remoteAddr, $cloudflareIpv4Ranges, $cloudflareIpv6Ranges)) {
+    // Cloudflare edge connected directly — this host has no separate
+    // module restoring REMOTE_ADDR to the real visitor IP, so recover it
+    // from the header Cloudflare itself sets.
+    $cfConnectingIp = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? '';
+    if ($cfConnectingIp !== '') {
+        $realClientIp = $cfConnectingIp;
+    }
+    $realRayId = $_SERVER['HTTP_CF_RAY'] ?? null;
+}
+// Else: REMOTE_ADDR is left as-is (fail-open) — this covers both "the host
+// already has a module restoring REMOTE_ADDR to the real visitor IP" and
+// "this request never went through Cloudflare at all" (local dev, or a
+// direct hit on the origin IP), neither of which should be blocked.
+
+$headers[] = 'X-Forwarded-For: ' . $realClientIp;
+if ($realRayId !== null && $realRayId !== '') {
+    // New header (not a standard Cloudflare one) carrying the *verified*
+    // Ray ID through to Node — see lib/rayId.ts, issue #127.
+    $headers[] = 'X-Real-Ray-Id: ' . $realRayId;
+}
 // Content-Type/Content-Length land in $_SERVER as CONTENT_TYPE/CONTENT_LENGTH,
 // not HTTP_CONTENT_TYPE, so the HTTP_-prefix loop above never picks them up.
 // Without Content-Type (and its multipart boundary) forwarded, Node has no

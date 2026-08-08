@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { getCurrentUser } from "@/lib/auth";
 import { getClientIpFromHeaders } from "@/lib/clientIp";
 import { formatUtcTimestamp } from "@/lib/formatUtcTimestamp";
-import { generateRayId } from "@/lib/rayId";
+import { resolveRayId } from "@/lib/rayId";
 import CloudflareErrorPage from "../components/CloudflareErrorPage";
 import AdminShell from "./AdminShell";
 import "../globals.css";
@@ -30,7 +30,8 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 // Deliberately covers both "not logged in" and "logged in but not admin"
-// with the same 403-styled response — see issue #65 — rather than
+// with the same 403-styled response — see issue #65 (and issue #127 for
+// how rayId below can now be a real, verified Cloudflare Ray ID) — rather than
 // distinguishing them (e.g. redirecting the former to /login), so a random
 // prober hitting this obscured path can't tell which case they're in.
 //
@@ -46,7 +47,7 @@ export const dynamic = "force-dynamic";
 async function renderUnauthorized() {
   const headersList = await headers();
   const clientIp = getClientIpFromHeaders(headersList);
-  const rayId = generateRayId();
+  const rayId = resolveRayId(headersList);
   const timestamp = formatUtcTimestamp(new Date());
 
   return (
