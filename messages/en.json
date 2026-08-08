@@ -288,7 +288,8 @@
     "submitting": "Signing up...",
     "defaultError": "Sign up failed",
     "haveAccount": "Already have an account?",
-    "loginLink": "Log in"
+    "loginLink": "Log in",
+    "displayNameOptionalHint": "Optional — a default name will be generated if left blank"
   },
   "forgotPassword": {
     "title": "Forgot Password",
@@ -602,5 +603,10 @@
       "whatHappened": "An unexpected error occurred while trying to load this page. This has been logged and we'll look into it.",
       "whatCanIDo": "Please try again in a few minutes. If the problem keeps happening, get in touch and let us know what you were doing when it occurred."
     }
+  },
+  "passwordStrength": {
+    "weak": "Weak",
+    "medium": "Medium",
+    "strong": "Strong"
   }
 }
