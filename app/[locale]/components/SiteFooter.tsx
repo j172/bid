@@ -61,10 +61,31 @@ export default async function SiteFooter() {
         <section>
           <h3 className="text-sm font-extrabold uppercase tracking-wide text-ink">{t("quickLinksTitle")}</h3>
           <ul className="mt-3 space-y-2 text-sm text-ink-light">
-            <li>{t("privacy")}</li>
-            <li>{t("refund")}</li>
-            <li>{t("terms")}</li>
-            <li>{t("faq")}</li>
+            <li>
+              <Link href="/privacy" className="hover:text-interactive-primary">
+                {t("privacy")}
+              </Link>
+            </li>
+            <li>
+              <Link href="/refund" className="hover:text-interactive-primary">
+                {t("refund")}
+              </Link>
+            </li>
+            <li>
+              <Link href="/terms" className="hover:text-interactive-primary">
+                {t("terms")}
+              </Link>
+            </li>
+            <li>
+              <Link href="/faq" className="hover:text-interactive-primary">
+                {t("faq")}
+              </Link>
+            </li>
+            <li>
+              <Link href="/gdpr" className="hover:text-interactive-primary">
+                {t("gdpr")}
+              </Link>
+            </li>
             <li>
               <Link href="/contact" className="hover:text-interactive-primary">
                 {t("contact")}

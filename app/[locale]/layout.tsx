@@ -5,6 +5,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { routing } from "@/i18n/routing";
+import CookieConsentBanner from "./components/CookieConsentBanner";
 import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
 import WebVitalsReporter from "./components/WebVitalsReporter";
@@ -70,6 +71,7 @@ export default async function LocaleLayout({
           <SiteHeader />
           {children}
           <SiteFooter />
+          <CookieConsentBanner />
         </NextIntlClientProvider>
       </body>
     </html>

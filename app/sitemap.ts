@@ -41,6 +41,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...localeEntries("/listings", { query: { type: "auction" }, changeFrequency: "hourly", priority: 0.8 }),
     ...localeEntries("/listings", { query: { type: "fixed_price" }, changeFrequency: "hourly", priority: 0.8 }),
     ...localeEntries("/contact", { changeFrequency: "yearly", priority: 0.3 }),
+    // Static legal/help pages (issue #121) — same "rarely changes, low
+    // priority" treatment as /contact.
+    ...localeEntries("/privacy", { changeFrequency: "yearly", priority: 0.3 }),
+    ...localeEntries("/refund", { changeFrequency: "yearly", priority: 0.3 }),
+    ...localeEntries("/terms", { changeFrequency: "yearly", priority: 0.3 }),
+    ...localeEntries("/faq", { changeFrequency: "yearly", priority: 0.3 }),
+    ...localeEntries("/gdpr", { changeFrequency: "yearly", priority: 0.3 }),
     ...localeEntries("/news", { changeFrequency: "daily", priority: 0.5 }),
     ...localeEntries("/pigeon-showcase", { changeFrequency: "weekly", priority: 0.4 }),
   ];
