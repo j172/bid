@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import { getLocale, getTranslations } from "next-intl/server";
 import { listOpenListings } from "@/lib/listings";
@@ -6,6 +7,7 @@ import { listHomepageSections } from "@/lib/homepageSections";
 import { listLatestPigeonShowcase } from "@/lib/pigeonShowcase";
 import { listLatestNews } from "@/lib/news";
 import { excerptHtml } from "@/lib/htmlText";
+import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
 import { currencyForLocale, formatDualPrice, formatNtd } from "@/lib/currency";
 import { getLatestStoredRate } from "@/lib/exchangeRates";
 import { Link } from "@/i18n/navigation";
@@ -17,6 +19,25 @@ import NewsCarouselCard from "../components/NewsCarouselCard";
 export const dynamic = "force-dynamic";
 
 type SearchParams = Record<string, string | string[] | undefined>;
+
+// Homepage-specific alternates (issue #107 items 6-7) — deliberately not
+// hoisted into the shared root layout's generateMetadata (app/[locale]/
+// layout.tsx), since that layout wraps every page under [locale], and an
+// alternates.languages/canonical pointing at "/" would be wrong for every
+// other page that doesn't override it with its own generateMetadata.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    alternates: {
+      languages: hreflangAlternates("/"),
+      canonical: canonicalUrl(locale, "/"),
+    },
+  };
+}
 
 type VisualCategoryItem = {
   label: string;

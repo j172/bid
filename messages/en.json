@@ -119,10 +119,14 @@
     "trustEyebrow": "Built on Real Data",
     "trustTitle": "Real listings, real bidding activity",
     "trustDesc": "Every ranking, bid count, and sold figure on this page reflects live listing data — not static placeholder numbers.",
-    "trustCta": "Browse All Listings"
+    "trustCta": "Browse All Listings",
+    "metaDescription": "Bid Auction: an online marketplace for racing pigeon auctions and fixed-price breeding stock, with real-time bidding, auto bidding, and buy-it-now — trusted by pigeon fanciers."
   },
   "listings": {
     "title": "Live Auctions",
+    "metaDescriptionAll": "Browse current auction and fixed-price pigeon listings, with real-time bidding and stock status.",
+    "metaDescriptionAuction": "Browse live pigeon auctions with bidding, auto bidding, and buy-it-now support — stay on top of the latest activity.",
+    "metaDescriptionFixedPrice": "Browse fixed-price pigeon listings with transparent pricing, instant checkout, and real-time stock status.",
     "tabAll": "All",
     "tabAuction": "Auctions",
     "tabFixedPrice": "Fixed-Price Pigeons",

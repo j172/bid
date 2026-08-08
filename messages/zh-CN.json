@@ -119,10 +119,14 @@
     "trustEyebrow": "透明可信",
     "trustTitle": "依真实成交资料掌握热门鸽况",
     "trustDesc": "首页的热门排行、出价次数与成交件数，皆直接反映目前上架中的真实商品资料，而非预先写死的展示数字。",
-    "trustCta": "查看全部商品"
+    "trustCta": "查看全部商品",
+    "metaDescription": "拍卖竞标网站：优质赛鸽与种鸽的线上竞标与定价交易平台，支持实时出价、自动出价与一键买断，安全可靠、鸽友信赖之选。"
   },
   "listings": {
     "title": "竞标中商品",
+    "metaDescriptionAll": "浏览目前竞标中与定价供应中的优质种鸽商品，实时掌握出价与库存状态。",
+    "metaDescriptionAuction": "浏览竞标中的优质种鸽商品，支持出价、自动出价与一键买断，掌握最新竞标动态。",
+    "metaDescriptionFixedPrice": "浏览定价供应中的种鸽商品，价格透明、即刻下单，库存状态实时更新。",
     "tabAll": "全部",
     "tabAuction": "竞标商品",
     "tabFixedPrice": "定价种鸽",
