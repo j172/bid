@@ -117,7 +117,14 @@ function sendSecurityHeaders(): void
 $opsKey = trim((string) @file_get_contents(__DIR__ . '/.ops-key'));
 if (str_starts_with($path, '/__ops/')) {
     sendSecurityHeaders();
-    if ($opsKey === '' || ($_GET['key'] ?? '') !== $opsKey) {
+    // hash_equals, not !== : PHP's string comparison short-circuits on the
+    // first differing byte, which is a (theoretical, but free to remove)
+    // timing side-channel an attacker could use to recover .ops-key one byte
+    // at a time. hash_equals compares in constant time. Issue #140 L-1.
+    // is_string guards `?key[]=x`, which would otherwise hand hash_equals an
+    // array and raise a TypeError.
+    $providedKey = $_GET['key'] ?? '';
+    if ($opsKey === '' || !is_string($providedKey) || !hash_equals($opsKey, $providedKey)) {
         http_response_code(403);
         header('Content-Type: text/plain; charset=utf-8');
         echo 'Forbidden';

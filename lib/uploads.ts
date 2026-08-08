@@ -1,6 +1,6 @@
 import { randomBytes } from "crypto";
 import { copyFile, mkdir, unlink, writeFile } from "fs/promises";
-import { join } from "path";
+import { join, normalize, sep } from "path";
 import { DESCRIPTION_IMAGE_MAX_BYTES } from "@/lib/descriptionImageLimits";
 import { MAX_PHOTO_BYTES } from "@/lib/photoLimits";
 
@@ -20,6 +20,27 @@ export function isAllowedPhotoType(type: string): boolean {
 // 404 until the next restart. These are served instead by
 // app/uploads/[...path]/route.ts, which reads the filesystem per request.
 export const UPLOADS_ROOT = join(process.cwd(), "uploads");
+
+// Resolves the `[...path]` segments of a GET /uploads/... request to an
+// absolute path, or null when the result escapes UPLOADS_ROOT (CWE-22).
+//
+// Lives here rather than inline in the route (issue #140 L-2) so the
+// containment rule is directly unit-testable — the route's own version
+// compared with a bare `resolved.startsWith(UPLOADS_ROOT)`, which also
+// accepts any sibling directory that merely *starts with* the same
+// characters (".../uploads-backup/secrets.txt" passes a bare prefix test).
+// Appending the platform separator is what turns "same prefix" into
+// "actually inside", with the root itself allowed through separately so the
+// readFile below can reject it as a directory rather than this treating it
+// as an escape.
+export function resolveUploadPath(segments: string[]): string | null {
+  const relative = segments.join("/");
+  const resolved = normalize(join(UPLOADS_ROOT, relative));
+  if (resolved !== UPLOADS_ROOT && !resolved.startsWith(UPLOADS_ROOT + sep)) {
+    return null;
+  }
+  return resolved;
+}
 
 export async function saveListingPhotos(listingId: number, photos: File[]): Promise<string[]> {
   const dir = join(UPLOADS_ROOT, "listings", String(listingId));
