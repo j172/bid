@@ -1,7 +1,14 @@
 import { getTranslations } from "next-intl/server";
+import ContactForm from "./ContactForm";
 
 export default async function ContactPage() {
   const t = await getTranslations("contactPage");
+  // Site key only — not secret, safe to hand to the client form as a prop
+  // (see lib/turnstile.ts, which reads the *secret* key server-side only,
+  // never sent to the browser). Null when unconfigured so ContactForm can
+  // render the form without the widget rather than crash (e.g. local dev
+  // without Turnstile keys set).
+  const turnstileSiteKey = process.env.CLOUDFLARE_TURNSTILE_SITE_KEY ?? null;
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -20,15 +27,7 @@ export default async function ContactPage() {
 
         <article className="rounded-xl border border-border bg-white p-6 shadow-sm">
           <h2 className="text-lg font-bold text-ink">{t("formTitle")}</h2>
-          <form className="mt-4 grid grid-cols-1 gap-3">
-            <input className="rounded-md border border-border px-3 py-2" placeholder={t("namePlaceholder")} />
-            <input className="rounded-md border border-border px-3 py-2" placeholder={t("emailPlaceholder")} />
-            <input className="rounded-md border border-border px-3 py-2" placeholder={t("subjectPlaceholder")} />
-            <textarea className="min-h-28 rounded-md border border-border px-3 py-2" placeholder={t("messagePlaceholder")} />
-            <button type="button" className="rounded-md bg-interactive-primary px-4 py-2 text-sm font-semibold text-white hover:bg-interactive-primary-active">
-              {t("submit")}
-            </button>
-          </form>
+          <ContactForm turnstileSiteKey={turnstileSiteKey} />
         </article>
       </section>
     </main>

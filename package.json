@@ -12,6 +12,7 @@
     "postinstall": "node scripts/copy-tinymce.mjs"
   },
   "dependencies": {
+    "@node-rs/jieba": "^2.0.1",
     "@simplewebauthn/browser": "^13.3.0",
     "@simplewebauthn/server": "^13.3.2",
     "@tinymce/tinymce-react": "^6.3.0",

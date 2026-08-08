@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCurrentUser, listUsers, USERS_PAGE_SIZE, type ListUsersOptions } from "@/lib/auth";
 import RoleToggleButton from "./RoleToggleButton";
 import SuspendToggleButton from "./SuspendToggleButton";
+import ResetPasswordButton from "./ResetPasswordButton";
 import AdminPageIntro from "../AdminPageIntro";
 
 export const dynamic = "force-dynamic";
@@ -142,6 +143,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
                           isSuspended={user.status === "suspended"}
                           isSelf={user.id === currentUser?.id}
                         />
+                        <ResetPasswordButton userId={user.id} email={user.email} />
                       </div>
                     )}
                   </td>
