@@ -15,6 +15,10 @@ const th = "border-b border-border px-4 py-3 text-left text-sm font-semibold tex
 const td = "border-b border-border px-4 py-3 text-sm";
 
 const STATUS_LABEL: Record<string, string> = { active: "正常", suspended: "停權", deleted: "已刪除" };
+// issue #97 adds 'totp' alongside #93's 'email_otp' — both non-'none' values
+// share the same DisableTwoFactorButton rescue path below, but the detail
+// label needs to say which one is actually active.
+const TWO_FACTOR_LABEL: Record<string, string> = { none: "未啟用", email_otp: "Email 驗證碼", totp: "App 驗證碼（TOTP）" };
 
 function formatDate(date: Date): string {
   return new Date(date).toLocaleString("zh-TW", { hour12: false });
@@ -60,7 +64,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
             <dt className="text-ink-light">帳號狀態</dt>
             <dd>{STATUS_LABEL[detail.status]}</dd>
             <dt className="text-ink-light">兩階段驗證</dt>
-            <dd>{detail.twoFactorMethod === "none" ? "未啟用" : "Email 驗證碼"}</dd>
+            <dd>{TWO_FACTOR_LABEL[detail.twoFactorMethod] ?? "未啟用"}</dd>
             <dt className="text-ink-light">註冊時間</dt>
             <dd>{formatDate(detail.createdAt)}</dd>
           </dl>

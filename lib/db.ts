@@ -95,6 +95,31 @@ CREATE TABLE IF NOT EXISTS webauthn_credentials (
   KEY idx_webauthn_credentials_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- TOTP setup-in-progress secrets + one-time recovery codes (issue #97) — see
+-- db/init.sql for the fuller header comments. Brand-new tables, whole final
+-- schema from day one, same as webauthn_challenges/webauthn_credentials
+-- above.
+CREATE TABLE IF NOT EXISTS totp_setup_challenges (
+  token VARCHAR(64) NOT NULL,
+  user_id BIGINT NOT NULL,
+  secret VARCHAR(64) NOT NULL,
+  expires_at DATETIME NOT NULL,
+  used_at DATETIME NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (token),
+  KEY idx_totp_setup_challenges_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS totp_backup_codes (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  code_hash VARCHAR(64) NOT NULL,
+  used_at DATETIME NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_totp_backup_codes_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS listings (
   id BIGINT NOT NULL AUTO_INCREMENT,
   title VARCHAR(255) NOT NULL,
@@ -364,6 +389,10 @@ async function ensureAccountColumns(db: mysql.Pool): Promise<void> {
   // — see db/init.sql's CREATE TABLE users for the fuller comment on why
   // this is a single mutually-exclusive field rather than a boolean.
   await ensureColumn(db, "users", "two_factor_method", "VARCHAR(20) NOT NULL DEFAULT 'none'");
+  // The confirmed TOTP shared secret (issue #97) — see db/init.sql's CREATE
+  // TABLE users for the fuller comment on why this is set only via
+  // confirmTotpSetup, never directly from totp_setup_challenges.
+  await ensureColumn(db, "users", "totp_secret", "VARCHAR(64) NULL");
 }
 
 // buy_it_now_price started out NOT NULL (every listing required one);

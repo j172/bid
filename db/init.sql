@@ -10,13 +10,23 @@ CREATE TABLE IF NOT EXISTS users (
   deleted_at DATETIME NULL,
   suspended_at DATETIME NULL,
   locale VARCHAR(10) NOT NULL DEFAULT 'zh-TW',
-  -- Which second factor (if any) this account requires at login (issue #93).
-  -- 'none' | 'email_otp' | 'totp' — deliberately a single mutually-exclusive
-  -- field rather than a boolean per method, since an account can only have
-  -- one second factor active at a time (turning on email OTP later needs to
-  -- imply turning off TOTP, and vice versa, once #93's roadmap sibling adds
-  -- TOTP) — see lib/auth.ts's setTwoFactorMethod.
+  -- Which second factor (if any) this account requires at login (issue #93,
+  -- 'totp' added by #97). 'none' | 'email_otp' | 'totp' — deliberately a
+  -- single mutually-exclusive field rather than a boolean per method, since
+  -- an account can only have one second factor active at a time (turning on
+  -- email OTP implies turning off TOTP, and vice versa) — see
+  -- lib/auth.ts's setTwoFactorMethod.
   two_factor_method VARCHAR(20) NOT NULL DEFAULT 'none',
+  -- The account's confirmed TOTP shared secret (base32), set only once
+  -- confirmTotpSetup (issue #97) verifies a correct code from the
+  -- Authenticator app — never written directly from totp_setup_challenges.
+  -- NULL whenever two_factor_method isn't 'totp'; left behind (inert) rather
+  -- than eagerly cleared if the visitor later switches to Email OTP via
+  -- setTwoFactorMethod directly, same "orphaned row is harmless because the
+  -- mutex field is what's actually checked at login" tolerance this project
+  -- already accepts for #93's email_otp_challenges after an admin disables
+  -- 2FA — only lib/totp.ts's disableTotp clears it explicitly.
+  totp_secret VARCHAR(64) NULL,
   created_at DATETIME NOT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_users_email (email)
@@ -134,6 +144,55 @@ CREATE TABLE IF NOT EXISTS webauthn_credentials (
   last_used_at DATETIME NULL,
   PRIMARY KEY (credential_id),
   KEY idx_webauthn_credentials_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- TOTP ("App 驗證碼") setup-in-progress secrets (issue #97), the fifth and
+-- final account-security ticket. Same two-stage pattern webauthn_challenges
+-- established for passkeys (issue #95): a freshly generated secret is
+-- stashed here first, and only promoted to users.totp_secret once the
+-- visitor proves they actually copied it into an Authenticator app by
+-- entering a correct 6-digit code — see lib/totp.ts's confirmTotpSetup. If
+-- they abandon the wizard partway, this row just expires unused and
+-- users.totp_secret/two_factor_method are never touched, so a half-finished
+-- setup can never lock an account into requiring a code nobody has. Same
+-- shape/lifecycle convention as webauthn_challenges/email_otp_challenges
+-- (token as its own PK, used_at NOT NULL means "spent", expires_at
+-- NOW()-comparison means "10 minutes came and went") except there's no
+-- purpose column (this table only ever serves one ceremony) and — unlike
+-- webauthn_challenges's httpOnly-cookie-only token — the token here also
+-- travels through the setup wizard's own request/response JSON between the
+-- setup and confirm steps, same as email_otp_challenges's token.
+CREATE TABLE IF NOT EXISTS totp_setup_challenges (
+  token VARCHAR(64) NOT NULL,
+  user_id BIGINT NOT NULL,
+  secret VARCHAR(64) NOT NULL,
+  expires_at DATETIME NOT NULL,
+  used_at DATETIME NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (token),
+  KEY idx_totp_setup_challenges_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- One-time TOTP recovery codes (issue #97), generated once
+-- confirmTotpSetup succeeds and shown to the visitor exactly once (see
+-- app/[locale]/account/TotpSection.tsx) — the plaintext is never persisted,
+-- only code_hash (sha256 of the normalized code; see lib/totp.ts's
+-- hashBackupCode — a plain, unsalted hash is fine here since each code is
+-- itself a high-entropy random value, not a low-entropy secret like a
+-- password). One row per code (10 generated per setup — see
+-- lib/totp.ts's BACKUP_CODE_COUNT); used_at NOT NULL means "already
+-- redeemed at login", same one-time-use convention as every other
+-- token/challenge table in this file. Cleared out entirely (DELETE) when
+-- TOTP is disabled (lib/totp.ts's disableTotp) rather than kept around, so a
+-- later re-enable always starts from a fresh set of 10.
+CREATE TABLE IF NOT EXISTS totp_backup_codes (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  code_hash VARCHAR(64) NOT NULL,
+  used_at DATETIME NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_totp_backup_codes_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS listings (

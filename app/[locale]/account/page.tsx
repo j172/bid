@@ -6,6 +6,7 @@ import ChangePasswordForm from "./ChangePasswordForm";
 import DeleteAccountButton from "./DeleteAccountButton";
 import PasskeySection from "./PasskeySection";
 import ProfileForm from "./ProfileForm";
+import TotpSection from "./TotpSection";
 import TwoFactorSection from "./TwoFactorSection";
 
 export const dynamic = "force-dynamic";
@@ -47,6 +48,14 @@ export default async function AccountPage() {
         <p className="mt-2 text-sm text-ink-light">{t("twoFactorDescription")}</p>
         <div className="mt-4">
           <TwoFactorSection initialEnabled={profile?.twoFactorMethod === "email_otp"} />
+        </div>
+      </section>
+
+      <section className="mt-6 rounded-lg border border-border bg-surface p-6 shadow-sm">
+        <h2 className="text-lg font-semibold">{t("totpTitle")}</h2>
+        <p className="mt-2 text-sm text-ink-light">{t("totpDescription")}</p>
+        <div className="mt-4">
+          <TotpSection initialActive={profile?.twoFactorMethod === "totp"} />
         </div>
       </section>
 
