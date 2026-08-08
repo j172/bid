@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { excerptHtml, htmlToPlainText } from "./htmlText";
+import { escapeHtml, excerptHtml, htmlToPlainText } from "./htmlText";
 
 describe("htmlToPlainText", () => {
   it("strips tags and collapses whitespace", () => {
@@ -29,5 +29,23 @@ describe("excerptHtml", () => {
   it("does not append an ellipsis on an exact-length fit", () => {
     const html = `<p>${"a".repeat(10)}</p>`;
     expect(excerptHtml(html, 10)).toBe("a".repeat(10));
+  });
+});
+
+describe("escapeHtml", () => {
+  it("escapes the five reserved HTML characters", () => {
+    expect(escapeHtml(`<script>alert("hi") & 'bye'</script>`)).toBe(
+      "&lt;script&gt;alert(&quot;hi&quot;) &amp; &#39;bye&#39;&lt;/script&gt;",
+    );
+  });
+
+  it("leaves plain text untouched", () => {
+    expect(escapeHtml("血統優良")).toBe("血統優良");
+  });
+
+  it("does not double-escape an already-escaped ampersand", () => {
+    // & is escaped first, so a literal "&amp;" in the input becomes
+    // "&amp;amp;" — documenting this rather than silently under-escaping.
+    expect(escapeHtml("&amp;")).toBe("&amp;amp;");
   });
 });

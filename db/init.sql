@@ -382,3 +382,22 @@ CREATE TABLE IF NOT EXISTS news_posts (
   PRIMARY KEY (id),
   KEY idx_news_posts_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Public /contact form submissions (issue #104) — a brand-new table, whole
+-- final schema from day one, same as pigeon_showcase/news_posts above. Every
+-- verified (Cloudflare Turnstile) submission is stored here for later admin
+-- review — no dedicated admin list page yet, this ticket only covers the
+-- table + the write path (see lib/contact.ts's insertContactMessage,
+-- called from app/api/contact/route.ts after Turnstile verification
+-- succeeds). No user_id: this form doesn't require login, so a submission
+-- may or may not come from a registered account and isn't linked either way.
+CREATE TABLE IF NOT EXISTS contact_messages (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  subject VARCHAR(200) NOT NULL,
+  message TEXT NOT NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_contact_messages_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

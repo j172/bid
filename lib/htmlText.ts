@@ -27,3 +27,19 @@ export function excerptHtml(html: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
   return `${text.slice(0, maxLength)}…`;
 }
+
+// Escapes plain text for safe interpolation into an HTML string — unlike the
+// two helpers above (which go from HTML to plain text), this goes the other
+// direction. Needed by lib/notifications.ts's contact-form emails (issue
+// #104), the first spot in this codebase that drops raw, unauthenticated
+// visitor input (name/subject/message) into an HTML email body — every
+// other EMAIL_MESSAGES interpolation is admin-authored content (listing
+// titles etc.), so this wasn't needed until now.
+export function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
