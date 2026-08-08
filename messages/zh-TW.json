@@ -341,6 +341,11 @@
     "saved": "密碼已更新",
     "defaultError": "修改密碼失敗"
   },
+  "passwordStrengthMeter": {
+    "weak": "弱",
+    "medium": "中等",
+    "strong": "強"
+  },
   "deleteAccountButton": {
     "confirm": "確定要刪除帳戶嗎？此動作無法撤銷。",
     "button": "刪除帳戶",
