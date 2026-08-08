@@ -6,6 +6,7 @@ import StatusBadge from "../../../components/StatusBadge";
 import RoleToggleButton from "../RoleToggleButton";
 import SuspendToggleButton from "../SuspendToggleButton";
 import ResetPasswordButton from "../ResetPasswordButton";
+import DisableTwoFactorButton from "../DisableTwoFactorButton";
 import AdminPageIntro from "../../AdminPageIntro";
 
 export const dynamic = "force-dynamic";
@@ -58,6 +59,8 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
             <dd>{detail.role === "admin" ? "管理員" : "一般使用者"}</dd>
             <dt className="text-ink-light">帳號狀態</dt>
             <dd>{STATUS_LABEL[detail.status]}</dd>
+            <dt className="text-ink-light">兩階段驗證</dt>
+            <dd>{detail.twoFactorMethod === "none" ? "未啟用" : "Email 驗證碼"}</dd>
             <dt className="text-ink-light">註冊時間</dt>
             <dd>{formatDate(detail.createdAt)}</dd>
           </dl>
@@ -73,6 +76,9 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
                 isSelf={detail.id === currentUser?.id}
               />
               <ResetPasswordButton userId={detail.id} email={detail.email} />
+              {detail.twoFactorMethod !== "none" && (
+                <DisableTwoFactorButton userId={detail.id} email={detail.email} />
+              )}
             </div>
           )}
         </div>

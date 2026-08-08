@@ -4,6 +4,7 @@ import { redirect } from "@/i18n/navigation";
 import ChangePasswordForm from "./ChangePasswordForm";
 import DeleteAccountButton from "./DeleteAccountButton";
 import ProfileForm from "./ProfileForm";
+import TwoFactorSection from "./TwoFactorSection";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,14 @@ export default async function AccountPage() {
         <h2 className="text-lg font-semibold">{t("passwordTitle")}</h2>
         <div className="mt-4">
           <ChangePasswordForm />
+        </div>
+      </section>
+
+      <section className="mt-6 rounded-lg border border-border bg-surface p-6 shadow-sm">
+        <h2 className="text-lg font-semibold">{t("twoFactorTitle")}</h2>
+        <p className="mt-2 text-sm text-ink-light">{t("twoFactorDescription")}</p>
+        <div className="mt-4">
+          <TwoFactorSection initialEnabled={profile?.twoFactorMethod === "email_otp"} />
         </div>
       </section>
 
