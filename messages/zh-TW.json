@@ -489,7 +489,10 @@
     "emailPlaceholder": "你的 Email",
     "subjectPlaceholder": "主旨",
     "messagePlaceholder": "訊息內容",
-    "submit": "送出訊息"
+    "submit": "送出訊息",
+    "submitting": "送出中...",
+    "success": "已送出，感謝你的訊息，我們會盡快回覆。",
+    "defaultError": "送出失敗，請稍後再試"
   },
   "errors": {
     "NOT_FOUND": "找不到這個商品",
@@ -527,7 +530,15 @@
     "TOTP_LOGIN_LOCKED": "驗證失敗次數過多，請 15 分鐘後再試",
     "LEADING_OPEN_LISTING": "你目前正在領先某個開放中的商品，請等到不再領先才能刪除帳號",
     "UNSETTLED_WIN": "你有已得標但尚未完成交易的商品，請等待管理員確認交易完成後再刪除帳號",
-    "UNSETTLED_PURCHASE": "你有已購買但尚未完成交易的商品，請等待管理員確認交易完成後再刪除帳號"
+    "UNSETTLED_PURCHASE": "你有已購買但尚未完成交易的商品，請等待管理員確認交易完成後再刪除帳號",
+    "CONTACT_NAME_REQUIRED": "請輸入姓名",
+    "CONTACT_NAME_TOO_LONG": "姓名不能超過 100 個字",
+    "CONTACT_SUBJECT_REQUIRED": "請輸入主旨",
+    "CONTACT_SUBJECT_TOO_LONG": "主旨不能超過 200 個字",
+    "CONTACT_MESSAGE_REQUIRED": "請輸入訊息內容",
+    "CONTACT_MESSAGE_TOO_LONG": "訊息內容不能超過 2000 個字",
+    "TURNSTILE_VERIFICATION_FAILED": "驗證失敗，請重新勾選驗證後再送出",
+    "CONTACT_SUBMIT_FAILED": "送出失敗，請稍後再試"
   },
   "pigeonShowcase": {
     "awardTitle": "入賞鴿",

@@ -262,6 +262,20 @@ CREATE TABLE IF NOT EXISTS news_posts (
   PRIMARY KEY (id),
   KEY idx_news_posts_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Public /contact form submissions (issue #104) — see db/init.sql for the
+-- fuller header comment. Brand-new table, whole final schema from day one,
+-- same as news_posts above.
+CREATE TABLE IF NOT EXISTS contact_messages (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  subject VARCHAR(200) NOT NULL,
+  message TEXT NOT NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_contact_messages_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
 
 // Columns added after their table's initial CREATE TABLE IF NOT EXISTS;

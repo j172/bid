@@ -1,5 +1,6 @@
 import { getDb } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
+import { escapeHtml } from "@/lib/htmlText";
 
 // Fire-and-forget: callers invoke these without awaiting them (see
 // lib/listings.ts's placeBid/buyNow) so the bidding/buyout action's HTTP
@@ -30,6 +31,13 @@ const EMAIL_MESSAGES: Record<
     resetPasswordBody: (resetUrl: string) => string;
     emailOtpSubject: string;
     emailOtpBody: (code: string) => string;
+    // Confirmation email sent to whoever submits the public /contact form
+    // (issue #104) — keyed by the locale of the contact page they submitted
+    // from (see resolveLocale's call site in sendContactMessageEmails),
+    // *not* users.locale like every other entry above, since a contact-form
+    // submitter isn't necessarily a registered account.
+    contactConfirmationSubject: string;
+    contactConfirmationBody: (subject: string) => string;
   }
 > = {
   "zh-TW": {
@@ -49,6 +57,9 @@ const EMAIL_MESSAGES: Record<
     emailOtpSubject: "登入驗證碼",
     emailOtpBody: (code) =>
       `<p>你的登入驗證碼是：</p><p style="font-size:24px;font-weight:bold;letter-spacing:4px;">${code}</p><p>此驗證碼將於 10 分鐘後失效，且僅能使用一次。若這不是你本人的登入嘗試，請忽略這封信。</p>`,
+    contactConfirmationSubject: "已收到你的訊息",
+    contactConfirmationBody: (subject) =>
+      `<p>我們已收到您的訊息，會盡快回覆。</p><p>您提交的主旨：${escapeHtml(subject)}</p>`,
   },
   "zh-CN": {
     outbidSubject: "你被超越了",
@@ -67,6 +78,9 @@ const EMAIL_MESSAGES: Record<
     emailOtpSubject: "登录验证码",
     emailOtpBody: (code) =>
       `<p>你的登录验证码是：</p><p style="font-size:24px;font-weight:bold;letter-spacing:4px;">${code}</p><p>此验证码将于 10 分钟后失效，且仅能使用一次。若这不是你本人的登录尝试，请忽略这封信。</p>`,
+    contactConfirmationSubject: "已收到你的留言",
+    contactConfirmationBody: (subject) =>
+      `<p>我们已收到您的留言，会尽快回复。</p><p>您提交的主题：${escapeHtml(subject)}</p>`,
   },
   en: {
     outbidSubject: "You've been outbid",
@@ -86,6 +100,9 @@ const EMAIL_MESSAGES: Record<
     emailOtpSubject: "Your login verification code",
     emailOtpBody: (code) =>
       `<p>Your login verification code is:</p><p style="font-size:24px;font-weight:bold;letter-spacing:4px;">${code}</p><p>This code expires in 10 minutes and can only be used once. If this wasn't you, you can safely ignore this email.</p>`,
+    contactConfirmationSubject: "We've received your message",
+    contactConfirmationBody: (subject) =>
+      `<p>We've received your message and will get back to you as soon as we can.</p><p>Subject you submitted: ${escapeHtml(subject)}</p>`,
   },
 };
 
@@ -237,5 +254,60 @@ export async function sendEmailOtpEmail(email: string, locale: string, code: str
   } catch (error) {
     console.error("sendEmailOtpEmail failed:", error);
     return false;
+  }
+}
+
+// Public /contact form (issue #104) email pair — a fixed admin notification
+// to CONTACT_ADMIN_EMAIL plus a locale-appropriate confirmation to whoever
+// submitted the form. Unlike the rest of this file's tables, the admin
+// notification is deliberately NOT looked up via EMAIL_MESSAGES/
+// resolveLocale: it always goes to the site admin in hardcoded Traditional
+// Chinese, same "admin surfaces stay hardcoded zh-TW" convention as
+// lib/errorCodes.ts's header comment (this recipient isn't the visitor who
+// submitted the form, so there's no per-recipient locale to honor).
+
+export interface ContactMessageDetails {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}
+
+const CONTACT_ADMIN_EMAIL = "j172@j172.tw";
+
+// Pure/no I/O so it's directly unit-testable, same split as
+// lib/newsletter.ts's buildNewsBroadcastHtml. escapeHtml is required here
+// (unlike every other EMAIL_MESSAGES body in this file) because name/
+// subject/message are raw, unauthenticated visitor input, not
+// admin-authored content.
+export function buildContactAdminNotificationHtml(details: ContactMessageDetails): string {
+  return [
+    "<p>網站聯絡表單收到一則新訊息：</p>",
+    `<p>姓名：${escapeHtml(details.name)}</p>`,
+    `<p>Email：${escapeHtml(details.email)}</p>`,
+    `<p>主旨：${escapeHtml(details.subject)}</p>`,
+    `<p>訊息內容：</p><p>${escapeHtml(details.message).replace(/\n/g, "<br>")}</p>`,
+  ].join("");
+}
+
+// Sends both the admin notification and the submitter confirmation. Awaited
+// directly by app/api/contact/route.ts (same "caller awaits it directly"
+// shape as sendPasswordResetEmail/sendEmailOtpEmail above) — but never
+// throws and its return value carries no ok/failure signal for the caller
+// to act on, since both sends are best-effort per the issue: once the
+// contact_messages row is inserted, a failed email must not turn the
+// visitor's submission into an error response.
+export async function sendContactMessageEmails(details: ContactMessageDetails, locale: string): Promise<void> {
+  try {
+    await sendEmail(CONTACT_ADMIN_EMAIL, "網站聯絡表單：新訊息", buildContactAdminNotificationHtml(details));
+  } catch (error) {
+    console.error("sendContactMessageEmails: admin notification failed:", error);
+  }
+
+  try {
+    const messages = EMAIL_MESSAGES[resolveLocale(locale)];
+    await sendEmail(details.email, messages.contactConfirmationSubject, messages.contactConfirmationBody(details.subject));
+  } catch (error) {
+    console.error("sendContactMessageEmails: submitter confirmation failed:", error);
   }
 }
