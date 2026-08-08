@@ -26,6 +26,8 @@ const EMAIL_MESSAGES: Record<
     purchaseConfirmedBody: (title: string, quantity: number, totalAmount: number) => string;
     winnerSubject: string;
     winnerBody: (title: string, finalPrice: number) => string;
+    resetPasswordSubject: string;
+    resetPasswordBody: (resetUrl: string) => string;
   }
 > = {
   "zh-TW": {
@@ -39,6 +41,9 @@ const EMAIL_MESSAGES: Record<
     winnerSubject: "恭喜得標",
     winnerBody: (title, finalPrice) =>
       `<p>恭喜你得標「${title}」，得標金額 ${finalPrice}。管理員會與你聯繫後續付款與交付事宜。</p>`,
+    resetPasswordSubject: "重設密碼",
+    resetPasswordBody: (resetUrl) =>
+      `<p>我們收到重設你密碼的請求。請點擊以下連結設定新密碼，此連結將於 30 分鐘後失效，且僅能使用一次：</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>若這不是你本人的操作，請忽略這封信，你的密碼不會被更動。</p>`,
   },
   "zh-CN": {
     outbidSubject: "你被超越了",
@@ -51,6 +56,9 @@ const EMAIL_MESSAGES: Record<
     winnerSubject: "恭喜得标",
     winnerBody: (title, finalPrice) =>
       `<p>恭喜你得标「${title}」，得标金额 ${finalPrice}。管理员会与你联系后续付款与交付事宜。</p>`,
+    resetPasswordSubject: "重设密码",
+    resetPasswordBody: (resetUrl) =>
+      `<p>我们收到重设你密码的请求。请点击以下链接设定新密码，此链接将于 30 分钟后失效，且仅能使用一次：</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>若这不是你本人的操作，请忽略这封信，你的密码不会被更动。</p>`,
   },
   en: {
     outbidSubject: "You've been outbid",
@@ -64,6 +72,9 @@ const EMAIL_MESSAGES: Record<
     winnerSubject: "Congratulations, you won!",
     winnerBody: (title, finalPrice) =>
       `<p>Congratulations — you won "${title}" for ${finalPrice}. The admin will contact you about payment and delivery.</p>`,
+    resetPasswordSubject: "Reset your password",
+    resetPasswordBody: (resetUrl) =>
+      `<p>We received a request to reset your password. Click the link below to set a new one — it expires in 30 minutes and can only be used once:</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>If you didn't request this, you can safely ignore this email — your password won't be changed.</p>`,
   },
 };
 
@@ -181,6 +192,24 @@ export async function sendWinnerEmail(listingId: number): Promise<boolean> {
     return sent;
   } catch (error) {
     console.error("sendWinnerEmail failed:", error);
+    return false;
+  }
+}
+
+// Forgot-password reset email (issue #89), called by
+// app/api/auth/forgot-password/route.ts. Unlike the fire-and-forget
+// notifiers above, the caller there awaits this directly — the route has no
+// other work to do once the token is issued, and (unlike a bid/purchase
+// side-effect) a slow email provider here doesn't block anything else.
+// Never throws (mirrors sendEmail/sendWinnerEmail); the route ignores the
+// returned outcome anyway, since it always responds with the same neutral
+// message regardless of whether the send actually succeeded.
+export async function sendPasswordResetEmail(email: string, locale: string, resetUrl: string): Promise<boolean> {
+  try {
+    const messages = EMAIL_MESSAGES[resolveLocale(locale)];
+    return await sendEmail(email, messages.resetPasswordSubject, messages.resetPasswordBody(resetUrl));
+  } catch (error) {
+    console.error("sendPasswordResetEmail failed:", error);
     return false;
   }
 }

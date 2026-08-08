@@ -256,7 +256,8 @@
     "submitting": "登入中...",
     "defaultError": "登入失敗",
     "noAccount": "還沒有帳號？",
-    "registerLink": "註冊"
+    "registerLink": "註冊",
+    "forgotPasswordLink": "忘記密碼？"
   },
   "register": {
     "title": "註冊",
@@ -270,6 +271,27 @@
     "defaultError": "註冊失敗",
     "haveAccount": "已經有帳號？",
     "loginLink": "登入"
+  },
+  "forgotPassword": {
+    "title": "忘記密碼",
+    "description": "請輸入註冊時使用的 email，我們會寄送重設密碼的連結給你。",
+    "email": "Email",
+    "submit": "寄送重設連結",
+    "submitting": "寄送中...",
+    "successMessage": "若此信箱已註冊，重設密碼的連結將寄至該信箱，請前往收信。",
+    "backToLogin": "返回登入"
+  },
+  "resetPassword": {
+    "title": "設定新密碼",
+    "newPassword": "新密碼（至少 8 個字元）",
+    "confirmPassword": "確認新密碼",
+    "submit": "重設密碼",
+    "submitting": "重設中...",
+    "mismatchError": "兩次輸入的密碼不一致",
+    "defaultError": "重設密碼失敗",
+    "missingToken": "重設連結無效，請重新申請",
+    "successMessage": "密碼已重設成功，請使用新密碼登入。",
+    "backToLogin": "返回登入"
   },
   "account": {
     "title": "帳戶設定",
@@ -413,6 +435,7 @@
     "ACCOUNT_SUSPENDED": "此帳號已被停權，請聯繫網站管理員",
     "WRONG_OLD_PASSWORD": "舊密碼不正確",
     "NEW_PASSWORD_TOO_SHORT": "新密碼至少需要 8 個字元",
+    "RESET_TOKEN_INVALID": "重設連結無效或已過期，請重新申請",
     "LEADING_OPEN_LISTING": "你目前正在領先某個開放中的商品，請等到不再領先才能刪除帳號",
     "UNSETTLED_WIN": "你有已得標但尚未完成交易的商品，請等待管理員確認交易完成後再刪除帳號",
     "UNSETTLED_PURCHASE": "你有已購買但尚未完成交易的商品，請等待管理員確認交易完成後再刪除帳號"

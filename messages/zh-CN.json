@@ -256,7 +256,8 @@
     "submitting": "登录中...",
     "defaultError": "登录失败",
     "noAccount": "还没有账号？",
-    "registerLink": "注册"
+    "registerLink": "注册",
+    "forgotPasswordLink": "忘记密码？"
   },
   "register": {
     "title": "注册",
@@ -270,6 +271,27 @@
     "defaultError": "注册失败",
     "haveAccount": "已经有账号？",
     "loginLink": "登录"
+  },
+  "forgotPassword": {
+    "title": "忘记密码",
+    "description": "请输入注册时使用的 email，我们会发送重设密码的链接给你。",
+    "email": "Email",
+    "submit": "发送重设链接",
+    "submitting": "发送中...",
+    "successMessage": "若此邮箱已注册，重设密码的链接将发送至该邮箱，请前往查收。",
+    "backToLogin": "返回登录"
+  },
+  "resetPassword": {
+    "title": "设定新密码",
+    "newPassword": "新密码（至少 8 个字符）",
+    "confirmPassword": "确认新密码",
+    "submit": "重设密码",
+    "submitting": "重设中...",
+    "mismatchError": "两次输入的密码不一致",
+    "defaultError": "重设密码失败",
+    "missingToken": "重设链接无效，请重新申请",
+    "successMessage": "密码已重设成功，请使用新密码登录。",
+    "backToLogin": "返回登录"
   },
   "account": {
     "title": "账户设置",
@@ -413,6 +435,7 @@
     "ACCOUNT_SUSPENDED": "此账号已被停权，请联系网站管理员",
     "WRONG_OLD_PASSWORD": "旧密码不正确",
     "NEW_PASSWORD_TOO_SHORT": "新密码至少需要 8 个字符",
+    "RESET_TOKEN_INVALID": "重设链接无效或已过期，请重新申请",
     "LEADING_OPEN_LISTING": "你目前正在领先某个开放中的商品，请等到不再领先才能删除账号",
     "UNSETTLED_WIN": "你有已得标但尚未完成交易的商品，请等待管理员确认交易完成后再删除账号",
     "UNSETTLED_PURCHASE": "你有已购买但尚未完成交易的商品，请等待管理员确认交易完成后再删除账号"
