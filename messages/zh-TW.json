@@ -536,6 +536,7 @@
     "PASSWORD_TOO_SHORT": "密碼至少需要 8 個字元",
     "EMAIL_ALREADY_REGISTERED": "這個 email 已經註冊過了",
     "EMAIL_OR_PASSWORD_INCORRECT": "email 或密碼錯誤",
+    "LOGIN_RATE_LIMITED": "登入失敗次數過多，請 15 分鐘後再試",
     "ACCOUNT_SUSPENDED": "此帳號已被停權，請聯繫網站管理員",
     "WRONG_OLD_PASSWORD": "舊密碼不正確",
     "NEW_PASSWORD_TOO_SHORT": "新密碼至少需要 8 個字元",

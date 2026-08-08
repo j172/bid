@@ -536,6 +536,7 @@
     "PASSWORD_TOO_SHORT": "Password must be at least 8 characters",
     "EMAIL_ALREADY_REGISTERED": "This email is already registered",
     "EMAIL_OR_PASSWORD_INCORRECT": "Incorrect email or password",
+    "LOGIN_RATE_LIMITED": "Too many failed sign-in attempts — please try again in 15 minutes",
     "ACCOUNT_SUSPENDED": "This account has been suspended — please contact the site admin",
     "WRONG_OLD_PASSWORD": "Current password is incorrect",
     "NEW_PASSWORD_TOO_SHORT": "New password must be at least 8 characters",

@@ -291,6 +291,19 @@ CREATE TABLE IF NOT EXISTS contact_messages (
   PRIMARY KEY (id),
   KEY idx_contact_messages_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Failed password-login attempts (issue #140 H-1) — see db/init.sql for the
+-- fuller header comment. Brand-new table, whole final schema from day one,
+-- same as contact_messages above.
+CREATE TABLE IF NOT EXISTS login_attempts (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  email VARCHAR(255) NOT NULL,
+  request_ip VARCHAR(45) NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_login_attempts_email_created (email, created_at),
+  KEY idx_login_attempts_ip_created (request_ip, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
 
 // Columns added after their table's initial CREATE TABLE IF NOT EXISTS;

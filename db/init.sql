@@ -434,3 +434,27 @@ CREATE TABLE IF NOT EXISTS contact_messages (
   PRIMARY KEY (id),
   KEY idx_contact_messages_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Failed password-login attempts (issue #140 H-1) — the brute-force guard
+-- for POST /api/auth/login and POST /api/auth/verify-totp, both of which
+-- verify an email+password pair. Deliberately its own table rather than
+-- more users.* counter columns like #97's totp_failed_attempts/
+-- totp_locked_until: a password guess may target an email that has no users
+-- row at all (typo, or an attacker probing a leaked address list), and those
+-- attempts must be counted too — otherwise the guard would only ever apply
+-- to accounts that already exist, which is also exactly the kind of
+-- observable difference that leaks whether an account exists. One row per
+-- *failed* attempt; a successful password check deletes that email's rows
+-- (see lib/loginRateLimit.ts's clearLoginFailures), so a legitimate visitor
+-- who mistypes a few times then gets it right starts from a clean slate.
+-- Both limits are derived from created_at directly (same "no separate
+-- rate-limit store" approach as password_reset_tokens/email_otp_challenges).
+CREATE TABLE IF NOT EXISTS login_attempts (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  email VARCHAR(255) NOT NULL,     -- normalized (trimmed + lowercased), same form as users.email
+  request_ip VARCHAR(45) NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_login_attempts_email_created (email, created_at),
+  KEY idx_login_attempts_ip_created (request_ip, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
