@@ -1,9 +1,15 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const FALLBACK_SRC = "/images/hero-placeholder.png";
+// Safety net for the intermittent case where neither `onLoad` nor `onError`
+// ever fires on the <Image> (observed in production; the file itself loads
+// fine when accessed directly). Without this the image stays stuck at
+// opacity-0 forever. If nothing has settled the load by this point, we treat
+// it the same as an `onError` and fall back to FALLBACK_SRC.
+const LOAD_TIMEOUT_MS = 7000;
 
 interface ZoomableProductImageProps {
   src: string;
@@ -65,6 +71,7 @@ export default function ZoomableProductImage({
     height: 100,
   });
   const [panePosition, setPanePosition] = useState<PanePosition>({ left: VIEWPORT_EDGE_PADDING, top: VIEWPORT_EDGE_PADDING });
+  const settledRef = useRef(false);
 
   useEffect(() => {
     setLoaded(false);
@@ -73,6 +80,16 @@ export default function ZoomableProductImage({
     setHoverVisible(false);
     setCursor({ x: 50, y: 50, pctX: 50, pctY: 50, width: 100, height: 100 });
     setPanePosition({ left: VIEWPORT_EDGE_PADDING, top: VIEWPORT_EDGE_PADDING });
+    settledRef.current = false;
+
+    const timeoutId = window.setTimeout(() => {
+      if (!settledRef.current) {
+        settledRef.current = true;
+        setErrored(true);
+      }
+    }, LOAD_TIMEOUT_MS);
+
+    return () => window.clearTimeout(timeoutId);
   }, [src]);
 
   useEffect(() => {
@@ -169,8 +186,12 @@ export default function ZoomableProductImage({
         sizes={sizes}
         loading={eager ? "eager" : "lazy"}
         fetchPriority={fetchPriority}
-        onLoad={() => setLoaded(true)}
+        onLoad={() => {
+          settledRef.current = true;
+          setLoaded(true);
+        }}
         onError={() => {
+          settledRef.current = true;
           if (displaySrc === FALLBACK_SRC) return;
           setErrored(true);
         }}
