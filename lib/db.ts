@@ -64,6 +64,37 @@ CREATE TABLE IF NOT EXISTS email_otp_challenges (
   KEY idx_email_otp_challenges_ip_created (request_ip, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Short-lived WebAuthn ceremony challenges (issue #95) — see db/init.sql for
+-- the fuller header comment. Brand-new table, whole final schema from day
+-- one, same as password_reset_tokens/email_otp_challenges above.
+CREATE TABLE IF NOT EXISTS webauthn_challenges (
+  token VARCHAR(64) NOT NULL,
+  challenge VARCHAR(255) NOT NULL,
+  purpose VARCHAR(20) NOT NULL,
+  user_id BIGINT NULL,
+  expires_at DATETIME NOT NULL,
+  used_at DATETIME NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (token),
+  KEY idx_webauthn_challenges_expires (expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Registered passkeys / WebAuthn credentials (issue #95) — see db/init.sql
+-- for the fuller header comment. Brand-new table, whole final schema from
+-- day one, same as webauthn_challenges above.
+CREATE TABLE IF NOT EXISTS webauthn_credentials (
+  credential_id VARCHAR(255) NOT NULL,
+  user_id BIGINT NOT NULL,
+  public_key TEXT NOT NULL,
+  counter BIGINT NOT NULL DEFAULT 0,
+  device_name VARCHAR(100) NULL,
+  transports VARCHAR(100) NULL,
+  created_at DATETIME NOT NULL,
+  last_used_at DATETIME NULL,
+  PRIMARY KEY (credential_id),
+  KEY idx_webauthn_credentials_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS listings (
   id BIGINT NOT NULL AUTO_INCREMENT,
   title VARCHAR(255) NOT NULL,

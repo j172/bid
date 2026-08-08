@@ -80,6 +80,62 @@ CREATE TABLE IF NOT EXISTS email_otp_challenges (
   KEY idx_email_otp_challenges_ip_created (request_ip, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Short-lived WebAuthn ceremony challenges (issue #95) — every passkey
+-- registration/authentication is a two-step round trip (options → browser →
+-- verify) and the challenge the browser signed has to be looked back up on
+-- the verify step. Same shape/lifecycle convention as password_reset_tokens/
+-- email_otp_challenges above (token as its own PK, used_at NOT NULL means
+-- "spent", expires_at NOW()-comparison means "5 minutes came and went") but
+-- purpose ('register' | 'login') keeps a registration challenge from being
+-- replayed against the login-verify route or vice versa — see
+-- lib/webauthn.ts's isWebauthnChallengeUsable. user_id is set for
+-- registration (bound to whoever is logged in when it's requested) and NULL
+-- for login (issue #95's usernameless/discoverable-credential flow — there's
+-- no account to bind to until the browser itself picks a passkey). Unlike
+-- those two tables, the token here never reaches client-side JS — it's
+-- carried in an httpOnly cookie exactly like sessions.id, not sent back and
+-- forth as request/response JSON.
+CREATE TABLE IF NOT EXISTS webauthn_challenges (
+  token VARCHAR(64) NOT NULL,
+  challenge VARCHAR(255) NOT NULL,
+  purpose VARCHAR(20) NOT NULL,
+  user_id BIGINT NULL,
+  expires_at DATETIME NOT NULL,
+  used_at DATETIME NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (token),
+  KEY idx_webauthn_challenges_expires (expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Registered passkeys / WebAuthn credentials (issue #95). credential_id (the
+-- browser/authenticator-issued base64url credential ID) is the primary key —
+-- it's already globally unique per the WebAuthn spec, so no separate
+-- surrogate id column is needed, same convention as password_reset_tokens/
+-- email_otp_challenges using their own token as PK. One account can hold
+-- many rows (a phone's passkey, a security key, etc — see USER ACCOUNT's
+-- passkey list). public_key is the credential's COSE public key, stored as
+-- its base64url encoding (see lib/webauthnCredentials.ts's toCredential/
+-- isoBase64URL round-trip) rather than raw bytes, since this project's MySQL
+-- columns are all text-based. counter is WebAuthn's per-credential signature
+-- counter — advanced on every successful login (see
+-- updateCredentialAfterLogin) as the spec's clone-detection signal.
+-- device_name is the visitor's own label for this passkey ("我的 iPhone")
+-- set at registration time; transports (["internal","hybrid"], etc) is
+-- stored as its JSON serialization — a handful of short enum strings, never
+-- queried on, so a join table would be pure overhead.
+CREATE TABLE IF NOT EXISTS webauthn_credentials (
+  credential_id VARCHAR(255) NOT NULL,
+  user_id BIGINT NOT NULL,
+  public_key TEXT NOT NULL,
+  counter BIGINT NOT NULL DEFAULT 0,
+  device_name VARCHAR(100) NULL,
+  transports VARCHAR(100) NULL,
+  created_at DATETIME NOT NULL,
+  last_used_at DATETIME NULL,
+  PRIMARY KEY (credential_id),
+  KEY idx_webauthn_credentials_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS listings (
   id BIGINT NOT NULL AUTO_INCREMENT,
   title VARCHAR(255) NOT NULL,

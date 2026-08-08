@@ -263,7 +263,11 @@
     "otpCodeLabel": "Verification code",
     "otpSubmit": "Verify and log in",
     "otpSubmitting": "Verifying...",
-    "otpBackToLogin": "Back to login"
+    "otpBackToLogin": "Back to login",
+    "passkeyDivider": "or",
+    "passkeyLoginButton": "Log in with a passkey",
+    "passkeySubmitting": "Verifying...",
+    "passkeyBrowserError": "Couldn't log in with a passkey — check that your device supports it and try again"
   },
   "register": {
     "title": "Sign Up",
@@ -305,6 +309,8 @@
     "passwordTitle": "Change Password",
     "twoFactorTitle": "Email Two-Factor Authentication",
     "twoFactorDescription": "When enabled, logging in requires a 6-digit code sent to your email in addition to your password.",
+    "passkeyTitle": "Passkeys",
+    "passkeyDescription": "Add a passkey to log in with your device's biometrics or PIN instead of typing your password.",
     "deleteTitle": "Delete Account",
     "deleteWarning": "You can't delete your account while leading any open listing, or while holding a won item the admin hasn't yet marked as settled."
   },
@@ -346,6 +352,25 @@
     "defaultError": "Action failed",
     "enabledNotice": "Email two-factor authentication enabled",
     "disabledNotice": "Email two-factor authentication disabled"
+  },
+  "passkeySection": {
+    "empty": "You haven't added any passkeys yet.",
+    "unnamedDevice": "Unnamed device",
+    "createdAtLabel": "Added",
+    "lastUsedAtLabel": "Last used",
+    "addButton": "Add a passkey",
+    "registering": "Follow your device's prompts to finish verifying...",
+    "deviceNamePrompt": "Verified — name this passkey so you can recognize it later.",
+    "deviceNameLabel": "Device name",
+    "deviceNamePlaceholder": "e.g. My iPhone",
+    "saveButton": "Save",
+    "submitting": "Saving...",
+    "cancel": "Cancel",
+    "deleteButton": "Delete",
+    "deleting": "Deleting...",
+    "deleteConfirm": "Delete this passkey? You won't be able to use it to log in anymore.",
+    "browserError": "Couldn't create a passkey on this device — check that your device supports it and try again",
+    "defaultError": "Action failed"
   },
   "myBids": {
     "title": "My Bid History",
@@ -463,6 +488,8 @@
     "EMAIL_OTP_INVALID": "That code is incorrect or has expired",
     "EMAIL_OTP_TOO_MANY_ATTEMPTS": "Too many failed attempts — please log in again to get a new code",
     "EMAIL_OTP_RATE_LIMITED": "Verification codes are being requested too often — please try again later",
+    "WEBAUTHN_CHALLENGE_INVALID": "Verification timed out or is no longer valid — please try again",
+    "WEBAUTHN_VERIFICATION_FAILED": "Passkey verification failed — please try again",
     "LEADING_OPEN_LISTING": "You're currently leading an open listing — you can't delete your account until that's no longer the case",
     "UNSETTLED_WIN": "You have a won item that hasn't been marked settled yet — please wait for the admin to confirm it before deleting your account",
     "UNSETTLED_PURCHASE": "You have a purchase that hasn't been marked settled yet — please wait for the admin to confirm it before deleting your account"
