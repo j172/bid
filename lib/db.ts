@@ -523,13 +523,44 @@ function createPool(): mysql.Pool {
     password: process.env.MYSQL_PASSWORD,
     database: process.env.MYSQL_DATABASE,
     ssl: process.env.MYSQL_SSL === "true" ? {} : undefined,
+    // multipleStatements is deliberately left off (issue #140 I-1). It was
+    // only ever needed to fire SCHEMA_SQL's whole CREATE TABLE list in one
+    // query — which splitSqlStatements now handles instead — while leaving
+    // it on turns any future "one statement" SQL-injection slip anywhere in
+    // this codebase into "attacker appends arbitrary extra statements".
+    // Pure defence in depth: every query in this project is parameterised
+    // today, and this keeps the blast radius small if one day one isn't.
     connectionLimit: 5,
-    multipleStatements: true,
   });
 }
 
+// SCHEMA_SQL above is one string per the "kept in sync with db/init.sql"
+// convention, but has to reach the driver one statement at a time now that
+// multipleStatements is off. Statements are separated by a semicolon at end
+// of line; the semicolons that appear inside the `--` comments are all
+// mid-line, so they never split a statement (the test in lib/db.test.ts
+// pins that invariant: every chunk this produces is exactly one CREATE
+// TABLE). Leading `--` comment lines stay attached to the statement that
+// follows them, which MySQL accepts.
+//
+// splitSqlStatements/schemaStatements are exported for that test only — same
+// reason ensureEmailVerificationColumns above has a wider export surface than
+// its sibling helpers (SCHEMA_SQL itself stays private).
+export function splitSqlStatements(sql: string): string[] {
+  return sql
+    .split(/;\s*(?:\r?\n|$)/)
+    .map((statement) => statement.trim())
+    .filter((statement) => statement !== "");
+}
+
+export function schemaStatements(): string[] {
+  return splitSqlStatements(SCHEMA_SQL);
+}
+
 async function ensureSchema(db: mysql.Pool): Promise<void> {
-  await db.query(SCHEMA_SQL);
+  for (const statement of schemaStatements()) {
+    await db.query(statement);
+  }
   await ensureBiddingColumns(db);
   await ensureAccountColumns(db);
   await ensureBuyItNowNullable(db);
