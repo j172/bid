@@ -393,6 +393,10 @@ async function ensureAccountColumns(db: mysql.Pool): Promise<void> {
   // TABLE users for the fuller comment on why this is set only via
   // confirmTotpSetup, never directly from totp_setup_challenges.
   await ensureColumn(db, "users", "totp_secret", "VARCHAR(64) NULL");
+  // TOTP login brute-force guard (issue #97 code review follow-up) — see
+  // db/init.sql's CREATE TABLE users for the fuller comment.
+  await ensureColumn(db, "users", "totp_failed_attempts", "INT NOT NULL DEFAULT 0");
+  await ensureColumn(db, "users", "totp_locked_until", "DATETIME NULL");
 }
 
 // buy_it_now_price started out NOT NULL (every listing required one);

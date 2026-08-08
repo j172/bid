@@ -27,6 +27,18 @@ CREATE TABLE IF NOT EXISTS users (
   -- already accepts for #93's email_otp_challenges after an admin disables
   -- 2FA — only lib/totp.ts's disableTotp clears it explicitly.
   totp_secret VARCHAR(64) NULL,
+  -- Brute-force guard for POST /api/auth/verify-totp (issue #97 code review
+  -- follow-up): unlike #93's Email OTP, a TOTP login check has no per-attempt
+  -- challenge row to cap attempts on (the secret lives on the visitor's own
+  -- device, nothing is emailed/issued per login try), so the cap lives on
+  -- the account itself instead. totp_failed_attempts counts consecutive
+  -- wrong codes (TOTP *or* backup code) at login; reaching
+  -- TOTP_LOGIN_MAX_ATTEMPTS (5, see lib/totp.ts) sets totp_locked_until 15
+  -- minutes out, during which verifyTotpLogin refuses to even check a
+  -- submitted code. A successful verify resets both back to 0/NULL — see
+  -- verifyTotpLogin's own header comment.
+  totp_failed_attempts INT NOT NULL DEFAULT 0,
+  totp_locked_until DATETIME NULL,
   created_at DATETIME NOT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_users_email (email)

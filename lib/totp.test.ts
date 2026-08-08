@@ -23,6 +23,7 @@ vi.mock("@/lib/db", () => ({
 import { hashPassword } from "./auth";
 import {
   BACKUP_CODE_COUNT,
+  TOTP_LOGIN_MAX_ATTEMPTS,
   confirmTotpSetup,
   disableTotp,
   generateBackupCode,
@@ -31,6 +32,7 @@ import {
   hashBackupCode,
   isBackupCodeFormat,
   isTotpCodeFormat,
+  isTotpLoginLocked,
   isTotpSetupChallengeUsable,
   startTotpSetup,
   verifyAndConsumeBackupCode,
@@ -195,6 +197,26 @@ describe("isTotpSetupChallengeUsable", () => {
   });
 });
 
+describe("isTotpLoginLocked", () => {
+  const now = new Date("2026-08-08T12:00:00Z");
+
+  it("is not locked when totp_locked_until is null", () => {
+    expect(isTotpLoginLocked(null, now)).toBe(false);
+  });
+
+  it("is not locked once the lockout has passed", () => {
+    expect(isTotpLoginLocked(new Date("2026-08-08T11:59:59Z"), now)).toBe(false);
+  });
+
+  it("is locked while totp_locked_until is still in the future", () => {
+    expect(isTotpLoginLocked(new Date("2026-08-08T12:00:01Z"), now)).toBe(true);
+  });
+
+  it("treats the exact boundary instant as no longer locked", () => {
+    expect(isTotpLoginLocked(now, now)).toBe(false);
+  });
+});
+
 describe("startTotpSetup", () => {
   it("inserts a fresh secret bound to the user and returns token/secret/otpauthUri", async () => {
     queryMock.mockResolvedValueOnce([{}]);
@@ -325,8 +347,12 @@ describe("verifyAndConsumeBackupCode", () => {
 });
 
 describe("verifyTotpLogin", () => {
+  function mockSecretRow(secret: string | null, attempts = 0, lockedUntil: Date | null = null) {
+    queryMock.mockResolvedValueOnce([[{ totp_secret: secret, totp_failed_attempts: attempts, totp_locked_until: lockedUntil }]]);
+  }
+
   it("rejects when the account has no totp_secret", async () => {
-    queryMock.mockResolvedValueOnce([[{ totp_secret: null }]]);
+    mockSecretRow(null);
     const result = await verifyTotpLogin(7, "123456");
     expect(result).toEqual({ ok: false, errorCode: "TOTP_CODE_INVALID" });
     expect(queryMock).toHaveBeenCalledTimes(1);
@@ -337,22 +363,79 @@ describe("verifyTotpLogin", () => {
     const totp = new TOTP({ algorithm: "SHA1", digits: 6, period: 30, secret: Secret.fromBase32(secret) });
     const code = totp.generate();
 
-    queryMock.mockResolvedValueOnce([[{ totp_secret: secret }]]);
+    mockSecretRow(secret);
     const result = await verifyTotpLogin(7, code);
     expect(result).toEqual({ ok: true, usedBackupCode: false });
-    expect(queryMock).toHaveBeenCalledTimes(1); // no backup-code query touched
+    expect(queryMock).toHaveBeenCalledTimes(1); // no backup-code query, no attempts reset needed (already 0)
   });
 
-  it("rejects a wrong 6-digit code", async () => {
+  it("resets a previously nonzero attempts count on success", async () => {
     const secret = generateTotpSecret();
-    queryMock.mockResolvedValueOnce([[{ totp_secret: secret }]]);
+    const totp = new TOTP({ algorithm: "SHA1", digits: 6, period: 30, secret: Secret.fromBase32(secret) });
+    const code = totp.generate();
+
+    mockSecretRow(secret, 3);
+    queryMock.mockResolvedValueOnce([{}]); // UPDATE reset attempts/locked_until
+
+    const result = await verifyTotpLogin(7, code);
+    expect(result).toEqual({ ok: true, usedBackupCode: false });
+    expect(queryMock).toHaveBeenCalledTimes(2);
+    expect(queryMock.mock.calls[1][0]).toContain("totp_failed_attempts = 0, totp_locked_until = NULL");
+    expect(queryMock.mock.calls[1][1]).toEqual([7]);
+  });
+
+  it("rejects a wrong 6-digit code and increments totp_failed_attempts", async () => {
+    const secret = generateTotpSecret();
+    mockSecretRow(secret, 1);
+    queryMock.mockResolvedValueOnce([{}]); // UPDATE attempts
+
     const result = await verifyTotpLogin(7, "000000");
     expect(result).toEqual({ ok: false, errorCode: "TOTP_CODE_INVALID" });
+    expect(queryMock).toHaveBeenCalledTimes(2);
+    expect(queryMock.mock.calls[1][0]).toBe("UPDATE users SET totp_failed_attempts = ? WHERE id = ?");
+    expect(queryMock.mock.calls[1][1]).toEqual([2, 7]);
+  });
+
+  it("locks the account once a wrong code pushes attempts to TOTP_LOGIN_MAX_ATTEMPTS", async () => {
+    const secret = generateTotpSecret();
+    mockSecretRow(secret, TOTP_LOGIN_MAX_ATTEMPTS - 1);
+    queryMock.mockResolvedValueOnce([{}]); // UPDATE attempts + locked_until
+
+    const result = await verifyTotpLogin(7, "000000");
+    expect(result).toEqual({ ok: false, errorCode: "TOTP_CODE_INVALID" });
+    expect(queryMock).toHaveBeenCalledTimes(2);
+    expect(queryMock.mock.calls[1][0]).toBe("UPDATE users SET totp_failed_attempts = ?, totp_locked_until = ? WHERE id = ?");
+    expect(queryMock.mock.calls[1][1][0]).toBe(TOTP_LOGIN_MAX_ATTEMPTS);
+    expect(queryMock.mock.calls[1][1][1]).toBeInstanceOf(Date);
+    expect(queryMock.mock.calls[1][1][2]).toBe(7);
+  });
+
+  it("refuses to even check the code while locked out, without touching totp_failed_attempts", async () => {
+    const secret = generateTotpSecret();
+    const totp = new TOTP({ algorithm: "SHA1", digits: 6, period: 30, secret: Secret.fromBase32(secret) });
+    const code = totp.generate(); // a *correct* code — still rejected while locked
+
+    mockSecretRow(secret, TOTP_LOGIN_MAX_ATTEMPTS, new Date(Date.now() + 60_000));
+    const result = await verifyTotpLogin(7, code);
+    expect(result).toEqual({ ok: false, errorCode: "TOTP_LOGIN_LOCKED" });
+    expect(queryMock).toHaveBeenCalledTimes(1); // only the initial SELECT — no UPDATE at all
+  });
+
+  it("allows verification again once the lockout has passed", async () => {
+    const secret = generateTotpSecret();
+    const totp = new TOTP({ algorithm: "SHA1", digits: 6, period: 30, secret: Secret.fromBase32(secret) });
+    const code = totp.generate();
+
+    mockSecretRow(secret, TOTP_LOGIN_MAX_ATTEMPTS, new Date(Date.now() - 1000)); // lockout already expired
+    queryMock.mockResolvedValueOnce([{}]); // UPDATE reset attempts/locked_until on success
+
+    const result = await verifyTotpLogin(7, code);
+    expect(result).toEqual({ ok: true, usedBackupCode: false });
   });
 
   it("routes a backup-code-shaped input to verifyAndConsumeBackupCode", async () => {
     const secret = generateTotpSecret();
-    queryMock.mockResolvedValueOnce([[{ totp_secret: secret }]]); // SELECT totp_secret
+    mockSecretRow(secret); // SELECT totp_secret
     queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]); // UPDATE backup code
     queryMock.mockResolvedValueOnce([[{ cnt: 3 }]]); // remaining count
 
@@ -360,20 +443,25 @@ describe("verifyTotpLogin", () => {
     expect(result).toEqual({ ok: true, usedBackupCode: true, remainingBackupCodes: 3 });
   });
 
-  it("rejects an unrecognized backup code", async () => {
+  it("rejects an unrecognized backup code and increments totp_failed_attempts", async () => {
     const secret = generateTotpSecret();
-    queryMock.mockResolvedValueOnce([[{ totp_secret: secret }]]);
+    mockSecretRow(secret);
     queryMock.mockResolvedValueOnce([{ affectedRows: 0 }]);
+    queryMock.mockResolvedValueOnce([{}]); // UPDATE attempts
 
     const result = await verifyTotpLogin(7, "ab12c-34de5");
     expect(result).toEqual({ ok: false, errorCode: "TOTP_CODE_INVALID" });
+    expect(queryMock).toHaveBeenCalledTimes(3);
+    expect(queryMock.mock.calls[2][1]).toEqual([1, 7]);
   });
 
-  it("rejects input matching neither format", async () => {
+  it("rejects input matching neither format and still counts as a failed attempt", async () => {
     const secret = generateTotpSecret();
-    queryMock.mockResolvedValueOnce([[{ totp_secret: secret }]]);
+    mockSecretRow(secret);
+    queryMock.mockResolvedValueOnce([{}]); // UPDATE attempts
+
     const result = await verifyTotpLogin(7, "not-a-valid-code");
     expect(result).toEqual({ ok: false, errorCode: "TOTP_CODE_INVALID" });
-    expect(queryMock).toHaveBeenCalledTimes(1);
+    expect(queryMock).toHaveBeenCalledTimes(2);
   });
 });

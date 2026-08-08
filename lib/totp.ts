@@ -29,6 +29,20 @@ const TOTP_PERIOD = 30;
 const TOTP_ALGORITHM = "SHA1"; // widest Authenticator-app compatibility (Google Authenticator etc only support SHA1)
 const LOGIN_WINDOW = 1; // ±1 period (±30s) of clock drift tolerated at verify time
 
+// Brute-force guard for the login-time check (code review follow-up to issue
+// #97's initial PR): a TOTP code is still just a 6-digit space (1,000,000
+// possibilities), same as #93's Email OTP, but unlike Email OTP there's no
+// per-attempt challenge row to cap — see verifyTotpLogin's own header
+// comment for why the cap lives on the account instead. 5 wrong tries (TOTP
+// code or backup code, counted together) locks the account out of TOTP
+// verification for 15 minutes — same attempt cap as EMAIL_OTP_MAX_ATTEMPTS
+// in lib/emailOtp.ts, and the same 15-minute window
+// lib/passwordReset.ts's/lib/emailOtp.ts's own IP rate limits use elsewhere
+// in this project, reused here for consistency rather than picking a new
+// number.
+export const TOTP_LOGIN_MAX_ATTEMPTS = 5;
+export const TOTP_LOGIN_LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
+
 function buildTotp(secret: string, label?: string): OTPAuth.TOTP {
   return new OTPAuth.TOTP({
     issuer: RP_NAME,
@@ -111,6 +125,14 @@ export function isTotpSetupChallengeUsable(row: TotpSetupChallengeRow | null, no
   return row.expires_at.getTime() > now.getTime();
 }
 
+// Pure: mirrors isTotpSetupChallengeUsable/isResetTokenValid's `now` param
+// pattern — true exactly when a lockout is currently in effect (a
+// totp_locked_until in the past, or never set, means "not locked").
+export function isTotpLoginLocked(lockedUntil: Date | null, now: Date = new Date()): boolean {
+  if (!lockedUntil) return false;
+  return lockedUntil.getTime() > now.getTime();
+}
+
 export interface TotpSetupStart {
   token: string;
   secret: string;
@@ -181,7 +203,13 @@ export async function confirmTotpSetup(
   }
 
   await db.query("UPDATE totp_setup_challenges SET used_at = NOW() WHERE token = ?", [token]);
-  await db.query("UPDATE users SET totp_secret = ?, two_factor_method = 'totp' WHERE id = ?", [secret, userId]);
+  // Also clears any stale totp_failed_attempts/totp_locked_until from a
+  // previous enable/disable cycle — a fresh setup should never inherit an
+  // old lockout.
+  await db.query(
+    "UPDATE users SET totp_secret = ?, two_factor_method = 'totp', totp_failed_attempts = 0, totp_locked_until = NULL WHERE id = ?",
+    [secret, userId],
+  );
 
   const backupCodes = Array.from({ length: BACKUP_CODE_COUNT }, () => generateBackupCode());
   const rows = backupCodes.map((backupCode) => [userId, hashBackupCode(backupCode), new Date()]);
@@ -206,7 +234,9 @@ export async function disableTotp(userId: number, currentPassword: string): Prom
   if (!result.ok) return result;
 
   const db = await getDb();
-  await db.query("UPDATE users SET totp_secret = NULL WHERE id = ?", [userId]);
+  await db.query("UPDATE users SET totp_secret = NULL, totp_failed_attempts = 0, totp_locked_until = NULL WHERE id = ?", [
+    userId,
+  ]);
   await db.query("DELETE FROM totp_backup_codes WHERE user_id = ?", [userId]);
   return { ok: true };
 }
@@ -248,29 +278,67 @@ export type VerifyTotpLoginOutcome =
 // wrong app code, unknown/already-used backup code, or the account somehow
 // not actually having a totp_secret) — same "don't leak which check failed"
 // principle as lib/emailOtp.ts's EMAIL_OTP_INVALID.
+//
+// Brute-force guard (code review follow-up): an attacker who already knows
+// an account's email+password would otherwise be able to hammer this route
+// with unlimited code guesses — unlike Email OTP, there's no challenge
+// row/rate-limited email send to throttle them. So this reads (and, on a
+// wrong guess, writes back) the account's own totp_failed_attempts/
+// totp_locked_until columns instead: a locked-out account short-circuits
+// before even looking at the submitted code (isTotpLoginLocked), and every
+// non-success — wrong TOTP code, wrong/reused backup code, or garbage in an
+// unrecognized format — counts toward the same TOTP_LOGIN_MAX_ATTEMPTS cap,
+// which locks the account out for TOTP_LOGIN_LOCKOUT_MS once reached. A
+// success resets both columns back to 0/NULL.
 export async function verifyTotpLogin(userId: number, code: string): Promise<VerifyTotpLoginOutcome> {
   const trimmed = code.trim();
   const db = await getDb();
-  const [rows] = await db.query("SELECT totp_secret FROM users WHERE id = ? LIMIT 1", [userId]);
-  const row = (rows as { totp_secret: string | null }[])[0];
+  const [rows] = await db.query(
+    "SELECT totp_secret, totp_failed_attempts, totp_locked_until FROM users WHERE id = ? LIMIT 1",
+    [userId],
+  );
+  const row = (rows as { totp_secret: string | null; totp_failed_attempts: number; totp_locked_until: Date | null }[])[0];
   if (!row || !row.totp_secret) {
     return { ok: false, errorCode: "TOTP_CODE_INVALID" };
   }
+  if (isTotpLoginLocked(row.totp_locked_until)) {
+    return { ok: false, errorCode: "TOTP_LOGIN_LOCKED" };
+  }
+
+  let usedBackupCode = false;
+  let remainingBackupCodes: number | undefined;
+  let succeeded: boolean;
 
   if (isTotpCodeFormat(trimmed)) {
-    if (verifyTotpCode(row.totp_secret, trimmed)) {
-      return { ok: true, usedBackupCode: false };
-    }
-    return { ok: false, errorCode: "TOTP_CODE_INVALID" };
-  }
-
-  if (isBackupCodeFormat(trimmed)) {
+    succeeded = verifyTotpCode(row.totp_secret, trimmed);
+  } else if (isBackupCodeFormat(trimmed)) {
     const result = await verifyAndConsumeBackupCode(userId, trimmed);
+    succeeded = result.ok;
     if (result.ok) {
-      return { ok: true, usedBackupCode: true, remainingBackupCodes: result.remaining };
+      usedBackupCode = true;
+      remainingBackupCodes = result.remaining;
+    }
+  } else {
+    succeeded = false;
+  }
+
+  if (!succeeded) {
+    const nextAttempts = row.totp_failed_attempts + 1;
+    if (nextAttempts >= TOTP_LOGIN_MAX_ATTEMPTS) {
+      await db.query("UPDATE users SET totp_failed_attempts = ?, totp_locked_until = ? WHERE id = ?", [
+        nextAttempts,
+        new Date(Date.now() + TOTP_LOGIN_LOCKOUT_MS),
+        userId,
+      ]);
+    } else {
+      await db.query("UPDATE users SET totp_failed_attempts = ? WHERE id = ?", [nextAttempts, userId]);
     }
     return { ok: false, errorCode: "TOTP_CODE_INVALID" };
   }
 
-  return { ok: false, errorCode: "TOTP_CODE_INVALID" };
+  if (row.totp_failed_attempts > 0 || row.totp_locked_until !== null) {
+    await db.query("UPDATE users SET totp_failed_attempts = 0, totp_locked_until = NULL WHERE id = ?", [userId]);
+  }
+
+  return { ok: true, usedBackupCode, remainingBackupCodes };
 }

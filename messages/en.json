@@ -524,6 +524,7 @@
     "WEBAUTHN_VERIFICATION_FAILED": "Passkey verification failed — please try again",
     "TOTP_SETUP_CHALLENGE_INVALID": "Setup timed out or is no longer valid — please start again",
     "TOTP_CODE_INVALID": "Incorrect code",
+    "TOTP_LOGIN_LOCKED": "Too many failed attempts — please try again in 15 minutes",
     "LEADING_OPEN_LISTING": "You're currently leading an open listing — you can't delete your account until that's no longer the case",
     "UNSETTLED_WIN": "You have a won item that hasn't been marked settled yet — please wait for the admin to confirm it before deleting your account",
     "UNSETTLED_PURCHASE": "You have a purchase that hasn't been marked settled yet — please wait for the admin to confirm it before deleting your account"

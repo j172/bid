@@ -33,7 +33,11 @@ export async function POST(request: Request) {
 
   const result = await verifyTotpLogin(user.id, code);
   if (!result.ok) {
-    return NextResponse.json({ ok: false, errorCode: result.errorCode }, { status: 400 });
+    // TOTP_LOGIN_LOCKED (verifyTotpLogin's brute-force guard) gets the same
+    // 429 status as the login route's EMAIL_OTP_RATE_LIMITED — both mean
+    // "come back later", not "your input was wrong".
+    const status = result.errorCode === "TOTP_LOGIN_LOCKED" ? 429 : 400;
+    return NextResponse.json({ ok: false, errorCode: result.errorCode }, { status });
   }
 
   await createSession(user.id);

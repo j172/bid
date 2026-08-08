@@ -524,6 +524,7 @@
     "WEBAUTHN_VERIFICATION_FAILED": "通行密钥验证失败，请重新尝试",
     "TOTP_SETUP_CHALLENGE_INVALID": "设定逾时或已失效，请重新开始设定",
     "TOTP_CODE_INVALID": "验证码不正确",
+    "TOTP_LOGIN_LOCKED": "验证失败次数过多，请 15 分钟后再试",
     "LEADING_OPEN_LISTING": "你目前正在领先某个开放中的商品，请等到不再领先才能删除账号",
     "UNSETTLED_WIN": "你有已得标但尚未完成交易的商品，请等待管理员确认交易完成后再删除账号",
     "UNSETTLED_PURCHASE": "你有已购买但尚未完成交易的商品，请等待管理员确认交易完成后再删除账号"
