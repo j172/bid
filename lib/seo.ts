@@ -202,3 +202,44 @@ export function buildListingProductJsonLd(listing: ListingJsonLdInput, pathname:
     },
   };
 }
+
+// /llms.txt content (issue #107 item 8) — the emerging llms.txt convention
+// (https://llmstxt.org/) for a short, plain-text/Markdown entry point aimed
+// at AI crawlers/agents: what the site is, its structure, and links to the
+// pages/machine-readable resources that matter most. Not an official
+// standard yet, but low-cost and directly GEO-relevant, per this issue.
+// Kept as a pure string builder (no request/DB access) so app/llms.txt/
+// route.ts stays a thin wrapper and this stays directly unit-testable.
+export function buildLlmsTxt(): string {
+  const lines = [
+    "# Bid Auction（拍賣競標）",
+    "",
+    "> An online marketplace for racing pigeon (賽鴿/種鴿) auctions and " +
+      "fixed-price breeding-stock listings, with real-time bidding, auto " +
+      "bidding, and buy-it-now checkout. Available in Traditional Chinese " +
+      "(zh-TW, default/unprefixed), Simplified Chinese (/zh-CN), and " +
+      "English (/en).",
+    "",
+    "## Key pages",
+    "",
+    `- [Home](${absoluteUrl("/")}): featured/new listings, categories, partner lofts.`,
+    `- [Listings](${absoluteUrl("/listings")}): every open auction and fixed-price listing, filterable by ` +
+      `category (\`?type=auction\` or \`?type=fixed_price\`).`,
+    `- [Contact](${absoluteUrl("/contact")}): support contact details.`,
+    `- [News](${absoluteUrl("/news")}): announcements and updates.`,
+    `- [Pigeon showcase](${absoluteUrl("/pigeon-showcase")}): featured pigeon photos and write-ups.`,
+    "",
+    "## Machine-readable resources",
+    "",
+    `- [sitemap.xml](${absoluteUrl("/sitemap.xml")}): every listing/category/static page, across all 3 locales.`,
+    `- [robots.txt](${absoluteUrl("/robots.txt")}): crawl rules — the admin backend and API routes are disallowed.`,
+    "- Listing detail pages (`/listings/<id>`) embed schema.org Product/Offer JSON-LD with name, image, " +
+      "description, price (TWD), and availability.",
+    "",
+    "## Out of bounds",
+    "",
+    "- `/z04urru6/*` (admin backend) and `/api/*` are private — not for indexing or crawling.",
+    "",
+  ];
+  return lines.join("\n");
+}

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   absoluteUrl,
   buildListingProductJsonLd,
+  buildLlmsTxt,
   canonicalListingsUrl,
   canonicalUrl,
   hreflangAlternates,
@@ -209,6 +210,32 @@ describe("buildListingProductJsonLd", () => {
     );
     const offers = jsonLd.offers as Record<string, unknown>;
     expect(offers).not.toHaveProperty("priceValidUntil");
+  });
+});
+
+describe("buildLlmsTxt", () => {
+  const text = buildLlmsTxt();
+
+  it("starts with an H1 title", () => {
+    expect(text.startsWith("# Bid Auction")).toBe(true);
+  });
+
+  it("links to the sitemap and robots.txt", () => {
+    expect(text).toContain("https://bid.j172.tw/sitemap.xml");
+    expect(text).toContain("https://bid.j172.tw/robots.txt");
+  });
+
+  it("links to every key public page", () => {
+    expect(text).toContain("https://bid.j172.tw/");
+    expect(text).toContain("https://bid.j172.tw/listings");
+    expect(text).toContain("https://bid.j172.tw/contact");
+    expect(text).toContain("https://bid.j172.tw/news");
+    expect(text).toContain("https://bid.j172.tw/pigeon-showcase");
+  });
+
+  it("flags the admin backend and API routes as out of bounds", () => {
+    expect(text).toContain("/z04urru6");
+    expect(text).toContain("/api/*");
   });
 });
 
