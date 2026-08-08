@@ -5,7 +5,7 @@ module.exports = {
       cwd: "/home/tw123457/bid_app",
       script: "node_modules/next/dist/bin/next",
       args: "start",
-      interpreter: "/home/tw123457/.nvm/versions/node/v20.20.2/bin/node",
+      interpreter: "/home/tw123457/.nvm/versions/node/v24.19.0/bin/node",
       instances: 1,
       exec_mode: "fork",
       env: {
