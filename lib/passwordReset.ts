@@ -11,6 +11,7 @@ import { randomBytes } from "crypto";
 import { getDb } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import type { ErrorCode } from "@/lib/errorCodes";
+import { routing } from "@/i18n/routing";
 
 export const RESET_TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes
 const EMAIL_COOLDOWN_SECONDS = 60;
@@ -75,6 +76,21 @@ export async function createPasswordResetToken(userId: number, ip: string | null
     [token, userId, ip, expiresAt],
   );
   return token;
+}
+
+// Builds the /reset-password path for the outbound email link. Shared by
+// app/api/auth/forgot-password/route.ts (self-service) and
+// app/api/admin/users/[id]/reset-password/route.ts (admin-triggered, issue
+// #91) — both send the exact same link shape, so this lives here once
+// instead of being redefined per route. The default locale (zh-TW) keeps
+// unprefixed URLs under this project's "as-needed" localePrefix routing (see
+// i18n/routing.ts) — every other locale gets a /{locale} prefix. Mirrors how
+// next-intl's own Link/getPathname resolve this, done by hand here since
+// this runs outside any component tree (an outbound email, not a page
+// render). Pure — no I/O — so it's unit-tested directly, no DB mocking.
+export function resetPasswordPath(locale: string, token: string): string {
+  const prefix = locale === routing.defaultLocale ? "" : `/${locale}`;
+  return `${prefix}/reset-password?token=${encodeURIComponent(token)}`;
 }
 
 export type ResetPasswordOutcome = { ok: true } | { ok: false; errorCode: ErrorCode };

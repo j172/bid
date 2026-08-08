@@ -222,13 +222,17 @@ export interface UserDetail {
   role: Role;
   status: AccountStatus;
   createdAt: Date;
+  // Needed by app/api/admin/users/[id]/reset-password/route.ts (issue #91)
+  // to pick the right EMAIL_MESSAGES locale for sendPasswordResetEmail —
+  // otherwise unused by app/z04urru6/users/[id]/page.tsx's own rendering.
+  locale: string;
 }
 
 export async function getUserDetail(userId: number): Promise<UserDetail | null> {
   const db = await getDb();
   const [rows] = await db.query(
     `SELECT
-       id, email, display_name AS displayName, phone, address, role, created_at AS createdAt,
+       id, email, display_name AS displayName, phone, address, role, locale, created_at AS createdAt,
        CASE WHEN deleted_at IS NOT NULL THEN 'deleted'
             WHEN suspended_at IS NOT NULL THEN 'suspended'
             ELSE 'active' END AS status
