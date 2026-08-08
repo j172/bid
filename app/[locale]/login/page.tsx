@@ -1,5 +1,6 @@
 "use client";
 
+import { startAuthentication } from "@simplewebauthn/browser";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -26,6 +27,18 @@ export default function LoginPage() {
   const [code, setCode] = useState("");
   const [verifying, setVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState<string | null>(null);
+
+  // Passkey login (issue #95) — a separate, parallel entry point to the
+  // password form above, not a replacement for it. Usernameless/discoverable-
+  // credential flow (@simplewebauthn/browser's startAuthentication): no
+  // email is collected first, the browser itself lists whichever passkeys it
+  // holds for this site. A successful verify goes straight to the same
+  // router.push("/") + router.refresh() the password flow ends with — it
+  // never touches the Email OTP step above, since passkey login already
+  // calls createSession server-side on its own (see
+  // app/api/auth/webauthn/login-verify/route.ts).
+  const [passkeySubmitting, setPasskeySubmitting] = useState(false);
+  const [passkeyError, setPasskeyError] = useState<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -81,6 +94,39 @@ export default function LoginPage() {
     router.refresh();
   }
 
+  async function handlePasskeyLogin() {
+    setPasskeyError(null);
+    setPasskeySubmitting(true);
+    try {
+      const optionsResponse = await fetch("/api/auth/webauthn/login-options", { method: "POST" });
+      const optionsData = await optionsResponse.json();
+      if (!optionsData.ok) {
+        setPasskeyError(optionsData.errorCode ? tErrors(optionsData.errorCode) : t("defaultError"));
+        return;
+      }
+
+      const authResponse = await startAuthentication({ optionsJSON: optionsData.options });
+
+      const verifyResponse = await fetch("/api/auth/webauthn/login-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ response: authResponse }),
+      });
+      const data = await verifyResponse.json();
+      if (!data.ok) {
+        setPasskeyError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
+        return;
+      }
+
+      router.push("/");
+      router.refresh();
+    } catch {
+      setPasskeyError(t("passkeyBrowserError"));
+    } finally {
+      setPasskeySubmitting(false);
+    }
+  }
+
   if (challengeToken) {
     return (
       <AuthFormShell
@@ -134,12 +180,28 @@ export default function LoginPage() {
       submittingLabel={t("submitting")}
       error={error}
       footer={
-        <p className="mt-4 text-sm text-ink-light">
-          {t("noAccount")}{" "}
-          <Link href="/register" className="font-medium text-interactive-primary hover:underline">
-            {t("registerLink")}
-          </Link>
-        </p>
+        <div className="mt-4 flex flex-col gap-3">
+          <div className="flex items-center gap-3 text-xs text-ink-light">
+            <span className="h-px flex-1 bg-border" />
+            {t("passkeyDivider")}
+            <span className="h-px flex-1 bg-border" />
+          </div>
+          <button
+            type="button"
+            onClick={handlePasskeyLogin}
+            disabled={passkeySubmitting}
+            className="w-full rounded-md border border-border px-4 py-2 font-medium text-ink hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {passkeySubmitting ? t("passkeySubmitting") : t("passkeyLoginButton")}
+          </button>
+          {passkeyError && <p className="text-sm text-ended">{passkeyError}</p>}
+          <p className="text-sm text-ink-light">
+            {t("noAccount")}{" "}
+            <Link href="/register" className="font-medium text-interactive-primary hover:underline">
+              {t("registerLink")}
+            </Link>
+          </p>
+        </div>
       }
     >
           <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">

@@ -263,7 +263,11 @@
     "otpCodeLabel": "验证码",
     "otpSubmit": "验证并登录",
     "otpSubmitting": "验证中...",
-    "otpBackToLogin": "返回重新登录"
+    "otpBackToLogin": "返回重新登录",
+    "passkeyDivider": "或",
+    "passkeyLoginButton": "使用通行密钥登录",
+    "passkeySubmitting": "验证中...",
+    "passkeyBrowserError": "无法使用通行密钥登录，请确认设备支持并再试一次"
   },
   "register": {
     "title": "注册",
@@ -305,6 +309,8 @@
     "passwordTitle": "修改密码",
     "twoFactorTitle": "Email 两阶段验证",
     "twoFactorDescription": "开启后，每次登录除了密码外，还需要输入发送到你 email 的 6 位数验证码。",
+    "passkeyTitle": "通行密钥",
+    "passkeyDescription": "新增通行密钥后，登录时可以直接用设备的生物识别或 PIN 码验证，不需要输入密码。",
     "deleteTitle": "删除账户",
     "deleteWarning": "若你目前正在领先任何开放中的商品，或有已得标但尚未由管理员标记完成交易的商品，将无法删除账户。"
   },
@@ -346,6 +352,25 @@
     "defaultError": "操作失败",
     "enabledNotice": "已开启 Email 两阶段验证",
     "disabledNotice": "已关闭 Email 两阶段验证"
+  },
+  "passkeySection": {
+    "empty": "你还没有新增任何通行密钥。",
+    "unnamedDevice": "未命名设备",
+    "createdAtLabel": "建立时间",
+    "lastUsedAtLabel": "最后使用",
+    "addButton": "新增通行密钥",
+    "registering": "请依设备指示完成验证...",
+    "deviceNamePrompt": "验证成功，请为这把通行密钥命名，方便日后辨识。",
+    "deviceNameLabel": "设备名称",
+    "deviceNamePlaceholder": "例如：我的 iPhone",
+    "saveButton": "保存",
+    "submitting": "保存中...",
+    "cancel": "取消",
+    "deleteButton": "删除",
+    "deleting": "删除中...",
+    "deleteConfirm": "确定要删除这把通行密钥吗？删除后将无法用它登录。",
+    "browserError": "无法使用这个设备建立通行密钥，请确认设备支持并再试一次",
+    "defaultError": "操作失败"
   },
   "myBids": {
     "title": "我的出价记录",
@@ -463,6 +488,8 @@
     "EMAIL_OTP_INVALID": "验证码不正确或已过期",
     "EMAIL_OTP_TOO_MANY_ATTEMPTS": "验证失败次数过多，请重新登录取得新的验证码",
     "EMAIL_OTP_RATE_LIMITED": "验证码发送过于频繁，请稍后再试",
+    "WEBAUTHN_CHALLENGE_INVALID": "验证超时或已失效，请重新尝试",
+    "WEBAUTHN_VERIFICATION_FAILED": "通行密钥验证失败，请重新尝试",
     "LEADING_OPEN_LISTING": "你目前正在领先某个开放中的商品，请等到不再领先才能删除账号",
     "UNSETTLED_WIN": "你有已得标但尚未完成交易的商品，请等待管理员确认交易完成后再删除账号",
     "UNSETTLED_PURCHASE": "你有已购买但尚未完成交易的商品，请等待管理员确认交易完成后再删除账号"

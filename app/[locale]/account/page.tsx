@@ -1,8 +1,10 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { getAccountProfile, getCurrentUser } from "@/lib/auth";
 import { redirect } from "@/i18n/navigation";
+import { listPasskeysForUser } from "@/lib/webauthnCredentials";
 import ChangePasswordForm from "./ChangePasswordForm";
 import DeleteAccountButton from "./DeleteAccountButton";
+import PasskeySection from "./PasskeySection";
 import ProfileForm from "./ProfileForm";
 import TwoFactorSection from "./TwoFactorSection";
 
@@ -15,6 +17,7 @@ export default async function AccountPage() {
   }
 
   const profile = await getAccountProfile(user.id);
+  const passkeys = await listPasskeysForUser(user.id);
   const t = await getTranslations("account");
 
   return (
@@ -44,6 +47,21 @@ export default async function AccountPage() {
         <p className="mt-2 text-sm text-ink-light">{t("twoFactorDescription")}</p>
         <div className="mt-4">
           <TwoFactorSection initialEnabled={profile?.twoFactorMethod === "email_otp"} />
+        </div>
+      </section>
+
+      <section className="mt-6 rounded-lg border border-border bg-surface p-6 shadow-sm">
+        <h2 className="text-lg font-semibold">{t("passkeyTitle")}</h2>
+        <p className="mt-2 text-sm text-ink-light">{t("passkeyDescription")}</p>
+        <div className="mt-4">
+          <PasskeySection
+            initialPasskeys={passkeys.map((passkey) => ({
+              credentialId: passkey.credentialId,
+              deviceName: passkey.deviceName,
+              createdAt: passkey.createdAt.toISOString(),
+              lastUsedAt: passkey.lastUsedAt ? passkey.lastUsedAt.toISOString() : null,
+            }))}
+          />
         </div>
       </section>
 

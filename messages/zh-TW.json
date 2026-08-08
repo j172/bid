@@ -263,7 +263,11 @@
     "otpCodeLabel": "驗證碼",
     "otpSubmit": "驗證並登入",
     "otpSubmitting": "驗證中...",
-    "otpBackToLogin": "返回重新登入"
+    "otpBackToLogin": "返回重新登入",
+    "passkeyDivider": "或",
+    "passkeyLoginButton": "使用通行密鑰登入",
+    "passkeySubmitting": "驗證中...",
+    "passkeyBrowserError": "無法使用通行密鑰登入，請確認裝置支援並再試一次"
   },
   "register": {
     "title": "註冊",
@@ -305,6 +309,8 @@
     "passwordTitle": "修改密碼",
     "twoFactorTitle": "Email 兩階段驗證",
     "twoFactorDescription": "開啟後，每次登入除了密碼外，還需要輸入寄到你 email 的 6 位數驗證碼。",
+    "passkeyTitle": "通行密鑰",
+    "passkeyDescription": "新增通行密鑰後，登入時可以直接用裝置的生物辨識或 PIN 碼驗證，不需要輸入密碼。",
     "deleteTitle": "刪除帳戶",
     "deleteWarning": "若你目前正在領先任何開放中的商品，或有已得標但尚未由管理員標記完成交易的商品，將無法刪除帳戶。"
   },
@@ -346,6 +352,25 @@
     "defaultError": "操作失敗",
     "enabledNotice": "已開啟 Email 兩階段驗證",
     "disabledNotice": "已關閉 Email 兩階段驗證"
+  },
+  "passkeySection": {
+    "empty": "你還沒有新增任何通行密鑰。",
+    "unnamedDevice": "未命名裝置",
+    "createdAtLabel": "建立時間",
+    "lastUsedAtLabel": "最後使用",
+    "addButton": "新增通行密鑰",
+    "registering": "請依裝置指示完成驗證...",
+    "deviceNamePrompt": "驗證成功，請為這把通行密鑰命名，方便日後辨識。",
+    "deviceNameLabel": "裝置名稱",
+    "deviceNamePlaceholder": "例如：我的 iPhone",
+    "saveButton": "儲存",
+    "submitting": "儲存中...",
+    "cancel": "取消",
+    "deleteButton": "刪除",
+    "deleting": "刪除中...",
+    "deleteConfirm": "確定要刪除這把通行密鑰嗎？刪除後將無法用它登入。",
+    "browserError": "無法使用這個裝置建立通行密鑰，請確認裝置支援並再試一次",
+    "defaultError": "操作失敗"
   },
   "myBids": {
     "title": "我的出價紀錄",
@@ -463,6 +488,8 @@
     "EMAIL_OTP_INVALID": "驗證碼不正確或已過期",
     "EMAIL_OTP_TOO_MANY_ATTEMPTS": "驗證失敗次數過多，請重新登入取得新的驗證碼",
     "EMAIL_OTP_RATE_LIMITED": "驗證碼發送過於頻繁，請稍後再試",
+    "WEBAUTHN_CHALLENGE_INVALID": "驗證逾時或已失效，請重新嘗試",
+    "WEBAUTHN_VERIFICATION_FAILED": "通行密鑰驗證失敗，請重新嘗試",
     "LEADING_OPEN_LISTING": "你目前正在領先某個開放中的商品，請等到不再領先才能刪除帳號",
     "UNSETTLED_WIN": "你有已得標但尚未完成交易的商品，請等待管理員確認交易完成後再刪除帳號",
     "UNSETTLED_PURCHASE": "你有已購買但尚未完成交易的商品，請等待管理員確認交易完成後再刪除帳號"
