@@ -26,8 +26,19 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "home" });
+  const tNav = await getTranslations({ locale, namespace: "nav" });
   return {
-    title: t("title"),
+    // `template` lets every child page's generateMetadata just return a
+    // plain string title (e.g. a listing's own title) and automatically get
+    // " | <site name>" appended by Next — see the listing detail/list pages'
+    // own generateMetadata (issue #107) for that in action. The homepage
+    // itself keeps its own full title via `default` rather than going
+    // through the template.
+    title: {
+      default: t("title"),
+      template: `%s | ${tNav("siteName")}`,
+    },
+    description: t("metaDescription"),
     icons: {
       icon: "/images/hero-placeholder.png",
       shortcut: "/images/hero-placeholder.png",

@@ -5,8 +5,23 @@ import {
   canonicalUrl,
   hreflangAlternates,
   localizedUrls,
+  stripHtmlToPlainText,
   truncateForMetaDescription,
 } from "./seo";
+
+describe("stripHtmlToPlainText", () => {
+  it("removes tags and keeps the text content", () => {
+    expect(stripHtmlToPlainText("<p>Hello <strong>world</strong></p>")).toBe("Hello world");
+  });
+
+  it("collapses whitespace left behind by block-level tags", () => {
+    expect(stripHtmlToPlainText("<p>Line one</p><p>Line two</p>")).toBe("Line one Line two");
+  });
+
+  it("drops disallowed tags entirely, including their content for script/style", () => {
+    expect(stripHtmlToPlainText('<img src="x.jpg" alt="ignored" />plain text')).toBe("plain text");
+  });
+});
 
 describe("truncateForMetaDescription", () => {
   it("returns short text unchanged", () => {

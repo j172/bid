@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { listOpenListings, type ListingType } from "@/lib/listings";
 import { currencyForLocale, formatDualPrice, formatNtd } from "@/lib/currency";
@@ -60,6 +61,33 @@ function tabHref(
 
   const query = sp.toString();
   return query ? `/listings?${query}` : "/listings";
+}
+
+// <title>/<meta description> for the listings list/category page (issue
+// #107 item 1) — driven by the `type` filter (auction / fixed_price / all),
+// the closest thing this site has to a "category" (see CategoryKey above).
+// Other filters (search, price range, sort, ...) don't get their own
+// metadata variant — they're view-only tweaks of the same logical page (see
+// lib/seo.ts's canonicalListingsUrl for the matching canonical-URL policy).
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<SearchParams>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const sp = await searchParams;
+  const rawType = Array.isArray(sp.type) ? sp.type[0] : sp.type;
+  const t = await getTranslations({ locale, namespace: "listings" });
+
+  if (rawType === "auction") {
+    return { title: `${t("tabAuction")} - ${t("title")}`, description: t("metaDescriptionAuction") };
+  }
+  if (rawType === "fixed_price") {
+    return { title: `${t("tabFixedPrice")} - ${t("title")}`, description: t("metaDescriptionFixedPrice") };
+  }
+  return { title: t("title"), description: t("metaDescriptionAll") };
 }
 
 export default async function ListingsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {

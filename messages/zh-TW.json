@@ -119,10 +119,14 @@
     "trustEyebrow": "透明可信",
     "trustTitle": "依真實成交資料掌握熱門鴿況",
     "trustDesc": "首頁的熱門排行、出價次數與成交件數，皆直接反映目前上架中的真實商品資料，而非預先寫死的展示數字。",
-    "trustCta": "查看全部商品"
+    "trustCta": "查看全部商品",
+    "metaDescription": "拍賣競標網站：優質賽鴿與種鴿的線上競標與定價交易平台，支援即時出價、自動出價與一鍵買斷，安全可靠、鴿友信賴之選。"
   },
   "listings": {
     "title": "競標中商品",
+    "metaDescriptionAll": "瀏覽目前競標中與定價供應中的優質種鴿商品，即時掌握出價與庫存狀態。",
+    "metaDescriptionAuction": "瀏覽競標中的優質種鴿商品，支援出價、自動出價與一鍵買斷，掌握最新競標動態。",
+    "metaDescriptionFixedPrice": "瀏覽定價供應中的種鴿商品，價格透明、即刻下單，庫存狀態即時更新。",
     "tabAll": "全部",
     "tabAuction": "競標商品",
     "tabFixedPrice": "定價種鴿",

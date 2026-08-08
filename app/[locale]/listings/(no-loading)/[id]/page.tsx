@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
@@ -7,6 +8,7 @@ import { getLatestStoredRate } from "@/lib/exchangeRates";
 import { formatRemaining } from "@/lib/format";
 import { maskDisplayName } from "@/lib/mask";
 import { getListingActivityFeed, getListingById, listOpenListings } from "@/lib/listings";
+import { absoluteUrl, stripHtmlToPlainText, truncateForMetaDescription } from "@/lib/seo";
 import { listingPhotoUrl } from "@/lib/uploads";
 import { Link } from "@/i18n/navigation";
 // Absolute imports (rather than relative "../../../components/...") because
@@ -23,6 +25,46 @@ import LiveListingStatus from "./LiveListingStatus";
 import PurchaseForm from "./PurchaseForm";
 
 export const dynamic = "force-dynamic";
+
+// Per-listing <title>/<meta description> (issue #107 item 1) — built from
+// the listing's own title/description rather than a generic site-wide
+// string, so search results (and shared links) show what the product
+// actually is. `title` returns a plain string, not an object, so it flows
+// through the root layout's title.template (" | <site name>") automatically
+// — see app/[locale]/layout.tsx's generateMetadata.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const listingId = Number(id);
+  if (!Number.isFinite(listingId)) return {};
+
+  const listing = await getListingById(listingId);
+  if (!listing) return {};
+
+  const description = truncateForMetaDescription(stripHtmlToPlainText(listing.description));
+  const imageUrl = listing.photos[0]
+    ? absoluteUrl(listingPhotoUrl(listing.id, listing.photos[0]))
+    : absoluteUrl("/images/hero-placeholder.png");
+
+  return {
+    title: listing.title,
+    description,
+    openGraph: {
+      title: listing.title,
+      description,
+      images: [{ url: imageUrl }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: listing.title,
+      description,
+      images: [imageUrl],
+    },
+  };
+}
 
 export default async function ListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

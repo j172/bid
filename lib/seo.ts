@@ -13,6 +13,7 @@
 // locale prefixing: the default locale, zh-TW, stays unprefixed; other
 // locales get a /xx prefix — see i18n/routing.ts's own comment), so the
 // logic stays plain and directly testable.
+import sanitizeHtml from "sanitize-html";
 import { routing } from "@/i18n/routing";
 import { SITE_URL } from "@/lib/siteUrl";
 
@@ -39,6 +40,23 @@ export function truncateForMetaDescription(text: string, maxLength = 160): strin
   // budget (e.g. a single very long word) — otherwise just hard-truncate.
   const base = lastSpace > maxLength * 0.6 ? sliced.slice(0, lastSpace) : sliced;
   return `${base.trimEnd()}…`;
+}
+
+// Strips a listing's stored description down to plain text — descriptions
+// are rich-text HTML from the admin's TinyMCE editor (already
+// XSS-sanitized on write, see lib/sanitizeDescriptionHtml.ts), but
+// <meta description>/OG description/JSON-LD text all need plain text, not
+// markup. Reuses the same sanitize-html library (no jsdom dependency, see
+// that file's header comment) with an empty allow-list so every tag is
+// stripped and only the text content survives.
+export function stripHtmlToPlainText(html: string): string {
+  // Insert a space between adjacent tags first (e.g. "</p><p>") so stripping
+  // block-level boundaries below doesn't glue two paragraphs' text together
+  // into one run-on word.
+  const spaced = html.replace(/>\s*</g, "> <");
+  return sanitizeHtml(spaced, { allowedTags: [], allowedAttributes: {} })
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 // Turns a site-relative pathname into an absolute URL under SITE_URL —
