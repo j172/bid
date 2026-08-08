@@ -125,11 +125,11 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                   <td className={td}>{formatDate(order.createdAt)}</td>
                   <td className={td}>
                     {order.settled ? (
-                      order.settlementAccount !== null && order.settlementAmount !== null ? (
-                        <SettlementExpand account={order.settlementAccount} amount={order.settlementAmount} />
-                      ) : (
-                        <span className="text-sm text-leading">已完成交易</span>
-                      )
+                      <SettlementExpand
+                        account={order.settlementAccount}
+                        amount={order.settlementAmount}
+                        profileUrl={`/api/admin/orders/${order.id}/buyer`}
+                      />
                     ) : (
                       <span className="text-sm text-ink-light">尚未完成</span>
                     )}

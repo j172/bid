@@ -154,11 +154,11 @@ export default async function ClosedListingsPage({ searchParams }: { searchParam
                     {listing.winnerEmail === null ? (
                       "—"
                     ) : listing.settled ? (
-                      listing.settlementAccount !== null && listing.settlementAmount !== null ? (
-                        <SettlementExpand account={listing.settlementAccount} amount={listing.settlementAmount} />
-                      ) : (
-                        <span className="text-sm text-leading">已完成交易</span>
-                      )
+                      <SettlementExpand
+                        account={listing.settlementAccount}
+                        amount={listing.settlementAmount}
+                        profileUrl={`/api/admin/listings/${listing.id}/winner`}
+                      />
                     ) : (
                       <span className="text-sm text-ink-light">尚未完成</span>
                     )}
