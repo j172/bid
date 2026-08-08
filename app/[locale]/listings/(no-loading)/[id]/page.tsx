@@ -8,7 +8,14 @@ import { getLatestStoredRate } from "@/lib/exchangeRates";
 import { formatRemaining } from "@/lib/format";
 import { maskDisplayName } from "@/lib/mask";
 import { getListingActivityFeed, getListingById, listOpenListings } from "@/lib/listings";
-import { absoluteUrl, buildListingProductJsonLd, stripHtmlToPlainText, truncateForMetaDescription } from "@/lib/seo";
+import {
+  absoluteUrl,
+  buildListingProductJsonLd,
+  canonicalUrl,
+  hreflangAlternates,
+  stripHtmlToPlainText,
+  truncateForMetaDescription,
+} from "@/lib/seo";
 import { listingPhotoUrl } from "@/lib/uploads";
 import { getPathname, Link } from "@/i18n/navigation";
 // Absolute imports (rather than relative "../../../components/...") because
@@ -31,13 +38,17 @@ export const dynamic = "force-dynamic";
 // string, so search results (and shared links) show what the product
 // actually is. `title` returns a plain string, not an object, so it flows
 // through the root layout's title.template (" | <site name>") automatically
-// — see app/[locale]/layout.tsx's generateMetadata.
+// — see app/[locale]/layout.tsx's generateMetadata. Also carries hreflang
+// (alternates.languages) and a canonical URL (issue #107 items 6-7) — a
+// listing detail page has no view-only query-string variance to strip
+// (contrast the listings list page), so canonicalUrl's plain pathname
+// form is enough here.
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string; id: string }>;
 }): Promise<Metadata> {
-  const { id } = await params;
+  const { locale, id } = await params;
   const listingId = Number(id);
   if (!Number.isFinite(listingId)) return {};
 
@@ -48,10 +59,15 @@ export async function generateMetadata({
   const imageUrl = listing.photos[0]
     ? absoluteUrl(listingPhotoUrl(listing.id, listing.photos[0]))
     : absoluteUrl("/images/hero-placeholder.png");
+  const pathname = `/listings/${listing.id}`;
 
   return {
     title: listing.title,
     description,
+    alternates: {
+      canonical: canonicalUrl(locale, pathname),
+      languages: hreflangAlternates(pathname),
+    },
     openGraph: {
       title: listing.title,
       description,

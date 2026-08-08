@@ -5,6 +5,7 @@ import { currencyForLocale, formatDualPrice, formatNtd } from "@/lib/currency";
 import { getLatestStoredRate } from "@/lib/exchangeRates";
 import { formatRemaining } from "@/lib/format";
 import { maskDisplayName } from "@/lib/mask";
+import { canonicalListingsUrl, hreflangAlternates } from "@/lib/seo";
 import { Link } from "@/i18n/navigation";
 import ProductCard from "../../components/ProductCard";
 
@@ -67,8 +68,13 @@ function tabHref(
 // #107 item 1) — driven by the `type` filter (auction / fixed_price / all),
 // the closest thing this site has to a "category" (see CategoryKey above).
 // Other filters (search, price range, sort, ...) don't get their own
-// metadata variant — they're view-only tweaks of the same logical page (see
-// lib/seo.ts's canonicalListingsUrl for the matching canonical-URL policy).
+// metadata variant — they're view-only tweaks of the same logical page.
+// Also carries hreflang (alternates.languages) and a canonical URL (issue
+// #107 items 6-7): `type` is kept in both (it's a real category, not a
+// cosmetic view), but every other query param (sort, q, minPrice/maxPrice,
+// withinHours, loft, perf, page) is stripped from the canonical URL so
+// those views all collapse onto the same canonical page instead of each
+// looking like a distinct duplicate — see lib/seo.ts's canonicalListingsUrl.
 export async function generateMetadata({
   params,
   searchParams,
@@ -80,14 +86,27 @@ export async function generateMetadata({
   const sp = await searchParams;
   const rawType = Array.isArray(sp.type) ? sp.type[0] : sp.type;
   const t = await getTranslations({ locale, namespace: "listings" });
+  const query = rawType === "auction" || rawType === "fixed_price" ? { type: rawType } : undefined;
+  const alternates = {
+    canonical: canonicalListingsUrl(locale, sp),
+    languages: hreflangAlternates("/listings", query),
+  };
 
   if (rawType === "auction") {
-    return { title: `${t("tabAuction")} - ${t("title")}`, description: t("metaDescriptionAuction") };
+    return {
+      title: `${t("tabAuction")} - ${t("title")}`,
+      description: t("metaDescriptionAuction"),
+      alternates,
+    };
   }
   if (rawType === "fixed_price") {
-    return { title: `${t("tabFixedPrice")} - ${t("title")}`, description: t("metaDescriptionFixedPrice") };
+    return {
+      title: `${t("tabFixedPrice")} - ${t("title")}`,
+      description: t("metaDescriptionFixedPrice"),
+      alternates,
+    };
   }
-  return { title: t("title"), description: t("metaDescriptionAll") };
+  return { title: t("title"), description: t("metaDescriptionAll"), alternates };
 }
 
 export default async function ListingsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
