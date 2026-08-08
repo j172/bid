@@ -1,13 +1,17 @@
 import LiveListingStatus from "../listings/(no-loading)/[id]/LiveListingStatus";
 
 // THROWAWAY visual-verification route — not part of the app, delete after use.
-export default function DevPreviewHeroCountdown() {
-  const now = Date.now();
-  const renderedAt = new Date(now).toISOString();
-  const twoDaysThreeHours = new Date(now + (2 * 24 + 3) * 3600_000 + 12 * 60_000 + 47_000).toISOString();
-  const fortyMinutes = new Date(now + 40 * 60_000 + 5_000).toISOString();
-  const startsInOneHour = new Date(now + 65 * 60_000).toISOString();
+// `now` is computed once at module load (outside the component render body)
+// rather than via a direct Date.now() call during render, so it satisfies
+// react-hooks/purity (components must not call impure functions while
+// rendering) instead of suppressing the rule.
+const now = Date.now();
+const renderedAt = new Date(now).toISOString();
+const twoDaysThreeHours = new Date(now + (2 * 24 + 3) * 3600_000 + 12 * 60_000 + 47_000).toISOString();
+const fortyMinutes = new Date(now + 40 * 60_000 + 5_000).toISOString();
+const startsInOneHour = new Date(now + 65 * 60_000).toISOString();
 
+export default function DevPreviewHeroCountdown() {
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-10 px-4 py-10">
       <div>

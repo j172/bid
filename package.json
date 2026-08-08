@@ -44,7 +44,7 @@
     "@types/sanitize-html": "^2.16.1",
     "@types/zxcvbn": "^4.4.5",
     "baseline-browser-mapping": "^2.11.12",
-    "eslint": "^9.34.0",
+    "eslint": "^10.8.1",
     "eslint-config-next": "^16.3.0",
     "jsdom": "^30.0.1",
     "postcss": "^8.5.26",
