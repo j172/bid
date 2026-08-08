@@ -17,6 +17,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, errorCode: "ACCOUNT_SUSPENDED" }, { status: 403 });
   }
 
+  // Registration email-ownership verification (issue #118, strict mode):
+  // checked before any 2FA branch below, since an unverified account never
+  // gets a session either way — there's nothing for a second factor to
+  // gate yet. Deliberately checked here rather than at registration time
+  // only, since this is what actually keeps an unverified account out, not
+  // the registration route's own choice not to call createSession.
+  if (!user.email_verified) {
+    return NextResponse.json({ ok: false, errorCode: "EMAIL_NOT_VERIFIED" }, { status: 403 });
+  }
+
   // Email OTP (issue #93): the password alone isn't enough for this account
   // — issue a pending challenge and email its code instead of calling
   // createSession directly. The response carries a challengeToken, never a

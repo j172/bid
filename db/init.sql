@@ -10,6 +10,16 @@ CREATE TABLE IF NOT EXISTS users (
   deleted_at DATETIME NULL,
   suspended_at DATETIME NULL,
   locale VARCHAR(10) NOT NULL DEFAULT 'zh-TW',
+  -- Registration email-ownership proof (issue #118): FALSE for every newly
+  -- registered account until POST /api/auth/verify-email confirms the token
+  -- sent to their inbox (see email_verification_tokens below); the login
+  -- route rejects EMAIL_OR_PASSWORD_INCORRECT-passing attempts here with
+  -- EMAIL_NOT_VERIFIED instead of creating a session. Every account that
+  -- existed before this column was added is grandfathered in as already
+  -- verified — see lib/db.ts's ensureEmailVerificationColumns, which
+  -- backfills every pre-existing row to TRUE in the same migration step that
+  -- adds the column, so no current user is ever locked out by this change.
+  email_verified TINYINT(1) NOT NULL DEFAULT 0,
   -- Which second factor (if any) this account requires at login (issue #93,
   -- 'totp' added by #97). 'none' | 'email_otp' | 'totp' — deliberately a
   -- single mutually-exclusive field rather than a boolean per method, since
@@ -74,6 +84,29 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
   PRIMARY KEY (token),
   KEY idx_password_reset_tokens_user (user_id),
   KEY idx_password_reset_tokens_ip_created (request_ip, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Registration email-ownership verification tokens (issue #118) — same
+-- shape/lifecycle convention as password_reset_tokens above (token as its
+-- own PK, one row per issued link, used_at NOT NULL means "spent",
+-- expires_at NOW()-comparison means "24 hours came and went", request_ip
+-- recorded purely for the resend endpoint's per-IP abuse limit — never used
+-- to look up or validate a token). See lib/emailVerification.ts's
+-- isEmailVerificationTokenValid. Issued at registration (POST
+-- /api/auth/register) and reissued by POST /api/auth/resend-verification;
+-- a successful POST /api/auth/verify-email sets the owning users row's
+-- email_verified to TRUE and marks this row used_at, same one-time-use
+-- treatment resetPassword gives password_reset_tokens.
+CREATE TABLE IF NOT EXISTS email_verification_tokens (
+  token VARCHAR(64) NOT NULL,
+  user_id BIGINT NOT NULL,
+  request_ip VARCHAR(45) NULL,
+  expires_at DATETIME NOT NULL,
+  used_at DATETIME NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (token),
+  KEY idx_email_verification_tokens_user (user_id),
+  KEY idx_email_verification_tokens_ip_created (request_ip, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Pending Email-OTP login challenges (issue #93) — same shape/lifecycle

@@ -279,7 +279,11 @@
     "passkeyDivider": "或",
     "passkeyLoginButton": "使用通行密鑰登入",
     "passkeySubmitting": "驗證中...",
-    "passkeyBrowserError": "無法使用通行密鑰登入，請確認裝置支援並再試一次"
+    "passkeyBrowserError": "無法使用通行密鑰登入，請確認裝置支援並再試一次",
+    "resendVerificationPrompt": "你的信箱尚未完成驗證。",
+    "resendVerificationButton": "重新寄送驗證信",
+    "resendVerificationSubmitting": "寄送中...",
+    "resendVerificationSent": "若該信箱已註冊且尚未驗證，我們已寄送新的驗證信，請至信箱查看。"
   },
   "register": {
     "title": "註冊",
@@ -293,7 +297,9 @@
     "defaultError": "註冊失敗",
     "haveAccount": "已經有帳號？",
     "loginLink": "登入",
-    "displayNameOptionalHint": "選填，未填寫將自動產生預設名稱"
+    "displayNameOptionalHint": "選填，未填寫將自動產生預設名稱",
+    "checkEmailTitle": "請至信箱完成驗證",
+    "checkEmailMessage": "我們已寄送一封驗證信到你的信箱，請點擊信中連結完成註冊，此連結將於 24 小時後失效。"
   },
   "forgotPassword": {
     "title": "忘記密碼",
@@ -314,6 +320,14 @@
     "defaultError": "重設密碼失敗",
     "missingToken": "重設連結無效，請重新申請",
     "successMessage": "密碼已重設成功，請使用新密碼登入。",
+    "backToLogin": "返回登入"
+  },
+  "verifyEmail": {
+    "title": "驗證信箱",
+    "verifying": "正在驗證你的信箱...",
+    "missingToken": "驗證連結無效，請檢查信中連結或重新申請",
+    "defaultError": "信箱驗證失敗",
+    "successMessage": "信箱已完成驗證，現在可以登入了。",
     "backToLogin": "返回登入"
   },
   "account": {
@@ -525,6 +539,9 @@
     "WRONG_OLD_PASSWORD": "舊密碼不正確",
     "NEW_PASSWORD_TOO_SHORT": "新密碼至少需要 8 個字元",
     "RESET_TOKEN_INVALID": "重設連結無效或已過期，請重新申請",
+    "EMAIL_NOT_VERIFIED": "你的信箱尚未完成驗證，請至信箱查看驗證信",
+    "EMAIL_VERIFICATION_TOKEN_INVALID": "驗證連結無效或已過期，請重新申請",
+    "EMAIL_VERIFICATION_RATE_LIMITED": "驗證信請求過於頻繁，請稍後再試",
     "EMAIL_OTP_INVALID": "驗證碼不正確或已過期",
     "EMAIL_OTP_TOO_MANY_ATTEMPTS": "驗證失敗次數過多，請重新登入取得新的驗證碼",
     "EMAIL_OTP_RATE_LIMITED": "驗證碼發送過於頻繁，請稍後再試",

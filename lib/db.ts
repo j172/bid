@@ -47,6 +47,21 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
   KEY idx_password_reset_tokens_ip_created (request_ip, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Registration email-ownership verification tokens (issue #118) — see
+-- db/init.sql for the fuller header comment. Brand-new table, whole final
+-- schema from day one, same as password_reset_tokens above.
+CREATE TABLE IF NOT EXISTS email_verification_tokens (
+  token VARCHAR(64) NOT NULL,
+  user_id BIGINT NOT NULL,
+  request_ip VARCHAR(45) NULL,
+  expires_at DATETIME NOT NULL,
+  used_at DATETIME NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (token),
+  KEY idx_email_verification_tokens_user (user_id),
+  KEY idx_email_verification_tokens_ip_created (request_ip, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Pending Email-OTP login challenges (issue #93) — see db/init.sql for the
 -- fuller header comment. Brand-new table, whole final schema from day one,
 -- same as password_reset_tokens above.
@@ -463,6 +478,30 @@ async function ensureNewsBroadcastColumn(db: mysql.Pool): Promise<void> {
   await ensureColumn(db, "news_posts", "broadcast_id", "VARCHAR(255) NULL");
 }
 
+// Issue #118: registration email-ownership verification. email_verified
+// defaults to FALSE at the column-definition level (see SCHEMA_SQL's users
+// table above) so brand-new registrations on a fresh install start out
+// unverified — but on an already-deployed database, ADD COLUMN applies that
+// same FALSE default to every existing row too, which would wrongly lock out
+// every account that registered before this ticket. The one-time UPDATE
+// below (gated on `added`, so it only ever runs the boot right after the
+// column is created — same "ensureColumn's return value decides whether a
+// one-time backfill runs" convention as ensureBiddingColumns' current_price
+// above) grandfathers every pre-existing row in as already verified.
+// Exported (unlike its sibling ensureX helpers above) specifically so
+// lib/db.test.ts can exercise the backfill decision directly against a
+// mocked mysql.Pool, the same "verify a migration's exact query/UPDATE
+// sequence" style lib/passwordReset.test.ts uses for its own DB-touching
+// functions — this is the one migration in this file issue #118 explicitly
+// requires a test for (grandfathering every existing account in as
+// verified), so it gets a wider export surface than the others.
+export async function ensureEmailVerificationColumns(db: mysql.Pool): Promise<void> {
+  const added = await ensureColumn(db, "users", "email_verified", "TINYINT(1) NOT NULL DEFAULT 0");
+  if (added) {
+    await db.query("UPDATE users SET email_verified = 1");
+  }
+}
+
 function createPool(): mysql.Pool {
   return mysql.createPool({
     host: process.env.MYSQL_HOST,
@@ -485,6 +524,7 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensurePartnerLoftColumns(db);
   await ensureShowcaseNewsImageColumns(db);
   await ensureNewsBroadcastColumn(db);
+  await ensureEmailVerificationColumns(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {
