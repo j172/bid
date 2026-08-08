@@ -29,6 +29,8 @@ const EMAIL_MESSAGES: Record<
     winnerBody: (title: string, finalPrice: number) => string;
     resetPasswordSubject: string;
     resetPasswordBody: (resetUrl: string) => string;
+    verifyEmailSubject: string;
+    verifyEmailBody: (verifyUrl: string) => string;
     emailOtpSubject: string;
     emailOtpBody: (code: string) => string;
     // Confirmation email sent to whoever submits the public /contact form
@@ -54,6 +56,9 @@ const EMAIL_MESSAGES: Record<
     resetPasswordSubject: "重設密碼",
     resetPasswordBody: (resetUrl) =>
       `<p>我們收到重設你密碼的請求。請點擊以下連結設定新密碼，此連結將於 30 分鐘後失效，且僅能使用一次：</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>若這不是你本人的操作，請忽略這封信，你的密碼不會被更動。</p>`,
+    verifyEmailSubject: "請驗證你的信箱",
+    verifyEmailBody: (verifyUrl) =>
+      `<p>感謝你註冊。請點擊以下連結驗證你的信箱，才能完成註冊並登入，此連結將於 24 小時後失效，且僅能使用一次：</p><p><a href="${verifyUrl}">${verifyUrl}</a></p><p>若這不是你本人的操作，請忽略這封信。</p>`,
     emailOtpSubject: "登入驗證碼",
     emailOtpBody: (code) =>
       `<p>你的登入驗證碼是：</p><p style="font-size:24px;font-weight:bold;letter-spacing:4px;">${code}</p><p>此驗證碼將於 10 分鐘後失效，且僅能使用一次。若這不是你本人的登入嘗試，請忽略這封信。</p>`,
@@ -75,6 +80,9 @@ const EMAIL_MESSAGES: Record<
     resetPasswordSubject: "重设密码",
     resetPasswordBody: (resetUrl) =>
       `<p>我们收到重设你密码的请求。请点击以下链接设定新密码，此链接将于 30 分钟后失效，且仅能使用一次：</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>若这不是你本人的操作，请忽略这封信，你的密码不会被更动。</p>`,
+    verifyEmailSubject: "请验证你的邮箱",
+    verifyEmailBody: (verifyUrl) =>
+      `<p>感谢你注册。请点击以下链接验证你的邮箱，才能完成注册并登录，此链接将于 24 小时后失效，且仅能使用一次：</p><p><a href="${verifyUrl}">${verifyUrl}</a></p><p>若这不是你本人的操作，请忽略这封信。</p>`,
     emailOtpSubject: "登录验证码",
     emailOtpBody: (code) =>
       `<p>你的登录验证码是：</p><p style="font-size:24px;font-weight:bold;letter-spacing:4px;">${code}</p><p>此验证码将于 10 分钟后失效，且仅能使用一次。若这不是你本人的登录尝试，请忽略这封信。</p>`,
@@ -97,6 +105,9 @@ const EMAIL_MESSAGES: Record<
     resetPasswordSubject: "Reset your password",
     resetPasswordBody: (resetUrl) =>
       `<p>We received a request to reset your password. Click the link below to set a new one — it expires in 30 minutes and can only be used once:</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>If you didn't request this, you can safely ignore this email — your password won't be changed.</p>`,
+    verifyEmailSubject: "Verify your email address",
+    verifyEmailBody: (verifyUrl) =>
+      `<p>Thanks for signing up. Click the link below to verify your email address and finish creating your account — it expires in 24 hours and can only be used once:</p><p><a href="${verifyUrl}">${verifyUrl}</a></p><p>If you didn't request this, you can safely ignore this email.</p>`,
     emailOtpSubject: "Your login verification code",
     emailOtpBody: (code) =>
       `<p>Your login verification code is:</p><p style="font-size:24px;font-weight:bold;letter-spacing:4px;">${code}</p><p>This code expires in 10 minutes and can only be used once. If this wasn't you, you can safely ignore this email.</p>`,
@@ -238,6 +249,21 @@ export async function sendPasswordResetEmail(email: string, locale: string, rese
     return await sendEmail(email, messages.resetPasswordSubject, messages.resetPasswordBody(resetUrl));
   } catch (error) {
     console.error("sendPasswordResetEmail failed:", error);
+    return false;
+  }
+}
+
+// Registration email-ownership verification link (issue #118), called by
+// app/api/auth/register/route.ts and app/api/auth/resend-verification/
+// route.ts. Same "caller awaits it directly" shape as
+// sendPasswordResetEmail above — the route has no other work to do once the
+// token is issued. Never throws (mirrors sendEmail/sendPasswordResetEmail).
+export async function sendVerificationEmail(email: string, locale: string, verifyUrl: string): Promise<boolean> {
+  try {
+    const messages = EMAIL_MESSAGES[resolveLocale(locale)];
+    return await sendEmail(email, messages.verifyEmailSubject, messages.verifyEmailBody(verifyUrl));
+  } catch (error) {
+    console.error("sendVerificationEmail failed:", error);
     return false;
   }
 }

@@ -279,7 +279,11 @@
     "passkeyDivider": "or",
     "passkeyLoginButton": "Log in with a passkey",
     "passkeySubmitting": "Verifying...",
-    "passkeyBrowserError": "Couldn't log in with a passkey — check that your device supports it and try again"
+    "passkeyBrowserError": "Couldn't log in with a passkey — check that your device supports it and try again",
+    "resendVerificationPrompt": "Your email address hasn't been verified yet.",
+    "resendVerificationButton": "Resend verification email",
+    "resendVerificationSubmitting": "Sending...",
+    "resendVerificationSent": "If that email is registered and still unverified, a new verification link has been sent — please check your inbox."
   },
   "register": {
     "title": "Sign Up",
@@ -293,7 +297,9 @@
     "defaultError": "Sign up failed",
     "haveAccount": "Already have an account?",
     "loginLink": "Log in",
-    "displayNameOptionalHint": "Optional — a default name will be generated if left blank"
+    "displayNameOptionalHint": "Optional — a default name will be generated if left blank",
+    "checkEmailTitle": "Check your email",
+    "checkEmailMessage": "We've sent a verification link to your email address. Click it to finish creating your account — the link expires in 24 hours."
   },
   "forgotPassword": {
     "title": "Forgot Password",
@@ -314,6 +320,14 @@
     "defaultError": "Failed to reset password",
     "missingToken": "This reset link is invalid — please request a new one",
     "successMessage": "Your password has been reset — please log in with your new password.",
+    "backToLogin": "Back to login"
+  },
+  "verifyEmail": {
+    "title": "Verify Your Email",
+    "verifying": "Verifying your email address...",
+    "missingToken": "This verification link is invalid — please check the link in your email or request a new one",
+    "defaultError": "Failed to verify your email",
+    "successMessage": "Your email address has been verified — you can now log in.",
     "backToLogin": "Back to login"
   },
   "account": {
@@ -525,6 +539,9 @@
     "WRONG_OLD_PASSWORD": "Current password is incorrect",
     "NEW_PASSWORD_TOO_SHORT": "New password must be at least 8 characters",
     "RESET_TOKEN_INVALID": "This reset link is invalid or has expired — please request a new one",
+    "EMAIL_NOT_VERIFIED": "Your email address hasn't been verified yet — please check your inbox for the verification link",
+    "EMAIL_VERIFICATION_TOKEN_INVALID": "This verification link is invalid or has expired — please request a new one",
+    "EMAIL_VERIFICATION_RATE_LIMITED": "Verification emails are being requested too often — please try again later",
     "EMAIL_OTP_INVALID": "That code is incorrect or has expired",
     "EMAIL_OTP_TOO_MANY_ATTEMPTS": "Too many failed attempts — please log in again to get a new code",
     "EMAIL_OTP_RATE_LIMITED": "Verification codes are being requested too often — please try again later",

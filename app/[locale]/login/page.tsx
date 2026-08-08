@@ -1,7 +1,7 @@
 "use client";
 
 import { startAuthentication } from "@simplewebauthn/browser";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import Button from "@/app/components/Button";
@@ -11,12 +11,27 @@ const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:borde
 
 export default function LoginPage() {
   const router = useRouter();
+  const locale = useLocale();
   const t = useTranslations("login");
   const tErrors = useTranslations("errors");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Registration email-ownership verification (issue #118): a login attempt
+  // against a not-yet-verified account fails with EMAIL_NOT_VERIFIED instead
+  // of creating a session (see app/api/auth/login/route.ts). This flag
+  // switches the error message into one offering a resend button rather than
+  // the generic error text — the email the visitor already typed into the
+  // form above is reused for the resend call, so they never have to retype
+  // it. Same "resend, rate-limited the same way as forgot-password" endpoint
+  // as app/[locale]/forgot-password/page.tsx's submit — the response is
+  // deliberately neutral (see that route's header comment) so this always
+  // just reports "sent" without revealing whether the account existed.
+  const [emailNotVerified, setEmailNotVerified] = useState(false);
+  const [resendSubmitting, setResendSubmitting] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
 
   // Email OTP (issue #93): a successful password check doesn't always mean
   // "logged in" — when the account has Email OTP turned on, the login
@@ -62,6 +77,8 @@ export default function LoginPage() {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
+    setEmailNotVerified(false);
+    setResendSent(false);
 
     const response = await fetch("/api/auth/login", {
       method: "POST",
@@ -72,6 +89,9 @@ export default function LoginPage() {
 
     setSubmitting(false);
     if (!data.ok) {
+      if (data.errorCode === "EMAIL_NOT_VERIFIED") {
+        setEmailNotVerified(true);
+      }
       setError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
       return;
     }
@@ -85,6 +105,20 @@ export default function LoginPage() {
     }
     router.push("/");
     router.refresh();
+  }
+
+  async function handleResendVerification() {
+    setResendSubmitting(true);
+    setResendSent(false);
+
+    await fetch("/api/auth/resend-verification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, locale }),
+    });
+
+    setResendSubmitting(false);
+    setResendSent(true);
   }
 
   async function handleTotpSubmit(event: React.FormEvent) {
@@ -293,6 +327,25 @@ export default function LoginPage() {
       error={error}
       footer={
         <div className="mt-4 flex flex-col gap-3">
+          {emailNotVerified && (
+            <div className="rounded-md border border-border bg-surface-muted p-3">
+              {resendSent ? (
+                <p className="text-sm text-ink-light">{t("resendVerificationSent")}</p>
+              ) : (
+                <>
+                  <p className="text-sm text-ink-light">{t("resendVerificationPrompt")}</p>
+                  <button
+                    type="button"
+                    onClick={handleResendVerification}
+                    disabled={resendSubmitting}
+                    className="mt-2 font-medium text-interactive-primary hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {resendSubmitting ? t("resendVerificationSubmitting") : t("resendVerificationButton")}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
           <div className="flex items-center gap-3 text-xs text-ink-light">
             <span className="h-px flex-1 bg-border" />
             {t("passkeyDivider")}

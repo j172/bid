@@ -86,6 +86,10 @@ interface UserRow {
   suspended_at: Date | null;
   locale: string;
   two_factor_method: TwoFactorMethod;
+  // Registration email-ownership proof (issue #118) — see db/init.sql's
+  // users.email_verified comment. MySQL returns TINYINT(1) as a JS number
+  // (0/1), not a boolean, hence the wider type here.
+  email_verified: number | boolean;
 }
 
 export async function findUserByEmail(email: string): Promise<UserRow | null> {

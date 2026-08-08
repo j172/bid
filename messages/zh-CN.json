@@ -279,7 +279,11 @@
     "passkeyDivider": "或",
     "passkeyLoginButton": "使用通行密钥登录",
     "passkeySubmitting": "验证中...",
-    "passkeyBrowserError": "无法使用通行密钥登录，请确认设备支持并再试一次"
+    "passkeyBrowserError": "无法使用通行密钥登录，请确认设备支持并再试一次",
+    "resendVerificationPrompt": "你的邮箱尚未完成验证。",
+    "resendVerificationButton": "重新发送验证邮件",
+    "resendVerificationSubmitting": "发送中...",
+    "resendVerificationSent": "若该邮箱已注册且尚未验证，我们已发送新的验证邮件，请至邮箱查看。"
   },
   "register": {
     "title": "注册",
@@ -293,7 +297,9 @@
     "defaultError": "注册失败",
     "haveAccount": "已经有账号？",
     "loginLink": "登录",
-    "displayNameOptionalHint": "选填，未填写将自动生成默认名称"
+    "displayNameOptionalHint": "选填，未填写将自动生成默认名称",
+    "checkEmailTitle": "请至邮箱完成验证",
+    "checkEmailMessage": "我们已发送一封验证邮件到你的邮箱，请点击邮件中的链接完成注册，此链接将于 24 小时后失效。"
   },
   "forgotPassword": {
     "title": "忘记密码",
@@ -314,6 +320,14 @@
     "defaultError": "重设密码失败",
     "missingToken": "重设链接无效，请重新申请",
     "successMessage": "密码已重设成功，请使用新密码登录。",
+    "backToLogin": "返回登录"
+  },
+  "verifyEmail": {
+    "title": "验证邮箱",
+    "verifying": "正在验证你的邮箱...",
+    "missingToken": "验证链接无效，请检查邮件中的链接或重新申请",
+    "defaultError": "邮箱验证失败",
+    "successMessage": "邮箱已完成验证，现在可以登录了。",
     "backToLogin": "返回登录"
   },
   "account": {
@@ -525,6 +539,9 @@
     "WRONG_OLD_PASSWORD": "旧密码不正确",
     "NEW_PASSWORD_TOO_SHORT": "新密码至少需要 8 个字符",
     "RESET_TOKEN_INVALID": "重设链接无效或已过期，请重新申请",
+    "EMAIL_NOT_VERIFIED": "你的邮箱尚未完成验证，请至邮箱查看验证邮件",
+    "EMAIL_VERIFICATION_TOKEN_INVALID": "验证链接无效或已过期，请重新申请",
+    "EMAIL_VERIFICATION_RATE_LIMITED": "验证邮件请求过于频繁，请稍后再试",
     "EMAIL_OTP_INVALID": "验证码不正确或已过期",
     "EMAIL_OTP_TOO_MANY_ATTEMPTS": "验证失败次数过多，请重新登录取得新的验证码",
     "EMAIL_OTP_RATE_LIMITED": "验证码发送过于频繁，请稍后再试",
