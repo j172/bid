@@ -257,7 +257,13 @@
     "defaultError": "登入失敗",
     "noAccount": "還沒有帳號？",
     "registerLink": "註冊",
-    "forgotPasswordLink": "忘記密碼？"
+    "forgotPasswordLink": "忘記密碼？",
+    "otpTitle": "輸入驗證碼",
+    "otpDescription": "我們已寄送一組 6 位數驗證碼到你的 email，請於 10 分鐘內輸入完成登入。",
+    "otpCodeLabel": "驗證碼",
+    "otpSubmit": "驗證並登入",
+    "otpSubmitting": "驗證中...",
+    "otpBackToLogin": "返回重新登入"
   },
   "register": {
     "title": "註冊",
@@ -297,6 +303,8 @@
     "title": "帳戶設定",
     "profileTitle": "個人資料",
     "passwordTitle": "修改密碼",
+    "twoFactorTitle": "Email 兩階段驗證",
+    "twoFactorDescription": "開啟後，每次登入除了密碼外，還需要輸入寄到你 email 的 6 位數驗證碼。",
     "deleteTitle": "刪除帳戶",
     "deleteWarning": "若你目前正在領先任何開放中的商品，或有已得標但尚未由管理員標記完成交易的商品，將無法刪除帳戶。"
   },
@@ -322,6 +330,22 @@
     "button": "刪除帳戶",
     "submitting": "處理中...",
     "defaultError": "刪除失敗"
+  },
+  "twoFactorSection": {
+    "statusLabel": "目前狀態",
+    "statusEnabled": "已啟用",
+    "statusDisabled": "未啟用",
+    "enableButton": "開啟兩階段驗證",
+    "disableButton": "關閉兩階段驗證",
+    "enableConfirmPrompt": "請輸入目前密碼以開啟 Email 兩階段驗證。",
+    "disableConfirmPrompt": "請輸入目前密碼以關閉 Email 兩階段驗證。",
+    "currentPasswordLabel": "目前密碼",
+    "confirmSubmit": "確認送出",
+    "submitting": "處理中...",
+    "cancel": "取消",
+    "defaultError": "操作失敗",
+    "enabledNotice": "已開啟 Email 兩階段驗證",
+    "disabledNotice": "已關閉 Email 兩階段驗證"
   },
   "myBids": {
     "title": "我的出價紀錄",
@@ -436,6 +460,9 @@
     "WRONG_OLD_PASSWORD": "舊密碼不正確",
     "NEW_PASSWORD_TOO_SHORT": "新密碼至少需要 8 個字元",
     "RESET_TOKEN_INVALID": "重設連結無效或已過期，請重新申請",
+    "EMAIL_OTP_INVALID": "驗證碼不正確或已過期",
+    "EMAIL_OTP_TOO_MANY_ATTEMPTS": "驗證失敗次數過多，請重新登入取得新的驗證碼",
+    "EMAIL_OTP_RATE_LIMITED": "驗證碼發送過於頻繁，請稍後再試",
     "LEADING_OPEN_LISTING": "你目前正在領先某個開放中的商品，請等到不再領先才能刪除帳號",
     "UNSETTLED_WIN": "你有已得標但尚未完成交易的商品，請等待管理員確認交易完成後再刪除帳號",
     "UNSETTLED_PURCHASE": "你有已購買但尚未完成交易的商品，請等待管理員確認交易完成後再刪除帳號"

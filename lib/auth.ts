@@ -9,6 +9,12 @@ const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 export type Role = "admin" | "user";
 
+// 'none' (default) | 'email_otp' (issue #93) | 'totp' (a later roadmap
+// ticket) — see db/init.sql's users.two_factor_method column comment for why
+// this is a single mutually-exclusive field rather than a boolean per
+// method.
+export type TwoFactorMethod = "none" | "email_otp" | "totp";
+
 export interface CurrentUser {
   id: number;
   email: string;
@@ -79,6 +85,7 @@ interface UserRow {
   role: Role;
   suspended_at: Date | null;
   locale: string;
+  two_factor_method: TwoFactorMethod;
 }
 
 export async function findUserByEmail(email: string): Promise<UserRow | null> {
@@ -226,6 +233,10 @@ export interface UserDetail {
   // to pick the right EMAIL_MESSAGES locale for sendPasswordResetEmail —
   // otherwise unused by app/z04urru6/users/[id]/page.tsx's own rendering.
   locale: string;
+  // Drives app/z04urru6/users/DisableTwoFactorButton.tsx's visibility
+  // (issue #93) — the admin rescue button only renders when this isn't
+  // 'none'.
+  twoFactorMethod: TwoFactorMethod;
 }
 
 export async function getUserDetail(userId: number): Promise<UserDetail | null> {
@@ -233,6 +244,7 @@ export async function getUserDetail(userId: number): Promise<UserDetail | null> 
   const [rows] = await db.query(
     `SELECT
        id, email, display_name AS displayName, phone, address, role, locale, created_at AS createdAt,
+       two_factor_method AS twoFactorMethod,
        CASE WHEN deleted_at IS NOT NULL THEN 'deleted'
             WHEN suspended_at IS NOT NULL THEN 'suspended'
             ELSE 'active' END AS status
@@ -329,12 +341,15 @@ export interface AccountProfile {
   displayName: string;
   phone: string;
   address: string;
+  // Feeds app/[locale]/account/page.tsx's TwoFactorSection (issue #93) so it
+  // can render the toggle's current on/off state on load.
+  twoFactorMethod: TwoFactorMethod;
 }
 
 export async function getAccountProfile(userId: number): Promise<AccountProfile | null> {
   const db = await getDb();
   const [rows] = await db.query(
-    "SELECT email, display_name AS displayName, phone, address FROM users WHERE id = ? LIMIT 1",
+    "SELECT email, display_name AS displayName, phone, address, two_factor_method AS twoFactorMethod FROM users WHERE id = ? LIMIT 1",
     [userId],
   );
   const list = rows as AccountProfile[];
@@ -390,6 +405,45 @@ export async function changePassword(
   }
 
   return { ok: true };
+}
+
+export type SetTwoFactorMethodOutcome = { ok: true } | { ok: false; errorCode: ErrorCode };
+
+// Turning Email OTP on or off both require re-entering the current password
+// (issue #93) — same rationale and same WRONG_OLD_PASSWORD errorCode as
+// changePassword's oldPassword check above: a session hijacker who doesn't
+// know the password must not be able to silently disable (or force-enable)
+// a second factor. Unlike changePassword this never invalidates other
+// sessions — toggling 2FA doesn't compromise a password, so there's nothing
+// for a stale/attacker session to be kicked out over.
+export async function setTwoFactorMethod(
+  userId: number,
+  currentPassword: string,
+  method: TwoFactorMethod,
+): Promise<SetTwoFactorMethodOutcome> {
+  const db = await getDb();
+  const [rows] = await db.query("SELECT password_hash, password_salt FROM users WHERE id = ? LIMIT 1", [userId]);
+  const row = (rows as { password_hash: string; password_salt: string }[])[0];
+  if (!row || !(await verifyPassword(currentPassword, row.password_hash, row.password_salt))) {
+    return { ok: false, errorCode: "WRONG_OLD_PASSWORD" };
+  }
+
+  await db.query("UPDATE users SET two_factor_method = ? WHERE id = ?", [method, userId]);
+  return { ok: true };
+}
+
+// Admin rescue path (issue #93) for an account locked out of its own Email
+// OTP (e.g. can't receive the code email) — mirrors #91's admin
+// reset-password operation in shape: no password confirmation (the admin
+// route itself is already admin-only), unconditionally forces the method
+// back to 'none'. Any pending email_otp_challenges rows for this user are
+// left alone; they simply become unusable next since the account no longer
+// requires them at login (findUserByEmail's caller checks
+// two_factor_method, not challenge rows) and will fall out of their own
+// 10-minute expiry.
+export async function adminDisableTwoFactor(targetUserId: number): Promise<void> {
+  const db = await getDb();
+  await db.query("UPDATE users SET two_factor_method = 'none' WHERE id = ?", [targetUserId]);
 }
 
 export type DeleteAccountOutcome = { ok: true } | { ok: false; errorCode: ErrorCode };

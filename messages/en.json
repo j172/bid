@@ -257,7 +257,13 @@
     "defaultError": "Login failed",
     "noAccount": "Don't have an account?",
     "registerLink": "Sign up",
-    "forgotPasswordLink": "Forgot password?"
+    "forgotPasswordLink": "Forgot password?",
+    "otpTitle": "Enter verification code",
+    "otpDescription": "We've sent a 6-digit verification code to your email. Enter it within 10 minutes to finish logging in.",
+    "otpCodeLabel": "Verification code",
+    "otpSubmit": "Verify and log in",
+    "otpSubmitting": "Verifying...",
+    "otpBackToLogin": "Back to login"
   },
   "register": {
     "title": "Sign Up",
@@ -297,6 +303,8 @@
     "title": "Account Settings",
     "profileTitle": "Profile",
     "passwordTitle": "Change Password",
+    "twoFactorTitle": "Email Two-Factor Authentication",
+    "twoFactorDescription": "When enabled, logging in requires a 6-digit code sent to your email in addition to your password.",
     "deleteTitle": "Delete Account",
     "deleteWarning": "You can't delete your account while leading any open listing, or while holding a won item the admin hasn't yet marked as settled."
   },
@@ -322,6 +330,22 @@
     "button": "Delete Account",
     "submitting": "Processing...",
     "defaultError": "Failed to delete account"
+  },
+  "twoFactorSection": {
+    "statusLabel": "Current status",
+    "statusEnabled": "Enabled",
+    "statusDisabled": "Disabled",
+    "enableButton": "Enable two-factor authentication",
+    "disableButton": "Disable two-factor authentication",
+    "enableConfirmPrompt": "Enter your current password to enable Email two-factor authentication.",
+    "disableConfirmPrompt": "Enter your current password to disable Email two-factor authentication.",
+    "currentPasswordLabel": "Current password",
+    "confirmSubmit": "Confirm",
+    "submitting": "Processing...",
+    "cancel": "Cancel",
+    "defaultError": "Action failed",
+    "enabledNotice": "Email two-factor authentication enabled",
+    "disabledNotice": "Email two-factor authentication disabled"
   },
   "myBids": {
     "title": "My Bid History",
@@ -436,6 +460,9 @@
     "WRONG_OLD_PASSWORD": "Current password is incorrect",
     "NEW_PASSWORD_TOO_SHORT": "New password must be at least 8 characters",
     "RESET_TOKEN_INVALID": "This reset link is invalid or has expired — please request a new one",
+    "EMAIL_OTP_INVALID": "That code is incorrect or has expired",
+    "EMAIL_OTP_TOO_MANY_ATTEMPTS": "Too many failed attempts — please log in again to get a new code",
+    "EMAIL_OTP_RATE_LIMITED": "Verification codes are being requested too often — please try again later",
     "LEADING_OPEN_LISTING": "You're currently leading an open listing — you can't delete your account until that's no longer the case",
     "UNSETTLED_WIN": "You have a won item that hasn't been marked settled yet — please wait for the admin to confirm it before deleting your account",
     "UNSETTLED_PURCHASE": "You have a purchase that hasn't been marked settled yet — please wait for the admin to confirm it before deleting your account"

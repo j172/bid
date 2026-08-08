@@ -47,6 +47,23 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
   KEY idx_password_reset_tokens_ip_created (request_ip, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Pending Email-OTP login challenges (issue #93) — see db/init.sql for the
+-- fuller header comment. Brand-new table, whole final schema from day one,
+-- same as password_reset_tokens above.
+CREATE TABLE IF NOT EXISTS email_otp_challenges (
+  token VARCHAR(64) NOT NULL,
+  user_id BIGINT NOT NULL,
+  code_hash VARCHAR(64) NOT NULL,
+  request_ip VARCHAR(45) NULL,
+  expires_at DATETIME NOT NULL,
+  attempts INT NOT NULL DEFAULT 0,
+  used_at DATETIME NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (token),
+  KEY idx_email_otp_challenges_user (user_id),
+  KEY idx_email_otp_challenges_ip_created (request_ip, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS listings (
   id BIGINT NOT NULL AUTO_INCREMENT,
   title VARCHAR(255) NOT NULL,
@@ -312,6 +329,10 @@ async function ensureAccountColumns(db: mysql.Pool): Promise<void> {
   // that user's email notifications (see lib/notifications.ts). Existing
   // rows default to 'zh-TW' (this site's original/default language).
   await ensureColumn(db, "users", "locale", "VARCHAR(10) NOT NULL DEFAULT 'zh-TW'");
+  // Which second factor (if any) this account requires at login (issue #93)
+  // — see db/init.sql's CREATE TABLE users for the fuller comment on why
+  // this is a single mutually-exclusive field rather than a boolean.
+  await ensureColumn(db, "users", "two_factor_method", "VARCHAR(20) NOT NULL DEFAULT 'none'");
 }
 
 // buy_it_now_price started out NOT NULL (every listing required one);

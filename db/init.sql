@@ -10,6 +10,13 @@ CREATE TABLE IF NOT EXISTS users (
   deleted_at DATETIME NULL,
   suspended_at DATETIME NULL,
   locale VARCHAR(10) NOT NULL DEFAULT 'zh-TW',
+  -- Which second factor (if any) this account requires at login (issue #93).
+  -- 'none' | 'email_otp' | 'totp' — deliberately a single mutually-exclusive
+  -- field rather than a boolean per method, since an account can only have
+  -- one second factor active at a time (turning on email OTP later needs to
+  -- imply turning off TOTP, and vice versa, once #93's roadmap sibling adds
+  -- TOTP) — see lib/auth.ts's setTwoFactorMethod.
+  two_factor_method VARCHAR(20) NOT NULL DEFAULT 'none',
   created_at DATETIME NOT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_users_email (email)
@@ -45,6 +52,32 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
   PRIMARY KEY (token),
   KEY idx_password_reset_tokens_user (user_id),
   KEY idx_password_reset_tokens_ip_created (request_ip, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Pending Email-OTP login challenges (issue #93) — same shape/lifecycle
+-- convention as password_reset_tokens above (token as its own PK, one row
+-- per issued challenge, request_ip recorded purely for the per-IP abuse
+-- limit). code_hash is sha256(`${token}:${code}`) — see
+-- lib/emailOtp.ts's hashEmailOtpCode — never the plaintext 6-digit code;
+-- the token itself doubles as this row's per-challenge salt, so no separate
+-- salt column is needed. used_at NOT NULL means "spent" (either a correct
+-- verify, or attempts hit the cap and the whole challenge was invalidated —
+-- see lib/emailOtp.ts's verifyEmailOtpChallenge); expires_at NOW()-comparison
+-- means "10 minutes came and went". attempts counts failed verify tries and
+-- is capped at EMAIL_OTP_MAX_ATTEMPTS (5) — once reached the challenge is
+-- invalidated and the visitor must log in again to get a fresh code.
+CREATE TABLE IF NOT EXISTS email_otp_challenges (
+  token VARCHAR(64) NOT NULL,
+  user_id BIGINT NOT NULL,
+  code_hash VARCHAR(64) NOT NULL,
+  request_ip VARCHAR(45) NULL,
+  expires_at DATETIME NOT NULL,
+  attempts INT NOT NULL DEFAULT 0,
+  used_at DATETIME NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (token),
+  KEY idx_email_otp_challenges_user (user_id),
+  KEY idx_email_otp_challenges_ip_created (request_ip, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS listings (
