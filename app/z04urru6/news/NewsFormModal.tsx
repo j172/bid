@@ -2,10 +2,10 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { TITLE_MAX } from "@/lib/newsValidation";
+import { CONTENT_MAX, TITLE_MAX } from "@/lib/newsValidation";
 import { BROADCAST_STATUS_LABEL } from "@/lib/broadcastStatusLabel";
 import type { BroadcastStatus } from "@/lib/newsletter";
-import NewsDescriptionEditor from "./NewsDescriptionEditor";
+import SimpleRichTextEditor from "../components/SimpleRichTextEditor";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 text-sm focus:border-interactive-primary focus:outline-none";
 
@@ -185,7 +185,7 @@ export default function NewsFormModal(props: Props) {
 
               <div className="flex flex-col gap-1 text-sm font-medium text-ink-light">
                 內容
-                <NewsDescriptionEditor value={content} onChange={setContent} />
+                <SimpleRichTextEditor value={content} onChange={setContent} maxLength={CONTENT_MAX} />
               </div>
 
               <div className="rounded-md border border-border p-3">

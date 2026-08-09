@@ -2,8 +2,8 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { NAME_MAX, type PigeonShowcaseCategory } from "@/lib/pigeonShowcaseValidation";
-import PigeonDescriptionEditor from "./PigeonDescriptionEditor";
+import { DESCRIPTION_MAX, NAME_MAX, type PigeonShowcaseCategory } from "@/lib/pigeonShowcaseValidation";
+import SimpleRichTextEditor from "../components/SimpleRichTextEditor";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 text-sm focus:border-interactive-primary focus:outline-none";
 
@@ -182,7 +182,7 @@ export default function PigeonShowcaseFormModal(props: Props) {
 
               <div className="flex flex-col gap-1 text-sm font-medium text-ink-light">
                 簡介
-                <PigeonDescriptionEditor value={description} onChange={setDescription} />
+                <SimpleRichTextEditor value={description} onChange={setDescription} maxLength={DESCRIPTION_MAX} />
               </div>
 
               {error && <p className="text-sm text-ended">{error}</p>}

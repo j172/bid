@@ -1,27 +1,31 @@
 "use client";
 
-// Simplified sibling of app/z04urru6/listings/DescriptionEditor.tsx (issue
-// #54) — reuses the same self-hosted TinyMCE script approach
-// (tinymceScriptSrc="/tinymce/tinymce.min.js", licenseKey="gpl") but drops
-// the image-upload machinery: pigeon_showcase has no per-row image storage
-// endpoint (unlike listings, which uploads description images alongside its
-// photos), so the "image" plugin is left out entirely rather than wired up
-// to nothing.
+// 精簡版的 TinyMCE 包裝，最新訊息（內容）與入賞鴿／進口鴿（簡介）共用。
+// 兩者原本是同一份設定的複製體、只差字數上限常數（issue #139 H3）。
+//
+// 與 app/z04urru6/listings/DescriptionEditor.tsx 一樣採自架 TinyMCE
+// （tinymceScriptSrc="/tinymce/tinymce.min.js"、licenseKey="gpl"），但刻意
+// 拿掉圖片上傳：news_posts / pigeon_showcase 都沒有各自的圖片儲存端點
+// （不像 listings 會連同照片一起上傳描述圖），與其接一個不存在的上傳流程，
+// 不如整個 "image" plugin 都不要載入。
 
 import { Editor } from "@tinymce/tinymce-react";
 import { COLOR_MAP } from "@/lib/editorColorMap";
 import { descriptionPlainTextLength } from "@/lib/listingValidation";
-import { DESCRIPTION_MAX } from "@/lib/pigeonShowcaseValidation";
 
-interface PigeonDescriptionEditorProps {
+export default function SimpleRichTextEditor({
+  value,
+  onChange,
+  maxLength,
+  error,
+}: {
   value: string;
   onChange: (html: string) => void;
+  maxLength: number;
   error?: string | null;
-}
-
-export default function PigeonDescriptionEditor({ value, onChange, error }: PigeonDescriptionEditorProps) {
+}) {
   const plainTextLength = descriptionPlainTextLength(value);
-  const counterClass = `text-xs ${plainTextLength > DESCRIPTION_MAX ? "text-ended" : "text-ink-light"}`;
+  const counterClass = `text-xs ${plainTextLength > maxLength ? "text-ended" : "text-ink-light"}`;
 
   return (
     <div className="flex flex-col gap-1">
@@ -50,7 +54,7 @@ export default function PigeonDescriptionEditor({ value, onChange, error }: Pige
       <div className="flex items-center justify-between">
         <span>{error && <span className="text-sm text-ended">{error}</span>}</span>
         <span className={counterClass}>
-          {plainTextLength}/{DESCRIPTION_MAX}
+          {plainTextLength}/{maxLength}
         </span>
       </div>
     </div>
