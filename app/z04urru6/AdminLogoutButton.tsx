@@ -2,9 +2,12 @@
 
 import { useRouter } from "next/navigation";
 
-// Untranslated copy of the public LogoutButton — see AdminSiteHeader's
-// comment for why the admin backend keeps its own separate copies rather
-// than sharing components with the translated public site.
+// Untranslated copy of the public LogoutButton (app/[locale]/components/
+// LogoutButton.tsx). The admin backend is deliberately out of scope for i18n
+// (see the ticket that introduced app/[locale]/), and admin pages sit outside
+// the next-intl-wrapped route tree entirely, so a shared/translated component
+// can't safely be rendered here anyway (no NextIntlClientProvider in scope) —
+// hence this separate copy.
 export default function AdminLogoutButton() {
   const router = useRouter();
 
