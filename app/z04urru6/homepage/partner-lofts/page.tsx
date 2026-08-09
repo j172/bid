@@ -1,6 +1,7 @@
 import { listHomepageSections } from "@/lib/homepageSections";
 import { homepageSectionImageUrl } from "@/lib/uploads";
 import AdminPageIntro from "../../AdminPageIntro";
+import { tableRowClass, tableWrapperClass, td, th } from "../../components/tableStyles";
 import PartnerLoftFormModal from "./PartnerLoftFormModal";
 import DeleteButton from "./DeleteButton";
 
@@ -13,9 +14,6 @@ export const dynamic = "force-dynamic";
 // section-type-agnostic (see its header comment) — this string is this
 // page's concern, not the library's.
 const SECTION_TYPE = "partner_loft";
-
-const th = "border-b border-border px-4 py-3 text-left text-sm font-semibold text-ink-light";
-const td = "border-b border-border px-4 py-3 text-sm";
 
 export default async function PartnerLoftsAdminPage() {
   // activeOnly defaults to false here (unlike the public homepage) so
@@ -31,7 +29,7 @@ export default async function PartnerLoftsAdminPage() {
       {sections.length === 0 ? (
         <p className="mt-6 text-ink-light">目前沒有任何合作鴿舍卡片，請點選上方「新增合作鴿舍」建立第一筆資料。</p>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-2xl border border-border bg-surface shadow-sm">
+        <div className={tableWrapperClass}>
           <table className="w-full border-collapse">
             <thead>
               <tr>
@@ -47,7 +45,7 @@ export default async function PartnerLoftsAdminPage() {
               {sections.map((section) => {
                 const imageUrl = homepageSectionImageUrl(section.imageFileName);
                 return (
-                  <tr key={section.id} className="transition hover:bg-surface-muted/80">
+                  <tr key={section.id} className={tableRowClass}>
                     <td className={td}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={imageUrl} alt={section.title} className="h-14 w-14 rounded-lg border border-border object-cover" />
