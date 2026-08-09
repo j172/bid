@@ -117,9 +117,9 @@ export default function ListingDetailTabs({
             </p>
           ) : (
             <div className="mt-4 space-y-2">
-              {activityLines.map((line, index) => (
+              {activityLines.map((line) => (
                 <div
-                  key={index}
+                  key={`${line.dateLabel}-${line.maskedName}-${line.amountLabel}`}
                   className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3 text-sm"
                 >
                   <span className="font-semibold text-ink">{line.maskedName}</span>

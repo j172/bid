@@ -47,8 +47,6 @@ export default function NewsCarouselCard({
     return () => clearInterval(timer);
   }, [items.length]);
 
-  const wrapperClass = "flex h-full flex-col justify-center rounded-2xl bg-gradient-to-r from-steel-azure-500 to-steel-azure-600 p-7 text-white";
-
   if (items.length === 0) {
     return (
       <div className="flex h-full min-h-[220px] flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-slate-50 p-7 text-center">
