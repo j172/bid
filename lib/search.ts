@@ -102,9 +102,8 @@ export function buildKeywordSearch(
   const matchesAnyColumn = `(${options.columns.map((column) => `${column} LIKE ?`).join(" OR ")})`;
   for (const term of searchTerms) {
     conditions.push(matchesAnyColumn);
-    for (const _column of options.columns) {
-      params.push(`%${term}%`);
-    }
+    // One bind param per column, since each column gets its own `LIKE ?`.
+    params.push(...options.columns.map(() => `%${term}%`));
   }
 
   return {

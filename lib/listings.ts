@@ -8,10 +8,17 @@ import {
 } from "@/lib/bidding/domain";
 import { resolvePurchase, type PurchaseOutcome } from "@/lib/purchase";
 import { notifyAuctionEnded, notifyOutbid, notifyPurchaseConfirmed, notifyWinner } from "@/lib/notifications";
+import { syncListingLifecycle } from "@/lib/listings/lifecycle";
 import type { ErrorCode } from "@/lib/errorCodes";
 import { buildKeywordSearch, type KeywordSearchSql } from "@/lib/search";
 import { paginate } from "@/lib/pagination";
 import { AUCTION_GMV_SUBQUERY, FIXED_PRICE_GMV_SUBQUERY, deletedAccountEmail } from "@/lib/sqlFragments";
+
+// The lazy 'scheduled' -> 'open' -> 'closed' sweeps live in
+// lib/listings/lifecycle.ts (issue #139) — they're the one part of this
+// module that touches nothing but status columns. Re-exported so existing
+// `@/lib/listings` imports keep working.
+export { closeExpiredListings, openScheduledListings, syncListingLifecycle } from "@/lib/listings/lifecycle";
 
 // Settlement (撥款) reads/writes moved to lib/settlement.ts, which now owns
 // both the form validation and the data access for the two settleable
@@ -407,57 +414,6 @@ export async function getOverviewStats(): Promise<OverviewStats> {
        ${AUCTION_GMV_SUBQUERY} + ${FIXED_PRICE_GMV_SUBQUERY} AS totalGmv`,
   );
   return (rows as OverviewStats[])[0];
-}
-
-// Closes any listing whose end time has passed without being bought out
-// first. Deliberately just a status flip: current_price and leader_user_id
-// are already correct at every moment (placeBid/buyNow keep them in sync
-// live), so the highest bid at the instant this runs — or the starting
-// price and no leader, if the listing never got a single bid — is exactly
-// the right final price/winner. Called at the top of every read/write path
-// below rather than run on a schedule, since there's no background worker
-// in this deployment; cheap enough (single indexed UPDATE) to run on every
-// access. Also fires notifyWinner (issue #48) for any listing this sweep is
-// about to close that actually has a winner (leader_user_id set) — a
-// zero-bid listing has nobody to congratulate, so it's excluded from the
-// pre-UPDATE lookup below rather than left to notifyWinner's own no-row
-// no-op, keeping the notify loop tight to only real winners.
-export async function closeExpiredListings(): Promise<void> {
-  const db = await getDb();
-  const [winnerRows] = await db.query(
-    "SELECT id FROM listings WHERE status = 'open' AND ends_at <= NOW() AND leader_user_id IS NOT NULL",
-  );
-  const winningListingIds = (winnerRows as { id: number }[]).map((row) => row.id);
-
-  await db.query(
-    "UPDATE listings SET status = 'closed', close_reason = 'expired' WHERE status = 'open' AND ends_at <= NOW()",
-  );
-
-  // Fired without awaiting — see the equivalent note in placeBid().
-  for (const listingId of winningListingIds) {
-    notifyWinner(listingId);
-  }
-}
-
-// Opens any listing whose scheduled start time has passed — the mirror image
-// of closeExpiredListings above (same lazy-sweep-on-every-access pattern, no
-// background worker in this deployment). Must run before closeExpiredListings
-// in syncListingLifecycle so a listing whose starts_at and ends_at have *both*
-// already passed (e.g. the admin scheduled a very short auction and nobody
-// looked at it in time) still passes through 'open' on its way to 'closed'
-// rather than getting stuck in 'scheduled' forever — closeExpiredListings only
-// ever matches status = 'open'.
-export async function openScheduledListings(): Promise<void> {
-  const db = await getDb();
-  await db.query("UPDATE listings SET status = 'open' WHERE status = 'scheduled' AND starts_at <= NOW()");
-}
-
-// The single entry point every read/write path below calls instead of
-// closeExpiredListings directly — keeps both lazy sweeps (start, then end) in
-// sync at every access without every call site needing to know both exist.
-export async function syncListingLifecycle(): Promise<void> {
-  await openScheduledListings();
-  await closeExpiredListings();
 }
 
 export interface ListingCardExtras {
