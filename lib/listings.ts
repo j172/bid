@@ -9,7 +9,7 @@ import {
 import { resolvePurchase, type PurchaseOutcome } from "@/lib/purchase";
 import { notifyAuctionEnded, notifyOutbid, notifyPurchaseConfirmed, notifyWinner } from "@/lib/notifications";
 import type { ErrorCode } from "@/lib/errorCodes";
-import { tokenizeSearchQuery } from "@/lib/search";
+import { buildKeywordSearch, type KeywordSearchSql } from "@/lib/search";
 import { paginate } from "@/lib/pagination";
 import { AUCTION_GMV_SUBQUERY, FIXED_PRICE_GMV_SUBQUERY, deletedAccountEmail } from "@/lib/sqlFragments";
 
@@ -320,23 +320,17 @@ export async function getOpenListingsForAdmin(
 
   // Scheduled (not-yet-started) auctions belong in this view too — admins
   // still need to see/edit/cancel them before they go live.
-  const conditions = ["status IN ('open', 'scheduled')"];
-  const params: string[] = [];
-  const search = options.search?.trim();
-  if (search) {
-    // Segment into keywords so a multi-word query like "石君 回血" matches
-    // listings containing both words rather than failing on the literal
-    // space (see issue #105). Each keyword must match title OR description;
-    // keywords are AND'd together. Falls back to the previous whole-string
-    // match if segmentation yields no usable tokens (e.g. all punctuation),
-    // so search never silently drops the filter and returns everything.
-    const tokens = tokenizeSearchQuery(search);
-    const searchTerms = tokens.length > 0 ? tokens : [search];
-    for (const term of searchTerms) {
-      conditions.push("(title LIKE ? OR description LIKE ?)");
-      params.push(`%${term}%`, `%${term}%`);
-    }
-  }
+  // Segments the query into keywords so a multi-word search like "石君 回血"
+  // matches listings containing both words rather than failing on the
+  // literal space (see issue #105 and buildKeywordSearch itself, which owns
+  // the whole "keywords -> LIKE conditions + whole-query ranking" step for
+  // all three admin list queries in this file).
+  const keywordSearch = buildKeywordSearch(options.search, {
+    columns: ["title", "description"],
+    rankColumn: "title",
+  });
+  const conditions = ["status IN ('open', 'scheduled')", ...keywordSearch.conditions];
+  const params: string[] = [...keywordSearch.params];
   if (options.type) {
     conditions.push("listing_type = ?");
     params.push(options.type);
@@ -347,10 +341,8 @@ export async function getOpenListingsForAdmin(
   const total = (countRows as { cnt: number }[])[0].cnt;
 
   const orderBy = OPEN_LISTINGS_SORT_CLAUSES[options.sort ?? "ends_asc"];
-  // Rank title/description hits on the full original query above everything
-  // else that only matched via individual keyword segments.
-  const orderByExpr = search ? `CASE WHEN title LIKE ? THEN 0 ELSE 1 END, ${orderBy}` : orderBy;
-  const selectParams = search ? [...params, `%${search}%`] : params;
+  const orderByExpr = `${keywordSearch.rankPrefix}${orderBy}`;
+  const selectParams = [...params, ...keywordSearch.rankParams];
   const { offset, limit } = paginate(options.page, OPEN_LISTINGS_PAGE_SIZE);
 
   const [rows] = await db.query(
@@ -569,21 +561,22 @@ const CLOSED_LISTINGS_SORT_CLAUSES: Record<ClosedListingSort, string> = {
   price_desc: "l.current_price DESC",
 };
 
-function closedListingsWhereClause(options: ListClosedListingsOptions): { where: string; params: string[] } {
-  const conditions = ["l.status = 'closed'"];
-  const params: string[] = [];
+// Returns the keyword search alongside the WHERE clause: listClosedListings
+// needs its ranking prefix/params for the ORDER BY too, and re-deriving that
+// from options.search separately is exactly how the two halves get to
+// disagree about what counts as a match.
+function closedListingsWhereClause(
+  options: ListClosedListingsOptions,
+): { where: string; params: string[]; keywordSearch: KeywordSearchSql } {
+  // See getOpenListingsForAdmin's comment for why this segments the query
+  // and matches title/description per keyword (issue #105).
+  const keywordSearch = buildKeywordSearch(options.search, {
+    columns: ["l.title", "l.description"],
+    rankColumn: "l.title",
+  });
+  const conditions = ["l.status = 'closed'", ...keywordSearch.conditions];
+  const params: string[] = [...keywordSearch.params];
 
-  const search = options.search?.trim();
-  if (search) {
-    // See getOpenListingsForAdmin's comment for why this segments the query
-    // and matches title/description per keyword (issue #105).
-    const tokens = tokenizeSearchQuery(search);
-    const searchTerms = tokens.length > 0 ? tokens : [search];
-    for (const term of searchTerms) {
-      conditions.push("(l.title LIKE ? OR l.description LIKE ?)");
-      params.push(`%${term}%`, `%${term}%`);
-    }
-  }
   const winnerEmail = options.winnerEmail?.trim();
   if (winnerEmail) {
     conditions.push("u.email LIKE ?");
@@ -604,7 +597,7 @@ function closedListingsWhereClause(options: ListClosedListingsOptions): { where:
       break;
   }
 
-  return { where: `WHERE ${conditions.join(" AND ")}`, params };
+  return { where: `WHERE ${conditions.join(" AND ")}`, params, keywordSearch };
 }
 
 // Admin's closed-listings/settlement view: search by title/winner email,
@@ -615,7 +608,7 @@ export async function listClosedListings(
 ): Promise<{ listings: ClosedListingSummary[]; total: number }> {
   await syncListingLifecycle();
   const db = await getDb();
-  const { where, params } = closedListingsWhereClause(options);
+  const { where, params, keywordSearch } = closedListingsWhereClause(options);
 
   const [countRows] = await db.query(
     `SELECT COUNT(*) AS cnt FROM listings l LEFT JOIN users u ON u.id = l.leader_user_id ${where}`,
@@ -623,12 +616,9 @@ export async function listClosedListings(
   );
   const total = (countRows as { cnt: number }[])[0].cnt;
 
-  const search = options.search?.trim();
   const orderBy = CLOSED_LISTINGS_SORT_CLAUSES[options.sort ?? "ends_desc"];
-  // Rank title/description hits on the full original query above everything
-  // else that only matched via individual keyword segments.
-  const orderByExpr = search ? `CASE WHEN l.title LIKE ? THEN 0 ELSE 1 END, ${orderBy}` : orderBy;
-  const selectParams = search ? [...params, `%${search}%`] : params;
+  const orderByExpr = `${keywordSearch.rankPrefix}${orderBy}`;
+  const selectParams = [...params, ...keywordSearch.rankParams];
   const { offset, limit } = paginate(options.page, CLOSED_LISTINGS_PAGE_SIZE);
   const limitClause = options.all ? "" : `LIMIT ${limit} OFFSET ${offset}`;
 
@@ -1285,20 +1275,15 @@ export async function getOrdersForAdmin(
   options: ListOrdersOptions = {},
 ): Promise<{ orders: OrderSummary[]; total: number }> {
   const db = await getDb();
-  const conditions: string[] = [];
-  const params: string[] = [];
+  // See getOpenListingsForAdmin's comment for why this segments the query
+  // and matches title/description per keyword (issue #105).
+  const keywordSearch = buildKeywordSearch(options.search, {
+    columns: ["l.title", "l.description"],
+    rankColumn: "l.title",
+  });
+  const conditions: string[] = [...keywordSearch.conditions];
+  const params: string[] = [...keywordSearch.params];
 
-  const search = options.search?.trim();
-  if (search) {
-    // See getOpenListingsForAdmin's comment for why this segments the query
-    // and matches title/description per keyword (issue #105).
-    const tokens = tokenizeSearchQuery(search);
-    const searchTerms = tokens.length > 0 ? tokens : [search];
-    for (const term of searchTerms) {
-      conditions.push("(l.title LIKE ? OR l.description LIKE ?)");
-      params.push(`%${term}%`, `%${term}%`);
-    }
-  }
   const buyerEmail = options.buyerEmail?.trim();
   if (buyerEmail) {
     conditions.push("u.email LIKE ?");
@@ -1327,10 +1312,8 @@ export async function getOrdersForAdmin(
   const total = (countRows as { cnt: number }[])[0].cnt;
 
   const orderBy = ORDER_SORT_CLAUSES[options.sort ?? "created_desc"];
-  // Rank title/description hits on the full original query above everything
-  // else that only matched via individual keyword segments.
-  const orderByExpr = search ? `CASE WHEN l.title LIKE ? THEN 0 ELSE 1 END, ${orderBy}` : orderBy;
-  const selectParams = search ? [...params, `%${search}%`] : params;
+  const orderByExpr = `${keywordSearch.rankPrefix}${orderBy}`;
+  const selectParams = [...params, ...keywordSearch.rankParams];
   const { offset, limit } = paginate(options.page, ORDERS_PAGE_SIZE);
 
   const [rows] = await db.query(
