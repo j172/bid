@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Link } from "@/i18n/navigation";
+import { useRotatingIndex } from "@/lib/useRotatingIndex";
 
 // Homepage carousel card (issue #56) — replaces the static "現正競標/熱門
 // 競標正在進行" promo card (app/[locale]/(with-loading)/page.tsx, the lg:col-span-2 card)
@@ -39,13 +39,7 @@ export default function NewsCarouselCard({
   emptyStateTitle: string;
   emptyStateDesc: string;
 }) {
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    if (items.length <= 1) return;
-    const timer = setInterval(() => setIndex((prev) => (prev + 1) % items.length), ROTATE_INTERVAL_MS);
-    return () => clearInterval(timer);
-  }, [items.length]);
+  const index = useRotatingIndex(items.length, ROTATE_INTERVAL_MS);
 
   if (items.length === 0) {
     return (

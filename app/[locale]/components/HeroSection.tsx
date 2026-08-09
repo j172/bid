@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import ProgressiveImage from "@/app/components/ProgressiveImage";
+import CountdownTiles from "./CountdownTiles";
 import ZoomableProductImage from "./ZoomableProductImage";
 import { useHeroCountdown } from "@/lib/useHeroCountdown";
 import { formatDualPrice, type DisplayCurrency } from "@/lib/currency";
@@ -102,19 +103,7 @@ function EndTimeCountdown({
     { value: seconds, label: t("unitSeconds") },
   ];
 
-  return (
-    <div className="mt-1.5 flex gap-1">
-      {tiles.map((tile) => (
-        <div
-          key={tile.label}
-          className="flex min-w-[1.85rem] flex-1 flex-col items-center rounded-md bg-white/15 py-1"
-        >
-          <span className="text-sm font-black leading-none text-white">{String(tile.value).padStart(2, "0")}</span>
-          <span className="mt-0.5 text-[8px] uppercase tracking-wide text-steel-azure-200">{tile.label}</span>
-        </div>
-      ))}
-    </div>
-  );
+  return <CountdownTiles tiles={tiles} size="sm" />;
 }
 
 export default function HeroSection({

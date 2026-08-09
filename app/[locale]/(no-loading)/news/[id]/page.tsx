@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getNewsById, listLatestNews } from "@/lib/news";
 import { newsImageUrl } from "@/lib/uploads";
 import { Link } from "@/i18n/navigation";
+import RichTextContent from "../../../components/RichTextContent";
 
 export const dynamic = "force-dynamic";
 
@@ -53,15 +54,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
           <h1 className="mt-6 text-3xl font-black text-ink">{item.title}</h1>
           <p className="mt-2 text-sm font-semibold text-ink-light">{t("publishedLine", { date: item.createdAt.toLocaleString() })}</p>
 
-          {/* content is stored pre-sanitized (lib/sanitizeDescriptionHtml.ts, applied
-              by both the create and edit API routes) before ever reaching here. No
-              @tailwindcss/typography plugin in this project, so rich-text tags are styled
-              via explicit child selectors — same convention as
-              app/[locale]/(no-loading)/pigeon-showcase/[id]/page.tsx. */}
-          <div
-            className="mt-6 max-w-none border-t border-border pt-6 leading-7 text-ink-light [&_a]:text-interactive-primary [&_a]:underline [&_h2]:mt-4 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-ink [&_h3]:mt-3 [&_h3]:text-base [&_h3]:font-bold [&_h3]:text-ink [&_img]:my-2 [&_img]:max-w-full [&_img]:rounded-md [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-border [&_td]:p-2 [&_th]:border [&_th]:border-border [&_th]:p-2 [&_ul]:list-disc [&_ul]:pl-5"
-            dangerouslySetInnerHTML={{ __html: item.content }}
-          />
+          <RichTextContent html={item.content} className="mt-6 border-t border-border pt-6 leading-7 text-ink-light" />
         </article>
 
         <aside className="flex flex-col gap-4">

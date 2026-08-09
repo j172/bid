@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { breakdownRemainingMs } from "@/lib/format";
 import { useListingCountdown } from "@/lib/useListingCountdown";
+import CountdownTiles from "../../../components/CountdownTiles";
 
 interface HeroCountdownStripProps {
   listingId: number;
@@ -76,17 +77,7 @@ export default function HeroCountdownStrip({
 
         <div className="rounded-xl border border-white/10 bg-white/12 px-4 py-3 backdrop-blur-sm">
           <p className="text-[11px] uppercase tracking-[0.16em] text-blue-200">{countdownLabel}</p>
-          <div className="mt-2 flex gap-1.5">
-            {tiles.map((tile) => (
-              <div
-                key={tile.label}
-                className="flex min-w-[2.5rem] flex-1 flex-col items-center rounded-lg border border-white/10 bg-white/12 py-1.5 backdrop-blur-sm"
-              >
-                <span className="text-base font-black leading-none text-white">{String(tile.value).padStart(2, "0")}</span>
-                <span className="mt-1 text-[9px] uppercase tracking-wide text-blue-200">{tile.label}</span>
-              </div>
-            ))}
-          </div>
+          <CountdownTiles tiles={tiles} size="lg" />
         </div>
       </div>
     </section>

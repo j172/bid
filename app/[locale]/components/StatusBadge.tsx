@@ -1,10 +1,15 @@
 import { useTranslations } from "next-intl";
+import { resolveStatusBadgeVariant } from "@/lib/statusBadge";
 
 // Translated duplicate of app/components/StatusBadge.tsx — that original
 // copy stays in place, untranslated, for the admin backend (see
 // app/z04urru6/users/[id]/page.tsx), which sits outside next-intl's
 // NextIntlClientProvider entirely (see the ticket that introduced this
 // app/[locale]/ tree).
+//
+// Only the label lookup differs between the two: the status → variant
+// decision itself lives in lib/statusBadge.ts (issue #139 item 6), and the
+// variant's `key` doubles as the `statusBadge` message key.
 export default function StatusBadge({
   status,
   isLeading,
@@ -16,57 +21,7 @@ export default function StatusBadge({
   isFixedPrice?: boolean;
 }) {
   const t = useTranslations("statusBadge");
+  const variant = resolveStatusBadgeVariant(status, isLeading, isFixedPrice);
 
-  if (status === "scheduled") {
-    return (
-      <span className="inline-block rounded-full bg-interactive-primary-subtle px-2.5 py-0.5 text-xs font-medium text-interactive-primary">
-        {t("scheduled")}
-      </span>
-    );
-  }
-
-  if (status === "cancelled") {
-    return (
-      <span className="inline-block rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
-        {t("cancelled")}
-      </span>
-    );
-  }
-
-  if (status !== "open") {
-    return (
-      <span className="inline-block rounded-full bg-ended-bg px-2.5 py-0.5 text-xs font-medium text-ended">
-        {t("closed")}
-      </span>
-    );
-  }
-
-  if (isLeading === true) {
-    return (
-      <span className="inline-block rounded-full bg-leading-bg px-2.5 py-0.5 text-xs font-medium text-leading">
-        {t("leading")}
-      </span>
-    );
-  }
-  if (isLeading === false) {
-    return (
-      <span className="inline-block rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
-        {t("outbid")}
-      </span>
-    );
-  }
-
-  if (isFixedPrice) {
-    return (
-      <span className="inline-block rounded-full bg-interactive-primary-subtle px-2.5 py-0.5 text-xs font-medium text-interactive-primary-active">
-        {t("onSale")}
-      </span>
-    );
-  }
-
-  return (
-    <span className="inline-block rounded-full bg-interactive-primary-subtle px-2.5 py-0.5 text-xs font-medium text-interactive-primary-active">
-      {t("bidding")}
-    </span>
-  );
+  return <span className={variant.className}>{t(variant.key)}</span>;
 }
