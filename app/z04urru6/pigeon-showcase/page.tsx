@@ -11,7 +11,7 @@ import { isPigeonShowcaseCategory } from "@/lib/pigeonShowcaseValidation";
 import { pigeonShowcaseImageUrl } from "@/lib/uploads";
 import AdminPageIntro from "../AdminPageIntro";
 import PigeonShowcaseFormModal from "./PigeonShowcaseFormModal";
-import DeleteButton from "./DeleteButton";
+import DeleteConfirmButton from "../components/DeleteConfirmButton";
 
 export const dynamic = "force-dynamic";
 
@@ -149,7 +149,11 @@ export default async function PigeonShowcaseAdminPage({ searchParams }: { search
                             imageUrl,
                           }}
                         />
-                        <DeleteButton id={item.id} name={item.name} />
+                        <DeleteConfirmButton
+                          endpoint={`/api/admin/pigeon-showcase/${item.id}`}
+                          itemLabel={item.name}
+                          itemNoun="這筆鴿況資料"
+                        />
                       </div>
                     </td>
                   </tr>

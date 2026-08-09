@@ -5,7 +5,7 @@ import { listBroadcasts, type Broadcast } from "@/lib/newsletter";
 import { BROADCAST_STATUS_LABEL } from "@/lib/broadcastStatusLabel";
 import AdminPageIntro from "../AdminPageIntro";
 import NewsFormModal from "./NewsFormModal";
-import DeleteButton from "./DeleteButton";
+import DeleteConfirmButton from "../components/DeleteConfirmButton";
 import CancelBroadcastButton from "./CancelBroadcastButton";
 
 export const dynamic = "force-dynamic";
@@ -136,7 +136,7 @@ export default async function NewsAdminPage({ searchParams }: { searchParams: Pr
                             broadcast: broadcast ? { id: broadcast.id, status: broadcast.status, scheduledAt: broadcast.scheduledAt } : null,
                           }}
                         />
-                        <DeleteButton id={item.id} title={item.title} />
+                        <DeleteConfirmButton endpoint={`/api/admin/news/${item.id}`} itemLabel={item.title} itemNoun="這則訊息" />
                       </div>
                     </td>
                   </tr>
