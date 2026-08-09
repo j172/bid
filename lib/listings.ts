@@ -10,6 +10,7 @@ import { resolvePurchase, type PurchaseOutcome } from "@/lib/purchase";
 import { notifyAuctionEnded, notifyOutbid, notifyPurchaseConfirmed, notifyWinner } from "@/lib/notifications";
 import type { ErrorCode } from "@/lib/errorCodes";
 import { tokenizeSearchQuery } from "@/lib/search";
+import { AUCTION_GMV_SUBQUERY, FIXED_PRICE_GMV_SUBQUERY, deletedAccountEmail } from "@/lib/sqlFragments";
 
 let listingsStartsAtColumnExists: boolean | null = null;
 
@@ -425,11 +426,15 @@ export interface OverviewStats {
   totalGmv: number;
 }
 
-// totalGmv combines settled auction sales (listings.current_price where
-// status = 'closed') with fixed_price purchase revenue (purchases.
-// total_amount) — fixed_price listings never transition to 'closed'
-// themselves (see cancelListing's comment), so their sales would otherwise
-// be invisible to this stat.
+// totalGmv combines sold auctions (listings.current_price) with fixed_price
+// purchase revenue (purchases.total_amount) — fixed_price listings never
+// transition to 'closed' themselves (see cancelListing's comment), so their
+// sales would otherwise be invisible to this stat. Both halves come from
+// lib/sqlFragments.ts so this stays byte-for-byte the same definition
+// lib/dashboard.ts' getGmvSplitByType breaks down by type: this query used
+// to filter on status = 'closed' alone, which counted every zero-bid expired
+// auction's starting_price as revenue and made the overview card disagree
+// with every chart on the dashboard (issue #139).
 export async function getOverviewStats(): Promise<OverviewStats> {
   await syncListingLifecycle();
   const db = await getDb();
@@ -438,8 +443,7 @@ export async function getOverviewStats(): Promise<OverviewStats> {
        (SELECT COUNT(*) FROM listings WHERE status = 'open') AS openCount,
        (SELECT COUNT(*) FROM listings WHERE status = 'closed') AS closedCount,
        (SELECT COUNT(*) FROM users) AS userCount,
-       (SELECT COALESCE(SUM(current_price), 0) FROM listings WHERE status = 'closed')
-         + (SELECT COALESCE(SUM(total_amount), 0) FROM purchases) AS totalGmv`,
+       ${AUCTION_GMV_SUBQUERY} + ${FIXED_PRICE_GMV_SUBQUERY} AS totalGmv`,
   );
   return (rows as OverviewStats[])[0];
 }
@@ -691,9 +695,7 @@ export async function listClosedListings(
   const [rows] = await db.query(
     `SELECT
        l.id AS id, l.title AS title, l.current_price AS finalPrice, l.ends_at AS endsAt, l.close_reason AS closeReason,
-       CASE WHEN l.leader_user_id IS NULL THEN NULL
-            WHEN u.deleted_at IS NOT NULL THEN '（帳號已刪除）'
-            ELSE u.email END AS winnerEmail,
+       ${deletedAccountEmail("u", { nullWhen: "l.leader_user_id IS NULL" })} AS winnerEmail,
        (l.settled_at IS NOT NULL) AS settled,
        l.settlement_account AS settlementAccount, l.settlement_amount AS settlementAmount,
        l.winner_notified_at AS winnerNotifiedAt,
@@ -724,7 +726,7 @@ export async function getBiddersForListing(listingId: number): Promise<BidderEnt
   const db = await getDb();
   const [rows] = await db.query(
     `SELECT
-       CASE WHEN u.deleted_at IS NOT NULL THEN '（帳號已刪除）' ELSE u.email END AS email,
+       ${deletedAccountEmail("u")} AS email,
        b.amount AS amount, b.created_at AS bidAt
      FROM bids b
      JOIN users u ON u.id = b.user_id
@@ -1402,7 +1404,7 @@ export async function getOrdersForAdmin(
     `SELECT
        p.id AS id, p.listing_id AS listingId, l.title AS listingTitle,
        p.quantity AS quantity, p.unit_price AS unitPrice, p.total_amount AS totalAmount, p.created_at AS createdAt,
-       CASE WHEN u.deleted_at IS NOT NULL THEN '（帳號已刪除）' ELSE u.email END AS buyerEmail,
+       ${deletedAccountEmail("u")} AS buyerEmail,
        (p.settled_at IS NOT NULL) AS settled,
        p.settlement_account AS settlementAccount, p.settlement_amount AS settlementAmount
      FROM purchases p
