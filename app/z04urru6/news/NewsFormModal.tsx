@@ -1,11 +1,15 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CONTENT_MAX, TITLE_MAX } from "@/lib/newsValidation";
 import { BROADCAST_STATUS_LABEL } from "@/lib/broadcastStatusLabel";
 import type { BroadcastStatus } from "@/lib/newsletter";
+import AdminModal from "../components/AdminModal";
+import ImageUploadField from "../components/ImageUploadField";
+import ModalFormActions from "../components/ModalFormActions";
 import SimpleRichTextEditor from "../components/SimpleRichTextEditor";
+import { useImageUploadPreview } from "../components/useImageUploadPreview";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 text-sm focus:border-interactive-primary focus:outline-none";
 
@@ -47,7 +51,6 @@ function toLocalDatetimeValue(iso: string): string {
 // separate review/test-send step, and no extra confirm() dialog.
 export default function NewsFormModal(props: Props) {
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const isEdit = props.mode === "edit";
   const broadcast = isEdit ? props.item.broadcast : null;
   const locked = broadcast?.status === "sent";
@@ -55,7 +58,7 @@ export default function NewsFormModal(props: Props) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(isEdit ? props.item.title : "");
   const [content, setContent] = useState(isEdit ? props.item.content : "");
-  const [previewUrl, setPreviewUrl] = useState<string | null>(isEdit ? props.item.imageUrl : null);
+  const image = useImageUploadPreview(isEdit ? props.item.imageUrl : null);
   // Defaults to whatever's currently active: unchecked when there's no
   // broadcast yet (or the last one was canceled — canceled reads the same
   // as "nothing pending" here), checked for draft/scheduled/queued/sent.
@@ -68,31 +71,18 @@ export default function NewsFormModal(props: Props) {
   function resetForm() {
     setTitle(isEdit ? props.item.title : "");
     setContent(isEdit ? props.item.content : "");
-    setPreviewUrl((prev) => {
-      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
-      return isEdit ? props.item.imageUrl : null;
-    });
     setSendNewsletter(Boolean(broadcast) && broadcast?.status !== "canceled");
     setScheduleEnabled(Boolean(broadcast?.scheduledAt));
     setScheduledAt(broadcast?.scheduledAt ? toLocalDatetimeValue(broadcast.scheduledAt) : "");
     setError(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }
-
-  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setPreviewUrl((prev) => {
-      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
-      return URL.createObjectURL(file);
-    });
+    image.reset();
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
 
-    const file = fileInputRef.current?.files?.[0];
+    const file = image.selectedFile();
     if (!file) {
       setError("請上傳主圖");
       return;
@@ -158,111 +148,88 @@ export default function NewsFormModal(props: Props) {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-border bg-surface p-6 shadow-lg">
-            <h2 className="text-lg font-semibold">{isEdit ? "編輯訊息" : "新增訊息"}</h2>
+        <AdminModal title={isEdit ? "編輯訊息" : "新增訊息"} size="xl">
+          <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
+            <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+              標題
+              <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={TITLE_MAX} required className={inputClass} />
+            </label>
 
-            <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
-              <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-                標題
-                <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={TITLE_MAX} required className={inputClass} />
-              </label>
+            <ImageUploadField
+              label="主圖"
+              fileInputRef={image.fileInputRef}
+              previewUrl={image.previewUrl}
+              onChange={image.handleFileChange}
+            />
 
-              <div className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-                主圖
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  onChange={handleFileChange}
-                  className="text-sm"
-                />
-                {previewUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={previewUrl} alt="" className="mt-2 h-24 w-24 rounded-md border border-border object-cover" />
-                )}
-              </div>
+            <div className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+              內容
+              <SimpleRichTextEditor value={content} onChange={setContent} maxLength={CONTENT_MAX} />
+            </div>
 
-              <div className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-                內容
-                <SimpleRichTextEditor value={content} onChange={setContent} maxLength={CONTENT_MAX} />
-              </div>
-
-              <div className="rounded-md border border-border p-3">
-                {locked ? (
-                  <p className="text-sm text-ink-light">
-                    電子報已寄出（{BROADCAST_STATUS_LABEL[broadcast!.status] ?? broadcast!.status}），內容修改不會回頭更新已寄出的信，也無法重寄。
-                  </p>
-                ) : (
-                  <>
-                    <label className="flex items-center gap-2 text-sm font-medium text-ink-light">
-                      <input
-                        type="checkbox"
-                        checked={sendNewsletter}
-                        onChange={(e) => setSendNewsletter(e.target.checked)}
-                        disabled={submitting}
-                      />
-                      同時發送電子報
-                    </label>
-                    {broadcast && (
-                      <p className="mt-1 text-xs text-ink-light">
-                        目前狀態：{BROADCAST_STATUS_LABEL[broadcast.status] ?? broadcast.status}
-                        {sendNewsletter && "（儲存後會以目前標題／內容重新建立並寄送，取代這個狀態）"}
-                      </p>
-                    )}
-                    {sendNewsletter && (
-                      <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
-                        <label className="flex items-center gap-2 text-sm font-medium text-ink-light">
+            <div className="rounded-md border border-border p-3">
+              {locked ? (
+                <p className="text-sm text-ink-light">
+                  電子報已寄出（{BROADCAST_STATUS_LABEL[broadcast!.status] ?? broadcast!.status}），內容修改不會回頭更新已寄出的信，也無法重寄。
+                </p>
+              ) : (
+                <>
+                  <label className="flex items-center gap-2 text-sm font-medium text-ink-light">
+                    <input
+                      type="checkbox"
+                      checked={sendNewsletter}
+                      onChange={(e) => setSendNewsletter(e.target.checked)}
+                      disabled={submitting}
+                    />
+                    同時發送電子報
+                  </label>
+                  {broadcast && (
+                    <p className="mt-1 text-xs text-ink-light">
+                      目前狀態：{BROADCAST_STATUS_LABEL[broadcast.status] ?? broadcast.status}
+                      {sendNewsletter && "（儲存後會以目前標題／內容重新建立並寄送，取代這個狀態）"}
+                    </p>
+                  )}
+                  {sendNewsletter && (
+                    <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
+                      <label className="flex items-center gap-2 text-sm font-medium text-ink-light">
+                        <input
+                          type="checkbox"
+                          checked={scheduleEnabled}
+                          onChange={(e) => setScheduleEnabled(e.target.checked)}
+                          disabled={submitting}
+                        />
+                        排程寄送（未勾選則立即寄送）
+                      </label>
+                      {scheduleEnabled && (
+                        <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+                          排程時間
                           <input
-                            type="checkbox"
-                            checked={scheduleEnabled}
-                            onChange={(e) => setScheduleEnabled(e.target.checked)}
+                            type="datetime-local"
+                            value={scheduledAt}
+                            onChange={(e) => setScheduledAt(e.target.value)}
                             disabled={submitting}
+                            className="w-full max-w-xs rounded-md border border-border px-3 py-2 text-ink focus:border-interactive-primary focus:outline-none"
                           />
-                          排程寄送（未勾選則立即寄送）
                         </label>
-                        {scheduleEnabled && (
-                          <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-                            排程時間
-                            <input
-                              type="datetime-local"
-                              value={scheduledAt}
-                              onChange={(e) => setScheduledAt(e.target.value)}
-                              disabled={submitting}
-                              className="w-full max-w-xs rounded-md border border-border px-3 py-2 text-ink focus:border-interactive-primary focus:outline-none"
-                            />
-                          </label>
-                        )}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
 
-              {error && <p className="text-sm text-ended">{error}</p>}
-              <div className="mt-2 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpen(false);
-                    resetForm();
-                  }}
-                  disabled={submitting}
-                  className="rounded-md border border-border px-4 py-1.5 text-sm font-medium text-ink hover:bg-surface-muted"
-                >
-                  取消
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="rounded-md bg-header px-4 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {submitting ? "儲存中..." : "儲存"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            {error && <p className="text-sm text-ended">{error}</p>}
+            <ModalFormActions
+              onCancel={() => {
+                setOpen(false);
+                resetForm();
+              }}
+              submitting={submitting}
+              submitLabel="儲存"
+              pendingLabel="儲存中..."
+            />
+          </form>
+        </AdminModal>
       )}
     </>
   );
