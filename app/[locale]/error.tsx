@@ -1,12 +1,8 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
-import { getClientIpAction } from "@/lib/actions/getClientIp";
-import { getRayIdAction } from "@/lib/actions/getRayId";
 import { routing } from "@/i18n/routing";
-import { formatUtcTimestamp } from "@/lib/formatUtcTimestamp";
-import { generateRayId } from "@/lib/rayId";
+import { useCloudflareErrorMeta } from "@/lib/useCloudflareErrorMeta";
 import CloudflareErrorPage from "../components/CloudflareErrorPage";
 
 // Next.js requires error.tsx (the boundary for a route segment and its
@@ -17,41 +13,13 @@ import CloudflareErrorPage from "../components/CloudflareErrorPage";
 // mounted around a thrown error — only the failing segment is replaced), so
 // useLocale()/useTranslations() work here without extra plumbing.
 //
-// Ray ID and client IP are filled in after mount rather than during the
-// initial render: this component is still server-rendered for the first
-// HTML response when the triggering error happens during SSR, and awaiting
-// either server action (getRayIdAction, getClientIpAction — see issue #127
-// for why Ray ID also went through a server action rather than
-// generateRayId() directly, once it needed request headers to find the real
-// Cloudflare Ray ID) synchronously there would make that server-rendered
-// value disagree with the value produced when the same component re-runs
-// during client hydration — a React hydration mismatch. Starting from null
-// on both sides and filling in via useEffect (which only runs after
-// hydration) avoids that entirely.
+// Ray ID, client IP and timestamp come from useCloudflareErrorMeta, shared
+// with app/global-error.tsx — see that hook for why they're filled in after
+// mount rather than during the initial render.
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const locale = useLocale();
   const t = useTranslations("errorPage");
-  const [rayId, setRayId] = useState<string | null>(null);
-  const [clientIp, setClientIp] = useState<string | null>(null);
-  const [timestamp, setTimestamp] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Logged client-side so the underlying error is still visible during
-    // development / in the browser console — this component only ever
-    // shows the visitor a generic message, never `error.message` itself.
-    console.error(error);
-
-    getRayIdAction()
-      .then((id) => setRayId(id))
-      // Server Action unreachable (e.g. offline) — fall back to the same
-      // cosmetic random id this page always showed before issue #127
-      // rather than leaving the "…" placeholder up forever.
-      .catch(() => setRayId(generateRayId()));
-    setTimestamp(formatUtcTimestamp(new Date()));
-    getClientIpAction()
-      .then((ip) => setClientIp(ip))
-      .catch(() => setClientIp(null));
-  }, [error]);
+  const { rayId, clientIp, timestamp } = useCloudflareErrorMeta(error);
 
   const homeHref = locale === routing.defaultLocale ? "/" : `/${locale}`;
 

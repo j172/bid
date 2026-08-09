@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-
-const FALLBACK_SRC = "/images/hero-placeholder.png";
+import { IMAGE_FALLBACK_SRC, useImageSetFallback } from "@/lib/imageFallback";
 
 interface ListingGalleryProps {
   title: string;
@@ -15,15 +14,12 @@ export default function ListingGallery({ title, imageUrls }: ListingGalleryProps
   const urls = useMemo(() => imageUrls.filter(Boolean), [imageUrls]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [failedUrls, setFailedUrls] = useState<Set<string>>(new Set());
   const selectedUrl = urls[selectedIndex] ?? "";
   const galleryRef = useRef<HTMLDivElement>(null);
 
-  const resolveSrc = useCallback((url: string) => (failedUrls.has(url) ? FALLBACK_SRC : url), [failedUrls]);
-  const markFailed = useCallback((url: string) => {
-    if (url === FALLBACK_SRC) return;
-    setFailedUrls((previous) => (previous.has(url) ? previous : new Set(previous).add(url)));
-  }, []);
+  // Per-URL failure tracking: this component shows a main image, a thumbnail
+  // strip and a lightbox at once, so one broken photo must not blank the rest.
+  const { resolveSrc, markFailed } = useImageSetFallback();
 
   const moveSelection = useCallback(
     (direction: 1 | -1) => {
@@ -67,7 +63,7 @@ export default function ListingGallery({ title, imageUrls }: ListingGalleryProps
     return (
       <div className="aspect-video overflow-hidden rounded-xl border border-border bg-surface-muted">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/images/hero-placeholder.png" alt={title} className="h-full w-full object-contain p-8" />
+        <img src={IMAGE_FALLBACK_SRC} alt={title} className="h-full w-full object-contain p-8" />
       </div>
     );
   }

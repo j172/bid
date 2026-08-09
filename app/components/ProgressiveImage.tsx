@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-
-const FALLBACK_SRC = "/images/hero-placeholder.png";
+import { useImageFallback } from "@/lib/imageFallback";
 
 interface ProgressiveImageProps {
   src: string;
@@ -23,17 +22,14 @@ export default function ProgressiveImage({
   fetchPriority = "auto",
 }: ProgressiveImageProps) {
   const [loaded, setLoaded] = useState(eager);
-  const [errored, setErrored] = useState(false);
+  const { displaySrc, unoptimized, markFailed } = useImageFallback(src);
 
   // A carousel (HeroSection) reuses this component instance across slides,
-  // so a failure on one image must not permanently fall back every slide after it.
+  // so the fade-in must restart per slide. The fallback half of that reset
+  // lives in useImageFallback.
   useEffect(() => {
     setLoaded(eager);
-    setErrored(false);
   }, [src, eager]);
-
-  const displaySrc = errored ? FALLBACK_SRC : src;
-  const shouldBypassOptimizer = displaySrc.startsWith("/uploads/") || displaySrc.includes("/uploads/");
 
   return (
     <div className="relative h-full w-full overflow-hidden">
@@ -42,16 +38,13 @@ export default function ProgressiveImage({
         src={displaySrc}
         alt={alt}
         fill
-        unoptimized={shouldBypassOptimizer}
+        unoptimized={unoptimized}
         priority={eager}
         sizes={sizes}
         loading={eager ? "eager" : "lazy"}
         fetchPriority={fetchPriority}
         onLoad={() => setLoaded(true)}
-        onError={() => {
-          if (displaySrc === FALLBACK_SRC) return;
-          setErrored(true);
-        }}
+        onError={markFailed}
         className={`${className} transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"}`}
       />
     </div>

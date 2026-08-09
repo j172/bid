@@ -1,11 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getClientIpAction } from "@/lib/actions/getClientIp";
-import { getRayIdAction } from "@/lib/actions/getRayId";
 import { DEFAULT_GLOBAL_ERROR_LOCALE, GLOBAL_ERROR_COPY, detectGlobalErrorLocale } from "@/lib/globalErrorCopy";
-import { formatUtcTimestamp } from "@/lib/formatUtcTimestamp";
-import { generateRayId } from "@/lib/rayId";
+import { useCloudflareErrorMeta } from "@/lib/useCloudflareErrorMeta";
 import CloudflareErrorPage from "./components/CloudflareErrorPage";
 import "./globals.css";
 
@@ -23,25 +20,16 @@ import "./globals.css";
 //     messages/*.json.
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const [locale, setLocale] = useState(DEFAULT_GLOBAL_ERROR_LOCALE);
-  const [rayId, setRayId] = useState<string | null>(null);
-  const [clientIp, setClientIp] = useState<string | null>(null);
-  const [timestamp, setTimestamp] = useState<string | null>(null);
+  // Shared with app/[locale]/error.tsx. The hook deliberately has no
+  // next-intl dependency, which is what makes it usable from here.
+  const { rayId, clientIp, timestamp } = useCloudflareErrorMeta(error);
 
+  // Locale detection stays local: it reads navigator, so like the metadata
+  // above it can only run after mount, but it has no counterpart on the
+  // other error page (which gets its locale from the surrounding provider).
   useEffect(() => {
-    console.error(error);
-
     setLocale(detectGlobalErrorLocale(typeof navigator === "undefined" ? undefined : navigator.languages));
-    getRayIdAction()
-      .then((id) => setRayId(id))
-      // Server Action unreachable (e.g. offline) — fall back to the same
-      // cosmetic random id this page always showed before issue #127
-      // rather than leaving the "…" placeholder up forever.
-      .catch(() => setRayId(generateRayId()));
-    setTimestamp(formatUtcTimestamp(new Date()));
-    getClientIpAction()
-      .then((ip) => setClientIp(ip))
-      .catch(() => setClientIp(null));
-  }, [error]);
+  }, []);
 
   const copy = GLOBAL_ERROR_COPY[locale];
 

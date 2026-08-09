@@ -2,13 +2,13 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { useImageFallback } from "@/lib/imageFallback";
 
-const FALLBACK_SRC = "/images/hero-placeholder.png";
 // Safety net for the intermittent case where neither `onLoad` nor `onError`
 // ever fires on the <Image> (observed in production; the file itself loads
 // fine when accessed directly). Without this the image stays stuck at
 // opacity-0 forever. If nothing has settled the load by this point, we treat
-// it the same as an `onError` and fall back to FALLBACK_SRC.
+// it the same as an `onError` and fall back to the shared placeholder.
 const LOAD_TIMEOUT_MS = 7000;
 
 interface ZoomableProductImageProps {
@@ -57,7 +57,7 @@ export default function ZoomableProductImage({
   zoomPreset = "medium",
 }: ZoomableProductImageProps) {
   const [loaded, setLoaded] = useState(false);
-  const [errored, setErrored] = useState(false);
+  const { displaySrc, unoptimized, markFailed } = useImageFallback(src);
   const [hovering, setHovering] = useState(false);
   const [hoverVisible, setHoverVisible] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -73,9 +73,9 @@ export default function ZoomableProductImage({
   const [panePosition, setPanePosition] = useState<PanePosition>({ left: VIEWPORT_EDGE_PADDING, top: VIEWPORT_EDGE_PADDING });
   const settledRef = useRef(false);
 
+  // The fallback half of this per-src reset lives in useImageFallback.
   useEffect(() => {
     setLoaded(false);
-    setErrored(false);
     setHovering(false);
     setHoverVisible(false);
     setCursor({ x: 50, y: 50, pctX: 50, pctY: 50, width: 100, height: 100 });
@@ -85,12 +85,12 @@ export default function ZoomableProductImage({
     const timeoutId = window.setTimeout(() => {
       if (!settledRef.current) {
         settledRef.current = true;
-        setErrored(true);
+        markFailed();
       }
     }, LOAD_TIMEOUT_MS);
 
     return () => window.clearTimeout(timeoutId);
-  }, [src]);
+  }, [src, markFailed]);
 
   useEffect(() => {
     if (!hovering) {
@@ -118,8 +118,6 @@ export default function ZoomableProductImage({
     return () => media.removeEventListener("change", updateReducedMotion);
   }, []);
 
-  const displaySrc = errored ? FALLBACK_SRC : src;
-  const shouldBypassOptimizer = displaySrc.startsWith("/uploads/") || displaySrc.includes("/uploads/");
   const interactionsEnabled = !reducedMotion && !lowPerformanceMode;
   const zoomScale = ZOOM_PRESET_SCALE[zoomPreset];
   const lensLeft = Math.min(Math.max(cursor.x - LENS_SIZE / 2, 0), Math.max(cursor.width - LENS_SIZE, 0));
@@ -181,7 +179,7 @@ export default function ZoomableProductImage({
         src={displaySrc}
         alt={alt}
         fill
-        unoptimized={shouldBypassOptimizer}
+        unoptimized={unoptimized}
         priority={eager}
         sizes={sizes}
         loading={eager ? "eager" : "lazy"}
@@ -192,8 +190,7 @@ export default function ZoomableProductImage({
         }}
         onError={() => {
           settledRef.current = true;
-          if (displaySrc === FALLBACK_SRC) return;
-          setErrored(true);
+          markFailed();
         }}
         className={`h-full w-full object-contain p-2 transition duration-300 ${interactionsEnabled && hoverVisible ? "scale-[1.06]" : "scale-100"} ${loaded ? "opacity-100" : "opacity-0"} ${className}`}
         style={{ transformOrigin: `${cursor.pctX}% ${cursor.pctY}%` }}
@@ -217,7 +214,7 @@ export default function ZoomableProductImage({
           src={displaySrc}
           alt=""
           fill
-          unoptimized={shouldBypassOptimizer}
+          unoptimized={unoptimized}
           sizes="288px"
           loading="lazy"
           className="object-contain p-3"
