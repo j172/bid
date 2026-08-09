@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import DescriptionEditor, { type DescriptionEditorHandle } from "./DescriptionEditor";
 import PhotoGalleryEditor, { type PhotoItem } from "./PhotoGalleryEditor";
 import { usePartnerLofts } from "./usePartnerLofts";
+import AdminModal from "../components/AdminModal";
+import ModalFormActions from "../components/ModalFormActions";
 import { PRICE_MAX, TITLE_MAX } from "@/lib/listingValidation";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
@@ -56,6 +58,20 @@ export default function EditListingModal({ listingId }: { listingId: number }) {
     setLoaded(true);
   }
 
+  // 取消後把 loaded 一起清掉，下次打開才會重新抓伺服器上的真實資料，
+  // 而不是顯示上一次沒送出的編輯內容（issue #139 M2）。
+  function resetForm() {
+    setLoaded(false);
+    setLoadError(null);
+    setError(null);
+    setTitle("");
+    setDescription("");
+    setPrice("");
+    setStockRemaining("");
+    setLoftId("");
+    setPhotoItems([]);
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
@@ -105,97 +121,86 @@ export default function EditListingModal({ listingId }: { listingId: number }) {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg border border-border bg-surface p-6 shadow-lg">
-            <h2 className="text-lg font-semibold">編輯商品</h2>
+        <AdminModal title="編輯商品" size="lg">
+          {loading && <p className="mt-4 text-sm text-ink-light">載入中...</p>}
+          {loadError && <p className="mt-4 text-sm text-ended">{loadError}</p>}
 
-            {loading && <p className="mt-4 text-sm text-ink-light">載入中...</p>}
-            {loadError && <p className="mt-4 text-sm text-ended">{loadError}</p>}
+          {loaded && (
+            <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
+              <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+                標題
+                <input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  maxLength={TITLE_MAX}
+                  required
+                  className={inputClass}
+                />
+                <span className={counterClass(title.length, TITLE_MAX)}>
+                  {title.length}/{TITLE_MAX}
+                </span>
+              </label>
 
-            {loaded && (
-              <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
-                <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-                  標題
-                  <input
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    maxLength={TITLE_MAX}
-                    required
-                    className={inputClass}
-                  />
-                  <span className={counterClass(title.length, TITLE_MAX)}>
-                    {title.length}/{TITLE_MAX}
-                  </span>
-                </label>
+              <PhotoGalleryEditor items={photoItems} onChange={setPhotoItems} />
 
-                <PhotoGalleryEditor items={photoItems} onChange={setPhotoItems} />
+              <div className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+                描述
+                <DescriptionEditor ref={descriptionEditorRef} value={description} onChange={setDescription} />
+              </div>
 
-                <div className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-                  描述
-                  <DescriptionEditor ref={descriptionEditorRef} value={description} onChange={setDescription} />
-                </div>
+              <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+                價格
+                <input
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  type="number"
+                  min={1}
+                  max={PRICE_MAX}
+                  step={1}
+                  required
+                  className={inputClass}
+                />
+              </label>
 
-                <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-                  價格
-                  <input
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    type="number"
-                    min={1}
-                    max={PRICE_MAX}
-                    step={1}
-                    required
-                    className={inputClass}
-                  />
-                </label>
+              <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+                合作鴿舍（選填）
+                <select value={loftId} onChange={(e) => setLoftId(e.target.value)} className={inputClass}>
+                  <option value="">無</option>
+                  {lofts.map((loft) => (
+                    <option key={loft.id} value={loft.id}>
+                      {loft.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-                <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-                  合作鴿舍（選填）
-                  <select value={loftId} onChange={(e) => setLoftId(e.target.value)} className={inputClass}>
-                    <option value="">無</option>
-                    {lofts.map((loft) => (
-                      <option key={loft.id} value={loft.id}>
-                        {loft.title}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+              <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+                剩餘庫存
+                <input
+                  value={stockRemaining}
+                  onChange={(e) => setStockRemaining(e.target.value)}
+                  type="number"
+                  min={0}
+                  step={1}
+                  required
+                  className={inputClass}
+                />
+              </label>
 
-                <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-                  剩餘庫存
-                  <input
-                    value={stockRemaining}
-                    onChange={(e) => setStockRemaining(e.target.value)}
-                    type="number"
-                    min={0}
-                    step={1}
-                    required
-                    className={inputClass}
-                  />
-                </label>
-
-                {error && <p className="text-sm text-ended">{error}</p>}
-                <div className="mt-2 flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setOpen(false)}
-                    disabled={submitting}
-                    className="rounded-md border border-border px-4 py-1.5 text-sm font-medium text-ink hover:bg-surface-muted"
-                  >
-                    取消
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting || photoItems.length === 0}
-                    className="rounded-md bg-header px-4 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {submitting ? "儲存中..." : "儲存"}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
+              {error && <p className="text-sm text-ended">{error}</p>}
+              <ModalFormActions
+                onCancel={() => {
+                  setOpen(false);
+                  resetForm();
+                }}
+                submitting={submitting}
+                submitLabel="儲存"
+                pendingLabel="儲存中..."
+                submitDisabled={photoItems.length === 0}
+              />
+            </form>
+          )}
+        </AdminModal>
       )}
     </>
   );
