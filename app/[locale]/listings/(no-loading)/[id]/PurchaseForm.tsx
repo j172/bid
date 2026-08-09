@@ -4,34 +4,21 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { useState } from "react";
 import Button from "@/app/components/Button";
+import { usePostJson } from "@/lib/usePostJson";
 
 export default function PurchaseForm({ listingId, stockRemaining }: { listingId: number; stockRemaining: number }) {
   const router = useRouter();
   const t = useTranslations("purchaseForm");
-  const tErrors = useTranslations("errors");
   const [quantity, setQuantity] = useState(1);
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const { post, submitting, error } = usePostJson(t("defaultError"));
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!confirm(t("confirm", { count: quantity }))) return;
 
-    setSubmitting(true);
-    setError(null);
+    const data = await post(`/api/listings/${listingId}/purchase`, { quantity });
+    if (!data) return;
 
-    const response = await fetch(`/api/listings/${listingId}/purchase`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ quantity }),
-    });
-    const data = await response.json();
-
-    setSubmitting(false);
-    if (!data.ok) {
-      setError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
-      return;
-    }
     router.refresh();
   }
 

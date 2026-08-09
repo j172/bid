@@ -1,31 +1,22 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState } from "react";
 import { useRouter } from "@/i18n/navigation";
+import { usePostJson } from "@/lib/usePostJson";
 
 export default function DeleteAccountButton() {
   const router = useRouter();
   const t = useTranslations("deleteAccountButton");
-  const tErrors = useTranslations("errors");
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const { post, submitting, error } = usePostJson(t("defaultError"));
 
   async function handleDelete() {
     if (!confirm(t("confirm"))) {
       return;
     }
-    setSubmitting(true);
-    setError(null);
 
-    const response = await fetch("/api/account/delete", { method: "POST" });
-    const data = await response.json();
+    const data = await post("/api/account/delete");
+    if (!data) return;
 
-    setSubmitting(false);
-    if (!data.ok) {
-      setError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
-      return;
-    }
     router.push("/");
     router.refresh();
   }

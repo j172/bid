@@ -3,45 +3,32 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link } from "@/i18n/navigation";
+import { inputClass } from "@/lib/formStyles";
+import { usePostJson } from "@/lib/usePostJson";
 import AuthFormShell from "../components/AuthFormShell";
 import PasswordStrengthMeter from "@/app/components/PasswordStrengthMeter";
-
-const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
 
 export default function RegisterPage() {
   const locale = useLocale();
   const t = useTranslations("register");
-  const tErrors = useTranslations("errors");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   // Issue #118 (strict mode): registration no longer auto-logs-in, so a
   // successful submit has nothing to navigate to — instead this switches to
   // an inline "check your email" state, same single-state-flag step switch
   // as app/[locale]/forgot-password/page.tsx's `submitted`.
   const [registered, setRegistered] = useState(false);
+  const { post, submitting, error } = usePostJson(t("defaultError"));
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setSubmitting(true);
-    setError(null);
 
-    const response = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, displayName, phone, address, locale }),
-    });
-    const data = await response.json();
+    const data = await post("/api/auth/register", { email, password, displayName, phone, address, locale });
+    if (!data) return;
 
-    setSubmitting(false);
-    if (!data.ok) {
-      setError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
-      return;
-    }
     setRegistered(true);
   }
 

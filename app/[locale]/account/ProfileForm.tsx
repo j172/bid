@@ -4,8 +4,8 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import Button from "@/app/components/Button";
 import { useRouter } from "@/i18n/navigation";
-
-const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
+import { inputClass } from "@/lib/formStyles";
+import { usePostJson } from "@/lib/usePostJson";
 
 export default function ProfileForm({
   initialDisplayName,
@@ -18,32 +18,19 @@ export default function ProfileForm({
 }) {
   const router = useRouter();
   const t = useTranslations("profileForm");
-  const tErrors = useTranslations("errors");
   const [displayName, setDisplayName] = useState(initialDisplayName);
   const [phone, setPhone] = useState(initialPhone);
   const [address, setAddress] = useState(initialAddress);
-  const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const { post, submitting, error } = usePostJson(t("defaultError"));
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setSubmitting(true);
-    setError(null);
     setNotice(null);
 
-    const response = await fetch("/api/account/profile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ displayName, phone, address }),
-    });
-    const data = await response.json();
+    const data = await post("/api/account/profile", { displayName, phone, address });
+    if (!data) return;
 
-    setSubmitting(false);
-    if (!data.ok) {
-      setError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
-      return;
-    }
     setNotice(t("saved"));
     router.refresh();
   }

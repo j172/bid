@@ -4,36 +4,35 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { useState } from "react";
 import Button from "@/app/components/Button";
+import { usePostJson } from "@/lib/usePostJson";
+
+interface BidResponse {
+  ok?: boolean;
+  errorCode?: string;
+  /** Only present on a BID_TOO_LOW rejection — interpolated into that message. */
+  minimumNextBid?: number;
+  closedViaBuyItNow?: boolean;
+  youAreLeading?: boolean;
+}
 
 export default function BidForm({ listingId, minimumNextBid }: { listingId: number; minimumNextBid: number }) {
   const router = useRouter();
   const t = useTranslations("bidForm");
-  const tErrors = useTranslations("errors");
   const [maxAmount, setMaxAmount] = useState(minimumNextBid);
-  const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const { post, submitting, error } = usePostJson(t("defaultError"));
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setSubmitting(true);
-    setError(null);
     setNotice(null);
 
-    const response = await fetch(`/api/listings/${listingId}/bids`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ maxAmount }),
-    });
-    const data = await response.json();
+    const data = await post<BidResponse>(
+      `/api/listings/${listingId}/bids`,
+      { maxAmount },
+      { errorValues: (failure) => ({ minimum: failure.minimumNextBid ?? "" }) },
+    );
+    if (!data) return;
 
-    setSubmitting(false);
-    if (!data.ok) {
-      setError(
-        data.errorCode ? tErrors(data.errorCode, { minimum: data.minimumNextBid }) : t("defaultError"),
-      );
-      return;
-    }
     if (data.closedViaBuyItNow) {
       setNotice(data.youAreLeading ? t("closedViaBinLeading") : t("closedViaBinNotLeading"));
     } else {
