@@ -21,6 +21,20 @@ function isConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY && process.env.RESEND_AUDIENCE_ID);
 }
 
+// Resend's JSON -> this module's Broadcast. Shared by listBroadcasts and
+// getBroadcast, which had the same field-by-field mapping written out twice
+// (issue #139) — the kind of copy where only one side learns about a
+// renamed/added field.
+function mapBroadcast(item: Record<string, unknown>): Broadcast {
+  return {
+    id: String(item.id),
+    subject: (item.subject as string | undefined) ?? null,
+    status: (item.status as BroadcastStatus | undefined) ?? "draft",
+    scheduledAt: (item.scheduled_at as string | undefined) ?? null,
+    createdAt: (item.created_at as string | undefined) ?? null,
+  };
+}
+
 // News → newsletter sync (issue #73): when an admin opts in at news-post
 // creation time, the API route builds a broadcast from that post using this
 // helper — the post's own (already-sanitized) content HTML as-is, plus one
@@ -43,14 +57,7 @@ export async function listBroadcasts(): Promise<ListResult> {
     }
 
     const parsed = JSON.parse(body) as { data?: Array<Record<string, unknown>> };
-    const broadcasts: Broadcast[] = (parsed.data ?? []).map((item) => ({
-      id: String(item.id),
-      subject: (item.subject as string | undefined) ?? null,
-      status: (item.status as BroadcastStatus | undefined) ?? "draft",
-      scheduledAt: (item.scheduled_at as string | undefined) ?? null,
-      createdAt: (item.created_at as string | undefined) ?? null,
-    }));
-    return { ok: true, broadcasts };
+    return { ok: true, broadcasts: (parsed.data ?? []).map(mapBroadcast) };
   } catch (error) {
     console.error("Failed to list broadcasts:", error);
     return { ok: false, errorCode: "PROVIDER_ERROR" };
@@ -73,16 +80,7 @@ export async function getBroadcast(id: string): Promise<GetResult> {
     }
 
     const item = JSON.parse(body) as Record<string, unknown>;
-    return {
-      ok: true,
-      broadcast: {
-        id: String(item.id),
-        subject: (item.subject as string | undefined) ?? null,
-        status: (item.status as BroadcastStatus | undefined) ?? "draft",
-        scheduledAt: (item.scheduled_at as string | undefined) ?? null,
-        createdAt: (item.created_at as string | undefined) ?? null,
-      },
-    };
+    return { ok: true, broadcast: mapBroadcast(item) };
   } catch (error) {
     console.error(`Failed to get broadcast ${id}:`, error);
     return { ok: false, errorCode: "PROVIDER_ERROR" };
