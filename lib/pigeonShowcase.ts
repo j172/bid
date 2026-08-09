@@ -11,6 +11,7 @@
 // layer before writing.
 
 import { getDb } from "@/lib/db";
+import { paginate } from "@/lib/pagination";
 import type { PigeonShowcaseCategory } from "@/lib/pigeonShowcaseValidation";
 
 export type { PigeonShowcaseCategory };
@@ -118,12 +119,10 @@ export async function listPigeonShowcase(
   const [countRows] = await db.query(`SELECT COUNT(*) AS cnt FROM pigeon_showcase ps ${where}`, params);
   const total = (countRows as { cnt: number }[])[0].cnt;
 
-  const pageSize = options.pageSize ?? DEFAULT_PIGEON_SHOWCASE_PAGE_SIZE;
-  const page = Math.max(1, options.page ?? 1);
-  const offset = (page - 1) * pageSize;
+  const { offset, limit } = paginate(options.page, options.pageSize ?? DEFAULT_PIGEON_SHOWCASE_PAGE_SIZE);
 
   const [rows] = await db.query(
-    `${SELECT_WITH_LOFT} ${where} ORDER BY ps.created_at DESC, ps.id DESC LIMIT ${pageSize} OFFSET ${offset}`,
+    `${SELECT_WITH_LOFT} ${where} ORDER BY ps.created_at DESC, ps.id DESC LIMIT ${limit} OFFSET ${offset}`,
     params,
   );
   return { items: (rows as PigeonShowcaseRow[]).map(mapRow), total };

@@ -10,6 +10,7 @@ import { resolvePurchase, type PurchaseOutcome } from "@/lib/purchase";
 import { notifyAuctionEnded, notifyOutbid, notifyPurchaseConfirmed, notifyWinner } from "@/lib/notifications";
 import type { ErrorCode } from "@/lib/errorCodes";
 import { tokenizeSearchQuery } from "@/lib/search";
+import { paginate } from "@/lib/pagination";
 import { AUCTION_GMV_SUBQUERY, FIXED_PRICE_GMV_SUBQUERY, deletedAccountEmail } from "@/lib/sqlFragments";
 
 // Note on listings.starts_at: this module used to probe information_schema
@@ -350,8 +351,7 @@ export async function getOpenListingsForAdmin(
   // else that only matched via individual keyword segments.
   const orderByExpr = search ? `CASE WHEN title LIKE ? THEN 0 ELSE 1 END, ${orderBy}` : orderBy;
   const selectParams = search ? [...params, `%${search}%`] : params;
-  const page = Math.max(1, options.page ?? 1);
-  const offset = (page - 1) * OPEN_LISTINGS_PAGE_SIZE;
+  const { offset, limit } = paginate(options.page, OPEN_LISTINGS_PAGE_SIZE);
 
   const [rows] = await db.query(
     `SELECT
@@ -361,7 +361,7 @@ export async function getOpenListingsForAdmin(
      FROM listings
      ${where}
      ORDER BY ${orderByExpr}
-     LIMIT ${OPEN_LISTINGS_PAGE_SIZE} OFFSET ${offset}`,
+     LIMIT ${limit} OFFSET ${offset}`,
     selectParams,
   );
   const listings = (rows as (Omit<OpenListingForAdmin, "hasBids" | "canCancel"> & { hasBids: number })[]).map((row) => ({
@@ -629,9 +629,8 @@ export async function listClosedListings(
   // else that only matched via individual keyword segments.
   const orderByExpr = search ? `CASE WHEN l.title LIKE ? THEN 0 ELSE 1 END, ${orderBy}` : orderBy;
   const selectParams = search ? [...params, `%${search}%`] : params;
-  const page = Math.max(1, options.page ?? 1);
-  const offset = (page - 1) * CLOSED_LISTINGS_PAGE_SIZE;
-  const limitClause = options.all ? "" : `LIMIT ${CLOSED_LISTINGS_PAGE_SIZE} OFFSET ${offset}`;
+  const { offset, limit } = paginate(options.page, CLOSED_LISTINGS_PAGE_SIZE);
+  const limitClause = options.all ? "" : `LIMIT ${limit} OFFSET ${offset}`;
 
   const [rows] = await db.query(
     `SELECT
@@ -1332,8 +1331,7 @@ export async function getOrdersForAdmin(
   // else that only matched via individual keyword segments.
   const orderByExpr = search ? `CASE WHEN l.title LIKE ? THEN 0 ELSE 1 END, ${orderBy}` : orderBy;
   const selectParams = search ? [...params, `%${search}%`] : params;
-  const page = Math.max(1, options.page ?? 1);
-  const offset = (page - 1) * ORDERS_PAGE_SIZE;
+  const { offset, limit } = paginate(options.page, ORDERS_PAGE_SIZE);
 
   const [rows] = await db.query(
     `SELECT
@@ -1347,7 +1345,7 @@ export async function getOrdersForAdmin(
      LEFT JOIN users u ON u.id = p.buyer_id
      ${where}
      ORDER BY ${orderByExpr}
-     LIMIT ${ORDERS_PAGE_SIZE} OFFSET ${offset}`,
+     LIMIT ${limit} OFFSET ${offset}`,
     selectParams,
   );
   const orders = (rows as (Omit<OrderSummary, "settled"> & { settled: number })[]).map((row) => ({
