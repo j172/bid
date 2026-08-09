@@ -13,6 +13,22 @@ import { buildKeywordSearch, type KeywordSearchSql } from "@/lib/search";
 import { paginate } from "@/lib/pagination";
 import { AUCTION_GMV_SUBQUERY, FIXED_PRICE_GMV_SUBQUERY, deletedAccountEmail } from "@/lib/sqlFragments";
 
+// Settlement (撥款) reads/writes moved to lib/settlement.ts, which now owns
+// both the form validation and the data access for the two settleable
+// things (won auctions and fixed_price orders) instead of keeping two
+// near-identical copies of every query here (issue #139). Re-exported so
+// every existing `import { markListingSettled } from "@/lib/listings"` call
+// site in app/api/** keeps working unchanged.
+export {
+  getBuyerProfileForOrder,
+  getWinnerProfileForListing,
+  markListingSettled,
+  markOrderSettled,
+  unsettleListing,
+  unsettleOrder,
+  type WinnerProfile,
+} from "@/lib/settlement";
+
 // Note on listings.starts_at: this module used to probe information_schema
 // for that column on first use and degrade to a no-scheduling code path when
 // it was missing (legacy already-deployed databases). That fallback was
@@ -725,49 +741,6 @@ export async function getListingActivityFeed(
   return { totalCount, entries: rows as ListingActivityEntry[] };
 }
 
-// Admin confirms the offline payment/delivery is done — releases the
-// winner from deleteAccount's "unsettled win" block (see
-// findBlockingObligation). Records the remittance account/amount the admin
-// entered (validated by lib/settlement.ts before this is called). Idempotent:
-// settling twice just overwrites the previously recorded values.
-export async function markListingSettled(listingId: number, account: string, amount: number): Promise<void> {
-  const db = await getDb();
-  await db.query(
-    "UPDATE listings SET settled_at = NOW(), settlement_account = ?, settlement_amount = ? WHERE id = ? AND status = 'closed'",
-    [account, amount, listingId],
-  );
-}
-
-// Reverses markListingSettled — lets an admin correct an accidental
-// "settled" click, putting the winner back under deleteAccount's
-// unsettled-win block until it's confirmed again. Deliberately leaves
-// settlement_account/settlement_amount in place (not cleared) so the settle
-// form can pre-fill the last-entered values on re-settle.
-export async function unsettleListing(listingId: number): Promise<void> {
-  const db = await getDb();
-  await db.query("UPDATE listings SET settled_at = NULL WHERE id = ? AND status = 'closed'", [listingId]);
-}
-
-export interface WinnerProfile {
-  displayName: string | null;
-  phone: string | null;
-  address: string | null;
-}
-
-// Powers the closed-listings page's expandable "得標者資料" section.
-export async function getWinnerProfileForListing(listingId: number): Promise<WinnerProfile | null> {
-  const db = await getDb();
-  const [rows] = await db.query(
-    `SELECT u.display_name AS displayName, u.phone AS phone, u.address AS address
-     FROM listings l
-     JOIN users u ON u.id = l.leader_user_id
-     WHERE l.id = ?
-     LIMIT 1`,
-    [listingId],
-  );
-  return (rows as WinnerProfile[])[0] ?? null;
-}
-
 // Used by the admin "重新寄送得標信" resend route (issue #48,
 // app/api/admin/listings/[id]/notify-winner) to read back the freshly-set
 // winner_notified_at after sendWinnerEmail succeeds, so the response can
@@ -1336,36 +1309,6 @@ export async function getOrdersForAdmin(
     settled: Boolean(row.settled),
   }));
   return { orders, total };
-}
-
-// Mirrors markListingSettled/unsettleListing (see their comments) but for
-// individual purchases rather than whole listings.
-export async function markOrderSettled(orderId: number, account: string, amount: number): Promise<void> {
-  const db = await getDb();
-  await db.query(
-    "UPDATE purchases SET settled_at = NOW(), settlement_account = ?, settlement_amount = ? WHERE id = ?",
-    [account, amount, orderId],
-  );
-}
-
-export async function unsettleOrder(orderId: number): Promise<void> {
-  const db = await getDb();
-  await db.query("UPDATE purchases SET settled_at = NULL WHERE id = ?", [orderId]);
-}
-
-// Powers the orders page's expandable "買家資料" section — the fixed_price
-// equivalent of getWinnerProfileForListing.
-export async function getBuyerProfileForOrder(orderId: number): Promise<WinnerProfile | null> {
-  const db = await getDb();
-  const [rows] = await db.query(
-    `SELECT u.display_name AS displayName, u.phone AS phone, u.address AS address
-     FROM purchases p
-     JOIN users u ON u.id = p.buyer_id
-     WHERE p.id = ?
-     LIMIT 1`,
-    [orderId],
-  );
-  return (rows as WinnerProfile[])[0] ?? null;
 }
 
 export async function getPhotoFileNames(listingId: number): Promise<string[]> {
