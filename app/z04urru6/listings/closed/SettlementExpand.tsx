@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLazyExpand } from "../../components/useLazyExpand";
 
 interface Profile {
   displayName: string | null;
@@ -18,36 +18,19 @@ export default function SettlementExpand({
   /** Full path to the winner/buyer profile API, e.g. `/api/admin/listings/${id}/winner` or `/api/admin/orders/${id}/buyer`. */
   profileUrl: string;
 }) {
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleToggle() {
-    if (open) {
-      setOpen(false);
-      return;
-    }
-    setOpen(true);
-    if (profile !== null) return;
-
-    setLoading(true);
-    setError(null);
-    const response = await fetch(profileUrl);
-    const data = await response.json();
-    setLoading(false);
-    if (!data.ok) {
-      setError(data.error ?? "讀取失敗");
-      return;
-    }
-    setProfile(data.winner ?? data.buyer);
-  }
+  const {
+    open,
+    loading,
+    data: profile,
+    error,
+    toggle,
+  } = useLazyExpand<Profile>(profileUrl, (payload) => (payload.winner ?? payload.buyer) as Profile);
 
   return (
     <div>
       <button
         type="button"
-        onClick={handleToggle}
+        onClick={toggle}
         className="text-sm font-medium text-leading hover:underline"
       >
         已完成交易 {open ? "▲" : "▼"}

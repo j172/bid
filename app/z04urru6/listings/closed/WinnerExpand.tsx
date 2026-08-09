@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLazyExpand } from "../../components/useLazyExpand";
 
 interface Winner {
   displayName: string | null;
@@ -22,36 +23,20 @@ export default function WinnerExpand({
   /** Null: never sent, or the last attempt failed — see lib/listings.ts's ClosedListingSummary. */
   winnerNotifiedAt: Date | null;
 }) {
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [winner, setWinner] = useState<Winner | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    open,
+    loading,
+    data: winner,
+    error,
+    toggle,
+  } = useLazyExpand<Winner>(`/api/admin/listings/${listingId}/winner`, (payload) => payload.winner as Winner);
+
   // Local copy so a successful resend reflects immediately without a full
   // page reload — same fetch-then-setState pattern as the winner lookup
   // above, updated in place instead of re-fetching the whole page (issue #48).
   const [notifiedAt, setNotifiedAt] = useState<Date | null>(winnerNotifiedAt);
   const [resending, setResending] = useState(false);
   const [resendError, setResendError] = useState<string | null>(null);
-
-  async function handleToggle() {
-    if (open) {
-      setOpen(false);
-      return;
-    }
-    setOpen(true);
-    if (winner !== null) return;
-
-    setLoading(true);
-    setError(null);
-    const response = await fetch(`/api/admin/listings/${listingId}/winner`);
-    const data = await response.json();
-    setLoading(false);
-    if (!data.ok) {
-      setError(data.error ?? "讀取失敗");
-      return;
-    }
-    setWinner(data.winner);
-  }
 
   async function handleResend() {
     setResending(true);
@@ -68,7 +53,7 @@ export default function WinnerExpand({
 
   return (
     <div>
-      <button type="button" onClick={handleToggle} className="text-xs font-medium text-interactive-primary hover:underline">
+      <button type="button" onClick={toggle} className="text-xs font-medium text-interactive-primary hover:underline">
         {email} {open ? "▲" : "▼"}
       </button>
       {open && (
