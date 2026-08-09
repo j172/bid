@@ -6,6 +6,16 @@ import { getLatestStoredRate } from "@/lib/exchangeRates";
 import { formatRemaining } from "@/lib/format";
 import { maskDisplayName } from "@/lib/mask";
 import { canonicalListingsUrl, hreflangAlternates } from "@/lib/seo";
+import {
+  countByCategory,
+  filterListings,
+  listingsHref,
+  parseSortKey,
+  sortListings,
+  type ListingCategory,
+  type ListingSortKey,
+} from "@/lib/listingFilters";
+import { firstParam, numberParam, type SearchParams } from "@/lib/searchParams";
 import { Link } from "@/i18n/navigation";
 import ProductCard from "../../components/ProductCard";
 
@@ -13,29 +23,8 @@ export const dynamic = "force-dynamic";
 
 const DESCRIPTION_SNIPPET_LENGTH = 30;
 
-type SearchParams = Record<string, string | string[] | undefined>;
-
-type CategoryKey = "auction" | "fixed_price";
-// ends_soon / starts_soon power the homepage "分類瀏覽" cards
-// (see app/[locale]/(with-loading)/page.tsx) — real, computable subsets/orderings rather
-// than the hardcoded links that used to live there.
-type SortKey = "newest" | "price_asc" | "price_desc" | "ends_soon" | "starts_soon";
-
-function inferCategoryFromListingType(type: ListingType): CategoryKey {
-  return type === "auction" ? "auction" : "fixed_price";
-}
-
-function parseNumberParam(value: string | string[] | undefined): number | undefined {
-  const raw = Array.isArray(value) ? value[0] : value;
-  if (!raw) return undefined;
-  const parsed = Number(raw);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
-
 function perfModeFromSearchParams(params: SearchParams): "balanced" | "aggressive" {
-  const modeParam = params.perf;
-  const mode = Array.isArray(modeParam) ? modeParam[0] : modeParam;
-  return mode === "aggressive" ? "aggressive" : "balanced";
+  return firstParam(params.perf) === "aggressive" ? "aggressive" : "balanced";
 }
 
 function descriptionSnippet(description: string): string {
@@ -49,19 +38,16 @@ function tabHref(
   tabValue: ListingType | "",
   perfMode: "balanced" | "aggressive",
   searchQuery?: string,
-  sort?: SortKey,
+  sort?: ListingSortKey,
 ): string {
-  const sp = new URLSearchParams();
-
-  if (tabValue) sp.set("type", tabValue);
-  if (perfMode === "aggressive") sp.set("perf", "aggressive");
-  if (searchQuery?.trim()) sp.set("q", searchQuery.trim());
-  if (sort && sort !== "newest") sp.set("sort", sort);
-  // Deliberately drop status/withinHours here — switching the type tab
-  // exits any homepage-card-specific filtering rather than compounding it.
-
-  const query = sp.toString();
-  return query ? `/listings?${query}` : "/listings";
+  // Deliberately drops status/withinHours — switching the type tab exits any
+  // homepage-card-specific filtering rather than compounding it.
+  return listingsHref({
+    type: tabValue || undefined,
+    perf: perfMode === "aggressive" ? "aggressive" : undefined,
+    q: searchQuery?.trim() || undefined,
+    sort: sort && sort !== "newest" ? sort : undefined,
+  });
 }
 
 // <title>/<meta description> for the listings list/category page (issue
@@ -84,7 +70,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const sp = await searchParams;
-  const rawType = Array.isArray(sp.type) ? sp.type[0] : sp.type;
+  const rawType = firstParam(sp.type);
   const t = await getTranslations({ locale, namespace: "listings" });
   const query = rawType === "auction" || rawType === "fixed_price" ? { type: rawType } : undefined;
   const alternates = {
@@ -111,32 +97,21 @@ export async function generateMetadata({
 
 export default async function ListingsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams;
-  const typeParam = params.type;
-  const categoryParam = params.category;
-  const selectedCategory = (Array.isArray(categoryParam) ? categoryParam[0] : categoryParam) as CategoryKey | undefined;
-  const minPrice = parseNumberParam(params.minPrice);
-  const maxPrice = parseNumberParam(params.maxPrice);
-  const type = (Array.isArray(typeParam) ? typeParam[0] : typeParam) as ListingType | undefined;
-  const rawQ = Array.isArray(params.q) ? params.q[0] : params.q;
-  const searchQuery = rawQ?.trim() ?? "";
-  const rawSort = Array.isArray(params.sort) ? params.sort[0] : params.sort;
-  const sort: SortKey =
-    rawSort === "price_asc" ||
-    rawSort === "price_desc" ||
-    rawSort === "ends_soon" ||
-    rawSort === "starts_soon"
-      ? rawSort
-      : "newest";
+  const selectedCategory = firstParam(params.category) as ListingCategory | undefined;
+  const minPrice = numberParam(params.minPrice);
+  const maxPrice = numberParam(params.maxPrice);
+  const type = firstParam(params.type) as ListingType | undefined;
+  const searchQuery = firstParam(params.q)?.trim() ?? "";
+  const sort = parseSortKey(firstParam(params.sort));
   // Only "scheduled" is a supported value today (powers the homepage's
   // "即將開賣" card) — anything else is treated as no status filter.
-  const rawStatus = Array.isArray(params.status) ? params.status[0] : params.status;
-  const statusFilter = rawStatus === "scheduled" ? "scheduled" : undefined;
-  const withinHours = parseNumberParam(params.withinHours);
+  const statusFilter = firstParam(params.status) === "scheduled" ? "scheduled" : undefined;
+  const withinHours = numberParam(params.withinHours);
   const perfMode = perfModeFromSearchParams(params);
   const gridEagerCount = perfMode === "aggressive" ? 6 : 4;
   // Powers the homepage partner-loft card click-through: /listings?loft=<id>
   // (issue #45 — replaces the removed homepage_sections.link_url).
-  const loftId = parseNumberParam(params.loft);
+  const loftId = numberParam(params.loft);
 
   const listings = await listOpenListings(type, { loftId });
   const t = await getTranslations("listings");
@@ -151,85 +126,32 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   const displayRate = displayCurrency === "TWD" ? null : await getLatestStoredRate(displayCurrency);
   const rateValue = displayRate?.rate ?? null;
 
-  const nowMs = new Date().getTime();
-  const filteredListings = listings.filter((listing) => {
-    const categoryMatch = !selectedCategory || inferCategoryFromListingType(listing.listing_type) === selectedCategory;
-    const price = listing.listing_type === "auction" ? listing.current_price : (listing.price ?? listing.current_price);
-    const minMatch = minPrice === undefined || price >= minPrice;
-    const maxMatch = maxPrice === undefined || price <= maxPrice;
-    const searchMatch =
-      searchQuery.length === 0 ||
-      `${listing.title} ${listing.description}`.toLowerCase().includes(searchQuery.toLowerCase());
-    const statusMatch = !statusFilter || listing.status === statusFilter;
-    const withinHoursMatch =
-      withinHours === undefined ||
-      (listing.listing_type === "auction" &&
-        listing.status === "open" &&
-        listing.ends_at !== null &&
-        listing.ends_at.getTime() - nowMs >= 0 &&
-        listing.ends_at.getTime() - nowMs <= withinHours * 60 * 60 * 1000);
-    return categoryMatch && minMatch && maxMatch && searchMatch && statusMatch && withinHoursMatch;
+  const filteredListings = filterListings(listings, {
+    category: selectedCategory,
+    minPrice,
+    maxPrice,
+    searchQuery,
+    status: statusFilter,
+    withinHours,
+    nowMs: new Date().getTime(),
   });
+  const sortedListings = sortListings(filteredListings, sort);
+  const categoryCounts = countByCategory(listings);
 
-  const sortedListings = [...filteredListings].sort((a, b) => {
-    const priceA = a.listing_type === "auction" ? a.current_price : (a.price ?? a.current_price);
-    const priceB = b.listing_type === "auction" ? b.current_price : (b.price ?? b.current_price);
-
-    if (sort === "price_asc") return priceA - priceB;
-    if (sort === "price_desc") return priceB - priceA;
-    if (sort === "ends_soon") {
-      const aTime = a.ends_at ? a.ends_at.getTime() : Infinity;
-      const bTime = b.ends_at ? b.ends_at.getTime() : Infinity;
-      return aTime - bTime;
-    }
-    if (sort === "starts_soon") {
-      const aTime = a.starts_at ? a.starts_at.getTime() : Infinity;
-      const bTime = b.starts_at ? b.starts_at.getTime() : Infinity;
-      return aTime - bTime;
-    }
-    return b.id - a.id;
-  });
-
-  const categoryCounts = listings.reduce(
-    (acc, listing) => {
-      const key = inferCategoryFromListingType(listing.listing_type);
-      acc[key] += 1;
-      return acc;
-    },
-    { auction: 0, fixed_price: 0 } satisfies Record<CategoryKey, number>,
-  );
-
+  /** Current filter set with `partial` applied on top — powers every facet link below. */
   function withFilters(partial: Record<string, string | undefined>): string {
-    const sp = new URLSearchParams();
-    const perf = Array.isArray(params.perf) ? params.perf[0] : params.perf;
-    const currentType = Array.isArray(params.type) ? params.type[0] : params.type;
-    const currentCategory = Array.isArray(params.category) ? params.category[0] : params.category;
-    const currentMin = Array.isArray(params.minPrice) ? params.minPrice[0] : params.minPrice;
-    const currentMax = Array.isArray(params.maxPrice) ? params.maxPrice[0] : params.maxPrice;
-    const currentQ = Array.isArray(params.q) ? params.q[0] : params.q;
-    const currentSort = Array.isArray(params.sort) ? params.sort[0] : params.sort;
-    const currentStatus = Array.isArray(params.status) ? params.status[0] : params.status;
-    const currentWithinHours = Array.isArray(params.withinHours) ? params.withinHours[0] : params.withinHours;
-
-    const next = {
-      perf,
-      type: currentType,
-      category: currentCategory,
-      minPrice: currentMin,
-      maxPrice: currentMax,
-      q: currentQ,
-      sort: currentSort,
-      status: currentStatus,
-      withinHours: currentWithinHours,
+    return listingsHref({
+      perf: firstParam(params.perf),
+      type: firstParam(params.type),
+      category: firstParam(params.category),
+      minPrice: firstParam(params.minPrice),
+      maxPrice: firstParam(params.maxPrice),
+      q: firstParam(params.q),
+      sort: firstParam(params.sort),
+      status: firstParam(params.status),
+      withinHours: firstParam(params.withinHours),
       ...partial,
-    };
-
-    Object.entries(next).forEach(([key, value]) => {
-      if (value) sp.set(key, value);
     });
-
-    const query = sp.toString();
-    return query ? `/listings?${query}` : "/listings";
   }
 
   const TYPE_TABS: { value: ListingType | ""; label: string }[] = [
