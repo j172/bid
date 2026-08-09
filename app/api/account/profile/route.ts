@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser, updateProfile } from "@/lib/auth";
+import { requireUser } from "@/lib/apiAuth";
+import { updateProfile } from "@/lib/auth";
 import { validateProfile } from "@/lib/profile";
 
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, errorCode: "MUST_LOGIN" }, { status: 401 });
-  }
+  const auth = await requireUser();
+  if (auth.response) return auth.response;
 
   const body = await request.json().catch(() => null);
   const displayName = typeof body?.displayName === "string" ? body.displayName : "";
@@ -18,6 +17,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, errorCode: result.errorCode }, { status: 400 });
   }
 
-  await updateProfile(user.id, { displayName, phone, address });
+  await updateProfile(auth.user.id, { displayName, phone, address });
   return NextResponse.json({ ok: true });
 }

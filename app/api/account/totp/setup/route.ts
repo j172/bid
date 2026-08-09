@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import QRCode from "qrcode";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/apiAuth";
 import { startTotpSetup } from "@/lib/totp";
 
 // Step 1 of the TOTP setup wizard (issue #97) — mirrors
@@ -11,12 +11,10 @@ import { startTotpSetup } from "@/lib/totp";
 // rendered here (qrcode's toDataURL) rather than in the browser so the
 // client only ever needs an <img src>, no extra client-side dependency.
 export async function POST() {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, errorCode: "MUST_LOGIN" }, { status: 401 });
-  }
+  const auth = await requireUser();
+  if (auth.response) return auth.response;
 
-  const { token, secret, otpauthUri } = await startTotpSetup(user.id, user.email);
+  const { token, secret, otpauthUri } = await startTotpSetup(auth.user.id, auth.user.email);
   const qrCodeDataUrl = await QRCode.toDataURL(otpauthUri);
 
   return NextResponse.json({ ok: true, token, secret, qrCodeDataUrl });
