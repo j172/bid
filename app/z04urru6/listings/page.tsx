@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getOpenListingsForAdmin, OPEN_LISTINGS_PAGE_SIZE, type ListOpenListingsForAdminOptions } from "@/lib/listings";
 import { formatRemainingZhHant } from "@/lib/format";
+import { LISTING_TYPE_LABEL } from "@/lib/listingTypeLabel";
 import CancelButton from "./CancelButton";
 import EditListingModal from "./EditListingModal";
 import EditScheduleModal from "./EditScheduleModal";
@@ -19,8 +20,6 @@ import {
 } from "../components/tableStyles";
 
 export const dynamic = "force-dynamic";
-
-const TYPE_LABEL: Record<string, string> = { auction: "競標商品", fixed_price: "一般商品" };
 
 const QUERY_KEYS = ["search", "type", "sort", "page"] as const;
 
@@ -93,7 +92,7 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
                       {listing.title}
                     </Link>
                   </td>
-                  <td className={td}>{TYPE_LABEL[listing.listingType]}</td>
+                  <td className={td}>{LISTING_TYPE_LABEL[listing.listingType]}</td>
                   <td className={`${td} font-semibold`}>{listing.currentPrice}</td>
                   <td className={td}>
                     {listing.listingType === "fixed_price" ? (
