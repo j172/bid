@@ -5,7 +5,7 @@ import {
   listClosedListings,
   type ListClosedListingsOptions,
 } from "@/lib/listings";
-import SettleModal from "./SettleModal";
+import SettleModal from "../../components/SettleModal";
 import UnsettleButton from "./UnsettleButton";
 import BiddersExpand from "./BiddersExpand";
 import WinnerExpand from "./WinnerExpand";
@@ -170,8 +170,8 @@ export default async function ClosedListingsPage({ searchParams }: { searchParam
                       <UnsettleButton listingId={listing.id} />
                     ) : (
                       <SettleModal
-                        listingId={listing.id}
-                        finalPrice={listing.finalPrice}
+                        endpoint={`/api/admin/listings/${listing.id}/settle`}
+                        defaultAmount={listing.finalPrice}
                         previousAccount={listing.settlementAccount}
                         previousAmount={listing.settlementAmount}
                       />

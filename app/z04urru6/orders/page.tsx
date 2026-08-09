@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getOrdersForAdmin, ORDERS_PAGE_SIZE, type ListOrdersOptions } from "@/lib/listings";
 import SettlementExpand from "../listings/closed/SettlementExpand";
 import BuyerExpand from "./BuyerExpand";
-import OrderSettleModal from "./OrderSettleModal";
+import SettleModal from "../components/SettleModal";
 import OrderUnsettleButton from "./OrderUnsettleButton";
 import AdminPageIntro from "../AdminPageIntro";
 
@@ -138,9 +138,9 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                     {order.settled ? (
                       <OrderUnsettleButton orderId={order.id} />
                     ) : (
-                      <OrderSettleModal
-                        orderId={order.id}
-                        totalAmount={order.totalAmount}
+                      <SettleModal
+                        endpoint={`/api/admin/orders/${order.id}/settle`}
+                        defaultAmount={order.totalAmount}
                         previousAccount={order.settlementAccount}
                         previousAmount={order.settlementAmount}
                       />
