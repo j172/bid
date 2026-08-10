@@ -71,14 +71,17 @@ export default function NewsCarouselCard({
 
   return (
     <article className="group relative flex h-full flex-col justify-between overflow-hidden rounded-3xl bg-baltic-blue-900 shadow-xl">
-      <div className="relative aspect-[16/10] w-full overflow-hidden sm:aspect-[21/10]">
+      <div className="relative aspect-[16/10] w-full overflow-hidden bg-baltic-blue-900 sm:aspect-[21/10]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={current.imageUrl}
           alt={current.title}
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+          className="absolute inset-0 h-full w-full object-contain transition-transform duration-700 ease-out group-hover:scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-baltic-blue-950 via-baltic-blue-950/50 to-transparent" />
+        {/* Scrim shrunk to just the bottom text band (issue #148) — object-contain
+            no longer fills the whole box, so a full-height gradient washed the
+            entire letterboxed image out to near-black. */}
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-baltic-blue-950 via-baltic-blue-950/70 to-transparent" />
         <div className="absolute left-6 top-6">
           <span className="inline-flex items-center rounded-full bg-twilight-indigo-600 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-md">
             {activeBadge}

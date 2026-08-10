@@ -219,6 +219,46 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
   return (
     <main className="pb-8">
+      {/* Issue #148: reordered so the 最新消息／入賞鴿／進口鴿 showcase grid
+          leads the page, directly above the hero auction rail. */}
+      <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <NewsCarouselCard
+              items={newsCarouselItems}
+              activeBadge={t("newsCarouselBadge")}
+              ctaLabel={t("newsCarouselCta")}
+              emptyStateTitle={t("emptyStateTitle")}
+              emptyStateDesc={t("newsCarouselEmptyDesc")}
+            />
+          </div>
+
+          <div className="grid gap-5">
+            <PigeonShowcaseCarouselCard
+              items={awardCarouselItems}
+              variant="dark"
+              badgeLabel={t("awardPigeonBadge")}
+              emptyStateTitle={t("emptyStateTitle")}
+              emptyStateDesc={t("pigeonShowcaseEmptyDesc")}
+              viewCtaLabel={t("pigeonShowcaseViewCta")}
+              viewMoreLabel={t("pigeonShowcaseViewMore")}
+              viewMoreHref="/pigeon-showcase?category=award"
+            />
+
+            <PigeonShowcaseCarouselCard
+              items={importedCarouselItems}
+              variant="light"
+              badgeLabel={t("importedPigeonBadge")}
+              emptyStateTitle={t("emptyStateTitle")}
+              emptyStateDesc={t("pigeonShowcaseEmptyDesc")}
+              viewCtaLabel={t("pigeonShowcaseViewCta")}
+              viewMoreLabel={t("pigeonShowcaseViewMore")}
+              viewMoreHref="/pigeon-showcase?category=imported"
+            />
+          </div>
+        </div>
+      </section>
+
       <HeroSection
         browseHref={`/listings?type=auction${perfSuffix}`}
         cards={heroCards}
@@ -228,98 +268,62 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         rateValue={rateValue}
       />
 
-      <section className="mx-auto mt-5 max-w-6xl px-4 sm:px-6">
-        <div className="rounded-2xl border border-border bg-white px-4 py-3 shadow-sm">
-          <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-            <span className="rounded-full bg-header px-3 py-1 font-semibold text-white">{t("quickNavTitle")}</span>
-            <Link href="/listings?type=auction" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-interactive-primary hover:text-interactive-primary">
-              {t("quickNavEndingSoon")}
-            </Link>
-            <Link href="/#auto-bidding-explainer" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-interactive-primary hover:text-interactive-primary">
-              {t("quickNavAutoBidGuide")}
-            </Link>
-            <Link href="/listings?sort=price_desc" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-interactive-primary hover:text-interactive-primary">
-              {t("quickNavPremiumPicks")}
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section id="auto-bidding-explainer" className="mx-auto mt-5 max-w-6xl scroll-mt-24 px-4 sm:px-6">
-        <div className="rounded-2xl border border-interactive-primary/20 bg-interactive-primary-subtle p-5 shadow-sm sm:p-6">
-          <h2 className="text-lg font-black text-ink">{tAutoBid("title")}</h2>
-          <p className="mt-1 text-sm text-ink-light">{tAutoBid("description")}</p>
-          <ol className="mt-4 grid gap-3 sm:grid-cols-3">
-            <li className="rounded-xl bg-white/70 p-3 text-sm text-ink">
-              <span className="mb-1 block text-xs font-bold text-interactive-primary">1</span>
-              {tAutoBid("step1")}
-            </li>
-            <li className="rounded-xl bg-white/70 p-3 text-sm text-ink">
-              <span className="mb-1 block text-xs font-bold text-interactive-primary">2</span>
-              {tAutoBid("step2")}
-            </li>
-            <li className="rounded-xl bg-white/70 p-3 text-sm text-ink">
-              <span className="mb-1 block text-xs font-bold text-interactive-primary">3</span>
-              {tAutoBid("step3")}
-            </li>
-          </ol>
-        </div>
-      </section>
-
-      <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
-        <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-border bg-white shadow-sm md:grid-cols-2 lg:grid-cols-4">
-          <article className="flex items-center gap-3 border-b border-border px-5 py-4 md:border-r lg:border-b-0">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-steel-azure-50 text-lg">🚚</span>
-            <div>
-              <p className="text-sm font-bold text-ink">{t("serviceFast")}</p>
-              <p className="text-xs text-ink-light">{t("serviceFastDesc")}</p>
-            </div>
-          </article>
-          <article className="flex items-center gap-3 border-b border-border px-5 py-4 lg:border-b-0 lg:border-r">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-steel-azure-50 text-lg">🔒</span>
-            <div>
-              <p className="text-sm font-bold text-ink">{t("serviceSecure")}</p>
-              <p className="text-xs text-ink-light">{t("serviceSecureDesc")}</p>
-            </div>
-          </article>
-          <article className="flex items-center gap-3 border-b border-border px-5 py-4 md:border-b-0 md:border-r">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-steel-azure-50 text-lg">🎧</span>
-            <div>
-              <p className="text-sm font-bold text-ink">{t("serviceSupport")}</p>
-              <p className="text-xs text-ink-light">{t("serviceSupportDesc")}</p>
-            </div>
-          </article>
-          <article className="flex items-center gap-3 px-5 py-4">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-steel-azure-50 text-lg">✅</span>
-            <div>
-              <p className="text-sm font-bold text-ink">{t("serviceVerified")}</p>
-              <p className="text-xs text-ink-light">{t("serviceVerifiedDesc")}</p>
-            </div>
-          </article>
-        </div>
-      </section>
-
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
         <div className="flex items-end justify-between">
-          <h2 className="text-2xl font-bold">{t("browseByCategory")}</h2>
+          <h2 className="text-2xl font-bold">{t("newArrivals")}</h2>
+          <Link href={perfMode === "aggressive" ? "/listings?perf=aggressive" : "/listings"} className="text-sm font-semibold text-interactive-primary hover:text-header">
+            {t("viewAll")}
+          </Link>
         </div>
-        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {visualCategories.map((cat) => (
-            <Link
-              key={`${cat.label}-${cat.href}`}
-              href={cat.href}
-              className="group rounded-2xl border border-border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-interactive-primary">{cat.label}</p>
-                  <p className="mt-2 text-sm text-ink-light">{cat.subtitle}</p>
-                </div>
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-lg">{cat.badge}</span>
-              </div>
-              <p className="mt-4 text-2xl font-black text-ink">{cat.count}</p>
-              <p className="mt-1 text-sm font-semibold text-interactive-primary group-hover:text-header">{t("viewAll")} →</p>
-            </Link>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+          <Link href="/listings" className="rounded-full bg-header px-3 py-1 font-semibold text-white">
+            {t("pillAll")}
+          </Link>
+          <Link
+            href="/listings?type=auction"
+            className="rounded-full border border-border bg-white px-3 py-1 font-medium text-ink transition hover:border-interactive-primary hover:text-interactive-primary"
+          >
+            {t("pillHotAuction")}
+          </Link>
+          <Link
+            href="/listings?type=fixed_price"
+            className="rounded-full border border-border bg-white px-3 py-1 font-medium text-ink transition hover:border-interactive-primary hover:text-interactive-primary"
+          >
+            {t("pillFixedPicks")}
+          </Link>
+          <Link
+            href="/listings?sort=price_desc"
+            className="rounded-full border border-border bg-white px-3 py-1 font-medium text-ink transition hover:border-interactive-primary hover:text-interactive-primary"
+          >
+            {t("pillPriceDesc")}
+          </Link>
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {newArrivals.map((item, index) => (
+            <HomeProductCard
+              key={item.id}
+              id={item.id}
+              title={item.title}
+              imageSrc={photoUrlFor(item)}
+              hasPhoto={Boolean(item.photos[0])}
+              badgeLabel={item.listing_type === "auction" ? t("badgeHotBidding") : t("badgeBestPrice")}
+              statusLabel={item.listing_type === "auction" ? t("statusBidding") : t("statusFixedDeal")}
+              countLabel={
+                item.listing_type === "auction"
+                  ? t("bidCountShort", { count: item.bidCount })
+                  : t("purchaseCountShort", { count: item.purchaseCount })
+              }
+              priceText={formatDualPrice(
+                item.listing_type === "auction" ? item.current_price : item.price!,
+                displayCurrency,
+                rateValue,
+              )}
+              quickActionLabel={tListings("quickAction")}
+              ctaLabel={item.listing_type === "fixed_price" ? t("promoFixedCta") : t("promoAuctionCta")}
+              eager={index < homeEagerCount}
+            />
           ))}
         </div>
       </section>
@@ -360,7 +364,75 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </section>
       )}
 
-      <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
+      <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
+        <div className="flex items-end justify-between">
+          <h2 className="text-2xl font-bold">{t("bestSellersTitle")}</h2>
+          <Link href="/listings" className="text-sm font-semibold text-interactive-primary hover:text-header">
+            {t("viewAll")}
+          </Link>
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {bestMixed.map((item, index) => (
+            <HomeProductCard
+              key={`best-${item.id}`}
+              id={item.id}
+              title={item.title}
+              imageSrc={photoUrlFor(item)}
+              hasPhoto={Boolean(item.photos[0])}
+              badgeLabel={item.listing_type === "auction" ? t("badgeHotBidding") : t("badgeBestPrice")}
+              statusLabel={item.listing_type === "auction" ? t("statusBidding") : t("statusFixedDeal")}
+              countLabel={
+                item.listing_type === "auction"
+                  ? t("bidCountShort", { count: item.bidCount })
+                  : t("purchaseCountShort", { count: item.purchaseCount })
+              }
+              priceText={formatDualPrice(
+                item.listing_type === "auction" ? item.current_price : item.price!,
+                displayCurrency,
+                rateValue,
+              )}
+              quickActionLabel={tListings("quickAction")}
+              ctaLabel={item.listing_type === "fixed_price" ? t("promoFixedCta") : t("promoAuctionCta")}
+              eager={index < 1}
+            />
+          ))}
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <article className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+            <h3 className="text-lg font-black">{t("bestAuction")}</h3>
+            <div className="mt-3 space-y-2">
+              {topAuctions.map((item) => (
+                <Link key={item.id} href={`/listings/${item.id}`} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 hover:bg-slate-100">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{item.title}</p>
+                    <p className="text-xs text-ink-light">{item.bidCount === 0 ? tListings("noBidsYet") : tListings("totalBids", { count: item.bidCount })}</p>
+                  </div>
+                  <p className="ml-3 shrink-0 text-sm font-bold text-interactive-primary">{formatDualPrice(item.current_price, displayCurrency, rateValue)}</p>
+                </Link>
+              ))}
+            </div>
+          </article>
+
+          <article className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+            <h3 className="text-lg font-black">{t("bestFixed")}</h3>
+            <div className="mt-3 space-y-2">
+              {topFixed.map((item) => (
+                <Link key={item.id} href={`/listings/${item.id}`} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 hover:bg-slate-100">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{item.title}</p>
+                    <p className="text-xs text-ink-light">{t("purchaseCountShort", { count: item.purchaseCount })}</p>
+                  </div>
+                  <p className="ml-3 shrink-0 text-sm font-bold text-interactive-primary">{formatDualPrice(item.price!, displayCurrency, rateValue)}</p>
+                </Link>
+              ))}
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-6">
         <div className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -454,187 +526,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       )}
 
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
-        <div className="flex items-end justify-between">
-          <h2 className="text-2xl font-bold">{t("newArrivals")}</h2>
-          <Link href={perfMode === "aggressive" ? "/listings?perf=aggressive" : "/listings"} className="text-sm font-semibold text-interactive-primary hover:text-header">
-            {t("viewAll")}
-          </Link>
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-          <Link href="/listings" className="rounded-full bg-header px-3 py-1 font-semibold text-white">
-            {t("pillAll")}
-          </Link>
-          <Link
-            href="/listings?type=auction"
-            className="rounded-full border border-border bg-white px-3 py-1 font-medium text-ink transition hover:border-interactive-primary hover:text-interactive-primary"
-          >
-            {t("pillHotAuction")}
-          </Link>
-          <Link
-            href="/listings?type=fixed_price"
-            className="rounded-full border border-border bg-white px-3 py-1 font-medium text-ink transition hover:border-interactive-primary hover:text-interactive-primary"
-          >
-            {t("pillFixedPicks")}
-          </Link>
-          <Link
-            href="/listings?sort=price_desc"
-            className="rounded-full border border-border bg-white px-3 py-1 font-medium text-ink transition hover:border-interactive-primary hover:text-interactive-primary"
-          >
-            {t("pillPriceDesc")}
-          </Link>
-        </div>
-
-        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {newArrivals.map((item, index) => (
-            <HomeProductCard
-              key={item.id}
-              id={item.id}
-              title={item.title}
-              imageSrc={photoUrlFor(item)}
-              hasPhoto={Boolean(item.photos[0])}
-              badgeLabel={item.listing_type === "auction" ? t("badgeHotBidding") : t("badgeBestPrice")}
-              statusLabel={item.listing_type === "auction" ? t("statusBidding") : t("statusFixedDeal")}
-              countLabel={
-                item.listing_type === "auction"
-                  ? t("bidCountShort", { count: item.bidCount })
-                  : t("purchaseCountShort", { count: item.purchaseCount })
-              }
-              priceText={formatDualPrice(
-                item.listing_type === "auction" ? item.current_price : item.price!,
-                displayCurrency,
-                rateValue,
-              )}
-              quickActionLabel={tListings("quickAction")}
-              ctaLabel={item.listing_type === "fixed_price" ? t("promoFixedCta") : t("promoAuctionCta")}
-              eager={index < homeEagerCount}
-            />
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <NewsCarouselCard
-              items={newsCarouselItems}
-              activeBadge={t("newsCarouselBadge")}
-              ctaLabel={t("newsCarouselCta")}
-              emptyStateTitle={t("emptyStateTitle")}
-              emptyStateDesc={t("newsCarouselEmptyDesc")}
-            />
-          </div>
-
-          <div className="grid gap-5">
-            <PigeonShowcaseCarouselCard
-              items={awardCarouselItems}
-              variant="dark"
-              badgeLabel={t("promoFixedBadge")}
-              emptyStateTitle={t("emptyStateTitle")}
-              emptyStateDesc={t("pigeonShowcaseEmptyDesc")}
-              viewCtaLabel={t("pigeonShowcaseViewCta")}
-              viewMoreLabel={t("pigeonShowcaseViewMore")}
-              viewMoreHref="/pigeon-showcase?category=award"
-            />
-
-            <PigeonShowcaseCarouselCard
-              items={importedCarouselItems}
-              variant="light"
-              badgeLabel={t("weeklyPicksEyebrow")}
-              emptyStateTitle={t("emptyStateTitle")}
-              emptyStateDesc={t("pigeonShowcaseEmptyDesc")}
-              viewCtaLabel={t("pigeonShowcaseViewCta")}
-              viewMoreLabel={t("pigeonShowcaseViewMore")}
-              viewMoreHref="/pigeon-showcase?category=imported"
-            />
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
-        <div className="flex items-end justify-between">
-          <h2 className="text-2xl font-bold">{t("bestSellersTitle")}</h2>
-          <Link href="/listings" className="text-sm font-semibold text-interactive-primary hover:text-header">
-            {t("viewAll")}
-          </Link>
-        </div>
-
-        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {bestMixed.map((item, index) => (
-            <HomeProductCard
-              key={`best-${item.id}`}
-              id={item.id}
-              title={item.title}
-              imageSrc={photoUrlFor(item)}
-              hasPhoto={Boolean(item.photos[0])}
-              badgeLabel={item.listing_type === "auction" ? t("badgeHotBidding") : t("badgeBestPrice")}
-              statusLabel={item.listing_type === "auction" ? t("statusBidding") : t("statusFixedDeal")}
-              countLabel={
-                item.listing_type === "auction"
-                  ? t("bidCountShort", { count: item.bidCount })
-                  : t("purchaseCountShort", { count: item.purchaseCount })
-              }
-              priceText={formatDualPrice(
-                item.listing_type === "auction" ? item.current_price : item.price!,
-                displayCurrency,
-                rateValue,
-              )}
-              quickActionLabel={tListings("quickAction")}
-              ctaLabel={item.listing_type === "fixed_price" ? t("promoFixedCta") : t("promoAuctionCta")}
-              eager={index < 1}
-            />
-          ))}
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <article className="rounded-2xl border border-border bg-white p-5 shadow-sm">
-            <h3 className="text-lg font-black">{t("bestAuction")}</h3>
-            <div className="mt-3 space-y-2">
-              {topAuctions.map((item) => (
-                <Link key={item.id} href={`/listings/${item.id}`} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 hover:bg-slate-100">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold">{item.title}</p>
-                    <p className="text-xs text-ink-light">{item.bidCount === 0 ? tListings("noBidsYet") : tListings("totalBids", { count: item.bidCount })}</p>
-                  </div>
-                  <p className="ml-3 shrink-0 text-sm font-bold text-interactive-primary">{formatDualPrice(item.current_price, displayCurrency, rateValue)}</p>
-                </Link>
-              ))}
-            </div>
-          </article>
-
-          <article className="rounded-2xl border border-border bg-white p-5 shadow-sm">
-            <h3 className="text-lg font-black">{t("bestFixed")}</h3>
-            <div className="mt-3 space-y-2">
-              {topFixed.map((item) => (
-                <Link key={item.id} href={`/listings/${item.id}`} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 hover:bg-slate-100">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold">{item.title}</p>
-                    <p className="text-xs text-ink-light">{t("purchaseCountShort", { count: item.purchaseCount })}</p>
-                  </div>
-                  <p className="ml-3 shrink-0 text-sm font-bold text-interactive-primary">{formatDualPrice(item.price!, displayCurrency, rateValue)}</p>
-                </Link>
-              ))}
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
-        <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-baltic-blue-900 to-slate-900 p-7 text-white shadow-lg">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-steel-azure-200">{t("trustEyebrow")}</p>
-          <h2 className="mt-2 text-3xl font-black">{t("trustTitle")}</h2>
-          <p className="mt-4 max-w-3xl text-sm text-steel-azure-100">
-            {t("trustDesc")}
-          </p>
-
-          <Link href="/listings" className="mt-6 inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-bold text-steel-azure-800 transition hover:bg-steel-azure-50">
-            {t("trustCta")}
-            <span aria-hidden>→</span>
-          </Link>
-        </div>
-      </section>
-
-      <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
         <h2 className="text-2xl font-bold">{t("weatherTitle")}</h2>
         <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="overflow-hidden rounded-2xl border border-border bg-white shadow-sm">
@@ -661,6 +552,117 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               className="h-[420px] w-full border-0 sm:h-[460px]"
             />
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
+        <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-baltic-blue-900 to-slate-900 p-7 text-white shadow-lg">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-steel-azure-200">{t("trustEyebrow")}</p>
+          <h2 className="mt-2 text-3xl font-black">{t("trustTitle")}</h2>
+          <p className="mt-4 max-w-3xl text-sm text-steel-azure-100">
+            {t("trustDesc")}
+          </p>
+
+          <Link href="/listings" className="mt-6 inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-bold text-steel-azure-800 transition hover:bg-steel-azure-50">
+            {t("trustCta")}
+            <span aria-hidden>→</span>
+          </Link>
+        </div>
+      </section>
+
+      <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
+        <div className="rounded-2xl border border-border bg-white px-4 py-3 shadow-sm">
+          <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+            <span className="rounded-full bg-header px-3 py-1 font-semibold text-white">{t("quickNavTitle")}</span>
+            <Link href="/listings?type=auction" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-interactive-primary hover:text-interactive-primary">
+              {t("quickNavEndingSoon")}
+            </Link>
+            <Link href="/#auto-bidding-explainer" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-interactive-primary hover:text-interactive-primary">
+              {t("quickNavAutoBidGuide")}
+            </Link>
+            <Link href="/listings?sort=price_desc" className="rounded-full border border-border bg-slate-50 px-3 py-1 font-medium text-ink hover:border-interactive-primary hover:text-interactive-primary">
+              {t("quickNavPremiumPicks")}
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section id="auto-bidding-explainer" className="mx-auto mt-5 max-w-6xl scroll-mt-24 px-4 sm:px-6">
+        <div className="rounded-2xl border border-interactive-primary/20 bg-interactive-primary-subtle p-5 shadow-sm sm:p-6">
+          <h2 className="text-lg font-black text-ink">{tAutoBid("title")}</h2>
+          <p className="mt-1 text-sm text-ink-light">{tAutoBid("description")}</p>
+          <ol className="mt-4 grid gap-3 sm:grid-cols-3">
+            <li className="rounded-xl bg-white/70 p-3 text-sm text-ink">
+              <span className="mb-1 block text-xs font-bold text-interactive-primary">1</span>
+              {tAutoBid("step1")}
+            </li>
+            <li className="rounded-xl bg-white/70 p-3 text-sm text-ink">
+              <span className="mb-1 block text-xs font-bold text-interactive-primary">2</span>
+              {tAutoBid("step2")}
+            </li>
+            <li className="rounded-xl bg-white/70 p-3 text-sm text-ink">
+              <span className="mb-1 block text-xs font-bold text-interactive-primary">3</span>
+              {tAutoBid("step3")}
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
+        <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-border bg-white shadow-sm md:grid-cols-2 lg:grid-cols-4">
+          <article className="flex items-center gap-3 border-b border-border px-5 py-4 md:border-r lg:border-b-0">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-steel-azure-50 text-lg">🚚</span>
+            <div>
+              <p className="text-sm font-bold text-ink">{t("serviceFast")}</p>
+              <p className="text-xs text-ink-light">{t("serviceFastDesc")}</p>
+            </div>
+          </article>
+          <article className="flex items-center gap-3 border-b border-border px-5 py-4 lg:border-b-0 lg:border-r">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-steel-azure-50 text-lg">🔒</span>
+            <div>
+              <p className="text-sm font-bold text-ink">{t("serviceSecure")}</p>
+              <p className="text-xs text-ink-light">{t("serviceSecureDesc")}</p>
+            </div>
+          </article>
+          <article className="flex items-center gap-3 border-b border-border px-5 py-4 md:border-b-0 md:border-r">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-steel-azure-50 text-lg">🎧</span>
+            <div>
+              <p className="text-sm font-bold text-ink">{t("serviceSupport")}</p>
+              <p className="text-xs text-ink-light">{t("serviceSupportDesc")}</p>
+            </div>
+          </article>
+          <article className="flex items-center gap-3 px-5 py-4">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-steel-azure-50 text-lg">✅</span>
+            <div>
+              <p className="text-sm font-bold text-ink">{t("serviceVerified")}</p>
+              <p className="text-xs text-ink-light">{t("serviceVerifiedDesc")}</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
+        <div className="flex items-end justify-between">
+          <h2 className="text-2xl font-bold">{t("browseByCategory")}</h2>
+        </div>
+        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {visualCategories.map((cat) => (
+            <Link
+              key={`${cat.label}-${cat.href}`}
+              href={cat.href}
+              className="group rounded-2xl border border-border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-interactive-primary">{cat.label}</p>
+                  <p className="mt-2 text-sm text-ink-light">{cat.subtitle}</p>
+                </div>
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-lg">{cat.badge}</span>
+              </div>
+              <p className="mt-4 text-2xl font-black text-ink">{cat.count}</p>
+              <p className="mt-1 text-sm font-semibold text-interactive-primary group-hover:text-header">{t("viewAll")} →</p>
+            </Link>
+          ))}
         </div>
       </section>
 
