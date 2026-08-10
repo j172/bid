@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { isValidEmail } from "@/lib/emailValidation";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -13,7 +14,10 @@ export default function NewsletterForm() {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
 
-    if (!email.includes("@")) {
+    // Same rule the subscribe endpoint enforces (lib/emailValidation.ts,
+    // issue #140 M-2) — kept in sync so the inline hint below never says
+    // "looks fine" about an address the server will reject.
+    if (!isValidEmail(email)) {
       setStatus("error");
       return;
     }
@@ -58,7 +62,7 @@ export default function NewsletterForm() {
       {status === "success" && <p className="mt-2 text-sm text-emerald-600">{t("newsletterSuccess")}</p>}
       {status === "error" && (
         <p className="mt-2 text-sm text-red-600">
-          {email.includes("@") ? t("newsletterError") : t("newsletterInvalidEmail")}
+          {isValidEmail(email) ? t("newsletterError") : t("newsletterInvalidEmail")}
         </p>
       )}
     </form>

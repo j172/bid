@@ -1,7 +1,6 @@
 import { readFile } from "fs/promises";
-import { join, normalize } from "path";
 import { NextResponse } from "next/server";
-import { UPLOADS_ROOT } from "@/lib/uploads";
+import { resolveUploadPath } from "@/lib/uploads";
 
 const CONTENT_TYPES: Record<string, string> = {
   jpg: "image/jpeg",
@@ -13,16 +12,17 @@ const CONTENT_TYPES: Record<string, string> = {
 
 export async function GET(_request: Request, { params }: { params: Promise<{ path: string[] }> }) {
   const { path: segments } = await params;
-  const relative = segments.join("/");
-  const resolved = normalize(join(UPLOADS_ROOT, relative));
+  // Path-traversal containment lives in lib/uploads.ts's resolveUploadPath
+  // (issue #140 L-2) — null means the request escaped UPLOADS_ROOT.
+  const resolved = resolveUploadPath(segments);
 
-  if (!resolved.startsWith(UPLOADS_ROOT)) {
+  if (resolved === null) {
     return new NextResponse("Not found", { status: 404 });
   }
 
   try {
     const data = await readFile(resolved);
-    const extension = relative.split(".").pop()?.toLowerCase() ?? "";
+    const extension = segments.join("/").split(".").pop()?.toLowerCase() ?? "";
     const contentType = CONTENT_TYPES[extension] ?? "application/octet-stream";
     return new NextResponse(new Uint8Array(data), {
       headers: {
