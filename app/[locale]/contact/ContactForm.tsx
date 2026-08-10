@@ -1,34 +1,11 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import Script from "next/script";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Button from "@/app/components/Button";
+import TurnstileWidget, { type TurnstileWidgetHandle } from "@/app/components/TurnstileWidget";
 import { inputClass } from "@/lib/formStyles";
 import { usePostJson } from "@/lib/usePostJson";
-
-// Minimal shape of the global Cloudflare Turnstile API exposed by
-// https://challenges.cloudflare.com/turnstile/v0/api.js once it loads.
-// Explicit rendering (turnstile.render(...)), not the script's own implicit
-// auto-render, since the widget container only exists once this client
-// component has mounted — implicit rendering only scans the DOM once, at
-// window.onload, and would miss a container added after that.
-declare global {
-  interface Window {
-    turnstile?: {
-      render: (
-        container: HTMLElement,
-        options: {
-          sitekey: string;
-          callback: (token: string) => void;
-          "expired-callback"?: () => void;
-          "error-callback"?: () => void;
-        },
-      ) => string;
-      reset: (widgetId?: string) => void;
-    };
-  }
-}
 
 interface ContactFormProps {
   // Turnstile *site* key (not secret) — null when CLOUDFLARE_TURNSTILE_SITE_KEY
@@ -51,47 +28,7 @@ export default function ContactForm({ turnstileSiteKey }: ContactFormProps) {
   const [notice, setNotice] = useState<string | null>(null);
   const { post, submitting, error } = usePostJson(t("defaultError"));
 
-  const turnstileContainerRef = useRef<HTMLDivElement>(null);
-  const widgetIdRef = useRef<string | null>(null);
-
-  function renderTurnstile() {
-    if (!turnstileSiteKey || widgetIdRef.current || !turnstileContainerRef.current || !window.turnstile) {
-      return;
-    }
-    widgetIdRef.current = window.turnstile.render(turnstileContainerRef.current, {
-      sitekey: turnstileSiteKey,
-      callback: (token) => setTurnstileToken(token),
-      "expired-callback": () => setTurnstileToken(""),
-      "error-callback": () => setTurnstileToken(""),
-    });
-  }
-
-  // Fallback for next/script's onLoad not firing again when the api.js
-  // script is already present (e.g. client-side navigation back to this
-  // page within the same session) — poll briefly for window.turnstile
-  // rather than relying on onLoad alone.
-  useEffect(() => {
-    if (!turnstileSiteKey) return;
-    if (window.turnstile) {
-      renderTurnstile();
-      return;
-    }
-    const interval = setInterval(() => {
-      if (window.turnstile) {
-        renderTurnstile();
-        clearInterval(interval);
-      }
-    }, 200);
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [turnstileSiteKey]);
-
-  function resetTurnstile() {
-    if (window.turnstile && widgetIdRef.current) {
-      window.turnstile.reset(widgetIdRef.current);
-    }
-    setTurnstileToken("");
-  }
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -101,7 +38,7 @@ export default function ContactForm({ turnstileSiteKey }: ContactFormProps) {
 
     // A Turnstile token is single-use, so the widget is reset either way —
     // otherwise a retry after a failed submit would send a spent token.
-    resetTurnstile();
+    turnstileRef.current?.reset();
 
     if (!data) return;
 
@@ -114,7 +51,6 @@ export default function ContactForm({ turnstileSiteKey }: ContactFormProps) {
 
   return (
     <>
-      {turnstileSiteKey && <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" onLoad={renderTurnstile} />}
       <form onSubmit={handleSubmit} className="mt-4 grid grid-cols-1 gap-3">
         <input
           className={inputClass}
@@ -145,7 +81,7 @@ export default function ContactForm({ turnstileSiteKey }: ContactFormProps) {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
         />
-        {turnstileSiteKey && <div ref={turnstileContainerRef} />}
+        {turnstileSiteKey && <TurnstileWidget ref={turnstileRef} siteKey={turnstileSiteKey} onToken={setTurnstileToken} />}
         <div className="flex items-center gap-3">
           <Button type="submit" disabled={submitting || (Boolean(turnstileSiteKey) && !turnstileToken)}>
             {submitting ? t("submitting") : t("submit")}

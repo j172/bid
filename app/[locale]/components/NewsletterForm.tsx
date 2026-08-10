@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { isValidEmail } from "@/lib/emailValidation";
 import { usePostJson } from "@/lib/usePostJson";
 
 // Footer newsletter opt-in. Issue #139 item 19: this used to be the one
@@ -22,8 +23,11 @@ export default function NewsletterForm() {
     setSubscribed(false);
 
     // Local pre-check, kept ahead of the request so an obviously malformed
-    // address gets the more specific copy without a round trip.
-    if (!email.includes("@")) {
+    // address gets the more specific copy without a round trip. Deliberately
+    // the very rule the subscribe endpoint enforces (lib/emailValidation.ts,
+    // issue #140 M-2) rather than a looser approximation, so this never waves
+    // through an address the server will reject.
+    if (!isValidEmail(email)) {
       setError(t("newsletterInvalidEmail"));
       return;
     }

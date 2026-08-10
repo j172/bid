@@ -1,9 +1,10 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import Button from "@/app/components/Button";
+import TurnstileWidget, { type TurnstileWidgetHandle } from "@/app/components/TurnstileWidget";
 import { inputClass } from "@/lib/formStyles";
 import { usePostJson } from "@/lib/usePostJson";
 import AuthFormShell from "../components/AuthFormShell";
@@ -12,6 +13,14 @@ interface TotpStepProps {
   /** The credentials the password step already collected — POST /api/auth/verify-totp re-verifies them itself. */
   email: string;
   password: string;
+  /**
+   * Turnstile *site* key, forwarded from LoginForm (ultimately
+   * app/[locale]/login/page.tsx's server-side read of
+   * CLOUDFLARE_TURNSTILE_SITE_KEY). Null when unconfigured, in which case the
+   * widget is skipped rather than shown broken — /api/auth/verify-totp still
+   * demands a valid token whenever CLOUDFLARE_TURNSTILE_SECRET_KEY is set.
+   */
+  turnstileSiteKey: string | null;
   /** Returns to the password form, discarding whatever was typed here. */
   onBack: () => void;
 }
@@ -34,12 +43,24 @@ interface VerifyTotpResponse {
 // doesn't navigate away immediately; it shows how many backup codes remain
 // first, since that's the only time the visitor finds out, then a second
 // click continues on.
-export default function TotpStep({ email, password, onBack }: TotpStepProps) {
+//
+// This step carries a Turnstile challenge of its own (issue #140 H-1) rather
+// than reusing the password step's: a token is single-use, and
+// /api/auth/verify-totp re-checks the password on every attempt, so it is a
+// password-guessing surface in its own right and verifies its own token.
+export default function TotpStep({ email, password, turnstileSiteKey, onBack }: TotpStepProps) {
   const router = useRouter();
   const t = useTranslations("login");
   const [code, setCode] = useState("");
   const [backupNotice, setBackupNotice] = useState<string | null>(null);
   const { post, submitting, error, setError } = usePostJson(t("defaultError"));
+
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
+  // Configured but no token yet (still loading, or the challenge isn't
+  // passed): submitting would only earn a TURNSTILE_VERIFICATION_FAILED from
+  // the server, so stop it here and say so instead.
+  const turnstilePending = Boolean(turnstileSiteKey) && !turnstileToken;
 
   function goHome() {
     router.push("/");
@@ -48,9 +69,23 @@ export default function TotpStep({ email, password, onBack }: TotpStepProps) {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (turnstilePending) {
+      setError(t("turnstileNotReady"));
+      return;
+    }
 
-    const data = await post<VerifyTotpResponse>("/api/auth/verify-totp", { email, password, code });
-    if (!data) return;
+    const data = await post<VerifyTotpResponse>("/api/auth/verify-totp", {
+      email,
+      password,
+      code,
+      turnstileToken,
+    });
+    if (!data) {
+      // The token just spent can't be reused, so hand the visitor a fresh
+      // challenge before they retry.
+      turnstileRef.current?.reset();
+      return;
+    }
 
     if (data.usedBackupCode) {
       setBackupNotice(t("totpBackupCodeUsedNotice", { count: data.remainingBackupCodes ?? 0 }));
@@ -88,6 +123,7 @@ export default function TotpStep({ email, password, onBack }: TotpStepProps) {
             onClick={() => {
               setCode("");
               setError(null);
+              setTurnstileToken("");
               onBack();
             }}
             className="font-medium text-interactive-primary hover:underline"
@@ -112,6 +148,9 @@ export default function TotpStep({ email, password, onBack }: TotpStepProps) {
           className={inputClass}
         />
       </label>
+      {turnstileSiteKey && (
+        <TurnstileWidget ref={turnstileRef} siteKey={turnstileSiteKey} onToken={setTurnstileToken} />
+      )}
     </AuthFormShell>
   );
 }
