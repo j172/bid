@@ -7,6 +7,7 @@
 // pointer.
 
 import { getDb } from "@/lib/db";
+import { paginate } from "@/lib/pagination";
 
 export interface NewsPost {
   id: number;
@@ -88,12 +89,10 @@ export async function listNews(options: ListNewsOptions = {}): Promise<{ items: 
   const [countRows] = await db.query(`SELECT COUNT(*) AS cnt FROM news_posts ${where}`, params);
   const total = (countRows as { cnt: number }[])[0].cnt;
 
-  const pageSize = options.pageSize ?? DEFAULT_NEWS_PAGE_SIZE;
-  const page = Math.max(1, options.page ?? 1);
-  const offset = (page - 1) * pageSize;
+  const { offset, limit } = paginate(options.page, options.pageSize ?? DEFAULT_NEWS_PAGE_SIZE);
 
   const [rows] = await db.query(
-    `${SELECT} ${where} ORDER BY created_at DESC, id DESC LIMIT ${pageSize} OFFSET ${offset}`,
+    `${SELECT} ${where} ORDER BY created_at DESC, id DESC LIMIT ${limit} OFFSET ${offset}`,
     params,
   );
   return { items: (rows as NewsPostRow[]).map(mapRow), total };

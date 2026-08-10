@@ -42,27 +42,57 @@ export function resolveUploadPath(segments: string[]): string | null {
   return resolved;
 }
 
-export async function saveListingPhotos(listingId: number, photos: File[]): Promise<string[]> {
-  const dir = join(UPLOADS_ROOT, "listings", String(listingId));
-  await mkdir(dir, { recursive: true });
-
-  const fileNames: string[] = [];
-  for (const photo of photos) {
-    if (!isAllowedPhotoType(photo.type)) {
-      throw new Error(`不支援的圖片格式：${photo.type || "unknown"}`);
-    }
-    if (photo.size > MAX_PHOTO_BYTES) {
-      throw new Error(`圖片檔案過大（上限 ${MAX_PHOTO_BYTES / 1024 / 1024}MB）`);
-    }
-
-    const extension = ALLOWED_EXTENSIONS[photo.type];
-    const fileName = `${randomBytes(16).toString("hex")}.${extension}`;
-    const buffer = Buffer.from(await photo.arrayBuffer());
-    await writeFile(join(dir, fileName), buffer);
-    fileNames.push(fileName);
+// Validates and stores one image, and is the single place that decides what
+// a stored file is named. Every upload in this module goes through it — the
+// single-image CMS savers below directly, the multi-image savers via
+// saveImages — so the type/size checks can't drift between the two shapes
+// (issue #139: the two multi-image loops had their own copies).
+//
+// maxBytes differs per caller: inline description images have their own,
+// smaller ceiling than gallery photos. Browser-side callers should run the
+// file through convertPhotoToWebp (lib/convertPhotoToWebp.ts) before upload,
+// same as the listing photo picker does — this doesn't re-encode.
+async function saveSingleImage(
+  dir: string,
+  image: File,
+  options: { maxBytes?: number; tooLargeError?: (limitMb: number) => string } = {},
+): Promise<string> {
+  const maxBytes = options.maxBytes ?? MAX_PHOTO_BYTES;
+  if (!isAllowedPhotoType(image.type)) {
+    throw new Error(`不支援的圖片格式：${image.type || "unknown"}`);
+  }
+  if (image.size > maxBytes) {
+    const limitMb = maxBytes / 1024 / 1024;
+    throw new Error(options.tooLargeError?.(limitMb) ?? `圖片檔案過大（上限 ${limitMb}MB）`);
   }
 
+  await mkdir(dir, { recursive: true });
+  const extension = ALLOWED_EXTENSIONS[image.type];
+  const fileName = `${randomBytes(16).toString("hex")}.${extension}`;
+  const buffer = Buffer.from(await image.arrayBuffer());
+  await writeFile(join(dir, fileName), buffer);
+  return fileName;
+}
+
+// Sequential on purpose: these run inside a request handler, and the file
+// count is already capped upstream (lib/photoLimits.ts,
+// lib/descriptionImageLimits.ts), so bounded memory beats parallel writes.
+// A rejected file aborts the whole batch — the route treats a partial upload
+// as a failed one.
+async function saveImages(
+  dir: string,
+  images: File[],
+  options?: { maxBytes?: number; tooLargeError?: (limitMb: number) => string },
+): Promise<string[]> {
+  const fileNames: string[] = [];
+  for (const image of images) {
+    fileNames.push(await saveSingleImage(dir, image, options));
+  }
   return fileNames;
+}
+
+export async function saveListingPhotos(listingId: number, photos: File[]): Promise<string[]> {
+  return saveImages(join(UPLOADS_ROOT, "listings", String(listingId)), photos);
 }
 
 export function listingPhotoUrl(listingId: number, fileName: string): string {
@@ -74,26 +104,10 @@ export function listingPhotoUrl(listingId: number, fileName: string): string {
 // the main photo gallery, since the two have independent count/size limits
 // (lib/descriptionImageLimits.ts) and aren't part of listing_photos.
 export async function saveDescriptionImages(listingId: number, images: File[]): Promise<string[]> {
-  const dir = join(UPLOADS_ROOT, "listings", String(listingId), "description");
-  await mkdir(dir, { recursive: true });
-
-  const fileNames: string[] = [];
-  for (const image of images) {
-    if (!isAllowedPhotoType(image.type)) {
-      throw new Error(`不支援的圖片格式：${image.type || "unknown"}`);
-    }
-    if (image.size > DESCRIPTION_IMAGE_MAX_BYTES) {
-      throw new Error(`描述圖片過大（上限 ${DESCRIPTION_IMAGE_MAX_BYTES / 1024 / 1024}MB）`);
-    }
-
-    const extension = ALLOWED_EXTENSIONS[image.type];
-    const fileName = `${randomBytes(16).toString("hex")}.${extension}`;
-    const buffer = Buffer.from(await image.arrayBuffer());
-    await writeFile(join(dir, fileName), buffer);
-    fileNames.push(fileName);
-  }
-
-  return fileNames;
+  return saveImages(join(UPLOADS_ROOT, "listings", String(listingId), "description"), images, {
+    maxBytes: DESCRIPTION_IMAGE_MAX_BYTES,
+    tooLargeError: (limitMb) => `描述圖片過大（上限 ${limitMb}MB）`,
+  });
 }
 
 export function descriptionImageUrl(listingId: number, fileName: string): string {
@@ -121,28 +135,6 @@ export async function copyListingPhotos(fromListingId: number, toListingId: numb
   for (const fileName of fileNames) {
     await copyFile(join(fromDir, fileName), join(toDir, fileName));
   }
-}
-
-// Shared by every single-image CMS upload below (homepage sections) — same
-// validation/naming/storage scheme as saveListingPhotos' per-photo loop body,
-// just factored out since these callers each only ever save exactly one file
-// at a time. Browser-side callers should run the file through
-// convertPhotoToWebp (lib/convertPhotoToWebp.ts) before upload, same as the
-// listing photo picker does — this function itself doesn't re-encode.
-async function saveSingleImage(dir: string, image: File): Promise<string> {
-  if (!isAllowedPhotoType(image.type)) {
-    throw new Error(`不支援的圖片格式：${image.type || "unknown"}`);
-  }
-  if (image.size > MAX_PHOTO_BYTES) {
-    throw new Error(`圖片檔案過大（上限 ${MAX_PHOTO_BYTES / 1024 / 1024}MB）`);
-  }
-
-  await mkdir(dir, { recursive: true });
-  const extension = ALLOWED_EXTENSIONS[image.type];
-  const fileName = `${randomBytes(16).toString("hex")}.${extension}`;
-  const buffer = Buffer.from(await image.arrayBuffer());
-  await writeFile(join(dir, fileName), buffer);
-  return fileName;
 }
 
 // homepage_sections (合作鴿舍 etc. — see lib/homepageSections.ts) — one

@@ -125,10 +125,16 @@ export function notifyOutbid(listingId: number, outbidUserId: number): void {
   void (async () => {
     const db = await getDb();
     const [rows] = await db.query(
+      // Deliberately an unrelated cross join of exactly two rows (the
+      // outbid user, and the listing they were outbid on) — there's no key
+      // linking them, since the outbid user is by definition no longer the
+      // listing's leader. Both sides are pinned in the WHERE rather than one
+      // of them hidden in the JOIN condition, matching how every other query
+      // in this file reads.
       `SELECT u.email AS email, u.locale AS locale, l.title AS title
        FROM users u
-       JOIN listings l ON l.id = ?
-       WHERE u.id = ?`,
+       CROSS JOIN listings l
+       WHERE l.id = ? AND u.id = ?`,
       [listingId, outbidUserId],
     );
     const row = (rows as { email: string; locale: string; title: string }[])[0];
