@@ -2,6 +2,7 @@ import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import { getDb } from "@/lib/db";
 import { findBlockingObligation } from "@/lib/listings";
+import { paginate } from "@/lib/pagination";
 import type { ErrorCode } from "@/lib/errorCodes";
 
 const SESSION_COOKIE = "session";
@@ -201,8 +202,7 @@ export async function listUsers(options: ListUsersOptions = {}): Promise<{ users
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
   const orderBy = SORT_CLAUSES[options.sort ?? "created_desc"];
-  const page = Math.max(1, options.page ?? 1);
-  const offset = (page - 1) * USERS_PAGE_SIZE;
+  const { offset, limit } = paginate(options.page, USERS_PAGE_SIZE);
 
   const [countRows] = await db.query(`SELECT COUNT(*) AS cnt FROM users u ${whereClause}`, params);
   const total = (countRows as { cnt: number }[])[0].cnt;
@@ -218,7 +218,7 @@ export async function listUsers(options: ListUsersOptions = {}): Promise<{ users
      FROM users u
      ${whereClause}
      ORDER BY ${orderBy}
-     LIMIT ${USERS_PAGE_SIZE} OFFSET ${offset}`,
+     LIMIT ${limit} OFFSET ${offset}`,
     params,
   );
   return { users: rows as UserSummary[], total };
@@ -335,9 +335,22 @@ export async function suspendUser(targetUserId: number, actingUserId: number): P
   return { ok: true };
 }
 
-export async function unsuspendUser(targetUserId: number): Promise<void> {
+// Mirrors suspendUser's existence check (issue #139 M5) — it used to run its
+// UPDATE unconditionally and report { ok: true } even for an id that doesn't
+// exist (or an already-deleted account), so the admin UI would happily show
+// "解除停權成功" for a row that was never touched. None of suspendUser's
+// other guards apply in reverse: un-suspending yourself is impossible
+// (a suspended admin can't be logged in to call this) and lifting a
+// suspension can never leave the system without an operational admin.
+export async function unsuspendUser(targetUserId: number): Promise<SuspendOutcome> {
   const db = await getDb();
+  const [rows] = await db.query("SELECT id FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1", [targetUserId]);
+  if (!(rows as { id: number }[])[0]) {
+    return { ok: false, error: "找不到這個使用者" };
+  }
+
   await db.query("UPDATE users SET suspended_at = NULL WHERE id = ?", [targetUserId]);
+  return { ok: true };
 }
 
 export interface AccountProfile {

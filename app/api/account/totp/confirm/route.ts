@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/apiAuth";
 import { confirmTotpSetup } from "@/lib/totp";
 
 // Step 2 of the TOTP setup wizard (issue #97) — the counterpart to
@@ -12,17 +12,15 @@ import { confirmTotpSetup } from "@/lib/totp";
 // the code, only then promoting the secret out of the temporary challenge
 // table and minting backup codes; see its own header comment in lib/totp.ts.
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, errorCode: "MUST_LOGIN" }, { status: 401 });
-  }
+  const auth = await requireUser();
+  if (auth.response) return auth.response;
 
   const body = await request.json().catch(() => null);
   const token = typeof body?.token === "string" ? body.token : "";
   const code = typeof body?.code === "string" ? body.code : "";
   const currentPassword = typeof body?.currentPassword === "string" ? body.currentPassword : "";
 
-  const result = await confirmTotpSetup(user.id, currentPassword, token, code);
+  const result = await confirmTotpSetup(auth.user.id, currentPassword, token, code);
   if (!result.ok) {
     return NextResponse.json({ ok: false, errorCode: result.errorCode }, { status: 400 });
   }

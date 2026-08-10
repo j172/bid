@@ -37,6 +37,27 @@ describe("newsletterErrorMessage", () => {
     expect(createMessage).not.toEqual(sendMessage);
     expect(sendMessage).toContain("已建立");
   });
+
+  // The "cancel" stage exists so app/api/admin/newsletter/[id]'s DELETE can
+  // answer with a translated `error` like every other admin route, instead
+  // of handing the raw BroadcastErrorCode to a UI with no catalogue to
+  // resolve it against (issue #139 M4).
+  it("phrases the cancel stage as a cancel failure, not a send failure", () => {
+    const cancelMessage = newsletterErrorMessage("PROVIDER_ERROR", "cancel");
+    expect(cancelMessage).toContain("取消");
+    expect(cancelMessage).not.toContain("寄送失敗");
+    expect(cancelMessage).not.toEqual(newsletterErrorMessage("PROVIDER_ERROR", "send"));
+  });
+
+  it("still names the missing configuration at the cancel stage", () => {
+    const cancelMessage = newsletterErrorMessage("NOT_CONFIGURED", "cancel");
+    expect(cancelMessage).toContain("尚未設定");
+    expect(cancelMessage).toContain("取消");
+  });
+
+  it("tells the admin a broadcast is already gone rather than blaming the provider", () => {
+    expect(newsletterErrorMessage("NOT_FOUND", "cancel")).toContain("找不到");
+  });
 });
 
 describe("resolveOrigin", () => {

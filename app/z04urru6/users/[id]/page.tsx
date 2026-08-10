@@ -8,11 +8,9 @@ import SuspendToggleButton from "../SuspendToggleButton";
 import ResetPasswordButton from "../ResetPasswordButton";
 import DisableTwoFactorButton from "../DisableTwoFactorButton";
 import AdminPageIntro from "../../AdminPageIntro";
+import { td, th } from "../../components/tableStyles";
 
 export const dynamic = "force-dynamic";
-
-const th = "border-b border-border px-4 py-3 text-left text-sm font-semibold text-ink-light";
-const td = "border-b border-border px-4 py-3 text-sm";
 
 const STATUS_LABEL: Record<string, string> = { active: "正常", suspended: "停權", deleted: "已刪除" };
 // issue #97 adds 'totp' alongside #93's 'email_otp' — both non-'none' values

@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser, getUserDetail } from "@/lib/auth";
+import { requireAdmin } from "@/lib/apiAuth";
+import { getUserDetail } from "@/lib/auth";
 import { createPasswordResetToken, isPasswordResetRateLimited, resetPasswordPath } from "@/lib/passwordReset";
 import { sendPasswordResetEmail } from "@/lib/notifications";
 import { resolveOrigin } from "@/lib/newsNewsletterSync";
+import { parseIdParam } from "@/lib/routeParams";
 
 // Admin-triggered counterpart to app/api/auth/forgot-password/route.ts
 // (issue #91, building on #89). Unlike that route this is NOT anti-
@@ -24,14 +26,12 @@ import { resolveOrigin } from "@/lib/newsNewsletterSync";
 // admin-only modules are out of scope for that pattern, so failures are
 // plain hardcoded Traditional Chinese, matching those routes.
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const admin = await getCurrentUser();
-  if (!admin || admin.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const { id } = await params;
-  const targetUserId = Number(id);
-  if (!Number.isFinite(targetUserId)) {
+  const targetUserId = parseIdParam(id);
+  if (targetUserId === null) {
     return NextResponse.json({ ok: false, error: "找不到這個使用者" }, { status: 404 });
   }
 

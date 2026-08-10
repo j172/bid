@@ -1,7 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import AdminModal from "../../components/AdminModal";
+import ImageUploadField from "../../components/ImageUploadField";
+import ModalFormActions from "../../components/ModalFormActions";
+import { useImageUploadPreview } from "../../components/useImageUploadPreview";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 text-sm focus:border-interactive-primary focus:outline-none";
 const TITLE_MAX = 255;
@@ -27,7 +31,6 @@ type Props = { mode: "create"; sectionType: string } | { mode: "edit"; sectionTy
 // collapsed into one component since the form is much smaller here.
 export default function PartnerLoftFormModal(props: Props) {
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const isEdit = props.mode === "edit";
 
   const [open, setOpen] = useState(false);
@@ -35,7 +38,7 @@ export default function PartnerLoftFormModal(props: Props) {
   const [bio, setBio] = useState(isEdit ? (props.section.bio ?? "") : "");
   const [sortOrder, setSortOrder] = useState(isEdit ? String(props.section.sortOrder) : "");
   const [isActive, setIsActive] = useState(isEdit ? props.section.isActive : true);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(isEdit ? props.section.imageUrl : null);
+  const image = useImageUploadPreview(isEdit ? props.section.imageUrl : null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -44,28 +47,15 @@ export default function PartnerLoftFormModal(props: Props) {
     setBio(isEdit ? (props.section.bio ?? "") : "");
     setSortOrder(isEdit ? String(props.section.sortOrder) : "");
     setIsActive(isEdit ? props.section.isActive : true);
-    setPreviewUrl((prev) => {
-      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
-      return isEdit ? props.section.imageUrl : null;
-    });
     setError(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }
-
-  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setPreviewUrl((prev) => {
-      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
-      return URL.createObjectURL(file);
-    });
+    image.reset();
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
 
-    const file = fileInputRef.current?.files?.[0];
+    const file = image.selectedFile();
     if (!isEdit && !file) {
       setError("請上傳圖片");
       return;
@@ -113,77 +103,54 @@ export default function PartnerLoftFormModal(props: Props) {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg border border-border bg-surface p-6 shadow-lg">
-            <h2 className="text-lg font-semibold">{isEdit ? "編輯合作鴿舍" : "新增合作鴿舍"}</h2>
+        <AdminModal title={isEdit ? "編輯合作鴿舍" : "新增合作鴿舍"} size="lg">
+          <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
+            <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+              標題
+              <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={TITLE_MAX} required className={inputClass} />
+            </label>
 
-            <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
-              <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-                標題
-                <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={TITLE_MAX} required className={inputClass} />
-              </label>
+            <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+              簡介（選填）
+              <textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="簡短介紹這個合作鴿舍"
+                maxLength={BIO_MAX}
+                rows={3}
+                className={inputClass}
+              />
+            </label>
 
-              <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-                簡介（選填）
-                <textarea
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="簡短介紹這個合作鴿舍"
-                  maxLength={BIO_MAX}
-                  rows={3}
-                  className={inputClass}
-                />
-              </label>
+            <ImageUploadField
+              label={`圖片${isEdit ? "（留空表示不更換）" : ""}`}
+              fileInputRef={image.fileInputRef}
+              previewUrl={image.previewUrl}
+              onChange={image.handleFileChange}
+            />
 
-              <div className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-                圖片{isEdit ? "（留空表示不更換）" : ""}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  onChange={handleFileChange}
-                  className="text-sm"
-                />
-                {previewUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={previewUrl} alt="" className="mt-2 h-24 w-24 rounded-md border border-border object-cover" />
-                )}
-              </div>
+            <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+              排序（留空自動排在最後）
+              <input value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} type="number" min={0} step={1} className={inputClass} />
+            </label>
 
-              <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-                排序（留空自動排在最後）
-                <input value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} type="number" min={0} step={1} className={inputClass} />
-              </label>
+            <label className="flex items-center gap-2 text-sm font-medium text-ink-light">
+              <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
+              啟用中（於首頁顯示）
+            </label>
 
-              <label className="flex items-center gap-2 text-sm font-medium text-ink-light">
-                <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
-                啟用中（於首頁顯示）
-              </label>
-
-              {error && <p className="text-sm text-ended">{error}</p>}
-              <div className="mt-2 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpen(false);
-                    resetForm();
-                  }}
-                  disabled={submitting}
-                  className="rounded-md border border-border px-4 py-1.5 text-sm font-medium text-ink hover:bg-surface-muted"
-                >
-                  取消
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="rounded-md bg-header px-4 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {submitting ? "儲存中..." : "儲存"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            {error && <p className="text-sm text-ended">{error}</p>}
+            <ModalFormActions
+              onCancel={() => {
+                setOpen(false);
+                resetForm();
+              }}
+              submitting={submitting}
+              submitLabel="儲存"
+              pendingLabel="儲存中..."
+            />
+          </form>
+        </AdminModal>
       )}
     </>
   );

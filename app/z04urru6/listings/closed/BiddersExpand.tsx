@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLazyExpand } from "../../components/useLazyExpand";
 
 interface Bidder {
   email: string;
@@ -13,30 +13,13 @@ function formatDate(iso: string): string {
 }
 
 export default function BiddersExpand({ listingId, bidCount }: { listingId: number; bidCount: number }) {
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [bidders, setBidders] = useState<Bidder[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleToggle() {
-    if (open) {
-      setOpen(false);
-      return;
-    }
-    setOpen(true);
-    if (bidders !== null) return;
-
-    setLoading(true);
-    setError(null);
-    const response = await fetch(`/api/admin/listings/${listingId}/bidders`);
-    const data = await response.json();
-    setLoading(false);
-    if (!data.ok) {
-      setError(data.error ?? "讀取失敗");
-      return;
-    }
-    setBidders(data.bidders);
-  }
+  const {
+    open,
+    loading,
+    data: bidders,
+    error,
+    toggle,
+  } = useLazyExpand<Bidder[]>(`/api/admin/listings/${listingId}/bidders`, (payload) => payload.bidders as Bidder[]);
 
   if (bidCount === 0) {
     return <span className="text-xs text-ink-light">0</span>;
@@ -44,7 +27,7 @@ export default function BiddersExpand({ listingId, bidCount }: { listingId: numb
 
   return (
     <div>
-      <button type="button" onClick={handleToggle} className="text-xs font-medium text-interactive-primary hover:underline">
+      <button type="button" onClick={toggle} className="text-xs font-medium text-interactive-primary hover:underline">
         {bidCount} {open ? "▲ 收合" : "▼ 展開"}
       </button>
       {open && (

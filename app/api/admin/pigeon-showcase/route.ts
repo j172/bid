@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/apiAuth";
 import {
   createPigeonShowcase,
   isPigeonShowcasePageSize,
@@ -12,7 +12,12 @@ import {
   validatePigeonShowcaseName,
 } from "@/lib/pigeonShowcaseValidation";
 import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
-import { deletePigeonShowcaseImageFile, savePigeonShowcaseImage } from "@/lib/uploads";
+import {
+  deletePigeonShowcaseImageFile,
+  saveImageOrError,
+  savePigeonShowcaseImage,
+  withImageRollback,
+} from "@/lib/uploads";
 
 // Admin list view — matches the filters issue #54 asks for: category
 // dropdown, name substring search, loft dropdown, selectable page size
@@ -21,13 +26,8 @@ import { deletePigeonShowcaseImageFile, savePigeonShowcaseImage } from "@/lib/up
 // listPigeonShowcase directly (server component), same as every other
 // public page in this app reading straight from lib/*.ts.
 export async function GET(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, error: "請先登入" }, { status: 401 });
-  }
-  if (user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const { searchParams } = new URL(request.url);
   const categoryRaw = searchParams.get("category") ?? "";
@@ -46,13 +46,8 @@ export async function GET(request: Request) {
 // Submits FormData (not JSON) as of issue #70 — 主圖 upload is required on
 // every create, front and back end both (see PigeonShowcaseFormModal.tsx).
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, error: "請先登入" }, { status: 401 });
-  }
-  if (user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const form = await request.formData();
   const category = form.get("category");
@@ -79,13 +74,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "請上傳主圖" }, { status: 400 });
   }
 
-  let imageFileName: string;
-  try {
-    imageFileName = await savePigeonShowcaseImage(image);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "圖片上傳失敗";
-    return NextResponse.json({ ok: false, error: message }, { status: 400 });
+  const saved = await saveImageOrError(() => savePigeonShowcaseImage(image));
+  if (!saved.ok) {
+    return NextResponse.json({ ok: false, error: saved.error }, { status: 400 });
   }
+  const imageFileName = saved.fileName;
 
   const input: PigeonShowcaseInput = {
     category,
@@ -94,10 +87,13 @@ export async function POST(request: Request) {
     description: sanitizeDescriptionHtml(description),
     imageFileName,
   };
-  const result = await createPigeonShowcase(input);
+  // Rollback: if the row was never created, don't leave the just-uploaded
+  // file orphaned (issue #139 M2).
+  const result = await withImageRollback(
+    () => createPigeonShowcase(input),
+    () => deletePigeonShowcaseImageFile(imageFileName),
+  );
   if (!result.ok) {
-    // Row was never created — don't leave the just-uploaded file orphaned.
-    await deletePigeonShowcaseImageFile(imageFileName);
     return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
   }
   return NextResponse.json({ ok: true, id: result.id });

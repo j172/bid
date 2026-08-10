@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { listHomepageSections } from "@/lib/homepageSections";
 import {
   PIGEON_SHOWCASE_PAGE_SIZES,
@@ -10,52 +9,50 @@ import {
 import { isPigeonShowcaseCategory } from "@/lib/pigeonShowcaseValidation";
 import { pigeonShowcaseImageUrl } from "@/lib/uploads";
 import AdminPageIntro from "../AdminPageIntro";
+import AdminPagination from "../components/AdminPagination";
+import { parseFirstParam, parsePageParam, type SearchParams } from "../components/searchParams";
+import {
+  filterControlClass,
+  filterFormClass,
+  filterLabelClass,
+  filterSubmitClass,
+  tableRowClass,
+  tableWrapperClass,
+  td,
+  th,
+} from "../components/tableStyles";
 import PigeonShowcaseFormModal from "./PigeonShowcaseFormModal";
-import DeleteButton from "./DeleteButton";
+import DeleteConfirmButton from "../components/DeleteConfirmButton";
 
 export const dynamic = "force-dynamic";
 
-const th = "border-b border-border px-4 py-3 text-left text-sm font-semibold text-ink-light";
-const td = "border-b border-border px-4 py-3 text-sm";
-
 const CATEGORY_LABEL: Record<PigeonShowcaseCategory, string> = { award: "入賞鴿", imported: "進口鴿" };
 
-type SearchParams = Record<string, string | string[] | undefined>;
-
-function first(value: string | string[] | undefined): string | undefined {
-  return Array.isArray(value) ? value[0] : value;
-}
-
-function buildQuery(params: SearchParams, overrides: Record<string, string>): string {
-  const query = new URLSearchParams();
-  for (const key of ["category", "search", "loftId", "pageSize", "page"]) {
-    const value = key in overrides ? overrides[key] : first(params[key]);
-    if (value) query.set(key, value);
-  }
-  return query.toString();
-}
+const QUERY_KEYS = ["category", "search", "loftId", "pageSize", "page"] as const;
 
 export default async function PigeonShowcaseAdminPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams;
 
-  const categoryRaw = first(params.category) ?? "";
+  const categoryRaw = parseFirstParam(params.category) ?? "";
   const category = isPigeonShowcaseCategory(categoryRaw) ? categoryRaw : undefined;
-  const search = first(params.search) ?? "";
-  const loftIdRaw = first(params.loftId) ?? "";
+  const search = parseFirstParam(params.search) ?? "";
+  const loftIdRaw = parseFirstParam(params.loftId) ?? "";
   const loftId = loftIdRaw ? Number(loftIdRaw) : undefined;
-  const pageSizeRaw = Number(first(params.pageSize));
+  const pageSizeRaw = Number(parseFirstParam(params.pageSize));
   const pageSize = isPigeonShowcasePageSize(pageSizeRaw) ? pageSizeRaw : DEFAULT_PIGEON_SHOWCASE_PAGE_SIZE;
-  const page = Math.max(1, Number(first(params.page) ?? "1") || 1);
+  const requestedPage = parsePageParam(params.page);
 
   // activeOnly: false — admins need to see/filter by every 合作鴿舍, including
   // ones since deactivated on the homepage, since pigeon_showcase rows can
   // still reference them (same reasoning as the partner-lofts admin page).
   const [{ items, total }, lofts] = await Promise.all([
-    listPigeonShowcase({ category, search, loftId, page, pageSize }),
+    listPigeonShowcase({ category, search, loftId, page: requestedPage, pageSize }),
     listHomepageSections("partner_loft"),
   ]);
   const loftOptions = lofts.map((loft) => ({ id: loft.id, title: loft.title }));
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  // 超出範圍的 page 夾回最後一頁，避免分頁列顯示「第 999 / 3 頁」（issue #139 L3）。
+  const page = Math.min(requestedPage, totalPages);
 
   return (
     <main>
@@ -63,27 +60,22 @@ export default async function PigeonShowcaseAdminPage({ searchParams }: { search
         <PigeonShowcaseFormModal mode="create" lofts={loftOptions} />
       </AdminPageIntro>
 
-      <form className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm" method="GET">
-        <label className="flex flex-col gap-1 text-xs text-ink-light">
+      <form className={filterFormClass} method="GET">
+        <label className={filterLabelClass}>
           鴿種
-          <select name="category" defaultValue={category ?? ""} className="rounded-md border border-border px-2 py-1 text-sm focus:border-interactive-primary focus:outline-none">
+          <select name="category" defaultValue={category ?? ""} className={filterControlClass}>
             <option value="">全部</option>
             <option value="award">入賞鴿</option>
             <option value="imported">進口鴿</option>
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-xs text-ink-light">
+        <label className={filterLabelClass}>
           名稱
-          <input
-            name="search"
-            defaultValue={search}
-            placeholder="搜尋名稱"
-            className="rounded-md border border-border px-2 py-1 text-sm focus:border-interactive-primary focus:outline-none"
-          />
+          <input name="search" defaultValue={search} placeholder="搜尋名稱" className={filterControlClass} />
         </label>
-        <label className="flex flex-col gap-1 text-xs text-ink-light">
+        <label className={filterLabelClass}>
           鴿舍
-          <select name="loftId" defaultValue={loftId ? String(loftId) : ""} className="rounded-md border border-border px-2 py-1 text-sm focus:border-interactive-primary focus:outline-none">
+          <select name="loftId" defaultValue={loftId ? String(loftId) : ""} className={filterControlClass}>
             <option value="">全部</option>
             {loftOptions.map((loft) => (
               <option key={loft.id} value={loft.id}>
@@ -92,9 +84,9 @@ export default async function PigeonShowcaseAdminPage({ searchParams }: { search
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-xs text-ink-light">
+        <label className={filterLabelClass}>
           每頁筆數
-          <select name="pageSize" defaultValue={String(pageSize)} className="rounded-md border border-border px-2 py-1 text-sm focus:border-interactive-primary focus:outline-none">
+          <select name="pageSize" defaultValue={String(pageSize)} className={filterControlClass}>
             {PIGEON_SHOWCASE_PAGE_SIZES.map((size) => (
               <option key={size} value={size}>
                 {size}
@@ -102,7 +94,7 @@ export default async function PigeonShowcaseAdminPage({ searchParams }: { search
             ))}
           </select>
         </label>
-        <button type="submit" className="rounded-lg bg-interactive-primary px-4 py-2 text-sm font-medium text-white hover:bg-interactive-primary-active">
+        <button type="submit" className={filterSubmitClass}>
           套用
         </button>
       </form>
@@ -110,7 +102,7 @@ export default async function PigeonShowcaseAdminPage({ searchParams }: { search
       {items.length === 0 ? (
         <p className="mt-6 text-ink-light">找不到符合條件的鴿況資料。</p>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-2xl border border-border bg-surface shadow-sm">
+        <div className={tableWrapperClass}>
           <table className="w-full border-collapse">
             <thead>
               <tr>
@@ -126,7 +118,7 @@ export default async function PigeonShowcaseAdminPage({ searchParams }: { search
               {items.map((item) => {
                 const imageUrl = item.imageFileName ? pigeonShowcaseImageUrl(item.imageFileName) : "/images/hero-placeholder.png";
                 return (
-                  <tr key={item.id} className="transition hover:bg-surface-muted/80">
+                  <tr key={item.id} className={tableRowClass}>
                     <td className={td}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={imageUrl} alt={item.name} className="h-14 w-14 rounded-lg border border-border object-cover" />
@@ -149,7 +141,11 @@ export default async function PigeonShowcaseAdminPage({ searchParams }: { search
                             imageUrl,
                           }}
                         />
-                        <DeleteButton id={item.id} name={item.name} />
+                        <DeleteConfirmButton
+                          endpoint={`/api/admin/pigeon-showcase/${item.id}`}
+                          itemLabel={item.name}
+                          itemNoun="這筆鴿況資料"
+                        />
                       </div>
                     </td>
                   </tr>
@@ -160,23 +156,14 @@ export default async function PigeonShowcaseAdminPage({ searchParams }: { search
         </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-2 text-sm shadow-sm">
-          {page > 1 && (
-            <Link href={`/z04urru6/pigeon-showcase?${buildQuery(params, { page: String(page - 1) })}`} className="text-interactive-primary hover:underline">
-              上一頁
-            </Link>
-          )}
-          <span className="text-ink-light">
-            第 {page} / {totalPages} 頁（共 {total} 筆）
-          </span>
-          {page < totalPages && (
-            <Link href={`/z04urru6/pigeon-showcase?${buildQuery(params, { page: String(page + 1) })}`} className="text-interactive-primary hover:underline">
-              下一頁
-            </Link>
-          )}
-        </div>
-      )}
+      <AdminPagination
+        basePath="/z04urru6/pigeon-showcase"
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        params={params}
+        keys={QUERY_KEYS}
+      />
     </main>
   );
 }

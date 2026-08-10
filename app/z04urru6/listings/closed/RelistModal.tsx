@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import AdminModal from "../../components/AdminModal";
+import ModalFormActions from "../../components/ModalFormActions";
 import { ENDS_AT_MAX_DAYS, PRICE_MAX } from "@/lib/listingValidation";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
@@ -44,6 +46,18 @@ export default function RelistModal({ listingId }: { listingId: number }) {
     setLoaded(true);
   }
 
+  // 取消後把 loaded 一起清掉，下次打開才會重新抓伺服器上的真實資料，
+  // 而不是顯示上一次沒送出的編輯內容（issue #139 M2）。
+  function resetForm() {
+    setLoaded(false);
+    setLoadError(null);
+    setError(null);
+    setStartingPrice("");
+    setBuyItNowPrice("");
+    setStartsAt("");
+    setEndsAt(defaultEndsAt());
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
@@ -81,83 +95,72 @@ export default function RelistModal({ listingId }: { listingId: number }) {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-lg border border-border bg-surface p-6 shadow-lg">
-            <h2 className="text-lg font-semibold">重新上架</h2>
-            <p className="mt-1 text-xs text-ink-light">標題、描述、照片會自動沿用原商品，建立一個全新的拍賣商品。</p>
+        <AdminModal title="重新上架">
+          <p className="mt-1 text-xs text-ink-light">標題、描述、照片會自動沿用原商品，建立一個全新的拍賣商品。</p>
 
-            {loading && <p className="mt-4 text-sm text-ink-light">載入中...</p>}
-            {loadError && <p className="mt-4 text-sm text-ended">{loadError}</p>}
+          {loading && <p className="mt-4 text-sm text-ink-light">載入中...</p>}
+          {loadError && <p className="mt-4 text-sm text-ended">{loadError}</p>}
 
-            {loaded && (
-              <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
-                <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-                  起標價
-                  <input
-                    value={startingPrice}
-                    onChange={(e) => setStartingPrice(e.target.value)}
-                    type="number"
-                    min={1}
-                    max={PRICE_MAX}
-                    step={1}
-                    required
-                    className={inputClass}
-                  />
-                </label>
-                <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-                  買斷價（選填）
-                  <input
-                    value={buyItNowPrice}
-                    onChange={(e) => setBuyItNowPrice(e.target.value)}
-                    type="number"
-                    min={1}
-                    max={PRICE_MAX}
-                    step={1}
-                    className={inputClass}
-                  />
-                </label>
-                <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-                  起標時間（選填，留空則立即開放競標）
-                  <input
-                    value={startsAt}
-                    onChange={(e) => setStartsAt(e.target.value)}
-                    type="datetime-local"
-                    className={inputClass}
-                  />
-                </label>
-                <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-                  新結標時間（最遠 {ENDS_AT_MAX_DAYS} 天後）
-                  <input
-                    value={endsAt}
-                    onChange={(e) => setEndsAt(e.target.value)}
-                    type="datetime-local"
-                    required
-                    className={inputClass}
-                  />
-                </label>
+          {loaded && (
+            <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
+              <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+                起標價
+                <input
+                  value={startingPrice}
+                  onChange={(e) => setStartingPrice(e.target.value)}
+                  type="number"
+                  min={1}
+                  max={PRICE_MAX}
+                  step={1}
+                  required
+                  className={inputClass}
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+                買斷價（選填）
+                <input
+                  value={buyItNowPrice}
+                  onChange={(e) => setBuyItNowPrice(e.target.value)}
+                  type="number"
+                  min={1}
+                  max={PRICE_MAX}
+                  step={1}
+                  className={inputClass}
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+                起標時間（選填，留空則立即開放競標）
+                <input
+                  value={startsAt}
+                  onChange={(e) => setStartsAt(e.target.value)}
+                  type="datetime-local"
+                  className={inputClass}
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+                新結標時間（最遠 {ENDS_AT_MAX_DAYS} 天後）
+                <input
+                  value={endsAt}
+                  onChange={(e) => setEndsAt(e.target.value)}
+                  type="datetime-local"
+                  required
+                  className={inputClass}
+                />
+              </label>
 
-                {error && <p className="text-sm text-ended">{error}</p>}
-                <div className="mt-2 flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setOpen(false)}
-                    disabled={submitting}
-                    className="rounded-md border border-border px-4 py-1.5 text-sm font-medium text-ink hover:bg-surface-muted"
-                  >
-                    取消
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="rounded-md bg-header px-4 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {submitting ? "處理中..." : "確認重新上架"}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
+              {error && <p className="text-sm text-ended">{error}</p>}
+              <ModalFormActions
+                onCancel={() => {
+                  setOpen(false);
+                  resetForm();
+                }}
+                submitting={submitting}
+                submitLabel="確認重新上架"
+                pendingLabel="處理中..."
+              />
+            </form>
+          )}
+        </AdminModal>
       )}
     </>
   );

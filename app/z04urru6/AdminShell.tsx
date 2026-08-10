@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import AdminLogoutButton from "./AdminLogoutButton";
 import AdminCommandPalette from "./AdminCommandPalette";
-import { ADMIN_NAV_ITEMS } from "./adminNav";
+import { ADMIN_NAV_ITEMS, type AdminNavItem } from "./adminNav";
 
 const SIDEBAR_STORAGE_KEY = "bid-admin-sidebar-collapsed";
 
@@ -17,6 +17,56 @@ function navClass(active: boolean, collapsed: boolean): string {
       : "text-slate-300 hover:bg-white/10 hover:text-white",
     collapsed ? "justify-center" : "justify-start",
   ].join(" ");
+}
+
+/**
+ * 側欄的一個導覽分組。三個分組原本是逐字重複的 JSX（issue #139 M7）。
+ *
+ * matchNested：Dashboards 那組只有「總覽」一個項目、href 就是後台根路徑，
+ * 用 startsWith 會在所有子頁面都亮起來，所以只比對完全相同的路徑；其餘
+ * 分組維持「子頁面也算選中」。
+ */
+function NavGroup({
+  title,
+  items,
+  collapsed,
+  pathname,
+  matchNested,
+  onNavigate,
+}: {
+  title: string;
+  items: AdminNavItem[];
+  collapsed: boolean;
+  pathname: string;
+  matchNested: boolean;
+  onNavigate: () => void;
+}) {
+  return (
+    <div>
+      <p className={["px-2 pb-2 text-xs uppercase tracking-wider text-slate-400", collapsed ? "sr-only" : ""].join(" ")}>
+        {title}
+      </p>
+      <ul className="space-y-1">
+        {items.map((item) => {
+          const active = pathname === item.href || (matchNested && pathname.startsWith(`${item.href}/`));
+          return (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                className={navClass(active, collapsed)}
+                onClick={onNavigate}
+                aria-current={active ? "page" : undefined}
+              >
+                <span className={[collapsed ? "text-xs" : "", "font-medium"].join(" ")}>
+                  {collapsed ? item.label.slice(0, 2) : item.label}
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
 }
 
 export default function AdminShell({ children, email }: { children: ReactNode; email: string }) {
@@ -90,8 +140,9 @@ export default function AdminShell({ children, email }: { children: ReactNode; e
     };
 
     let runningPath = "";
-    parts.forEach((part, index) => {
+    parts.forEach((part) => {
       runningPath += `/${part}`;
+      // 後台根路徑本身已經是 crumbs 的第一項（「後台」），不再重複加入。
       if (part === "z04urru6") return;
 
       const navLabel = ADMIN_NAV_ITEMS.find((item) => item.href === runningPath)?.label;
@@ -100,8 +151,6 @@ export default function AdminShell({ children, email }: { children: ReactNode; e
       const label = navLabel ?? mapEntry?.label ?? numericId ?? part;
       const icon = mapEntry?.icon ?? (numericId ? "🔎" : "📄");
 
-      // Skip duplicate of root label.
-      if (index === 1 && label === "總覽") return;
       crumbs.push({ label, href: runningPath, icon });
     });
 
@@ -142,81 +191,33 @@ export default function AdminShell({ children, email }: { children: ReactNode; e
           </button>
 
           <nav className="flex-1 space-y-5 overflow-y-auto">
-            <div>
-              <p className={["px-2 pb-2 text-xs uppercase tracking-wider text-slate-400", collapsed ? "sr-only" : ""].join(" ")}>
-                Dashboards
-              </p>
-              <ul className="space-y-1">
-                {grouped.dashboard.map((item) => {
-                  const active = pathname === item.href;
-                  return (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        className={navClass(active, collapsed)}
-                        onClick={() => setMobileOpen(false)}
-                        aria-current={active ? "page" : undefined}
-                      >
-                        <span className={[collapsed ? "text-xs" : "", "font-medium"].join(" ")}>
-                          {collapsed ? item.label.slice(0, 2) : item.label}
-                        </span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+            <NavGroup
+              title="Dashboards"
+              items={grouped.dashboard}
+              collapsed={collapsed}
+              pathname={pathname}
+              matchNested={false}
+              onNavigate={() => setMobileOpen(false)}
+            />
 
-            <div>
-              <p className={["px-2 pb-2 text-xs uppercase tracking-wider text-slate-400", collapsed ? "sr-only" : ""].join(" ")}>
-                Commerce
-              </p>
-              <ul className="space-y-1">
-                {grouped.commerce.map((item) => {
-                  const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-                  return (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        className={navClass(active, collapsed)}
-                        onClick={() => setMobileOpen(false)}
-                        aria-current={active ? "page" : undefined}
-                      >
-                        <span className={[collapsed ? "text-xs" : "", "font-medium"].join(" ")}>
-                          {collapsed ? item.label.slice(0, 2) : item.label}
-                        </span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+            <NavGroup
+              title="Commerce"
+              items={grouped.commerce}
+              collapsed={collapsed}
+              pathname={pathname}
+              matchNested
+              onNavigate={() => setMobileOpen(false)}
+            />
 
             {grouped.content.length > 0 && (
-              <div>
-                <p className={["px-2 pb-2 text-xs uppercase tracking-wider text-slate-400", collapsed ? "sr-only" : ""].join(" ")}>
-                  Content
-                </p>
-                <ul className="space-y-1">
-                  {grouped.content.map((item) => {
-                    const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-                    return (
-                      <li key={item.href}>
-                        <Link
-                          href={item.href}
-                          className={navClass(active, collapsed)}
-                          onClick={() => setMobileOpen(false)}
-                          aria-current={active ? "page" : undefined}
-                        >
-                          <span className={[collapsed ? "text-xs" : "", "font-medium"].join(" ")}>
-                            {collapsed ? item.label.slice(0, 2) : item.label}
-                          </span>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
+              <NavGroup
+                title="Content"
+                items={grouped.content}
+                collapsed={collapsed}
+                pathname={pathname}
+                matchNested
+                onNavigate={() => setMobileOpen(false)}
+              />
             )}
           </nav>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { breakdownRemainingMs } from "@/lib/format";
 
 // Fixed 1s tick, matching lib/useListingCountdown.ts's COUNTDOWN_TICK_MS.
 //
@@ -68,13 +69,5 @@ export function useHeroCountdown(targetIso: string, renderedAt: string): HeroCou
 
   const targetMs = new Date(targetIso).getTime();
   const remainingMs = Math.max(0, targetMs - nowMs);
-  const totalSeconds = Math.floor(remainingMs / 1000);
-  return {
-    remainingMs,
-    ended: remainingMs <= 0,
-    days: Math.floor(totalSeconds / 86_400),
-    hours: Math.floor((totalSeconds % 86_400) / 3_600),
-    minutes: Math.floor((totalSeconds % 3_600) / 60),
-    seconds: totalSeconds % 60,
-  };
+  return { remainingMs, ended: remainingMs <= 0, ...breakdownRemainingMs(remainingMs) };
 }

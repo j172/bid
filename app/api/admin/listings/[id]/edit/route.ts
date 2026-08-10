@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/apiAuth";
 import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
 import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
+import { parsePhotoOrder, resolvePhotoOrder, type PhotoOrderEntry } from "@/lib/listingPhotoOrder";
 import {
   getListingById,
   getPhotoFileNames,
@@ -12,18 +13,15 @@ import { validateDescription, validatePrice, validateStockRemaining, validateTit
 import { MAX_PHOTO_COUNT } from "@/lib/photoLimits";
 import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
 import { deleteListingPhotoFiles, descriptionImageUrl, saveDescriptionImages, saveListingPhotos } from "@/lib/uploads";
-
-type OrderEntry = { type: "existing"; fileName: string } | { type: "new"; index: number };
+import { parseIdParam } from "@/lib/routeParams";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const { id } = await params;
-  const listingId = Number(id);
-  if (!Number.isFinite(listingId)) {
+  const listingId = parseIdParam(id);
+  if (listingId === null) {
     return NextResponse.json({ ok: false, error: "找不到這個商品" }, { status: 404 });
   }
 
@@ -50,11 +48,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     .getAll("descriptionImages")
     .filter((entry): entry is File => entry instanceof File && entry.size > 0);
 
-  let order: OrderEntry[];
-  try {
-    order = JSON.parse(String(form.get("order") ?? "[]"));
-    if (!Array.isArray(order)) throw new Error();
-  } catch {
+  // Shape-validated up front (issue #139 M3): an entry whose `type` is
+  // neither "existing" nor "new", or a "new" entry without a usable index,
+  // is rejected here rather than silently resolving to `undefined` later.
+  const order: PhotoOrderEntry[] | null = parsePhotoOrder(String(form.get("order") ?? "[]"));
+  if (order === null) {
     return NextResponse.json({ ok: false, error: "照片順序資料不正確" }, { status: 400 });
   }
 
@@ -88,12 +86,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const currentFileNames = await getPhotoFileNames(listingId);
-  const currentFileNameSet = new Set(currentFileNames);
-  for (const entry of order) {
-    if (entry.type === "existing" && !currentFileNameSet.has(entry.fileName)) {
-      return NextResponse.json({ ok: false, error: "照片資料不正確" }, { status: 400 });
-    }
-  }
 
   let savedFileNames: string[];
   let finalDescription: string;
@@ -107,7 +99,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ ok: false, error: message }, { status: 400 });
   }
 
-  const finalOrder = order.map((entry) => (entry.type === "existing" ? entry.fileName : savedFileNames[entry.index]));
+  // Cross-checks the order against reality, now that both sides are known:
+  // every "existing" entry must still be one of this listing's photos, and
+  // every "new" entry must point at a file this request actually saved. A
+  // mismatch used to write `undefined` into listing_photos (issue #139 M3).
+  const finalOrder = resolvePhotoOrder(order, currentFileNames, savedFileNames);
+  if (finalOrder === null) {
+    await deleteListingPhotoFiles(listingId, savedFileNames);
+    return NextResponse.json({ ok: false, error: "照片資料不正確" }, { status: 400 });
+  }
 
   const result = await updateFixedPriceListing(listingId, { title, description: finalDescription, price, stockRemaining, loftId });
   if (!result.ok) {
