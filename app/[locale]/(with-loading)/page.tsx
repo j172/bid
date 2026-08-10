@@ -132,6 +132,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     title: post.title,
     excerpt: excerptHtml(post.content, NEWS_CAROUSEL_EXCERPT_LENGTH),
     imageUrl: post.imageFileName ? newsImageUrl(post.imageFileName) : "/images/hero-placeholder.png",
+    // Same date convention as the news list and the news detail sidebar
+    // (app/[locale]/news/page.tsx, app/[locale]/(no-loading)/news/[id]/page.tsx):
+    // formatted here on the server so the client carousel card can't drift
+    // from the server rendering during hydration (issue #146).
+    createdAt: post.createdAt.toLocaleDateString(),
   }));
 
   const heroRenderedAt = new Date().toISOString();

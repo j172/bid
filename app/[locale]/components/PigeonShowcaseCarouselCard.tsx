@@ -16,6 +16,17 @@ import { useRotatingIndex } from "@/lib/useRotatingIndex";
 // badge entirely rather than keep showing it over a blank state. The layout
 // slot itself stays occupied — see the `items.length === 0` branch — with a
 // neutral "尚無內容" placeholder instead of a fully-empty card.
+//
+// Issue #146 replaces the old "thumbnail + text beside it" structure with the
+// same full-bleed-cover language as NewsCarouselCard: cover image, bottom-up
+// gradient scrim, solid pill badge, overlaid title/excerpt, and both CTAs on a
+// single bottom row. The image runs at a portrait-ish 4:5 ratio (not the news
+// card's wide 21:10) because this card only occupies one of the homepage
+// grid's three columns, so a wide crop would leave the overlay text cramped.
+// The two variants stay visually distinct through their brand scale: the dark
+// variant (入賞鴿) is baltic-blue with a translucent white badge, the light
+// variant (進口鴿) is steel-azure — the interactive/primary scale — with a
+// solid badge.
 export interface PigeonShowcaseCarouselItem {
   id: number;
   name: string;
@@ -48,18 +59,12 @@ export default function PigeonShowcaseCarouselCard({
   const index = useRotatingIndex(items.length, ROTATE_INTERVAL_MS);
 
   const isDark = variant === "dark";
-  const wrapperClass = isDark
-    ? "rounded-2xl bg-gradient-to-r from-baltic-blue-700 to-slate-900 p-6 text-white"
-    : "rounded-2xl border border-border bg-white p-6";
-  const badgeClass = isDark ? "text-xs font-bold uppercase tracking-wider" : "text-xs font-bold uppercase tracking-wider text-interactive-primary";
-  const titleClass = isDark ? "mt-2 text-2xl font-black" : "mt-2 text-xl font-black text-ink";
-  const descClass = isDark ? "mt-3 text-sm text-steel-azure-100" : "mt-2 text-sm text-ink-light";
-  const ctaClass = isDark
-    ? "mt-4 inline-flex rounded-md bg-white px-3 py-1.5 text-xs font-bold text-steel-azure-700"
-    : "mt-4 inline-flex rounded-md bg-header px-3 py-1.5 text-xs font-bold text-white";
-  const viewMoreClass = isDark
-    ? "mt-4 inline-flex text-xs font-bold text-white/90 underline underline-offset-2 hover:text-white"
-    : "mt-4 inline-flex text-xs font-bold text-interactive-primary underline underline-offset-2 hover:text-header";
+  const wrapperClass = isDark ? "bg-baltic-blue-900" : "bg-steel-azure-900";
+  const scrimClass = isDark
+    ? "bg-gradient-to-t from-baltic-blue-950 via-baltic-blue-950/50 to-transparent"
+    : "bg-gradient-to-t from-steel-azure-950 via-steel-azure-950/50 to-transparent";
+  const badgeClass = isDark ? "bg-white/15 text-white backdrop-blur-sm" : "bg-steel-azure-600 text-white";
+  const ctaClass = isDark ? "text-baltic-blue-900 hover:bg-twilight-indigo-600" : "text-steel-azure-900 hover:bg-steel-azure-600";
 
   if (items.length === 0) {
     return (
@@ -71,26 +76,40 @@ export default function PigeonShowcaseCarouselCard({
   }
 
   const current = items[index];
+  const href = `/pigeon-showcase/${current.id}`;
 
   return (
-    <div className={wrapperClass}>
-      <div className="flex items-start gap-4">
+    <article className={`group relative flex h-full flex-col justify-between overflow-hidden rounded-3xl shadow-xl ${wrapperClass}`}>
+      <div className="relative aspect-[4/5] w-full overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={current.imageUrl} alt={current.name} className="h-16 w-16 flex-shrink-0 rounded-lg object-cover" />
-        <div className="min-w-0 flex-1">
-          <p className={badgeClass}>{badgeLabel}</p>
-          <h3 className={`${titleClass} truncate`}>{current.name}</h3>
-          <p className={`${descClass} line-clamp-2`}>{current.excerpt}</p>
+        <img
+          src={current.imageUrl}
+          alt={current.name}
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+        />
+        <div className={`absolute inset-0 ${scrimClass}`} />
+        <div className="absolute left-5 top-5">
+          <span className={`inline-flex items-center rounded-full px-3.5 py-1 text-xs font-bold uppercase tracking-wider shadow-md ${badgeClass}`}>
+            {badgeLabel}
+          </span>
+        </div>
+        <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
+          <h3 className="text-lg font-extrabold leading-snug tracking-tight text-white sm:text-xl">
+            <Link href={href} className="transition-opacity hover:opacity-90">
+              {current.name}
+            </Link>
+          </h3>
+          <p className="mt-2 line-clamp-2 text-xs text-slate-300">{current.excerpt}</p>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-3 text-xs">
+            <Link href={href} className={`inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-xs font-bold transition-colors hover:text-white ${ctaClass}`}>
+              {viewCtaLabel}
+            </Link>
+            <Link href={viewMoreHref} className="inline-flex font-bold text-white/90 underline underline-offset-2 transition-colors hover:text-white">
+              {viewMoreLabel}
+            </Link>
+          </div>
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-x-4">
-        <Link href={`/pigeon-showcase/${current.id}`} className={ctaClass}>
-          {viewCtaLabel}
-        </Link>
-        <Link href={viewMoreHref} className={viewMoreClass}>
-          {viewMoreLabel}
-        </Link>
-      </div>
-    </div>
+    </article>
   );
 }
