@@ -1,77 +1,61 @@
 import Link from "next/link";
 import { getOpenListingsForAdmin, OPEN_LISTINGS_PAGE_SIZE, type ListOpenListingsForAdminOptions } from "@/lib/listings";
 import { formatRemainingZhHant } from "@/lib/format";
+import { LISTING_TYPE_LABEL } from "@/lib/listingTypeLabel";
 import CancelButton from "./CancelButton";
 import EditListingModal from "./EditListingModal";
 import EditScheduleModal from "./EditScheduleModal";
 import AdminPageIntro from "../AdminPageIntro";
+import AdminPagination from "../components/AdminPagination";
+import { parseFirstParam, parsePageParam, type SearchParams } from "../components/searchParams";
+import {
+  filterControlClass,
+  filterFormClass,
+  filterLabelClass,
+  filterSubmitClass,
+  tableRowClass,
+  tableWrapperClass,
+  td,
+  th,
+} from "../components/tableStyles";
 
 export const dynamic = "force-dynamic";
 
-const th = "border-b border-border px-4 py-3 text-left text-sm font-semibold text-ink-light";
-const td = "border-b border-border px-4 py-3 text-sm";
-
-const TYPE_LABEL: Record<string, string> = { auction: "競標商品", fixed_price: "一般商品" };
-
-type SearchParams = Record<string, string | string[] | undefined>;
-
-function first(value: string | string[] | undefined): string | undefined {
-  return Array.isArray(value) ? value[0] : value;
-}
-
-function buildQuery(params: SearchParams, overrides: Record<string, string>): string {
-  const query = new URLSearchParams();
-  for (const key of ["search", "type", "sort", "page"]) {
-    const value = key in overrides ? overrides[key] : first(params[key]);
-    if (value) query.set(key, value);
-  }
-  return query.toString();
-}
+const QUERY_KEYS = ["search", "type", "sort", "page"] as const;
 
 export default async function AdminOpenListingsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams;
 
-  const search = first(params.search) ?? "";
-  const type = first(params.type) as ListOpenListingsForAdminOptions["type"] | undefined;
-  const sort = (first(params.sort) as ListOpenListingsForAdminOptions["sort"] | undefined) ?? "ends_asc";
-  const page = Math.max(1, Number(first(params.page) ?? "1") || 1);
+  const search = parseFirstParam(params.search) ?? "";
+  const type = parseFirstParam(params.type) as ListOpenListingsForAdminOptions["type"] | undefined;
+  const sort = (parseFirstParam(params.sort) as ListOpenListingsForAdminOptions["sort"] | undefined) ?? "ends_asc";
+  const requestedPage = parsePageParam(params.page);
 
-  const { listings, total } = await getOpenListingsForAdmin({ search, type, sort, page });
+  const { listings, total } = await getOpenListingsForAdmin({ search, type, sort, page: requestedPage });
   const totalPages = Math.max(1, Math.ceil(total / OPEN_LISTINGS_PAGE_SIZE));
+  // 超出範圍的 page 夾回最後一頁，避免分頁列顯示「第 999 / 3 頁」（issue #139 L3）。
+  const page = Math.min(requestedPage, totalPages);
 
   return (
     <main>
       <AdminPageIntro title="開放中商品" description="管理可售商品、調整排序並快速處理下架操作。" />
 
-      <form className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm" method="GET">
-        <label className="flex flex-col gap-1 text-xs text-ink-light">
+      <form className={filterFormClass} method="GET">
+        <label className={filterLabelClass}>
           商品標題
-          <input
-            name="search"
-            defaultValue={search}
-            placeholder="搜尋商品標題"
-            className="rounded-md border border-border px-2 py-1 text-sm focus:border-interactive-primary focus:outline-none"
-          />
+          <input name="search" defaultValue={search} placeholder="搜尋商品標題" className={filterControlClass} />
         </label>
-        <label className="flex flex-col gap-1 text-xs text-ink-light">
+        <label className={filterLabelClass}>
           商品分類
-          <select
-            name="type"
-            defaultValue={type ?? ""}
-            className="rounded-md border border-border px-2 py-1 text-sm focus:border-interactive-primary focus:outline-none"
-          >
+          <select name="type" defaultValue={type ?? ""} className={filterControlClass}>
             <option value="">全部</option>
             <option value="auction">競標商品</option>
             <option value="fixed_price">一般商品</option>
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-xs text-ink-light">
+        <label className={filterLabelClass}>
           排序
-          <select
-            name="sort"
-            defaultValue={sort}
-            className="rounded-md border border-border px-2 py-1 text-sm focus:border-interactive-primary focus:outline-none"
-          >
+          <select name="sort" defaultValue={sort} className={filterControlClass}>
             <option value="ends_asc">剩餘時間（近→遠）</option>
             <option value="price_desc">價格（高→低）</option>
             <option value="price_asc">價格（低→高）</option>
@@ -81,7 +65,7 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
             <option value="created_asc">建立時間（舊→新）</option>
           </select>
         </label>
-        <button type="submit" className="rounded-lg bg-interactive-primary px-4 py-2 text-sm font-medium text-white hover:bg-interactive-primary-active">
+        <button type="submit" className={filterSubmitClass}>
           套用
         </button>
       </form>
@@ -89,7 +73,7 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
       {listings.length === 0 ? (
         <p className="mt-6 text-ink-light">找不到符合條件的商品。</p>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-2xl border border-border bg-surface shadow-sm">
+        <div className={tableWrapperClass}>
           <table className="w-full border-collapse">
             <thead>
               <tr>
@@ -102,13 +86,13 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
             </thead>
             <tbody>
               {listings.map((listing) => (
-                <tr key={listing.id} className="transition hover:bg-surface-muted/80">
+                <tr key={listing.id} className={tableRowClass}>
                   <td className={td}>
                     <Link href={`/listings/${listing.id}`} className="font-medium text-interactive-primary hover:underline">
                       {listing.title}
                     </Link>
                   </td>
-                  <td className={td}>{TYPE_LABEL[listing.listingType]}</td>
+                  <td className={td}>{LISTING_TYPE_LABEL[listing.listingType]}</td>
                   <td className={`${td} font-semibold`}>{listing.currentPrice}</td>
                   <td className={td}>
                     {listing.listingType === "fixed_price" ? (
@@ -143,23 +127,14 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
         </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-2 text-sm shadow-sm">
-          {page > 1 && (
-            <Link href={`/z04urru6/listings?${buildQuery(params, { page: String(page - 1) })}`} className="text-interactive-primary hover:underline">
-              上一頁
-            </Link>
-          )}
-          <span className="text-ink-light">
-            第 {page} / {totalPages} 頁（共 {total} 筆）
-          </span>
-          {page < totalPages && (
-            <Link href={`/z04urru6/listings?${buildQuery(params, { page: String(page + 1) })}`} className="text-interactive-primary hover:underline">
-              下一頁
-            </Link>
-          )}
-        </div>
-      )}
+      <AdminPagination
+        basePath="/z04urru6/listings"
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        params={params}
+        keys={QUERY_KEYS}
+      />
     </main>
   );
 }

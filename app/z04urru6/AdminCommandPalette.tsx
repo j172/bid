@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { LISTING_TYPE_LABEL } from "@/lib/listingTypeLabel";
 import { ADMIN_NAV_ITEMS } from "./adminNav";
 
 interface SearchListing {
@@ -227,7 +228,7 @@ export default function AdminCommandPalette({
         results.listings.map((listing) => ({
         id: `listing-${listing.id}`,
         title: listing.title,
-        subtitle: `#${listing.id} ・ ${listing.listingType === "auction" ? "拍賣" : "一般商品"} ・ ${listing.status}`,
+        subtitle: `#${listing.id} ・ ${LISTING_TYPE_LABEL[listing.listingType]} ・ ${listing.status}`,
         href: `/listings/${listing.id}`,
         })),
         query,

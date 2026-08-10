@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLazyExpand } from "../components/useLazyExpand";
 
 interface Buyer {
   displayName: string | null;
@@ -9,34 +9,17 @@ interface Buyer {
 }
 
 export default function BuyerExpand({ orderId, email }: { orderId: number; email: string }) {
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [buyer, setBuyer] = useState<Buyer | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleToggle() {
-    if (open) {
-      setOpen(false);
-      return;
-    }
-    setOpen(true);
-    if (buyer !== null) return;
-
-    setLoading(true);
-    setError(null);
-    const response = await fetch(`/api/admin/orders/${orderId}/buyer`);
-    const data = await response.json();
-    setLoading(false);
-    if (!data.ok) {
-      setError(data.error ?? "讀取失敗");
-      return;
-    }
-    setBuyer(data.buyer);
-  }
+  const {
+    open,
+    loading,
+    data: buyer,
+    error,
+    toggle,
+  } = useLazyExpand<Buyer>(`/api/admin/orders/${orderId}/buyer`, (payload) => payload.buyer as Buyer);
 
   return (
     <div>
-      <button type="button" onClick={handleToggle} className="text-xs font-medium text-interactive-primary hover:underline">
+      <button type="button" onClick={toggle} className="text-xs font-medium text-interactive-primary hover:underline">
         {email} {open ? "▲" : "▼"}
       </button>
       {open && (

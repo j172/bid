@@ -1,8 +1,8 @@
 import Link from "next/link";
 import type { TopBidder, TopCustomer, TopListing } from "@/lib/dashboard";
+import { LISTING_TYPE_LABEL } from "@/lib/listingTypeLabel";
 
 const cardClass = "rounded-lg border border-border bg-surface p-4 shadow-sm";
-const TYPE_LABEL: Record<string, string> = { auction: "拍賣", fixed_price: "一般商品" };
 
 export default function Leaderboards({
   topListings,
@@ -28,7 +28,7 @@ export default function Leaderboards({
                   <Link href={`/listings/${listing.id}`} className="truncate text-interactive-primary hover:underline">
                     {listing.title}
                   </Link>
-                  <span className="flex-shrink-0 text-xs text-ink-light">（{TYPE_LABEL[listing.listingType]}）</span>
+                  <span className="flex-shrink-0 text-xs text-ink-light">（{LISTING_TYPE_LABEL[listing.listingType]}）</span>
                 </span>
                 <span className="flex-shrink-0 font-semibold">{listing.gmv.toLocaleString()}</span>
               </li>

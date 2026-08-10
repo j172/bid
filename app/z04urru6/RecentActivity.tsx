@@ -1,8 +1,8 @@
 import Link from "next/link";
 import type { RecentActivity as RecentActivityData } from "@/lib/dashboard";
+import { LISTING_TYPE_LABEL } from "@/lib/listingTypeLabel";
 
 const cardClass = "rounded-lg border border-border bg-surface p-4 shadow-sm";
-const TYPE_LABEL: Record<string, string> = { auction: "拍賣", fixed_price: "一般商品" };
 
 function formatDate(date: Date): string {
   return new Date(date).toLocaleString("zh-TW", { hour12: false });
@@ -41,7 +41,7 @@ export default function RecentActivity({ activity }: { activity: RecentActivityD
                   <Link href={`/listings/${listing.id}`} className="truncate text-interactive-primary hover:underline">
                     {listing.title}
                   </Link>{" "}
-                  <span className="text-xs text-ink-light">（{TYPE_LABEL[listing.listingType]}）</span>
+                  <span className="text-xs text-ink-light">（{LISTING_TYPE_LABEL[listing.listingType]}）</span>
                 </span>
                 <span className="text-xs text-ink-light">{formatDate(listing.createdAt)}</span>
               </li>
