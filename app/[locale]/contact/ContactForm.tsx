@@ -4,8 +4,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 import Button from "@/app/components/Button";
 import TurnstileWidget, { type TurnstileWidgetHandle } from "@/app/components/TurnstileWidget";
-
-const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
+import { inputClass } from "@/lib/formStyles";
+import { usePostJson } from "@/lib/usePostJson";
 
 interface ContactFormProps {
   // Turnstile *site* key (not secret) — null when CLOUDFLARE_TURNSTILE_SITE_KEY
@@ -18,7 +18,6 @@ interface ContactFormProps {
 
 export default function ContactForm({ turnstileSiteKey }: ContactFormProps) {
   const t = useTranslations("contactPage");
-  const tErrors = useTranslations("errors");
   const locale = useLocale();
 
   const [name, setName] = useState("");
@@ -26,32 +25,22 @@ export default function ContactForm({ turnstileSiteKey }: ContactFormProps) {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const { post, submitting, error } = usePostJson(t("defaultError"));
 
   const turnstileRef = useRef<TurnstileWidgetHandle>(null);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setSubmitting(true);
-    setError(null);
     setNotice(null);
 
-    const response = await fetch("/api/contact", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, subject, message, turnstileToken, locale }),
-    });
-    const data = await response.json();
+    const data = await post("/api/contact", { name, email, subject, message, turnstileToken, locale });
 
-    setSubmitting(false);
+    // A Turnstile token is single-use, so the widget is reset either way —
+    // otherwise a retry after a failed submit would send a spent token.
     turnstileRef.current?.reset();
 
-    if (!data.ok) {
-      setError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
-      return;
-    }
+    if (!data) return;
 
     setName("");
     setEmail("");

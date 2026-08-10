@@ -3,8 +3,8 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import Button from "@/app/components/Button";
-
-const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
+import { inputClass } from "@/lib/formStyles";
+import { usePostJson } from "@/lib/usePostJson";
 
 // USER ACCOUNT's Email OTP on/off toggle (issue #93). Both directions
 // require re-entering the current password — see lib/auth.ts's
@@ -14,13 +14,11 @@ const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:borde
 // plain window.confirm() (a confirm() dialog can't collect a password).
 export default function TwoFactorSection({ initialEnabled }: { initialEnabled: boolean }) {
   const t = useTranslations("twoFactorSection");
-  const tErrors = useTranslations("errors");
   const [enabled, setEnabled] = useState(initialEnabled);
   const [showConfirm, setShowConfirm] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const { post, submitting, error, setError } = usePostJson(t("defaultError"));
 
   function openConfirm() {
     setShowConfirm(true);
@@ -37,22 +35,11 @@ export default function TwoFactorSection({ initialEnabled }: { initialEnabled: b
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setSubmitting(true);
-    setError(null);
 
     const nextEnabled = !enabled;
-    const response = await fetch("/api/account/two-factor", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ currentPassword, enabled: nextEnabled }),
-    });
-    const data = await response.json();
+    const data = await post("/api/account/two-factor", { currentPassword, enabled: nextEnabled });
+    if (!data) return;
 
-    setSubmitting(false);
-    if (!data.ok) {
-      setError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
-      return;
-    }
     setEnabled(nextEnabled);
     setShowConfirm(false);
     setCurrentPassword("");

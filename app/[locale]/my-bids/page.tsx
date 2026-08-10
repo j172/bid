@@ -46,8 +46,11 @@ export default async function MyBidsPage() {
               </tr>
             </thead>
             <tbody>
-              {bids.map((bid, index) => (
-                <tr key={index}>
+              {/* One row per bid ever placed, so a listing can legitimately
+                  appear several times — keyed by which listing and when the
+                  bid landed rather than by array position. */}
+              {bids.map((bid) => (
+                <tr key={`${bid.listingId}-${bid.bidAt.toISOString()}-${bid.bidAmount}`}>
                   <td className={td}>
                     <Link href={`/listings/${bid.listingId}`} className="font-medium text-interactive-primary hover:underline">
                       {bid.listingTitle}

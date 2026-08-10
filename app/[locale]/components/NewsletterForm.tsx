@@ -3,38 +3,40 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { isValidEmail } from "@/lib/emailValidation";
+import { usePostJson } from "@/lib/usePostJson";
 
-type Status = "idle" | "loading" | "success" | "error";
-
+// Footer newsletter opt-in. Issue #139 item 19: this used to be the one
+// public form that ignored the site-wide `{ ok, errorCode }` convention —
+// it branched on the raw HTTP status and re-derived its message from the
+// email field's shape. It now goes through the same usePostJson hook as
+// every other form, so a server-side rejection with a known code (e.g.
+// EMAIL_INVALID) shows that code's copy, and anything else (the mail
+// provider being unconfigured or failing) falls back to `newsletterError`.
 export default function NewsletterForm() {
   const t = useTranslations("footer");
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<Status>("idle");
+  const [subscribed, setSubscribed] = useState(false);
+  const { post, submitting, error, setError } = usePostJson(t("newsletterError"));
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    setSubscribed(false);
 
-    // Same rule the subscribe endpoint enforces (lib/emailValidation.ts,
-    // issue #140 M-2) — kept in sync so the inline hint below never says
-    // "looks fine" about an address the server will reject.
+    // Local pre-check, kept ahead of the request so an obviously malformed
+    // address gets the more specific copy without a round trip. Deliberately
+    // the very rule the subscribe endpoint enforces (lib/emailValidation.ts,
+    // issue #140 M-2) rather than a looser approximation, so this never waves
+    // through an address the server will reject.
     if (!isValidEmail(email)) {
-      setStatus("error");
+      setError(t("newsletterInvalidEmail"));
       return;
     }
 
-    setStatus("loading");
-    const res = await fetch("/api/newsletter/subscribe", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    }).catch(() => null);
+    const data = await post("/api/newsletter/subscribe", { email });
+    if (!data) return;
 
-    if (res?.ok) {
-      setStatus("success");
-      setEmail("");
-    } else {
-      setStatus("error");
-    }
+    setSubscribed(true);
+    setEmail("");
   }
 
   return (
@@ -45,7 +47,8 @@ export default function NewsletterForm() {
           value={email}
           onChange={(event) => {
             setEmail(event.target.value);
-            if (status !== "idle") setStatus("idle");
+            setSubscribed(false);
+            setError(null);
           }}
           placeholder={t("newsletterPlaceholder")}
           required
@@ -53,18 +56,14 @@ export default function NewsletterForm() {
         />
         <button
           type="submit"
-          disabled={status === "loading"}
+          disabled={submitting}
           className="whitespace-nowrap rounded-md bg-interactive-primary px-3 py-2 text-sm font-semibold text-white hover:bg-interactive-primary-active disabled:opacity-60"
         >
-          {status === "loading" ? t("newsletterSubscribing") : t("subscribe")}
+          {submitting ? t("newsletterSubscribing") : t("subscribe")}
         </button>
       </div>
-      {status === "success" && <p className="mt-2 text-sm text-emerald-600">{t("newsletterSuccess")}</p>}
-      {status === "error" && (
-        <p className="mt-2 text-sm text-red-600">
-          {isValidEmail(email) ? t("newsletterError") : t("newsletterInvalidEmail")}
-        </p>
-      )}
+      {subscribed && <p className="mt-2 text-sm text-emerald-600">{t("newsletterSuccess")}</p>}
+      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
     </form>
   );
 }

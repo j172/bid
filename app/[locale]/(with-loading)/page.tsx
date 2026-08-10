@@ -10,15 +10,38 @@ import { excerptHtml } from "@/lib/htmlText";
 import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
 import { currencyForLocale, formatDualPrice, formatNtd } from "@/lib/currency";
 import { getLatestStoredRate } from "@/lib/exchangeRates";
+import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
+import { firstParam, type SearchParams } from "@/lib/searchParams";
+import {
+  QUICK_CLOSE_WINDOW_HOURS,
+  filterByListingType,
+  selectEndingSoonAuctions,
+  selectMostActive,
+  selectNewestFixedPrice,
+  selectQuickCloseAuctions,
+  selectTopAuctionsByBids,
+  selectTopFixedByPurchases,
+  selectTopPriceAuctions,
+} from "@/lib/homepageListings";
 import { Link } from "@/i18n/navigation";
 import HeroSection from "../components/HeroSection";
-import ZoomableProductImage from "../components/ZoomableProductImage";
+import HomeListingRow from "../components/HomeListingRow";
+import HomeProductCard from "../components/HomeProductCard";
 import PigeonShowcaseCarouselCard from "../components/PigeonShowcaseCarouselCard";
 import NewsCarouselCard from "../components/NewsCarouselCard";
 
 export const dynamic = "force-dynamic";
 
-type SearchParams = Record<string, string | string[] | undefined>;
+/** Number of hero/grid images that load eagerly, per perf mode. */
+const EAGER_COUNTS = { balanced: 1, aggressive: 2 } as const;
+
+const ENDING_SOON_LIMIT = 5;
+const TOP_PRICE_LIMIT = 2;
+const QUICK_DEALS_LIMIT = 3;
+const NEW_ARRIVALS_LIMIT = 8;
+const MOST_ACTIVE_LIMIT = 6;
+const TOP_BY_TYPE_LIMIT = 4;
+const FIXED_PRICE_SECTION_LIMIT = 6;
 
 // Homepage-specific alternates (issue #107 items 6-7) — deliberately not
 // hoisted into the shared root layout's generateMetadata (app/[locale]/
@@ -48,9 +71,7 @@ type VisualCategoryItem = {
 };
 
 function perfModeFromSearchParams(params: SearchParams): "balanced" | "aggressive" {
-  const modeParam = params.perf;
-  const mode = Array.isArray(modeParam) ? modeParam[0] : modeParam;
-  return mode === "aggressive" ? "aggressive" : "balanced";
+  return firstParam(params.perf) === "aggressive" ? "aggressive" : "balanced";
 }
 
 export default async function HomePage({ searchParams }: { searchParams: Promise<SearchParams> }) {
@@ -114,58 +135,28 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   }));
 
   const heroRenderedAt = new Date().toISOString();
-  const auctionsByEndingSoon = [...listings]
-    .filter((item) => item.listing_type === "auction" && item.ends_at)
-    .sort((a, b) => a.ends_at!.getTime() - b.ends_at!.getTime() || b.current_price - a.current_price);
-  const endingSoonWithPhoto = auctionsByEndingSoon.filter((item) => Boolean(item.photos[0]));
-  const endingSoonWithoutPhoto = auctionsByEndingSoon.filter((item) => !item.photos[0]);
-  const endingSoonAuctions = [...endingSoonWithPhoto, ...endingSoonWithoutPhoto].slice(0, 5);
-  const topPriceAuctions = [...listings]
-    .filter((item) => item.listing_type === "auction" && item.ends_at)
-    .sort((a, b) => b.current_price - a.current_price || a.ends_at!.getTime() - b.ends_at!.getTime())
-    .slice(0, 2);
-  const quickDeals = listings.slice(0, 3);
-  const newArrivals = listings.slice(0, 8);
-  const bestMixed = [...listings]
-    .sort(
-      (a, b) =>
-        (b.bidCount + b.purchaseCount) - (a.bidCount + a.purchaseCount) ||
-        (b.listing_type === "auction" ? b.current_price : (b.price ?? 0)) -
-          (a.listing_type === "auction" ? a.current_price : (a.price ?? 0)),
-    )
-    .slice(0, 6);
-  const topAuctions = [...listings]
-    .filter((item) => item.listing_type === "auction")
-    .sort((a, b) => b.bidCount - a.bidCount || b.current_price - a.current_price)
-    .slice(0, 4);
-  const topFixed = [...listings]
-    .filter((item) => item.listing_type === "fixed_price")
-    .sort((a, b) => b.purchaseCount - a.purchaseCount || (b.price ?? 0) - (a.price ?? 0))
-    .slice(0, 4);
-  // Independent "定價種鴿" homepage section (issue #36) — real fixed_price,
-  // status='open' listings straight from the same fetch every other section
-  // on this page already uses, newest-first so recently listed pigeons
-  // surface first. Renders nothing when there are none (see JSX below).
-  const fixedPriceListings = [...listings]
-    .filter((item) => item.listing_type === "fixed_price")
-    .sort((a, b) => b.created_at.getTime() - a.created_at.getTime())
-    .slice(0, 6);
+  const nowMs = new Date().getTime();
+
+  // Every curated section below is a named rule in lib/homepageListings.ts
+  // (issue #139 item 3) — see there for what each ordering means and why.
+  const endingSoonAuctions = selectEndingSoonAuctions(listings, ENDING_SOON_LIMIT);
+  const topPriceAuctions = selectTopPriceAuctions(listings, TOP_PRICE_LIMIT);
+  const quickDeals = listings.slice(0, QUICK_DEALS_LIMIT);
+  const newArrivals = listings.slice(0, NEW_ARRIVALS_LIMIT);
+  const bestMixed = selectMostActive(listings, MOST_ACTIVE_LIMIT);
+  const topAuctions = selectTopAuctionsByBids(listings, TOP_BY_TYPE_LIMIT);
+  const topFixed = selectTopFixedByPurchases(listings, TOP_BY_TYPE_LIMIT);
+  // Independent "定價種鴿" homepage section (issue #36) — renders nothing
+  // when there are none (see JSX below).
+  const fixedPriceListings = selectNewestFixedPrice(listings, FIXED_PRICE_SECTION_LIMIT);
+
   // "分類瀏覽" 卡片：維持「依商品狀態／熱度」瀏覽入口的定位（不是合作鴿舍
   // 那套 CMS 分類系統），但每張卡片都改成對 listings 真實計算
   // 出來的子集合，並且連結帶對應的篩選 query，讓點進去的清單筆數跟卡片上
   // 的數字一致。
-  const QUICK_CLOSE_WINDOW_HOURS = 72;
-  const quickCloseWindowMs = QUICK_CLOSE_WINDOW_HOURS * 60 * 60 * 1000;
-  const now = new Date().getTime();
-  const auctionListings = listings.filter((item) => item.listing_type === "auction");
-  const fixedPriceOpenListings = listings.filter((item) => item.listing_type === "fixed_price");
-  // 快速結標：open 狀態的競標商品中，3 天內即將截止的（而非全部競標商品，
-  // 否則會跟「拍賣商品」卡片數字重複）。
-  const quickCloseAuctions = auctionListings.filter((item) => {
-    if (!item.ends_at) return false;
-    const remaining = item.ends_at.getTime() - now;
-    return remaining >= 0 && remaining <= quickCloseWindowMs;
-  });
+  const auctionListings = filterByListingType(listings, "auction");
+  const fixedPriceOpenListings = filterByListingType(listings, "fixed_price");
+  const quickCloseAuctions = selectQuickCloseAuctions(listings, nowMs);
   // 即將開賣：取代原本語意無法對應真實欄位的「限時精選」，改為真的還沒開賣
   // 的 scheduled 商品（原本的「高人氣商品推薦」在 schema 上跟「買家最愛」重
   // 複，故合理替換為狀態面向的另一個真實子集合）。
@@ -200,30 +191,26 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       count: scheduledListings.length,
     },
   ];
-  const homeEagerCount = perfMode === "aggressive" ? 2 : 1;
+  const homeEagerCount = EAGER_COUNTS[perfMode];
   const perfSuffix = perfMode === "aggressive" ? "&perf=aggressive" : "";
-  const heroCards = endingSoonAuctions.map((item) => ({
+
+  /** Photo URL for a listing card, falling back to the site placeholder. */
+  const photoUrlFor = (item: { id: number; photos: string[] }) =>
+    item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : IMAGE_FALLBACK_SRC;
+
+  const toHeroCard = (item: (typeof listings)[number]) => ({
     id: item.id,
     href: `/listings/${item.id}`,
     title: item.title,
-    photoUrl: item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : "/images/hero-placeholder.png",
+    photoUrl: photoUrlFor(item),
     hasPhoto: Boolean(item.photos[0]),
     currentPrice: item.current_price,
     buyItNowPrice: item.buy_it_now_price,
     endsAt: item.ends_at!.toISOString(),
     bidCount: item.bidCount,
-  }));
-  const topPriceHeroCards = topPriceAuctions.map((item) => ({
-    id: item.id,
-    href: `/listings/${item.id}`,
-    title: item.title,
-    photoUrl: item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : "/images/hero-placeholder.png",
-    hasPhoto: Boolean(item.photos[0]),
-    currentPrice: item.current_price,
-    buyItNowPrice: item.buy_it_now_price,
-    endsAt: item.ends_at!.toISOString(),
-    bidCount: item.bidCount,
-  }));
+  });
+  const heroCards = endingSoonAuctions.map(toHeroCard);
+  const topPriceHeroCards = topPriceAuctions.map(toHeroCard);
 
   return (
     <main className="pb-8">
@@ -382,51 +369,41 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
           <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
             {quickDeals.map((item, index) => (
-              (() => {
-                const hasPhoto = Boolean(item.photos[0]);
-                return (
-              <Link
+              <HomeListingRow
                 key={`deal-${item.id}`}
-                href={`/listings/${item.id}`}
-                className="group flex items-center gap-3 rounded-xl border border-border bg-slate-50 p-3 transition hover:-translate-y-0.5 hover:border-interactive-primary/50 hover:bg-white"
+                id={item.id}
+                title={item.title}
+                imageSrc={photoUrlFor(item)}
+                hasPhoto={Boolean(item.photos[0])}
+                eager={index === 0}
               >
-                <div className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-lg ${hasPhoto ? "bg-slate-100" : "bg-white/90"}`}>
-                  <ZoomableProductImage
-                    src={item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : "/images/hero-placeholder.png"}
-                    alt={item.title}
-                    eager={index === 0}
-                    fetchPriority={index === 0 ? "high" : "auto"}
-                    sizes="80px"
-                    zoomPreset="medium"
-                  />
+                <div className="flex items-center gap-1.5">
+                  <span className="shrink-0 rounded bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                    {item.listing_type === "auction" ? t("badgeHotBidding") : t("badgeBestPrice")}
+                  </span>
+                  <p className="truncate text-sm font-bold text-ink">{item.title}</p>
                 </div>
-
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="shrink-0 rounded bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                      {item.listing_type === "auction" ? t("badgeHotBidding") : t("badgeBestPrice")}
-                    </span>
-                    <p className="truncate text-sm font-bold text-ink">{item.title}</p>
-                  </div>
-                  <p className="mt-1 text-xs text-ink-light">{item.listing_type === "auction" ? t("statusBidding") : t("statusFixedDeal")}</p>
-                  <div className="mt-2 flex items-end gap-2">
-                    <p className="text-base font-black text-ink">
-                      {formatDualPrice(
-                        item.listing_type === "auction" ? item.current_price : item.price!,
-                        displayCurrency,
-                        rateValue,
-                      )}
-                    </p>
-                    {item.listing_type === "auction" && (
-                      <p className="text-[11px] text-ink-light line-through">
-                        {formatNtd(Math.ceil(Number(item.current_price) * 1.15))}
-                      </p>
+                <p className="mt-1 text-xs text-ink-light">{item.listing_type === "auction" ? t("statusBidding") : t("statusFixedDeal")}</p>
+                <div className="mt-2 flex items-end gap-2">
+                  <p className="text-base font-black text-ink">
+                    {formatDualPrice(
+                      item.listing_type === "auction" ? item.current_price : item.price!,
+                      displayCurrency,
+                      rateValue,
                     )}
-                  </div>
+                  </p>
+                  {/* M-15 (issue #139): this struck-through "original price" is
+                      computed as current_price × 1.15, not read from any real
+                      original-price column. Left exactly as-is — whether that
+                      is intentional marketing is a product/legal call, not a
+                      refactoring one. */}
+                  {item.listing_type === "auction" && (
+                    <p className="text-[11px] text-ink-light line-through">
+                      {formatNtd(Math.ceil(Number(item.current_price) * 1.15))}
+                    </p>
+                  )}
                 </div>
-              </Link>
-                );
-              })()
+              </HomeListingRow>
             ))}
           </div>
         </div>
@@ -446,39 +423,26 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-              {fixedPriceListings.map((item, index) => {
-                const hasPhoto = Boolean(item.photos[0]);
-                return (
-                  <Link
-                    key={`fixed-price-${item.id}`}
-                    href={`/listings/${item.id}`}
-                    className="group flex items-center gap-3 rounded-xl border border-border bg-slate-50 p-3 transition hover:-translate-y-0.5 hover:border-interactive-primary/50 hover:bg-white"
-                  >
-                    <div className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-lg ${hasPhoto ? "bg-slate-100" : "bg-white/90"}`}>
-                      <ZoomableProductImage
-                        src={item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : "/images/hero-placeholder.png"}
-                        alt={item.title}
-                        eager={index === 0}
-                        fetchPriority={index === 0 ? "high" : "auto"}
-                        sizes="80px"
-                        zoomPreset="medium"
-                      />
-                    </div>
-
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-bold text-ink">{item.title}</p>
-                      <p className="mt-1 text-xs text-ink-light">
-                        {item.stock_remaining != null
-                          ? tListings("remainingUnits", { count: item.stock_remaining })
-                          : t("fixedPriceSectionItemLabel")}
-                      </p>
-                      <div className="mt-2 flex items-end gap-2">
-                        <p className="text-base font-black text-ink">{formatDualPrice(item.price!, displayCurrency, rateValue)}</p>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
+              {fixedPriceListings.map((item, index) => (
+                <HomeListingRow
+                  key={`fixed-price-${item.id}`}
+                  id={item.id}
+                  title={item.title}
+                  imageSrc={photoUrlFor(item)}
+                  hasPhoto={Boolean(item.photos[0])}
+                  eager={index === 0}
+                >
+                  <p className="truncate text-sm font-bold text-ink">{item.title}</p>
+                  <p className="mt-1 text-xs text-ink-light">
+                    {item.stock_remaining != null
+                      ? tListings("remainingUnits", { count: item.stock_remaining })
+                      : t("fixedPriceSectionItemLabel")}
+                  </p>
+                  <div className="mt-2 flex items-end gap-2">
+                    <p className="text-base font-black text-ink">{formatDualPrice(item.price!, displayCurrency, rateValue)}</p>
+                  </div>
+                </HomeListingRow>
+              ))}
             </div>
           </div>
         </section>
@@ -518,55 +482,28 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {newArrivals.map((item, index) => (
-            (() => {
-              const hasPhoto = Boolean(item.photos[0]);
-              return (
-            <article
+            <HomeProductCard
               key={item.id}
-              className="group rounded-2xl border border-border bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-interactive-primary/60 hover:shadow-md"
-            >
-              <Link href={`/listings/${item.id}`} className="block">
-                <div className="mb-2">
-                  <span className="inline-flex rounded-md bg-interactive-primary-subtle px-2 py-1 text-[11px] font-bold text-interactive-primary">
-                    {item.listing_type === "auction" ? t("badgeHotBidding") : t("badgeBestPrice")}
-                  </span>
-                </div>
-                <div className={`relative aspect-[4/3] overflow-hidden rounded-xl ${hasPhoto ? "bg-slate-100" : "bg-white/90"}`}>
-                  <ZoomableProductImage
-                    src={item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : "/images/hero-placeholder.png"}
-                    alt={item.title}
-                    eager={index < homeEagerCount}
-                    fetchPriority={index < homeEagerCount ? "high" : "auto"}
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    zoomPreset="medium"
-                  />
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition group-hover:opacity-100" />
-                </div>
-              </Link>
-              <h3 className="mt-3 truncate text-sm font-semibold text-ink">{item.title}</h3>
-              <div className="mt-1 flex items-center justify-between text-[11px] text-ink-light">
-                <span className="inline-flex items-center gap-1">
-                  <span className="text-amber-500">●</span>
-                  <span>{item.listing_type === "auction" ? t("statusBidding") : t("statusFixedDeal")}</span>
-                </span>
-                <span>
-                  {item.listing_type === "auction"
-                    ? t("bidCountShort", { count: item.bidCount })
-                    : t("purchaseCountShort", { count: item.purchaseCount })}
-                </span>
-              </div>
-              <div className="mt-2 flex items-end gap-2">
-                <p className="text-lg font-black text-ink">{formatDualPrice(item.listing_type === "auction" ? item.current_price : item.price!, displayCurrency, rateValue)}</p>
-              </div>
-              <div className="mt-3 flex items-center gap-2 text-[11px]">
-                <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold text-ink">{tListings("quickAction")}</span>
-                <Link href={`/listings/${item.id}`} className="rounded-md bg-header px-2 py-1 font-semibold text-white">
-                  {item.listing_type === "fixed_price" ? t("promoFixedCta") : t("promoAuctionCta")}
-                </Link>
-              </div>
-            </article>
-              );
-            })()
+              id={item.id}
+              title={item.title}
+              imageSrc={photoUrlFor(item)}
+              hasPhoto={Boolean(item.photos[0])}
+              badgeLabel={item.listing_type === "auction" ? t("badgeHotBidding") : t("badgeBestPrice")}
+              statusLabel={item.listing_type === "auction" ? t("statusBidding") : t("statusFixedDeal")}
+              countLabel={
+                item.listing_type === "auction"
+                  ? t("bidCountShort", { count: item.bidCount })
+                  : t("purchaseCountShort", { count: item.purchaseCount })
+              }
+              priceText={formatDualPrice(
+                item.listing_type === "auction" ? item.current_price : item.price!,
+                displayCurrency,
+                rateValue,
+              )}
+              quickActionLabel={tListings("quickAction")}
+              ctaLabel={item.listing_type === "fixed_price" ? t("promoFixedCta") : t("promoAuctionCta")}
+              eager={index < homeEagerCount}
+            />
           ))}
         </div>
       </section>
@@ -619,54 +556,28 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {bestMixed.map((item, index) => (
-            (() => {
-              const hasPhoto = Boolean(item.photos[0]);
-              return (
-            <article key={`best-${item.id}`} className="group rounded-2xl border border-border bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-interactive-primary/60 hover:shadow-md">
-              <Link href={`/listings/${item.id}`} className="block">
-                <div className="mb-2">
-                  <span className="inline-flex rounded-md bg-interactive-primary-subtle px-2 py-1 text-[11px] font-bold text-interactive-primary">
-                    {item.listing_type === "auction" ? t("badgeHotBidding") : t("badgeBestPrice")}
-                  </span>
-                </div>
-                <div className={`relative aspect-[4/3] overflow-hidden rounded-xl ${hasPhoto ? "bg-slate-100" : "bg-white/90"}`}>
-                  <ZoomableProductImage
-                    src={item.photos[0] ? listingPhotoUrl(item.id, item.photos[0]) : "/images/hero-placeholder.png"}
-                    alt={item.title}
-                    eager={index < 1}
-                    fetchPriority={index < 1 ? "high" : "auto"}
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    zoomPreset="medium"
-                  />
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition group-hover:opacity-100" />
-                </div>
-              </Link>
-
-              <h3 className="mt-3 truncate text-sm font-semibold text-ink">{item.title}</h3>
-              <div className="mt-1 flex items-center justify-between text-[11px] text-ink-light">
-                <span className="inline-flex items-center gap-1">
-                  <span className="text-amber-500">●</span>
-                  <span>{item.listing_type === "auction" ? t("statusBidding") : t("statusFixedDeal")}</span>
-                </span>
-                <span>
-                  {item.listing_type === "auction"
-                    ? t("bidCountShort", { count: item.bidCount })
-                    : t("purchaseCountShort", { count: item.purchaseCount })}
-                </span>
-              </div>
-              <div className="mt-2 flex items-end gap-2">
-                <p className="text-lg font-black text-ink">{formatDualPrice(item.listing_type === "auction" ? item.current_price : item.price!, displayCurrency, rateValue)}</p>
-              </div>
-
-              <div className="mt-3 flex items-center gap-2 text-[11px]">
-                <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold text-ink">{tListings("quickAction")}</span>
-                <Link href={`/listings/${item.id}`} className="rounded-md bg-header px-2 py-1 font-semibold text-white">
-                  {item.listing_type === "fixed_price" ? t("promoFixedCta") : t("promoAuctionCta")}
-                </Link>
-              </div>
-            </article>
-              );
-            })()
+            <HomeProductCard
+              key={`best-${item.id}`}
+              id={item.id}
+              title={item.title}
+              imageSrc={photoUrlFor(item)}
+              hasPhoto={Boolean(item.photos[0])}
+              badgeLabel={item.listing_type === "auction" ? t("badgeHotBidding") : t("badgeBestPrice")}
+              statusLabel={item.listing_type === "auction" ? t("statusBidding") : t("statusFixedDeal")}
+              countLabel={
+                item.listing_type === "auction"
+                  ? t("bidCountShort", { count: item.bidCount })
+                  : t("purchaseCountShort", { count: item.purchaseCount })
+              }
+              priceText={formatDualPrice(
+                item.listing_type === "auction" ? item.current_price : item.price!,
+                displayCurrency,
+                rateValue,
+              )}
+              quickActionLabel={tListings("quickAction")}
+              ctaLabel={item.listing_type === "fixed_price" ? t("promoFixedCta") : t("promoAuctionCta")}
+              eager={index < 1}
+            />
           ))}
         </div>
 

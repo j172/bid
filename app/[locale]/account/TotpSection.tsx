@@ -3,8 +3,8 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import Button from "@/app/components/Button";
-
-const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
+import { inputClass } from "@/lib/formStyles";
+import { usePostJson } from "@/lib/usePostJson";
 
 type Step = "idle" | "qr" | "backupCodes" | "disableConfirm";
 
@@ -25,36 +25,33 @@ type Step = "idle" | "qr" | "backupCodes" | "disableConfirm";
 // single password-confirm step, same shape as TwoFactorSection's.
 export default function TotpSection({ initialActive }: { initialActive: boolean }) {
   const t = useTranslations("totpSection");
-  const tErrors = useTranslations("errors");
   const [active, setActive] = useState(initialActive);
   const [step, setStep] = useState<Step>("idle");
-  const [starting, setStarting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // One hook instance for all three round trips (setup / confirm / disable):
+  // they are mutually exclusive `step`s, so a single in-flight flag and a
+  // single error slot cover them exactly as the three separate flags this
+  // component used to keep did (issue #139 item 1).
+  const { post, submitting, error, setError } = usePostJson(t("defaultError"));
 
   const [setupToken, setSetupToken] = useState("");
   const [secret, setSecret] = useState("");
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
   const [code, setCode] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [confirming, setConfirming] = useState(false);
 
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
 
   const [disablePassword, setDisablePassword] = useState("");
-  const [disabling, setDisabling] = useState(false);
 
   async function handleStartSetup() {
-    setError(null);
     setNotice(null);
-    setStarting(true);
-    const response = await fetch("/api/account/totp/setup", { method: "POST" });
-    const data = await response.json();
-    setStarting(false);
-    if (!data.ok) {
-      setError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
-      return;
-    }
+
+    const data = await post<{ ok?: boolean; token: string; secret: string; qrCodeDataUrl: string }>(
+      "/api/account/totp/setup",
+    );
+    if (!data) return;
+
     setSetupToken(data.token);
     setSecret(data.secret);
     setQrCodeDataUrl(data.qrCodeDataUrl);
@@ -75,21 +72,14 @@ export default function TotpSection({ initialActive }: { initialActive: boolean 
 
   async function handleConfirmSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setConfirming(true);
-    setError(null);
 
-    const response = await fetch("/api/account/totp/confirm", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: setupToken, code, currentPassword: confirmPassword }),
+    const data = await post<{ ok?: boolean; backupCodes: string[] }>("/api/account/totp/confirm", {
+      token: setupToken,
+      code,
+      currentPassword: confirmPassword,
     });
-    const data = await response.json();
+    if (!data) return;
 
-    setConfirming(false);
-    if (!data.ok) {
-      setError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
-      return;
-    }
     setBackupCodes(data.backupCodes);
     setStep("backupCodes");
     setActive(true);
@@ -121,21 +111,10 @@ export default function TotpSection({ initialActive }: { initialActive: boolean 
 
   async function handleDisableSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setDisabling(true);
-    setError(null);
 
-    const response = await fetch("/api/account/totp/disable", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ currentPassword: disablePassword }),
-    });
-    const data = await response.json();
+    const data = await post("/api/account/totp/disable", { currentPassword: disablePassword });
+    if (!data) return;
 
-    setDisabling(false);
-    if (!data.ok) {
-      setError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
-      return;
-    }
     setActive(false);
     setStep("idle");
     setDisablePassword("");
@@ -154,8 +133,8 @@ export default function TotpSection({ initialActive }: { initialActive: boolean 
 
       {step === "idle" && (
         <div className="flex items-center gap-3">
-          <Button type="button" onClick={active ? openDisableConfirm : handleStartSetup} disabled={starting}>
-            {starting ? t("starting") : active ? t("disableButton") : t("enableButton")}
+          <Button type="button" onClick={active ? openDisableConfirm : handleStartSetup} disabled={submitting}>
+            {submitting ? t("starting") : active ? t("disableButton") : t("enableButton")}
           </Button>
           {notice && <span className="text-sm text-leading">{notice}</span>}
           {error && <span className="text-sm text-ended">{error}</span>}
@@ -199,8 +178,8 @@ export default function TotpSection({ initialActive }: { initialActive: boolean 
               />
             </label>
             <div className="flex items-center gap-3">
-              <Button type="submit" disabled={confirming}>
-                {confirming ? t("submitting") : t("confirmSubmit")}
+              <Button type="submit" disabled={submitting}>
+                {submitting ? t("submitting") : t("confirmSubmit")}
               </Button>
               <button type="button" onClick={cancelSetup} className="text-sm text-ink-light hover:underline">
                 {t("cancel")}
@@ -241,8 +220,8 @@ export default function TotpSection({ initialActive }: { initialActive: boolean 
             />
           </label>
           <div className="flex items-center gap-3">
-            <Button type="submit" disabled={disabling}>
-              {disabling ? t("submitting") : t("confirmSubmit")}
+            <Button type="submit" disabled={submitting}>
+              {submitting ? t("submitting") : t("confirmSubmit")}
             </Button>
             <button type="button" onClick={cancelDisableConfirm} className="text-sm text-ink-light hover:underline">
               {t("cancel")}

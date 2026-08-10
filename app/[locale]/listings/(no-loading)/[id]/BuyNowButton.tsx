@@ -2,30 +2,21 @@
 
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { useState } from "react";
+import { usePostJson } from "@/lib/usePostJson";
 
 export default function BuyNowButton({ listingId, buyItNowPrice }: { listingId: number; buyItNowPrice: number }) {
   const router = useRouter();
   const t = useTranslations("buyNowButton");
-  const tErrors = useTranslations("errors");
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const { post, submitting, error } = usePostJson(t("defaultError"));
 
   async function handleBuyNow() {
     if (!confirm(t("confirm", { price: buyItNowPrice }))) {
       return;
     }
-    setSubmitting(true);
-    setError(null);
 
-    const response = await fetch(`/api/listings/${listingId}/buy-now`, { method: "POST" });
-    const data = await response.json();
+    const data = await post(`/api/listings/${listingId}/buy-now`);
+    if (!data) return;
 
-    setSubmitting(false);
-    if (!data.ok) {
-      setError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
-      return;
-    }
     router.refresh();
   }
 

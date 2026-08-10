@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import RichTextContent from "../../../components/RichTextContent";
 
 type TabKey = "description" | "additional" | "activity";
 
@@ -82,14 +83,7 @@ export default function ListingDetailTabs({
       {activeTab === "description" && (
         <div className="pt-6">
           <h3 className="text-xl font-black text-ink">{descriptionTitle}</h3>
-          {/* description is stored pre-sanitized (see lib/sanitizeDescriptionHtml.ts,
-              applied by both the create and edit API routes) before ever reaching here.
-              No @tailwindcss/typography plugin here, so rich-text tags are styled
-              explicitly via child selectors instead of a `prose` class. */}
-          <div
-            className="mt-3 max-w-none leading-7 text-ink-light [&_a]:text-interactive-primary [&_a]:underline [&_h2]:mt-4 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-ink [&_h3]:mt-3 [&_h3]:text-base [&_h3]:font-bold [&_h3]:text-ink [&_img]:my-2 [&_img]:max-w-full [&_img]:rounded-md [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-border [&_td]:p-2 [&_th]:border [&_th]:border-border [&_th]:p-2 [&_ul]:list-disc [&_ul]:pl-5"
-            dangerouslySetInnerHTML={{ __html: description }}
-          />
+          <RichTextContent html={description} className="mt-3 leading-7 text-ink-light" />
         </div>
       )}
 
@@ -117,9 +111,9 @@ export default function ListingDetailTabs({
             </p>
           ) : (
             <div className="mt-4 space-y-2">
-              {activityLines.map((line, index) => (
+              {activityLines.map((line) => (
                 <div
-                  key={index}
+                  key={`${line.dateLabel}-${line.maskedName}-${line.amountLabel}`}
                   className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3 text-sm"
                 >
                   <span className="font-semibold text-ink">{line.maskedName}</span>

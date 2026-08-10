@@ -1,3 +1,20 @@
+import { resolveStatusBadgeVariant, type StatusBadgeKey } from "@/lib/statusBadge";
+
+// Untranslated badge for the admin backend (see app/z04urru6/users/[id]/
+// page.tsx), which sits outside next-intl's NextIntlClientProvider entirely.
+// Its translated twin is app/[locale]/components/StatusBadge.tsx; both share
+// the status → variant decision via lib/statusBadge.ts (issue #139 item 6)
+// and differ only in where the label text comes from.
+const LABELS: Record<StatusBadgeKey, string> = {
+  scheduled: "尚未開標",
+  cancelled: "已下架",
+  closed: "已結標",
+  leading: "目前領先",
+  outbid: "已被超越",
+  onSale: "販售中",
+  bidding: "競標中",
+};
+
 export default function StatusBadge({
   status,
   isLeading,
@@ -8,56 +25,6 @@ export default function StatusBadge({
   /** Fixed-price ("一般商品") listings never bid/lead — an open one is just "on sale" (issue #49), not "bidding". */
   isFixedPrice?: boolean;
 }) {
-  if (status === "scheduled") {
-    return (
-      <span className="inline-block rounded-full bg-interactive-primary-subtle px-2.5 py-0.5 text-xs font-medium text-interactive-primary">
-        尚未開標
-      </span>
-    );
-  }
-
-  if (status === "cancelled") {
-    return (
-      <span className="inline-block rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
-        已下架
-      </span>
-    );
-  }
-
-  if (status !== "open") {
-    return (
-      <span className="inline-block rounded-full bg-ended-bg px-2.5 py-0.5 text-xs font-medium text-ended">
-        已結標
-      </span>
-    );
-  }
-
-  if (isLeading === true) {
-    return (
-      <span className="inline-block rounded-full bg-leading-bg px-2.5 py-0.5 text-xs font-medium text-leading">
-        目前領先
-      </span>
-    );
-  }
-  if (isLeading === false) {
-    return (
-      <span className="inline-block rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
-        已被超越
-      </span>
-    );
-  }
-
-  if (isFixedPrice) {
-    return (
-      <span className="inline-block rounded-full bg-interactive-primary-subtle px-2.5 py-0.5 text-xs font-medium text-interactive-primary-active">
-        販售中
-      </span>
-    );
-  }
-
-  return (
-    <span className="inline-block rounded-full bg-interactive-primary-subtle px-2.5 py-0.5 text-xs font-medium text-interactive-primary-active">
-      競標中
-    </span>
-  );
+  const variant = resolveStatusBadgeVariant(status, isLeading, isFixedPrice);
+  return <span className={variant.className}>{LABELS[variant.key]}</span>;
 }

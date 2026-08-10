@@ -3,9 +3,8 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link } from "@/i18n/navigation";
+import { inputClass } from "@/lib/formStyles";
 import AuthFormShell from "../components/AuthFormShell";
-
-const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
 
 export default function ForgotPasswordPage() {
   const locale = useLocale();

@@ -2,38 +2,28 @@ import { getTranslations } from "next-intl/server";
 import { DEFAULT_NEWS_PAGE_SIZE, NEWS_PAGE_SIZES, isNewsPageSize, listNews } from "@/lib/news";
 import { newsImageUrl } from "@/lib/uploads";
 import { excerptHtml } from "@/lib/htmlText";
-import { Link } from "@/i18n/navigation";
+import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
+import { buildQuery, firstParam, type SearchParams } from "@/lib/searchParams";
+import ContentCardGrid from "../components/ContentCardGrid";
+import PaginationFooter from "../components/PaginationFooter";
 
 export const dynamic = "force-dynamic";
 
 const LIST_EXCERPT_LENGTH = 100;
-
-type SearchParams = Record<string, string | string[] | undefined>;
-
-function first(value: string | string[] | undefined): string | undefined {
-  return Array.isArray(value) ? value[0] : value;
-}
-
-function buildQuery(params: SearchParams, overrides: Record<string, string>): string {
-  const query = new URLSearchParams();
-  for (const key of ["search", "pageSize", "page"]) {
-    const value = key in overrides ? overrides[key] : first(params[key]);
-    if (value) query.set(key, value);
-  }
-  return query.toString();
-}
+const QUERY_KEYS = ["search", "pageSize", "page"] as const;
 
 // Public "最新訊息" list (issue #56) — card grid + pagination (30/50/100) +
-// title fuzzy search, same layout shape as
-// app/[locale]/pigeon-showcase/page.tsx's category list page.
+// title fuzzy search. Shares its grid and pagination footer with
+// app/[locale]/pigeon-showcase/page.tsx (issue #139 item 8); the search form
+// is this page's own, since that list filters by category tabs instead.
 export default async function NewsListPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams;
   const t = await getTranslations("news");
 
-  const search = first(params.search) ?? "";
-  const pageSizeRaw = Number(first(params.pageSize));
+  const search = firstParam(params.search) ?? "";
+  const pageSizeRaw = Number(firstParam(params.pageSize));
   const pageSize = isNewsPageSize(pageSizeRaw) ? pageSizeRaw : DEFAULT_NEWS_PAGE_SIZE;
-  const page = Math.max(1, Number(first(params.page) ?? "1") || 1);
+  const page = Math.max(1, Number(firstParam(params.page) ?? "1") || 1);
 
   const { items, total } = await listNews({ search, page, pageSize });
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -59,63 +49,33 @@ export default async function NewsListPage({ searchParams }: { searchParams: Pro
         </button>
       </form>
 
-      {items.length === 0 ? (
-        <p className="mt-10 text-ink-light">{t("noItems")}</p>
-      ) : (
-        <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((item) => (
-            <Link
-              key={item.id}
-              href={`/news/${item.id}`}
-              className="group flex flex-col overflow-hidden rounded-xl border border-border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={item.imageFileName ? newsImageUrl(item.imageFileName) : "/images/hero-placeholder.png"}
-                alt={item.title}
-                className="h-40 w-full object-cover"
-              />
-              <div className="flex flex-1 flex-col p-5">
-                <p className="text-xs font-semibold text-ink-light">{item.createdAt.toLocaleDateString()}</p>
-                <h2 className="mt-1 truncate text-lg font-bold text-ink">{item.title}</h2>
-                <p className="mt-3 line-clamp-3 text-sm text-ink-light">{excerptHtml(item.content, LIST_EXCERPT_LENGTH)}</p>
-                <span className="mt-4 text-xs font-bold text-interactive-primary group-hover:underline">{t("viewDetails")}</span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+      <ContentCardGrid
+        items={items.map((item) => ({
+          id: item.id,
+          href: `/news/${item.id}`,
+          imageUrl: item.imageFileName ? newsImageUrl(item.imageFileName) : IMAGE_FALLBACK_SRC,
+          title: item.title,
+          dateLabel: item.createdAt.toLocaleDateString(),
+          excerpt: excerptHtml(item.content, LIST_EXCERPT_LENGTH),
+        }))}
+        emptyLabel={t("noItems")}
+        viewDetailsLabel={t("viewDetails")}
+      />
 
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-white px-4 py-3 text-sm shadow-sm">
-        <div className="flex items-center gap-2 text-ink-light">
-          <span>{t("pageSizeLabel")}</span>
-          {NEWS_PAGE_SIZES.map((size) => (
-            <Link
-              key={size}
-              href={`/news?${buildQuery(params, { pageSize: String(size), page: "1" })}`}
-              className={size === pageSize ? "font-bold text-interactive-primary underline" : "hover:text-interactive-primary"}
-            >
-              {size}
-            </Link>
-          ))}
-        </div>
-
-        {totalPages > 1 && (
-          <div className="flex items-center gap-3">
-            {page > 1 && (
-              <Link href={`/news?${buildQuery(params, { page: String(page - 1) })}`} className="text-interactive-primary hover:underline">
-                {t("prevPage")}
-              </Link>
-            )}
-            <span className="text-ink-light">{t("pageInfo", { page, totalPages, total })}</span>
-            {page < totalPages && (
-              <Link href={`/news?${buildQuery(params, { page: String(page + 1) })}`} className="text-interactive-primary hover:underline">
-                {t("nextPage")}
-              </Link>
-            )}
-          </div>
-        )}
-      </div>
+      <PaginationFooter
+        pageSizes={NEWS_PAGE_SIZES}
+        pageSize={pageSize}
+        page={page}
+        totalPages={totalPages}
+        pageSizeHref={(size) => `/news?${buildQuery(params, QUERY_KEYS, { pageSize: String(size), page: "1" })}`}
+        pageHref={(target) => `/news?${buildQuery(params, QUERY_KEYS, { page: String(target) })}`}
+        labels={{
+          pageSizeLabel: t("pageSizeLabel"),
+          prevPage: t("prevPage"),
+          nextPage: t("nextPage"),
+          pageInfo: t("pageInfo", { page, totalPages, total }),
+        }}
+      />
     </main>
   );
 }

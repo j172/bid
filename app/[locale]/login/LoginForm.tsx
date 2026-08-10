@@ -1,40 +1,49 @@
 "use client";
 
-import { startAuthentication } from "@simplewebauthn/browser";
 import { useLocale, useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
-import Button from "@/app/components/Button";
 import TurnstileWidget, { type TurnstileWidgetHandle } from "@/app/components/TurnstileWidget";
+import { inputClass } from "@/lib/formStyles";
+import { usePostJson } from "@/lib/usePostJson";
 import AuthFormShell from "../components/AuthFormShell";
-
-const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
+import EmailOtpStep from "./EmailOtpStep";
+import PasskeyLoginButton from "./PasskeyLoginButton";
+import TotpStep from "./TotpStep";
 
 interface LoginFormProps {
   // Turnstile *site* key (not secret) — null when
-  // CLOUDFLARE_TURNSTILE_SITE_KEY isn't configured, in which case both
-  // widgets are skipped rather than shown broken, exactly as
-  // app/[locale]/contact/ContactForm.tsx does. The routes still require a
-  // valid token whenever CLOUDFLARE_TURNSTILE_SECRET_KEY is set, so this is
-  // only a real bypass in an environment that has neither key.
+  // CLOUDFLARE_TURNSTILE_SITE_KEY isn't configured, in which case both this
+  // form's widget and TotpStep's are skipped rather than shown broken,
+  // exactly as app/[locale]/contact/ContactForm.tsx does. The routes still
+  // require a valid token whenever CLOUDFLARE_TURNSTILE_SECRET_KEY is set, so
+  // this is only a real bypass in an environment that has neither key.
   turnstileSiteKey: string | null;
 }
 
-// Split out of app/[locale]/login/page.tsx (issue #140 H-1) so that page can
-// become a server component and read CLOUDFLARE_TURNSTILE_SITE_KEY from the
-// environment — same page.tsx/ContactForm.tsx split the contact page already
-// uses. All five login flows below (password, resend-verification, TOTP,
-// Email OTP, passkey) moved over unchanged; only the two that post to
-// /api/auth/login and /api/auth/verify-totp gained a Turnstile token.
+interface LoginResponse {
+  ok?: boolean;
+  errorCode?: string;
+  twoFactorRequired?: boolean;
+  twoFactorMethod?: string;
+  challengeToken?: string;
+}
+
+// The password half of the login flow, plus the routing between the second
+// steps it can hand off to. Split out of app/[locale]/login/page.tsx (issue
+// #140 H-1) so that page can be a server component and read
+// CLOUDFLARE_TURNSTILE_SITE_KEY from the environment; issue #139 item 4 then
+// moved each second step into its own component (TotpStep / EmailOtpStep /
+// PasskeyLoginButton), so this file now only owns what the password form
+// itself needs: the credentials, the "verify your email first" branch, which
+// step is currently showing, and its own Turnstile challenge.
 export default function LoginForm({ turnstileSiteKey }: LoginFormProps) {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("login");
-  const tErrors = useTranslations("errors");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const { post, submitting, error, setError } = usePostJson(t("defaultError"));
 
   // Registration email-ownership verification (issue #118): a login attempt
   // against a not-yet-verified account fails with EMAIL_NOT_VERIFIED instead
@@ -50,67 +59,27 @@ export default function LoginForm({ turnstileSiteKey }: LoginFormProps) {
   const [resendSubmitting, setResendSubmitting] = useState(false);
   const [resendSent, setResendSent] = useState(false);
 
-  // Email OTP (issue #93): a successful password check doesn't always mean
-  // "logged in" — when the account has Email OTP turned on, the login
-  // response carries twoFactorRequired + a challengeToken instead of a
-  // session, and this page switches into a second step in place (no
-  // navigation) to collect the 6-digit code. Mirrors
-  // app/[locale]/forgot-password/page.tsx's single-state-flag step switch.
+  // Which second step (if any) the login response asked for. Both are
+  // entered in place, without navigating — see the two step components.
   const [challengeToken, setChallengeToken] = useState<string | null>(null);
-  const [code, setCode] = useState("");
-  const [verifying, setVerifying] = useState(false);
-  const [verifyError, setVerifyError] = useState<string | null>(null);
-
-  // TOTP (issue #97) — parallel branch to the Email OTP step above, entered
-  // when the login response's twoFactorMethod is "totp" instead of
-  // "email_otp". There's no challengeToken here (see
-  // app/api/auth/login/route.ts's totp branch): POST /api/auth/verify-totp
-  // re-verifies email+password itself, so this step resubmits the same
-  // email/password state the form above already collected, alongside
-  // whatever the visitor types into totpCode (accepts either a 6-digit app
-  // code or a backup code — the backend tells them apart by format). A
-  // successful backup-code verify doesn't navigate away immediately; it
-  // shows how many backup codes remain first (totpBackupNotice) since that's
-  // the only time the visitor finds out, then a second click continues on.
   const [totpRequired, setTotpRequired] = useState(false);
-  const [totpCode, setTotpCode] = useState("");
-  const [totpVerifying, setTotpVerifying] = useState(false);
-  const [totpError, setTotpError] = useState<string | null>(null);
-  const [totpBackupNotice, setTotpBackupNotice] = useState<string | null>(null);
-
-  // Passkey login (issue #95) — a separate, parallel entry point to the
-  // password form above, not a replacement for it. Usernameless/discoverable-
-  // credential flow (@simplewebauthn/browser's startAuthentication): no
-  // email is collected first, the browser itself lists whichever passkeys it
-  // holds for this site. A successful verify goes straight to the same
-  // router.push("/") + router.refresh() the password flow ends with — it
-  // never touches the Email OTP step above, since passkey login already
-  // calls createSession server-side on its own (see
-  // app/api/auth/webauthn/login-verify/route.ts). No Turnstile of its own:
-  // the flow never posts a password, so it is not a password-guessing
-  // surface.
-  const [passkeySubmitting, setPasskeySubmitting] = useState(false);
-  const [passkeyError, setPasskeyError] = useState<string | null>(null);
 
   // Cloudflare Turnstile (issue #140 H-1) — one widget per *submitting step*,
   // not one per page: a token is single-use, and the password step and the
   // TOTP step are two separate requests to two separate routes that each
-  // verify a token of their own. They therefore keep separate state and
-  // separate widget instances (each TurnstileWidget renders its own
-  // container), and never share a token. The other three flows on this page
-  // (resend-verification, Email OTP verify, passkey) are out of scope and
-  // post no token.
-  const [loginTurnstileToken, setLoginTurnstileToken] = useState("");
-  const loginTurnstileRef = useRef<TurnstileWidgetHandle>(null);
-  const [totpTurnstileToken, setTotpTurnstileToken] = useState("");
-  const totpTurnstileRef = useRef<TurnstileWidgetHandle>(null);
+  // verify a token of their own. This component therefore only owns the
+  // password step's widget; TotpStep mounts its own from the same site key
+  // (see the prop passed below), and the two never share a token. The other
+  // three flows on this page (resend-verification, Email OTP verify, passkey)
+  // are out of scope and post no token.
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
 
   // True while the widget is configured but hasn't handed us a token yet
   // (still loading, or the visitor hasn't passed the challenge). Submitting
   // in that state would only earn a TURNSTILE_VERIFICATION_FAILED from the
-  // server, so the submit handlers stop it here and say so instead.
-  const turnstilePending = Boolean(turnstileSiteKey) && !loginTurnstileToken;
-  const totpTurnstilePending = Boolean(turnstileSiteKey) && !totpTurnstileToken;
+  // server, so the submit handler stops it here and says so instead.
+  const turnstilePending = Boolean(turnstileSiteKey) && !turnstileToken;
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -118,37 +87,35 @@ export default function LoginForm({ turnstileSiteKey }: LoginFormProps) {
       setError(t("turnstileNotReady"));
       return;
     }
-    setSubmitting(true);
-    setError(null);
     setEmailNotVerified(false);
     setResendSent(false);
 
-    const response = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, turnstileToken: loginTurnstileToken }),
-    });
-    const data = await response.json();
-
-    setSubmitting(false);
-    if (!data.ok) {
+    const data = await post<LoginResponse>(
+      "/api/auth/login",
+      { email, password, turnstileToken },
+      {
+        onFailure: (failure) => {
+          if (failure.errorCode === "EMAIL_NOT_VERIFIED") {
+            setEmailNotVerified(true);
+          }
+        },
+      },
+    );
+    if (!data) {
       // The token just spent can't be reused, so hand the visitor a fresh
       // challenge before they retry.
-      loginTurnstileRef.current?.reset();
-      if (data.errorCode === "EMAIL_NOT_VERIFIED") {
-        setEmailNotVerified(true);
-      }
-      setError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
+      turnstileRef.current?.reset();
       return;
     }
+
     if (data.twoFactorRequired) {
       // This step's widget unmounts as the second-factor step takes over;
       // drop its spent token so coming back here can't submit it again.
-      setLoginTurnstileToken("");
+      setTurnstileToken("");
       if (data.twoFactorMethod === "totp") {
         setTotpRequired(true);
       } else {
-        setChallengeToken(data.challengeToken);
+        setChallengeToken(data.challengeToken ?? null);
       }
       return;
     }
@@ -160,6 +127,9 @@ export default function LoginForm({ turnstileSiteKey }: LoginFormProps) {
     setResendSubmitting(true);
     setResendSent(false);
 
+    // Deliberately not routed through usePostJson: this endpoint always
+    // answers neutrally (see app/api/auth/resend-verification/route.ts), so
+    // there is no ok/errorCode branch to take.
     await fetch("/api/auth/resend-verification", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -170,206 +140,27 @@ export default function LoginForm({ turnstileSiteKey }: LoginFormProps) {
     setResendSent(true);
   }
 
-  async function handleTotpSubmit(event: React.FormEvent) {
-    event.preventDefault();
-    if (totpTurnstilePending) {
-      setTotpError(t("turnstileNotReady"));
-      return;
-    }
-    setTotpVerifying(true);
-    setTotpError(null);
-
-    const response = await fetch("/api/auth/verify-totp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, code: totpCode, turnstileToken: totpTurnstileToken }),
-    });
-    const data = await response.json();
-
-    setTotpVerifying(false);
-    if (!data.ok) {
-      totpTurnstileRef.current?.reset();
-      setTotpError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
-      return;
-    }
-    if (data.usedBackupCode) {
-      setTotpBackupNotice(t("totpBackupCodeUsedNotice", { count: data.remainingBackupCodes }));
-      return;
-    }
-    router.push("/");
-    router.refresh();
-  }
-
-  async function handleVerifySubmit(event: React.FormEvent) {
-    event.preventDefault();
-    setVerifying(true);
-    setVerifyError(null);
-
-    const response = await fetch("/api/auth/verify-email-otp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: challengeToken, code }),
-    });
-    const data = await response.json();
-
-    setVerifying(false);
-    if (!data.ok) {
-      if (data.errorCode === "EMAIL_OTP_TOO_MANY_ATTEMPTS") {
-        // The challenge is permanently spent — the only way forward is a
-        // fresh login attempt (which issues a brand-new code).
-        setChallengeToken(null);
-        setCode("");
-        setError(tErrors("EMAIL_OTP_TOO_MANY_ATTEMPTS"));
-        return;
-      }
-      setVerifyError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
-      return;
-    }
-    router.push("/");
-    router.refresh();
-  }
-
-  async function handlePasskeyLogin() {
-    setPasskeyError(null);
-    setPasskeySubmitting(true);
-    try {
-      const optionsResponse = await fetch("/api/auth/webauthn/login-options", { method: "POST" });
-      const optionsData = await optionsResponse.json();
-      if (!optionsData.ok) {
-        setPasskeyError(optionsData.errorCode ? tErrors(optionsData.errorCode) : t("defaultError"));
-        return;
-      }
-
-      const authResponse = await startAuthentication({ optionsJSON: optionsData.options });
-
-      const verifyResponse = await fetch("/api/auth/webauthn/login-verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ response: authResponse }),
-      });
-      const data = await verifyResponse.json();
-      if (!data.ok) {
-        setPasskeyError(data.errorCode ? tErrors(data.errorCode) : t("defaultError"));
-        return;
-      }
-
-      router.push("/");
-      router.refresh();
-    } catch {
-      setPasskeyError(t("passkeyBrowserError"));
-    } finally {
-      setPasskeySubmitting(false);
-    }
-  }
-
   if (totpRequired) {
-    if (totpBackupNotice) {
-      return (
-        <main className="mx-auto max-w-md px-4 py-16 sm:px-6">
-          <div className="rounded-lg border border-border bg-surface p-8 shadow-sm">
-            <h1 className="text-2xl font-bold">{t("totpTitle")}</h1>
-            <p className="mt-6 text-sm text-ink-light">{totpBackupNotice}</p>
-            <Button
-              type="button"
-              onClick={() => {
-                router.push("/");
-                router.refresh();
-              }}
-              className="mt-6 w-full"
-            >
-              {t("totpContinue")}
-            </Button>
-          </div>
-        </main>
-      );
-    }
-
     return (
-      <AuthFormShell
-        title={t("totpTitle")}
-        onSubmit={handleTotpSubmit}
-        submitting={totpVerifying}
-        submitLabel={t("totpSubmit")}
-        submittingLabel={t("totpSubmitting")}
-        error={totpError}
-        footer={
-          <p className="mt-4 text-sm text-ink-light">
-            <button
-              type="button"
-              onClick={() => {
-                setTotpRequired(false);
-                setTotpCode("");
-                setTotpError(null);
-                setTotpTurnstileToken("");
-              }}
-              className="font-medium text-interactive-primary hover:underline"
-            >
-              {t("otpBackToLogin")}
-            </button>
-          </p>
-        }
-      >
-        <p className="text-sm text-ink-light">{t("totpDescription")}</p>
-        <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-          {t("totpCodeLabel")}
-          <input
-            type="text"
-            inputMode="text"
-            maxLength={11}
-            required
-            autoFocus
-            value={totpCode}
-            onChange={(e) => setTotpCode(e.target.value)}
-            placeholder={t("totpCodePlaceholder")}
-            className={inputClass}
-          />
-        </label>
-        {turnstileSiteKey && <TurnstileWidget ref={totpTurnstileRef} siteKey={turnstileSiteKey} onToken={setTotpTurnstileToken} />}
-      </AuthFormShell>
+      <TotpStep
+        email={email}
+        password={password}
+        turnstileSiteKey={turnstileSiteKey}
+        onBack={() => setTotpRequired(false)}
+      />
     );
   }
 
   if (challengeToken) {
     return (
-      <AuthFormShell
-        title={t("otpTitle")}
-        onSubmit={handleVerifySubmit}
-        submitting={verifying}
-        submitLabel={t("otpSubmit")}
-        submittingLabel={t("otpSubmitting")}
-        error={verifyError}
-        footer={
-          <p className="mt-4 text-sm text-ink-light">
-            <button
-              type="button"
-              onClick={() => {
-                setChallengeToken(null);
-                setCode("");
-                setVerifyError(null);
-              }}
-              className="font-medium text-interactive-primary hover:underline"
-            >
-              {t("otpBackToLogin")}
-            </button>
-          </p>
-        }
-      >
-        <p className="text-sm text-ink-light">{t("otpDescription")}</p>
-        <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-          {t("otpCodeLabel")}
-          <input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]{6}"
-            maxLength={6}
-            required
-            autoFocus
-            value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            className={inputClass}
-          />
-        </label>
-      </AuthFormShell>
+      <EmailOtpStep
+        challengeToken={challengeToken}
+        onBack={() => setChallengeToken(null)}
+        onChallengeSpent={(message) => {
+          setChallengeToken(null);
+          setError(message);
+        }}
+      />
     );
   }
 
@@ -402,20 +193,7 @@ export default function LoginForm({ turnstileSiteKey }: LoginFormProps) {
               )}
             </div>
           )}
-          <div className="flex items-center gap-3 text-xs text-ink-light">
-            <span className="h-px flex-1 bg-border" />
-            {t("passkeyDivider")}
-            <span className="h-px flex-1 bg-border" />
-          </div>
-          <button
-            type="button"
-            onClick={handlePasskeyLogin}
-            disabled={passkeySubmitting}
-            className="w-full rounded-md border border-border px-4 py-2 font-medium text-ink hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {passkeySubmitting ? t("passkeySubmitting") : t("passkeyLoginButton")}
-          </button>
-          {passkeyError && <p className="text-sm text-ended">{passkeyError}</p>}
+          <PasskeyLoginButton />
           <p className="text-sm text-ink-light">
             {t("noAccount")}{" "}
             <Link href="/register" className="font-medium text-interactive-primary hover:underline">
@@ -425,30 +203,32 @@ export default function LoginForm({ turnstileSiteKey }: LoginFormProps) {
         </div>
       }
     >
-          <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-            {t("email")}
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={inputClass}
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-            {t("password")}
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={inputClass}
-            />
-          </label>
-          <Link href="/forgot-password" className="text-sm text-interactive-primary hover:underline">
-            {t("forgotPasswordLink")}
-          </Link>
-          {turnstileSiteKey && <TurnstileWidget ref={loginTurnstileRef} siteKey={turnstileSiteKey} onToken={setLoginTurnstileToken} />}
+      <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+        {t("email")}
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={inputClass}
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+        {t("password")}
+        <input
+          type="password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className={inputClass}
+        />
+      </label>
+      <Link href="/forgot-password" className="text-sm text-interactive-primary hover:underline">
+        {t("forgotPasswordLink")}
+      </Link>
+      {turnstileSiteKey && (
+        <TurnstileWidget ref={turnstileRef} siteKey={turnstileSiteKey} onToken={setTurnstileToken} />
+      )}
     </AuthFormShell>
   );
 }

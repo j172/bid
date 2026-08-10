@@ -145,9 +145,11 @@ export default async function SiteHeader() {
         </div>
 
         <div className="hidden items-center gap-2 lg:flex">
-          <Link href="/cart" aria-label={t("cartLabel")} className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-ink shadow-sm hover:border-interactive-primary hover:text-interactive-primary">
+          {/* No item-count badge (issue #139 item 16): there is no cart model
+              yet — /cart is a static "購物車是空的" page — so the badge was
+              hardcoded to 0 and only ever advertised an empty cart. */}
+          <Link href="/cart" aria-label={t("cartLabel")} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-ink shadow-sm hover:border-interactive-primary hover:text-interactive-primary">
             <span aria-hidden>🛒</span>
-            <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-header px-1 text-[10px] text-white">0</span>
           </Link>
 
           {user ? (

@@ -9,27 +9,19 @@ import {
 import { isPigeonShowcaseCategory } from "@/lib/pigeonShowcaseValidation";
 import { pigeonShowcaseImageUrl } from "@/lib/uploads";
 import { excerptHtml } from "@/lib/htmlText";
+import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
+import { buildQuery, firstParam, type SearchParams } from "@/lib/searchParams";
 import { Link } from "@/i18n/navigation";
+import ContentCardGrid from "../components/ContentCardGrid";
+import PaginationFooter from "../components/PaginationFooter";
 
 export const dynamic = "force-dynamic";
 
 const LIST_EXCERPT_LENGTH = 100;
+const QUERY_KEYS = ["category", "pageSize", "page"] as const;
 
-type SearchParams = Record<string, string | string[] | undefined>;
-
-function first(value: string | string[] | undefined): string | undefined {
-  return Array.isArray(value) ? value[0] : value;
-}
-
-function buildQuery(params: SearchParams, overrides: Record<string, string>): string {
-  const query = new URLSearchParams();
-  for (const key of ["category", "pageSize", "page"]) {
-    const value = key in overrides ? overrides[key] : first(params[key]);
-    if (value) query.set(key, value);
-  }
-  return query.toString();
-}
-
+// Shares its card grid and pagination footer with app/[locale]/news/page.tsx
+// (issue #139 item 8); the category tabs are this page's own.
 export default async function PigeonShowcaseListPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams;
   const t = await getTranslations("pigeonShowcase");
@@ -37,11 +29,11 @@ export default async function PigeonShowcaseListPage({ searchParams }: { searchP
   // No valid ?category= falls back to 'award' — issue #54's homepage cards
   // and admin list always link here with an explicit category, so this only
   // matters for a hand-typed/bare /pigeon-showcase URL.
-  const categoryRaw = first(params.category) ?? "";
+  const categoryRaw = firstParam(params.category) ?? "";
   const category: PigeonShowcaseCategory = isPigeonShowcaseCategory(categoryRaw) ? categoryRaw : "award";
-  const pageSizeRaw = Number(first(params.pageSize));
+  const pageSizeRaw = Number(firstParam(params.pageSize));
   const pageSize = isPigeonShowcasePageSize(pageSizeRaw) ? pageSizeRaw : DEFAULT_PIGEON_SHOWCASE_PAGE_SIZE;
-  const page = Math.max(1, Number(first(params.page) ?? "1") || 1);
+  const page = Math.max(1, Number(firstParam(params.page) ?? "1") || 1);
 
   const { items, total } = await listPigeonShowcase({ category, page, pageSize });
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -57,73 +49,49 @@ export default async function PigeonShowcaseListPage({ searchParams }: { searchP
       <p className="mt-2 text-sm text-ink-light">{t("listSubtitle")}</p>
 
       <div className="mt-6 flex flex-wrap gap-2">
-        <Link href={`/pigeon-showcase?${buildQuery(params, { category: "award", page: "1" })}`} className={tabClass(category === "award")}>
+        <Link
+          href={`/pigeon-showcase?${buildQuery(params, QUERY_KEYS, { category: "award", page: "1" })}`}
+          className={tabClass(category === "award")}
+        >
           {t("awardTitle")}
         </Link>
-        <Link href={`/pigeon-showcase?${buildQuery(params, { category: "imported", page: "1" })}`} className={tabClass(category === "imported")}>
+        <Link
+          href={`/pigeon-showcase?${buildQuery(params, QUERY_KEYS, { category: "imported", page: "1" })}`}
+          className={tabClass(category === "imported")}
+        >
           {t("importedTitle")}
         </Link>
       </div>
 
-      {items.length === 0 ? (
-        <p className="mt-10 text-ink-light">{t("noItems")}</p>
-      ) : (
-        <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((item) => (
-            <Link
-              key={item.id}
-              href={`/pigeon-showcase/${item.id}`}
-              className="group flex flex-col overflow-hidden rounded-xl border border-border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={item.imageFileName ? pigeonShowcaseImageUrl(item.imageFileName) : "/images/hero-placeholder.png"}
-                alt={item.name}
-                className="h-40 w-full object-cover"
-              />
-              <div className="flex flex-1 flex-col p-5">
-                <h2 className="truncate text-lg font-bold text-ink">{item.name}</h2>
-                <p className="mt-1 inline-flex w-fit rounded-full bg-interactive-primary-subtle px-2 py-0.5 text-xs font-semibold text-interactive-primary">
-                  {item.loftTitle}
-                </p>
-                <p className="mt-3 line-clamp-3 text-sm text-ink-light">{excerptHtml(item.description, LIST_EXCERPT_LENGTH)}</p>
-                <span className="mt-4 text-xs font-bold text-interactive-primary group-hover:underline">{t("viewDetails")}</span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+      <ContentCardGrid
+        items={items.map((item) => ({
+          id: item.id,
+          href: `/pigeon-showcase/${item.id}`,
+          imageUrl: item.imageFileName ? pigeonShowcaseImageUrl(item.imageFileName) : IMAGE_FALLBACK_SRC,
+          title: item.name,
+          badgeLabel: item.loftTitle,
+          excerpt: excerptHtml(item.description, LIST_EXCERPT_LENGTH),
+        }))}
+        emptyLabel={t("noItems")}
+        viewDetailsLabel={t("viewDetails")}
+      />
 
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-white px-4 py-3 text-sm shadow-sm">
-        <div className="flex items-center gap-2 text-ink-light">
-          <span>{t("pageSizeLabel")}</span>
-          {PIGEON_SHOWCASE_PAGE_SIZES.map((size) => (
-            <Link
-              key={size}
-              href={`/pigeon-showcase?${buildQuery(params, { pageSize: String(size), page: "1" })}`}
-              className={size === pageSize ? "font-bold text-interactive-primary underline" : "hover:text-interactive-primary"}
-            >
-              {size}
-            </Link>
-          ))}
-        </div>
-
-        {totalPages > 1 && (
-          <div className="flex items-center gap-3">
-            {page > 1 && (
-              <Link href={`/pigeon-showcase?${buildQuery(params, { page: String(page - 1) })}`} className="text-interactive-primary hover:underline">
-                {t("prevPage")}
-              </Link>
-            )}
-            <span className="text-ink-light">{t("pageInfo", { page, totalPages, total })}</span>
-            {page < totalPages && (
-              <Link href={`/pigeon-showcase?${buildQuery(params, { page: String(page + 1) })}`} className="text-interactive-primary hover:underline">
-                {t("nextPage")}
-              </Link>
-            )}
-          </div>
-        )}
-      </div>
+      <PaginationFooter
+        pageSizes={PIGEON_SHOWCASE_PAGE_SIZES}
+        pageSize={pageSize}
+        page={page}
+        totalPages={totalPages}
+        pageSizeHref={(size) =>
+          `/pigeon-showcase?${buildQuery(params, QUERY_KEYS, { pageSize: String(size), page: "1" })}`
+        }
+        pageHref={(target) => `/pigeon-showcase?${buildQuery(params, QUERY_KEYS, { page: String(target) })}`}
+        labels={{
+          pageSizeLabel: t("pageSizeLabel"),
+          prevPage: t("prevPage"),
+          nextPage: t("nextPage"),
+          pageInfo: t("pageInfo", { page, totalPages, total }),
+        }}
+      />
     </main>
   );
 }
