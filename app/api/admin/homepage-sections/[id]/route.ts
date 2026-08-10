@@ -1,23 +1,19 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/apiAuth";
 import { deleteHomepageSection, getHomepageSectionById, updateHomepageSection } from "@/lib/homepageSections";
 import { deleteHomepageSectionImageFile, homepageSectionImageUrl, saveHomepageSectionImage } from "@/lib/uploads";
+import { parseIdParam } from "@/lib/routeParams";
 
 const TITLE_MAX = 255;
 const BIO_MAX = 2000;
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, error: "請先登入" }, { status: 401 });
-  }
-  if (user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const { id } = await params;
-  const sectionId = Number(id);
-  if (!Number.isFinite(sectionId)) {
+  const sectionId = parseIdParam(id);
+  if (sectionId === null) {
     return NextResponse.json({ ok: false, error: "找不到這個首頁區塊項目" }, { status: 404 });
   }
 
@@ -33,17 +29,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 // existing image_file_name untouched (same "only replace what's sent"
 // pattern as the listing edit route, see app/api/admin/listings/[id]/edit).
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, error: "請先登入" }, { status: 401 });
-  }
-  if (user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const { id } = await params;
-  const sectionId = Number(id);
-  if (!Number.isFinite(sectionId)) {
+  const sectionId = parseIdParam(id);
+  if (sectionId === null) {
     return NextResponse.json({ ok: false, error: "找不到這個首頁區塊項目" }, { status: 404 });
   }
 
@@ -96,17 +87,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, error: "請先登入" }, { status: 401 });
-  }
-  if (user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const { id } = await params;
-  const sectionId = Number(id);
-  if (!Number.isFinite(sectionId)) {
+  const sectionId = parseIdParam(id);
+  if (sectionId === null) {
     return NextResponse.json({ ok: false, error: "找不到這個首頁區塊項目" }, { status: 404 });
   }
 

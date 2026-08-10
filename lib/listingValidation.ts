@@ -2,6 +2,8 @@
 // (auction and fixed_price) — see app/api/admin/listings/route.ts. No HTTP/
 // DB involved, so it's directly unit-testable (see listingValidation.test.ts).
 
+import { validateRichTextField, type FieldValidationResult } from "@/lib/richTextValidation";
+
 export const TITLE_MAX = 100;
 // Measured against the *plain text* of the description (HTML tags stripped
 // — see descriptionPlainTextLength) since the description is now authored
@@ -16,7 +18,13 @@ export const DESCRIPTION_HTML_MAX = 20_000;
 export const PRICE_MAX = 10_000_000;
 export const ENDS_AT_MAX_DAYS = 90;
 
-export type FieldValidationResult = { ok: true } | { ok: false; error: string };
+// FieldValidationResult and the rich-text checks live in
+// lib/richTextValidation.ts, shared with newsValidation/
+// pigeonShowcaseValidation (issue #139). Re-exported here so existing
+// `@/lib/listingValidation` imports — including the admin editor
+// components' descriptionPlainTextLength — keep working unchanged.
+export type { FieldValidationResult };
+export { plainTextLength as descriptionPlainTextLength } from "@/lib/richTextValidation";
 
 export function validateTitle(title: string): FieldValidationResult {
   const trimmed = title.trim();
@@ -29,39 +37,14 @@ export function validateTitle(title: string): FieldValidationResult {
   return { ok: true };
 }
 
-// Rough (regex-based, not a real HTML parser) tag strip used only to measure
-// how much *visible* text a description HTML string contains. This isn't a
-// security boundary — sanitizeDescriptionHtml (lib/sanitizeDescriptionHtml.ts)
-// handles that — it just needs to work identically in the browser and in the
-// Node API route without pulling in a DOM implementation on either side.
-export function descriptionPlainTextLength(html: string): number {
-  return html
-    .replace(/<[^>]*>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .trim().length;
-}
-
 export function validateDescription(description: string): FieldValidationResult {
-  const trimmed = description.trim();
-  if (trimmed.length === 0) {
-    return { ok: false, error: "請輸入描述" };
-  }
-  if (trimmed.length > DESCRIPTION_HTML_MAX) {
-    return { ok: false, error: "描述內容過長" };
-  }
-  const plainTextLength = descriptionPlainTextLength(trimmed);
-  if (plainTextLength === 0) {
-    return { ok: false, error: "請輸入描述" };
-  }
-  if (plainTextLength > DESCRIPTION_MAX) {
-    return { ok: false, error: `描述不能超過 ${DESCRIPTION_MAX} 個字` };
-  }
-  return { ok: true };
+  return validateRichTextField(description, {
+    emptyError: "請輸入描述",
+    tooLongHtmlError: "描述內容過長",
+    tooLongTextError: `描述不能超過 ${DESCRIPTION_MAX} 個字`,
+    htmlMax: DESCRIPTION_HTML_MAX,
+    textMax: DESCRIPTION_MAX,
+  });
 }
 
 export function validatePrice(value: number, label: string): FieldValidationResult {

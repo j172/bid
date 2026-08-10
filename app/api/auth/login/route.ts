@@ -1,18 +1,54 @@
 import { NextResponse } from "next/server";
 import { createSession, findUserByEmail, verifyPassword } from "@/lib/auth";
 import { createEmailOtpChallenge, isEmailOtpRateLimited } from "@/lib/emailOtp";
+import { clearLoginFailures, isLoginRateLimited, recordLoginFailure } from "@/lib/loginRateLimit";
 import { sendEmailOtpEmail } from "@/lib/notifications";
 import { getClientIpFromHeaders } from "@/lib/clientIp";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const email = typeof body?.email === "string" ? body.email.trim() : "";
   const password = typeof body?.password === "string" ? body.password : "";
+  const turnstileToken = typeof body?.turnstileToken === "string" ? body.turnstileToken : "";
+  const ip = getClientIpFromHeaders(request.headers);
+
+  // Password brute-force guard (issue #140 H-1) — checked before the scrypt
+  // comparison so a locked-out email/IP costs nothing to reject, and before
+  // findUserByEmail so the response is identical whether or not the email is
+  // registered. Same 429 status the email_otp branch below already uses for
+  // EMAIL_OTP_RATE_LIMITED: "come back later", not "your input was wrong".
+  if (await isLoginRateLimited(email, ip)) {
+    return NextResponse.json({ ok: false, errorCode: "LOGIN_RATE_LIMITED" }, { status: 429 });
+  }
+
+  // Cloudflare Turnstile (issue #140 H-1, second layer): every login attempt
+  // must carry a fresh, valid token — always on, not something that only
+  // switches on after N failures. The rate limit above caps how fast one
+  // email/IP may guess; this caps how cheaply an attacker can generate the
+  // attempts at all, across many IPs. Deliberately checked *after* the rate
+  // limit (a locked-out attempt still costs no outbound siteverify call) and
+  // *before* findUserByEmail/verifyPassword, so a request without a valid
+  // token never reaches the password comparison — and, being neither a
+  // password guess nor a lockout, it records no login failure. Same 400 +
+  // TURNSTILE_VERIFICATION_FAILED shape app/api/contact/route.ts already
+  // returns; verifyTurnstileToken never throws and fails closed (see
+  // lib/turnstile.ts).
+  if (!(await verifyTurnstileToken(turnstileToken, ip))) {
+    return NextResponse.json({ ok: false, errorCode: "TURNSTILE_VERIFICATION_FAILED" }, { status: 400 });
+  }
 
   const user = await findUserByEmail(email);
   if (!user || !(await verifyPassword(password, user.password_hash, user.password_salt))) {
+    await recordLoginFailure(email, ip);
     return NextResponse.json({ ok: false, errorCode: "EMAIL_OR_PASSWORD_INCORRECT" }, { status: 401 });
   }
+  // The password was right, so this email's strikes are cleared here rather
+  // than after any 2FA branch below — the password is what this guard
+  // protects, and a visitor who mistyped twice before getting it right must
+  // not carry those strikes forward.
+  await clearLoginFailures(email);
+
   if (user.suspended_at !== null) {
     return NextResponse.json({ ok: false, errorCode: "ACCOUNT_SUSPENDED" }, { status: 403 });
   }
@@ -32,7 +68,6 @@ export async function POST(request: Request) {
   // createSession directly. The response carries a challengeToken, never a
   // session cookie, until POST /api/auth/verify-email-otp confirms the code.
   if (user.two_factor_method === "email_otp") {
-    const ip = getClientIpFromHeaders(request.headers);
     if (await isEmailOtpRateLimited(user.id, ip)) {
       return NextResponse.json({ ok: false, errorCode: "EMAIL_OTP_RATE_LIMITED" }, { status: 429 });
     }

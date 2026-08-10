@@ -1,21 +1,20 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/apiAuth";
 import { getListingById } from "@/lib/listings";
 import { listingPhotoUrl } from "@/lib/uploads";
+import { parseIdParam } from "@/lib/routeParams";
 
 // Powers the admin edit modal (fixed_price listings — see
 // EditListingModal.tsx) and the relist modal (closed auction listings with
 // no winner — see RelistModal.tsx): fetches the current field values and
 // photo URLs to pre-fill whichever form is asking.
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const { id } = await params;
-  const listingId = Number(id);
-  if (!Number.isFinite(listingId)) {
+  const listingId = parseIdParam(id);
+  if (listingId === null) {
     return NextResponse.json({ ok: false, error: "找不到這個商品" }, { status: 404 });
   }
 

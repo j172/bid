@@ -16,7 +16,7 @@
 // Column 1 is YYYYMMDD; column 2 is TWD per 1 USD; column 3 is TWD per 1
 // CNY. Only those three columns matter here — the rest (EUR/USD, USD/JPY,
 // etc.) are irrelevant to this site's zh-TW/zh-CN/en currency display.
-import { request } from "https";
+import { httpsRequest } from "@/lib/httpsRequest";
 import { getDb } from "@/lib/db";
 
 export type CurrencyCode = "USD" | "CNY";
@@ -102,25 +102,12 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Deliberately node:https instead of the global fetch(), mirroring
-// lib/email.ts's resendRequest() (see its comment for the full root-cause
-// writeup) — not reused directly since it's shaped for Resend's POST-JSON
-// API (auth header, request body) and this is an unauthenticated GET for a
-// CSV body from a different host, so a shared helper would just be
-// conditionals for the parts that differ. Resolves with the full response
-// body once the response ends, or rejects with node:https's raw error
-// (never fetch()'s `TypeError: fetch failed` wrapper — see the catch block
-// below for how that changes the error-logging shape).
+// An unauthenticated GET for a CSV body — no headers or payload of its own,
+// so this is just the shared node:https transport (see lib/httpsRequest.ts
+// for why it isn't fetch(), and for the error-shape note the catch block
+// below depends on).
 function taifexGet(url: string): Promise<{ status: number; body: string }> {
-  return new Promise((resolve, reject) => {
-    const req = request(url, { method: "GET" }, (res) => {
-      let data = "";
-      res.on("data", (chunk) => (data += chunk));
-      res.on("end", () => resolve({ status: res.statusCode ?? 0, body: data }));
-    });
-    req.on("error", reject);
-    req.end();
-  });
+  return httpsRequest(url, { method: "GET" });
 }
 
 // Performs the network fetch (with retries) and returns the raw CSV text.

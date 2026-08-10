@@ -34,6 +34,21 @@ describe("validateContact", () => {
     expect(validateContact({ ...validInput, email: "not-an-email" })).toEqual({ ok: false, errorCode: "EMAIL_INVALID" });
   });
 
+  // Issue #140 M-2: this check is now lib/emailValidation.ts's isValidEmail
+  // (shared with registration/newsletter) rather than a bare includes("@"),
+  // so shapes the old rule waved through are rejected here too.
+  it("rejects addresses the old includes(\"@\") rule accepted", () => {
+    expect(validateContact({ ...validInput, email: "@example.com" })).toEqual({ ok: false, errorCode: "EMAIL_INVALID" });
+    expect(validateContact({ ...validInput, email: "visitor@localhost" })).toEqual({
+      ok: false,
+      errorCode: "EMAIL_INVALID",
+    });
+    expect(validateContact({ ...validInput, email: "=cmd|' /C calc'!A0@x.com" })).toEqual({
+      ok: false,
+      errorCode: "EMAIL_INVALID",
+    });
+  });
+
   it("rejects an empty or whitespace-only subject", () => {
     expect(validateContact({ ...validInput, subject: "" })).toEqual({ ok: false, errorCode: "CONTACT_SUBJECT_REQUIRED" });
     expect(validateContact({ ...validInput, subject: "  " })).toEqual({ ok: false, errorCode: "CONTACT_SUBJECT_REQUIRED" });

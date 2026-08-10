@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/apiAuth";
 import { deleteNews, getNewsById, setNewsBroadcastId, updateNews, type NewsPostInput } from "@/lib/news";
 import { validateNewsContent, validateNewsTitle } from "@/lib/newsValidation";
 import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
-import { deleteNewsImageFile, saveNewsImage } from "@/lib/uploads";
+import { deleteNewsImageFile, saveImageOrError, saveNewsImage, withImageRollback } from "@/lib/uploads";
 import { buildNewsBroadcastHtml, cancelBroadcast, createBroadcast, getBroadcast, sendBroadcast, type BroadcastStatus } from "@/lib/newsletter";
 import { newsletterErrorMessage, parseScheduledAt, resolveOrigin } from "@/lib/newsNewsletterSync";
+import { parseIdParam } from "@/lib/routeParams";
 
 // Resolves whether newsId's linked broadcast (if any) is still editable, per
 // issue #5's "只要...電子報狀態還沒到已寄出（sent），編輯...都可以勾選/取消/
@@ -33,17 +34,12 @@ async function resolveBroadcastLock(
 // issue #70's explicit "新增／編輯時前後端都強制要求上傳" requirement — so
 // this always saves a new file and always retires the old one.
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, error: "請先登入" }, { status: 401 });
-  }
-  if (user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const { id } = await params;
-  const newsId = Number(id);
-  if (!Number.isFinite(newsId)) {
+  const newsId = parseIdParam(id);
+  if (newsId === null) {
     return NextResponse.json({ ok: false, error: "找不到這則訊息" }, { status: 404 });
   }
 
@@ -74,18 +70,18 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ ok: false, error: "請上傳主圖" }, { status: 400 });
   }
 
-  let imageFileName: string;
-  try {
-    imageFileName = await saveNewsImage(image);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "圖片上傳失敗";
-    return NextResponse.json({ ok: false, error: message }, { status: 400 });
+  const saved = await saveImageOrError(() => saveNewsImage(image));
+  if (!saved.ok) {
+    return NextResponse.json({ ok: false, error: saved.error }, { status: 400 });
   }
+  const imageFileName = saved.fileName;
 
   const input: NewsPostInput = { title, content: sanitizeDescriptionHtml(content), imageFileName };
-  const result = await updateNews(newsId, input);
+  const result = await withImageRollback(
+    () => updateNews(newsId, input),
+    () => deleteNewsImageFile(imageFileName),
+  );
   if (!result.ok) {
-    await deleteNewsImageFile(imageFileName);
     return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
   }
 
@@ -164,17 +160,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, error: "請先登入" }, { status: 401 });
-  }
-  if (user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const { id } = await params;
-  const newsId = Number(id);
-  if (!Number.isFinite(newsId)) {
+  const newsId = parseIdParam(id);
+  if (newsId === null) {
     return NextResponse.json({ ok: false, error: "找不到這則訊息" }, { status: 404 });
   }
 

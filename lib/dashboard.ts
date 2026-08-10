@@ -1,4 +1,10 @@
 import { getDb } from "@/lib/db";
+import {
+  AUCTION_GMV_SUBQUERY,
+  FIXED_PRICE_GMV_SUBQUERY,
+  SOLD_AUCTION_CONDITION,
+  deletedAccountEmail,
+} from "@/lib/sqlFragments";
 
 export const TREND_DAYS = 30;
 
@@ -34,7 +40,7 @@ export async function getDailyGmvTrend(): Promise<DailyGmvPoint[]> {
   const [auctionRows] = await db.query(
     `SELECT DATE(ends_at) AS date, COALESCE(SUM(current_price), 0) AS gmv
      FROM listings
-     WHERE listing_type = 'auction' AND status = 'closed' AND leader_user_id IS NOT NULL
+     WHERE ${SOLD_AUCTION_CONDITION}
        AND ends_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
      GROUP BY DATE(ends_at)`,
     [TREND_DAYS - 1],
@@ -93,8 +99,8 @@ export async function getGmvSplitByType(): Promise<GmvSplit> {
   const db = await getDb();
   const [rows] = await db.query(
     `SELECT
-       (SELECT COALESCE(SUM(current_price), 0) FROM listings WHERE listing_type = 'auction' AND status = 'closed' AND leader_user_id IS NOT NULL) AS auctionGmv,
-       (SELECT COALESCE(SUM(total_amount), 0) FROM purchases) AS fixedPriceGmv`,
+       ${AUCTION_GMV_SUBQUERY} AS auctionGmv,
+       ${FIXED_PRICE_GMV_SUBQUERY} AS fixedPriceGmv`,
   );
   return (rows as GmvSplit[])[0];
 }
@@ -167,7 +173,7 @@ export async function getTopListingsByGmv(): Promise<TopListing[]> {
     `SELECT id, title, listingType, gmv FROM (
        SELECT id, title, 'auction' AS listingType, current_price AS gmv
        FROM listings
-       WHERE listing_type = 'auction' AND status = 'closed' AND leader_user_id IS NOT NULL
+       WHERE ${SOLD_AUCTION_CONDITION}
        UNION ALL
        SELECT l.id AS id, l.title AS title, 'fixed_price' AS listingType, SUM(p.total_amount) AS gmv
        FROM purchases p
@@ -189,7 +195,7 @@ export async function getTopBiddersByCount(): Promise<TopBidder[]> {
   const db = await getDb();
   const [rows] = await db.query(
     `SELECT
-       CASE WHEN u.deleted_at IS NOT NULL THEN '（帳號已刪除）' ELSE u.email END AS email,
+       ${deletedAccountEmail("u")} AS email,
        COUNT(*) AS bidCount
      FROM bids b
      JOIN users u ON u.id = b.user_id
@@ -212,14 +218,14 @@ export async function getTopCustomersBySpend(): Promise<TopCustomer[]> {
   const [rows] = await db.query(
     `SELECT email, SUM(spend) AS totalSpend FROM (
        SELECT
-         CASE WHEN u.deleted_at IS NOT NULL THEN '（帳號已刪除）' ELSE u.email END AS email,
+         ${deletedAccountEmail("u")} AS email,
          l.current_price AS spend
        FROM listings l
        JOIN users u ON u.id = l.leader_user_id
        WHERE l.listing_type = 'auction' AND l.status = 'closed'
        UNION ALL
        SELECT
-         CASE WHEN u.deleted_at IS NOT NULL THEN '（帳號已刪除）' ELSE u.email END AS email,
+         ${deletedAccountEmail("u")} AS email,
          p.total_amount AS spend
        FROM purchases p
        JOIN users u ON u.id = p.buyer_id
@@ -258,7 +264,7 @@ export async function getRecentActivity(): Promise<RecentActivity> {
   const [newBidRows] = await db.query(
     `SELECT
        b.id AS id, l.id AS listingId, l.title AS listingTitle,
-       CASE WHEN u.deleted_at IS NOT NULL THEN '（帳號已刪除）' ELSE u.email END AS email,
+       ${deletedAccountEmail("u")} AS email,
        b.amount AS amount, b.created_at AS createdAt
      FROM bids b
      JOIN listings l ON l.id = b.listing_id

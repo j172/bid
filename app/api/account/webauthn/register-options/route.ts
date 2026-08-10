@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateRegistrationOptions } from "@simplewebauthn/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/apiAuth";
 import { RP_NAME, createWebauthnChallenge, resolveWebauthnRp, setWebauthnChallengeCookie } from "@/lib/webauthn";
 import { listCredentialDescriptorsForUser } from "@/lib/webauthnCredentials";
 
@@ -14,24 +14,22 @@ import { listCredentialDescriptorsForUser } from "@/lib/webauthnCredentials";
 // usernameless and needs the browser to be able to list this passkey
 // without the site providing an allowCredentials hint first.
 export async function POST() {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, errorCode: "MUST_LOGIN" }, { status: 401 });
-  }
+  const auth = await requireUser();
+  if (auth.response) return auth.response;
 
   const { rpID } = resolveWebauthnRp();
-  const excludeCredentials = await listCredentialDescriptorsForUser(user.id);
+  const excludeCredentials = await listCredentialDescriptorsForUser(auth.user.id);
 
   const options = await generateRegistrationOptions({
     rpName: RP_NAME,
     rpID,
-    userName: user.email,
+    userName: auth.user.email,
     attestationType: "none",
     excludeCredentials,
     authenticatorSelection: { residentKey: "required", userVerification: "preferred" },
   });
 
-  const token = await createWebauthnChallenge("register", user.id, options.challenge);
+  const token = await createWebauthnChallenge("register", auth.user.id, options.challenge);
   await setWebauthnChallengeCookie("register", token);
 
   return NextResponse.json({ ok: true, options });

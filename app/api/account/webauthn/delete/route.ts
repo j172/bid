@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/apiAuth";
 import { deleteCredential } from "@/lib/webauthnCredentials";
 
 // Removes one of the logged-in visitor's own passkeys (issue #95). No
@@ -7,15 +7,13 @@ import { deleteCredential } from "@/lib/webauthnCredentials";
 // deleteCredential header comment for why this deliberately doesn't mirror
 // app/api/account/two-factor/route.ts's currentPassword requirement.
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, errorCode: "MUST_LOGIN" }, { status: 401 });
-  }
+  const auth = await requireUser();
+  if (auth.response) return auth.response;
 
   const body = await request.json().catch(() => null);
   const credentialId = typeof body?.credentialId === "string" ? body.credentialId : "";
 
-  const result = await deleteCredential(credentialId, user.id);
+  const result = await deleteCredential(credentialId, auth.user.id);
   if (!result.ok) {
     return NextResponse.json({ ok: false, errorCode: result.errorCode }, { status: 400 });
   }

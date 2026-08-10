@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { deleteAccount, destroySession, getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/apiAuth";
+import { deleteAccount, destroySession } from "@/lib/auth";
 
 export async function POST() {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, errorCode: "MUST_LOGIN" }, { status: 401 });
-  }
+  const auth = await requireUser();
+  if (auth.response) return auth.response;
 
-  const result = await deleteAccount(user.id);
+  const result = await deleteAccount(auth.user.id);
   if (!result.ok) {
     return NextResponse.json({ ok: false, errorCode: result.errorCode }, { status: 400 });
   }

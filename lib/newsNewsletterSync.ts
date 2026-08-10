@@ -23,9 +23,20 @@ export function parseScheduledAt(scheduledAtRaw: string): ScheduleParseResult {
   return { ok: true, scheduledAt: parsed.toISOString() };
 }
 
-export function newsletterErrorMessage(errorCode: BroadcastErrorCode, stage: "create" | "send"): string {
+// "cancel" was added by issue #139 (M4): app/api/admin/newsletter/[id]'s
+// DELETE was the one admin route still handing the raw BroadcastErrorCode
+// back to the browser, while every other newsletter-touching route answered
+// with a translated Traditional Chinese `error` from here.
+export function newsletterErrorMessage(errorCode: BroadcastErrorCode, stage: "create" | "send" | "cancel"): string {
   if (errorCode === "NOT_CONFIGURED") {
-    return "電子報寄送失敗：尚未設定 RESEND_API_KEY / RESEND_AUDIENCE_ID。";
+    return stage === "cancel"
+      ? "電子報取消失敗：尚未設定 RESEND_API_KEY / RESEND_AUDIENCE_ID。"
+      : "電子報寄送失敗：尚未設定 RESEND_API_KEY / RESEND_AUDIENCE_ID。";
+  }
+  if (stage === "cancel") {
+    return errorCode === "NOT_FOUND"
+      ? "找不到這封電子報，可能已經取消或寄出。"
+      : "電子報取消失敗，請稍後再試一次。";
   }
   return stage === "create"
     ? "電子報建立失敗，請重新編輯這則訊息再試一次。"

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getListingStatus } from "@/lib/listings";
+import { parseIdParam } from "@/lib/routeParams";
 
 // Plain, unauthenticated GET — browsing/watching a listing is already
 // public, so there's no reason to gate the live-status poll behind login.
@@ -11,8 +12,8 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const listingId = Number(id);
-  if (!Number.isFinite(listingId)) {
+  const listingId = parseIdParam(id);
+  if (listingId === null) {
     return NextResponse.json({ ok: false, error: "找不到這個商品" }, { status: 404 });
   }
 

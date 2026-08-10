@@ -94,12 +94,37 @@ function isCloudflareEdgeIp(string $ip, array $ipv4Ranges, array $ipv6Ranges): b
     return false;
 }
 
+// Baseline security response headers (issue #140 M-3) — the PHP-side twin of
+// next.config.js's headers(); see that file's comment for why there is no
+// full Content-Security-Policy here either. Called on every response this
+// script produces itself (the /__ops/* replies, static assets, proxy errors)
+// *and* once more after the proxied response's own headers are forwarded.
+// replace=true on purpose in that last case: Node already sent the same set
+// via next.config.js, and replacing rather than appending keeps the browser
+// from seeing two copies of each header.
+function sendSecurityHeaders(): void
+{
+    header('X-Frame-Options: SAMEORIGIN', true);
+    header("Content-Security-Policy: frame-ancestors 'self'", true);
+    header('X-Content-Type-Options: nosniff', true);
+    header('Referrer-Policy: strict-origin-when-cross-origin', true);
+    header('Strict-Transport-Security: max-age=63072000; includeSubDomains', true);
+}
+
 // Not hardcoded/committed: this file is public (tracked in a public GitHub
 // repo), so the key lives in a sibling file that's uploaded separately by
 // the deploy workflow from a GitHub secret and never committed.
 $opsKey = trim((string) @file_get_contents(__DIR__ . '/.ops-key'));
 if (str_starts_with($path, '/__ops/')) {
-    if ($opsKey === '' || ($_GET['key'] ?? '') !== $opsKey) {
+    sendSecurityHeaders();
+    // hash_equals, not !== : PHP's string comparison short-circuits on the
+    // first differing byte, which is a (theoretical, but free to remove)
+    // timing side-channel an attacker could use to recover .ops-key one byte
+    // at a time. hash_equals compares in constant time. Issue #140 L-1.
+    // is_string guards `?key[]=x`, which would otherwise hand hash_equals an
+    // array and raise a TypeError.
+    $providedKey = $_GET['key'] ?? '';
+    if ($opsKey === '' || !is_string($providedKey) || !hash_equals($opsKey, $providedKey)) {
         http_response_code(403);
         header('Content-Type: text/plain; charset=utf-8');
         echo 'Forbidden';
@@ -264,6 +289,7 @@ if (str_starts_with($path, '/__ops/')) {
 }
 
 if (str_starts_with($path, '/_next/static/')) {
+    sendSecurityHeaders();
     $relative = rawurldecode(substr($path, strlen('/_next/static/')));
     if ($relative === '' || str_contains($relative, "\0") || str_contains($relative, '..')) {
         http_response_code(400);
@@ -383,6 +409,7 @@ curl_setopt_array($ch, [
 $response = curl_exec($ch);
 if ($response === false) {
     http_response_code(502);
+    sendSecurityHeaders();
     header('Content-Type: text/plain; charset=utf-8');
     echo 'Proxy error: ' . curl_error($ch);
     curl_close($ch);
@@ -411,4 +438,8 @@ foreach ($lines as $i => $line) {
 if ($contentType) {
     header('Content-Type: ' . $contentType);
 }
+// After the forwarding loop (which appends), so these end up as exactly one
+// copy each even though Node sends its own via next.config.js — and so a
+// response Node somehow served without them still gets them here.
+sendSecurityHeaders();
 echo $responseBody;

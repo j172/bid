@@ -1,18 +1,17 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/apiAuth";
 import { addListingPhotos, relistClosedListing } from "@/lib/listings";
 import { validateEndsAt, validatePrice, validateStartsAt } from "@/lib/listingValidation";
 import { copyListingPhotos } from "@/lib/uploads";
+import { parseIdParam } from "@/lib/routeParams";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const { id } = await params;
-  const listingId = Number(id);
-  if (!Number.isFinite(listingId)) {
+  const listingId = parseIdParam(id);
+  if (listingId === null) {
     return NextResponse.json({ ok: false, error: "找不到這個商品" }, { status: 404 });
   }
 

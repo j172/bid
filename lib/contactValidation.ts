@@ -2,6 +2,7 @@
 // involved, directly unit-testable, same split as lib/profile.ts /
 // lib/newsValidation.ts. Doesn't require login: this form is public.
 
+import { isValidEmail } from "@/lib/emailValidation";
 import type { ErrorCode } from "@/lib/errorCodes";
 
 export interface ContactInput {
@@ -26,8 +27,9 @@ export function validateContact(input: ContactInput): ContactValidationResult {
     return { ok: false, errorCode: "CONTACT_NAME_TOO_LONG" };
   }
 
-  const email = input.email.trim();
-  if (!email || !email.includes("@")) {
+  // Shared with registration/newsletter via lib/emailValidation.ts (issue
+  // #140 M-2) — this used to be its own `includes("@")` check.
+  if (!isValidEmail(input.email)) {
     return { ok: false, errorCode: "EMAIL_INVALID" };
   }
 

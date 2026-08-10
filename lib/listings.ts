@@ -8,41 +8,42 @@ import {
 } from "@/lib/bidding/domain";
 import { resolvePurchase, type PurchaseOutcome } from "@/lib/purchase";
 import { notifyAuctionEnded, notifyOutbid, notifyPurchaseConfirmed, notifyWinner } from "@/lib/notifications";
+import { syncListingLifecycle } from "@/lib/listings/lifecycle";
 import type { ErrorCode } from "@/lib/errorCodes";
-import { tokenizeSearchQuery } from "@/lib/search";
+import { buildKeywordSearch, type KeywordSearchSql } from "@/lib/search";
+import { paginate } from "@/lib/pagination";
+import { AUCTION_GMV_SUBQUERY, FIXED_PRICE_GMV_SUBQUERY, deletedAccountEmail } from "@/lib/sqlFragments";
 
-let listingsStartsAtColumnExists: boolean | null = null;
+// The lazy 'scheduled' -> 'open' -> 'closed' sweeps live in
+// lib/listings/lifecycle.ts (issue #139) — they're the one part of this
+// module that touches nothing but status columns. Re-exported so existing
+// `@/lib/listings` imports keep working.
+export { closeExpiredListings, openScheduledListings, syncListingLifecycle } from "@/lib/listings/lifecycle";
 
-function isMissingStartsAtColumnError(error: unknown): boolean {
-  if (!error || typeof error !== "object") return false;
-  const maybe = error as { code?: string; sqlMessage?: string };
-  return maybe.code === "ER_BAD_FIELD_ERROR" && (maybe.sqlMessage ?? "").includes("starts_at");
-}
+// Settlement (撥款) reads/writes moved to lib/settlement.ts, which now owns
+// both the form validation and the data access for the two settleable
+// things (won auctions and fixed_price orders) instead of keeping two
+// near-identical copies of every query here (issue #139). Re-exported so
+// every existing `import { markListingSettled } from "@/lib/listings"` call
+// site in app/api/** keeps working unchanged.
+export {
+  getBuyerProfileForOrder,
+  getWinnerProfileForListing,
+  markListingSettled,
+  markOrderSettled,
+  unsettleListing,
+  unsettleOrder,
+  type WinnerProfile,
+} from "@/lib/settlement";
 
-async function hasListingsStartsAtColumn(db: Awaited<ReturnType<typeof getDb>>): Promise<boolean> {
-  if (listingsStartsAtColumnExists !== null) {
-    return listingsStartsAtColumnExists;
-  }
-
-  try {
-    const [rows] = await db.query(
-      `SELECT 1 AS present
-       FROM information_schema.COLUMNS
-       WHERE TABLE_SCHEMA = DATABASE()
-         AND TABLE_NAME = 'listings'
-         AND COLUMN_NAME = 'starts_at'
-       LIMIT 1`,
-    );
-    listingsStartsAtColumnExists = (rows as { present: number }[]).length > 0;
-  } catch {
-    // If metadata inspection is blocked, keep the legacy behavior and let
-    // normal queries decide; targeted handlers below still downgrade on the
-    // specific "unknown column starts_at" error.
-    listingsStartsAtColumnExists = true;
-  }
-
-  return listingsStartsAtColumnExists;
-}
+// Note on listings.starts_at: this module used to probe information_schema
+// for that column on first use and degrade to a no-scheduling code path when
+// it was missing (legacy already-deployed databases). That fallback was
+// unreachable — getDb() awaits ensureSchema() before ever handing back a
+// pool, and ensureSchema -> ensureAccountColumns unconditionally runs
+// ensureColumn(listings, starts_at) — so the column is guaranteed to exist
+// for every query in this file, and the probe/cache/fallback branches were
+// removed as dead code (issue #139).
 
 export type ListingType = "auction" | "fixed_price";
 
@@ -129,48 +130,26 @@ export async function insertListing(input: NewListingInput): Promise<number> {
     return (result as { insertId: number }).insertId;
   }
 
-  const supportsStartsAt = await hasListingsStartsAtColumn(db);
-
-  let result: unknown;
-  if (supportsStartsAt) {
-    const status = input.startsAt !== null ? "scheduled" : "open";
-    [result] = await db.query(
-      `INSERT INTO listings
-         (title, description, listing_type, starting_price, current_price, buy_it_now_price, starts_at, ends_at, status, created_by, created_at, loft_id)
-       VALUES (?, ?, 'auction', ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
-      [
-        input.title,
-        input.description,
-        input.startingPrice,
-        input.startingPrice,
-        input.buyItNowPrice,
-        input.startsAt,
-        input.endsAt,
-        status,
-        input.createdBy,
-        loftId,
-      ],
-    );
-  } else {
-    // Legacy schema fallback: starts_at column does not exist, so scheduling
-    // cannot be persisted. We degrade to immediate-open behavior instead of
-    // throwing and taking down the request path.
-    [result] = await db.query(
-      `INSERT INTO listings
-         (title, description, listing_type, starting_price, current_price, buy_it_now_price, ends_at, status, created_by, created_at, loft_id)
-       VALUES (?, ?, 'auction', ?, ?, ?, ?, 'open', ?, NOW(), ?)`,
-      [
-        input.title,
-        input.description,
-        input.startingPrice,
-        input.startingPrice,
-        input.buyItNowPrice,
-        input.endsAt,
-        input.createdBy,
-        loftId,
-      ],
-    );
-  }
+  // A start time in the future means the listing waits in 'scheduled' until
+  // openScheduledListings() flips it; no start time means it opens now.
+  const status = input.startsAt !== null ? "scheduled" : "open";
+  const [result] = await db.query(
+    `INSERT INTO listings
+       (title, description, listing_type, starting_price, current_price, buy_it_now_price, starts_at, ends_at, status, created_by, created_at, loft_id)
+     VALUES (?, ?, 'auction', ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
+    [
+      input.title,
+      input.description,
+      input.startingPrice,
+      input.startingPrice,
+      input.buyItNowPrice,
+      input.startsAt,
+      input.endsAt,
+      status,
+      input.createdBy,
+      loftId,
+    ],
+  );
 
   return (result as { insertId: number }).insertId;
 }
@@ -361,27 +340,20 @@ export async function getOpenListingsForAdmin(
 ): Promise<{ listings: OpenListingForAdmin[]; total: number }> {
   await syncListingLifecycle();
   const db = await getDb();
-  const startsAtSelect = (await hasListingsStartsAtColumn(db)) ? "starts_at AS startsAt" : "NULL AS startsAt";
 
   // Scheduled (not-yet-started) auctions belong in this view too — admins
   // still need to see/edit/cancel them before they go live.
-  const conditions = ["status IN ('open', 'scheduled')"];
-  const params: string[] = [];
-  const search = options.search?.trim();
-  if (search) {
-    // Segment into keywords so a multi-word query like "石君 回血" matches
-    // listings containing both words rather than failing on the literal
-    // space (see issue #105). Each keyword must match title OR description;
-    // keywords are AND'd together. Falls back to the previous whole-string
-    // match if segmentation yields no usable tokens (e.g. all punctuation),
-    // so search never silently drops the filter and returns everything.
-    const tokens = tokenizeSearchQuery(search);
-    const searchTerms = tokens.length > 0 ? tokens : [search];
-    for (const term of searchTerms) {
-      conditions.push("(title LIKE ? OR description LIKE ?)");
-      params.push(`%${term}%`, `%${term}%`);
-    }
-  }
+  // Segments the query into keywords so a multi-word search like "石君 回血"
+  // matches listings containing both words rather than failing on the
+  // literal space (see issue #105 and buildKeywordSearch itself, which owns
+  // the whole "keywords -> LIKE conditions + whole-query ranking" step for
+  // all three admin list queries in this file).
+  const keywordSearch = buildKeywordSearch(options.search, {
+    columns: ["title", "description"],
+    rankColumn: "title",
+  });
+  const conditions = ["status IN ('open', 'scheduled')", ...keywordSearch.conditions];
+  const params: string[] = [...keywordSearch.params];
   if (options.type) {
     conditions.push("listing_type = ?");
     params.push(options.type);
@@ -392,22 +364,19 @@ export async function getOpenListingsForAdmin(
   const total = (countRows as { cnt: number }[])[0].cnt;
 
   const orderBy = OPEN_LISTINGS_SORT_CLAUSES[options.sort ?? "ends_asc"];
-  // Rank title/description hits on the full original query above everything
-  // else that only matched via individual keyword segments.
-  const orderByExpr = search ? `CASE WHEN title LIKE ? THEN 0 ELSE 1 END, ${orderBy}` : orderBy;
-  const selectParams = search ? [...params, `%${search}%`] : params;
-  const page = Math.max(1, options.page ?? 1);
-  const offset = (page - 1) * OPEN_LISTINGS_PAGE_SIZE;
+  const orderByExpr = `${keywordSearch.rankPrefix}${orderBy}`;
+  const selectParams = [...params, ...keywordSearch.rankParams];
+  const { offset, limit } = paginate(options.page, OPEN_LISTINGS_PAGE_SIZE);
 
   const [rows] = await db.query(
     `SELECT
-       id, title, listing_type AS listingType, status, current_price AS currentPrice, ends_at AS endsAt, ${startsAtSelect},
+       id, title, listing_type AS listingType, status, current_price AS currentPrice, ends_at AS endsAt, starts_at AS startsAt,
        (leader_max_amount IS NOT NULL) AS hasBids,
        stock_quantity AS stockQuantity, stock_remaining AS stockRemaining
      FROM listings
      ${where}
      ORDER BY ${orderByExpr}
-     LIMIT ${OPEN_LISTINGS_PAGE_SIZE} OFFSET ${offset}`,
+     LIMIT ${limit} OFFSET ${offset}`,
     selectParams,
   );
   const listings = (rows as (Omit<OpenListingForAdmin, "hasBids" | "canCancel"> & { hasBids: number })[]).map((row) => ({
@@ -425,11 +394,15 @@ export interface OverviewStats {
   totalGmv: number;
 }
 
-// totalGmv combines settled auction sales (listings.current_price where
-// status = 'closed') with fixed_price purchase revenue (purchases.
-// total_amount) — fixed_price listings never transition to 'closed'
-// themselves (see cancelListing's comment), so their sales would otherwise
-// be invisible to this stat.
+// totalGmv combines sold auctions (listings.current_price) with fixed_price
+// purchase revenue (purchases.total_amount) — fixed_price listings never
+// transition to 'closed' themselves (see cancelListing's comment), so their
+// sales would otherwise be invisible to this stat. Both halves come from
+// lib/sqlFragments.ts so this stays byte-for-byte the same definition
+// lib/dashboard.ts' getGmvSplitByType breaks down by type: this query used
+// to filter on status = 'closed' alone, which counted every zero-bid expired
+// auction's starting_price as revenue and made the overview card disagree
+// with every chart on the dashboard (issue #139).
 export async function getOverviewStats(): Promise<OverviewStats> {
   await syncListingLifecycle();
   const db = await getDb();
@@ -438,73 +411,9 @@ export async function getOverviewStats(): Promise<OverviewStats> {
        (SELECT COUNT(*) FROM listings WHERE status = 'open') AS openCount,
        (SELECT COUNT(*) FROM listings WHERE status = 'closed') AS closedCount,
        (SELECT COUNT(*) FROM users) AS userCount,
-       (SELECT COALESCE(SUM(current_price), 0) FROM listings WHERE status = 'closed')
-         + (SELECT COALESCE(SUM(total_amount), 0) FROM purchases) AS totalGmv`,
+       ${AUCTION_GMV_SUBQUERY} + ${FIXED_PRICE_GMV_SUBQUERY} AS totalGmv`,
   );
   return (rows as OverviewStats[])[0];
-}
-
-// Closes any listing whose end time has passed without being bought out
-// first. Deliberately just a status flip: current_price and leader_user_id
-// are already correct at every moment (placeBid/buyNow keep them in sync
-// live), so the highest bid at the instant this runs — or the starting
-// price and no leader, if the listing never got a single bid — is exactly
-// the right final price/winner. Called at the top of every read/write path
-// below rather than run on a schedule, since there's no background worker
-// in this deployment; cheap enough (single indexed UPDATE) to run on every
-// access. Also fires notifyWinner (issue #48) for any listing this sweep is
-// about to close that actually has a winner (leader_user_id set) — a
-// zero-bid listing has nobody to congratulate, so it's excluded from the
-// pre-UPDATE lookup below rather than left to notifyWinner's own no-row
-// no-op, keeping the notify loop tight to only real winners.
-export async function closeExpiredListings(): Promise<void> {
-  const db = await getDb();
-  const [winnerRows] = await db.query(
-    "SELECT id FROM listings WHERE status = 'open' AND ends_at <= NOW() AND leader_user_id IS NOT NULL",
-  );
-  const winningListingIds = (winnerRows as { id: number }[]).map((row) => row.id);
-
-  await db.query(
-    "UPDATE listings SET status = 'closed', close_reason = 'expired' WHERE status = 'open' AND ends_at <= NOW()",
-  );
-
-  // Fired without awaiting — see the equivalent note in placeBid().
-  for (const listingId of winningListingIds) {
-    notifyWinner(listingId);
-  }
-}
-
-// Opens any listing whose scheduled start time has passed — the mirror image
-// of closeExpiredListings above (same lazy-sweep-on-every-access pattern, no
-// background worker in this deployment). Must run before closeExpiredListings
-// in syncListingLifecycle so a listing whose starts_at and ends_at have *both*
-// already passed (e.g. the admin scheduled a very short auction and nobody
-// looked at it in time) still passes through 'open' on its way to 'closed'
-// rather than getting stuck in 'scheduled' forever — closeExpiredListings only
-// ever matches status = 'open'.
-export async function openScheduledListings(): Promise<void> {
-  const db = await getDb();
-  if (!(await hasListingsStartsAtColumn(db))) {
-    return;
-  }
-
-  try {
-    await db.query("UPDATE listings SET status = 'open' WHERE status = 'scheduled' AND starts_at <= NOW()");
-  } catch (error) {
-    if (isMissingStartsAtColumnError(error)) {
-      listingsStartsAtColumnExists = false;
-      return;
-    }
-    throw error;
-  }
-}
-
-// The single entry point every read/write path below calls instead of
-// closeExpiredListings directly — keeps both lazy sweeps (start, then end) in
-// sync at every access without every call site needing to know both exist.
-export async function syncListingLifecycle(): Promise<void> {
-  await openScheduledListings();
-  await closeExpiredListings();
 }
 
 export interface ListingCardExtras {
@@ -624,21 +533,22 @@ const CLOSED_LISTINGS_SORT_CLAUSES: Record<ClosedListingSort, string> = {
   price_desc: "l.current_price DESC",
 };
 
-function closedListingsWhereClause(options: ListClosedListingsOptions): { where: string; params: string[] } {
-  const conditions = ["l.status = 'closed'"];
-  const params: string[] = [];
+// Returns the keyword search alongside the WHERE clause: listClosedListings
+// needs its ranking prefix/params for the ORDER BY too, and re-deriving that
+// from options.search separately is exactly how the two halves get to
+// disagree about what counts as a match.
+function closedListingsWhereClause(
+  options: ListClosedListingsOptions,
+): { where: string; params: string[]; keywordSearch: KeywordSearchSql } {
+  // See getOpenListingsForAdmin's comment for why this segments the query
+  // and matches title/description per keyword (issue #105).
+  const keywordSearch = buildKeywordSearch(options.search, {
+    columns: ["l.title", "l.description"],
+    rankColumn: "l.title",
+  });
+  const conditions = ["l.status = 'closed'", ...keywordSearch.conditions];
+  const params: string[] = [...keywordSearch.params];
 
-  const search = options.search?.trim();
-  if (search) {
-    // See getOpenListingsForAdmin's comment for why this segments the query
-    // and matches title/description per keyword (issue #105).
-    const tokens = tokenizeSearchQuery(search);
-    const searchTerms = tokens.length > 0 ? tokens : [search];
-    for (const term of searchTerms) {
-      conditions.push("(l.title LIKE ? OR l.description LIKE ?)");
-      params.push(`%${term}%`, `%${term}%`);
-    }
-  }
   const winnerEmail = options.winnerEmail?.trim();
   if (winnerEmail) {
     conditions.push("u.email LIKE ?");
@@ -659,7 +569,7 @@ function closedListingsWhereClause(options: ListClosedListingsOptions): { where:
       break;
   }
 
-  return { where: `WHERE ${conditions.join(" AND ")}`, params };
+  return { where: `WHERE ${conditions.join(" AND ")}`, params, keywordSearch };
 }
 
 // Admin's closed-listings/settlement view: search by title/winner email,
@@ -670,7 +580,7 @@ export async function listClosedListings(
 ): Promise<{ listings: ClosedListingSummary[]; total: number }> {
   await syncListingLifecycle();
   const db = await getDb();
-  const { where, params } = closedListingsWhereClause(options);
+  const { where, params, keywordSearch } = closedListingsWhereClause(options);
 
   const [countRows] = await db.query(
     `SELECT COUNT(*) AS cnt FROM listings l LEFT JOIN users u ON u.id = l.leader_user_id ${where}`,
@@ -678,22 +588,16 @@ export async function listClosedListings(
   );
   const total = (countRows as { cnt: number }[])[0].cnt;
 
-  const search = options.search?.trim();
   const orderBy = CLOSED_LISTINGS_SORT_CLAUSES[options.sort ?? "ends_desc"];
-  // Rank title/description hits on the full original query above everything
-  // else that only matched via individual keyword segments.
-  const orderByExpr = search ? `CASE WHEN l.title LIKE ? THEN 0 ELSE 1 END, ${orderBy}` : orderBy;
-  const selectParams = search ? [...params, `%${search}%`] : params;
-  const page = Math.max(1, options.page ?? 1);
-  const offset = (page - 1) * CLOSED_LISTINGS_PAGE_SIZE;
-  const limitClause = options.all ? "" : `LIMIT ${CLOSED_LISTINGS_PAGE_SIZE} OFFSET ${offset}`;
+  const orderByExpr = `${keywordSearch.rankPrefix}${orderBy}`;
+  const selectParams = [...params, ...keywordSearch.rankParams];
+  const { offset, limit } = paginate(options.page, CLOSED_LISTINGS_PAGE_SIZE);
+  const limitClause = options.all ? "" : `LIMIT ${limit} OFFSET ${offset}`;
 
   const [rows] = await db.query(
     `SELECT
        l.id AS id, l.title AS title, l.current_price AS finalPrice, l.ends_at AS endsAt, l.close_reason AS closeReason,
-       CASE WHEN l.leader_user_id IS NULL THEN NULL
-            WHEN u.deleted_at IS NOT NULL THEN '（帳號已刪除）'
-            ELSE u.email END AS winnerEmail,
+       ${deletedAccountEmail("u", { nullWhen: "l.leader_user_id IS NULL" })} AS winnerEmail,
        (l.settled_at IS NOT NULL) AS settled,
        l.settlement_account AS settlementAccount, l.settlement_amount AS settlementAmount,
        l.winner_notified_at AS winnerNotifiedAt,
@@ -724,7 +628,7 @@ export async function getBiddersForListing(listingId: number): Promise<BidderEnt
   const db = await getDb();
   const [rows] = await db.query(
     `SELECT
-       CASE WHEN u.deleted_at IS NOT NULL THEN '（帳號已刪除）' ELSE u.email END AS email,
+       ${deletedAccountEmail("u")} AS email,
        b.amount AS amount, b.created_at AS bidAt
      FROM bids b
      JOIN users u ON u.id = b.user_id
@@ -791,49 +695,6 @@ export async function getListingActivityFeed(
     [listingId],
   );
   return { totalCount, entries: rows as ListingActivityEntry[] };
-}
-
-// Admin confirms the offline payment/delivery is done — releases the
-// winner from deleteAccount's "unsettled win" block (see
-// findBlockingObligation). Records the remittance account/amount the admin
-// entered (validated by lib/settlement.ts before this is called). Idempotent:
-// settling twice just overwrites the previously recorded values.
-export async function markListingSettled(listingId: number, account: string, amount: number): Promise<void> {
-  const db = await getDb();
-  await db.query(
-    "UPDATE listings SET settled_at = NOW(), settlement_account = ?, settlement_amount = ? WHERE id = ? AND status = 'closed'",
-    [account, amount, listingId],
-  );
-}
-
-// Reverses markListingSettled — lets an admin correct an accidental
-// "settled" click, putting the winner back under deleteAccount's
-// unsettled-win block until it's confirmed again. Deliberately leaves
-// settlement_account/settlement_amount in place (not cleared) so the settle
-// form can pre-fill the last-entered values on re-settle.
-export async function unsettleListing(listingId: number): Promise<void> {
-  const db = await getDb();
-  await db.query("UPDATE listings SET settled_at = NULL WHERE id = ? AND status = 'closed'", [listingId]);
-}
-
-export interface WinnerProfile {
-  displayName: string | null;
-  phone: string | null;
-  address: string | null;
-}
-
-// Powers the closed-listings page's expandable "得標者資料" section.
-export async function getWinnerProfileForListing(listingId: number): Promise<WinnerProfile | null> {
-  const db = await getDb();
-  const [rows] = await db.query(
-    `SELECT u.display_name AS displayName, u.phone AS phone, u.address AS address
-     FROM listings l
-     JOIN users u ON u.id = l.leader_user_id
-     WHERE l.id = ?
-     LIMIT 1`,
-    [listingId],
-  );
-  return (rows as WinnerProfile[])[0] ?? null;
 }
 
 // Used by the admin "重新寄送得標信" resend route (issue #48,
@@ -964,21 +825,18 @@ export interface ListingStatusSnapshot {
 export async function getListingStatus(id: number): Promise<ListingStatusSnapshot | null> {
   await syncListingLifecycle();
   const db = await getDb();
-  const supportsStartsAt = await hasListingsStartsAtColumn(db);
   const [rows] = await db.query(
-    supportsStartsAt
-      ? "SELECT current_price, ends_at, starts_at, status FROM listings WHERE id = ? LIMIT 1"
-      : "SELECT current_price, ends_at, status FROM listings WHERE id = ? LIMIT 1",
+    "SELECT current_price, ends_at, starts_at, status FROM listings WHERE id = ? LIMIT 1",
     [id],
   );
-  const list = rows as { current_price: number; ends_at: Date; starts_at?: Date | null; status: string }[];
+  const list = rows as { current_price: number; ends_at: Date; starts_at: Date | null; status: string }[];
   const listing = list[0];
   if (!listing) return null;
 
   return {
     currentPrice: listing.current_price,
     endsAt: listing.ends_at,
-    startsAt: supportsStartsAt ? (listing.starts_at ?? null) : null,
+    startsAt: listing.starts_at ?? null,
     status: listing.status,
   };
 }
@@ -1221,9 +1079,6 @@ export type UpdateListingStartsAtOutcome = { ok: true } | { ok: false; error: st
 export async function updateListingStartsAt(listingId: number, startsAt: Date | null): Promise<UpdateListingStartsAtOutcome> {
   await syncListingLifecycle();
   const db = await getDb();
-  if (!(await hasListingsStartsAtColumn(db))) {
-    return { ok: false, error: "目前資料庫尚未支援起標時間欄位（starts_at）" };
-  }
   const [result] = await db.query(
     `UPDATE listings
      SET starts_at = ?, status = ?
@@ -1349,20 +1204,15 @@ export async function getOrdersForAdmin(
   options: ListOrdersOptions = {},
 ): Promise<{ orders: OrderSummary[]; total: number }> {
   const db = await getDb();
-  const conditions: string[] = [];
-  const params: string[] = [];
+  // See getOpenListingsForAdmin's comment for why this segments the query
+  // and matches title/description per keyword (issue #105).
+  const keywordSearch = buildKeywordSearch(options.search, {
+    columns: ["l.title", "l.description"],
+    rankColumn: "l.title",
+  });
+  const conditions: string[] = [...keywordSearch.conditions];
+  const params: string[] = [...keywordSearch.params];
 
-  const search = options.search?.trim();
-  if (search) {
-    // See getOpenListingsForAdmin's comment for why this segments the query
-    // and matches title/description per keyword (issue #105).
-    const tokens = tokenizeSearchQuery(search);
-    const searchTerms = tokens.length > 0 ? tokens : [search];
-    for (const term of searchTerms) {
-      conditions.push("(l.title LIKE ? OR l.description LIKE ?)");
-      params.push(`%${term}%`, `%${term}%`);
-    }
-  }
   const buyerEmail = options.buyerEmail?.trim();
   if (buyerEmail) {
     conditions.push("u.email LIKE ?");
@@ -1391,18 +1241,15 @@ export async function getOrdersForAdmin(
   const total = (countRows as { cnt: number }[])[0].cnt;
 
   const orderBy = ORDER_SORT_CLAUSES[options.sort ?? "created_desc"];
-  // Rank title/description hits on the full original query above everything
-  // else that only matched via individual keyword segments.
-  const orderByExpr = search ? `CASE WHEN l.title LIKE ? THEN 0 ELSE 1 END, ${orderBy}` : orderBy;
-  const selectParams = search ? [...params, `%${search}%`] : params;
-  const page = Math.max(1, options.page ?? 1);
-  const offset = (page - 1) * ORDERS_PAGE_SIZE;
+  const orderByExpr = `${keywordSearch.rankPrefix}${orderBy}`;
+  const selectParams = [...params, ...keywordSearch.rankParams];
+  const { offset, limit } = paginate(options.page, ORDERS_PAGE_SIZE);
 
   const [rows] = await db.query(
     `SELECT
        p.id AS id, p.listing_id AS listingId, l.title AS listingTitle,
        p.quantity AS quantity, p.unit_price AS unitPrice, p.total_amount AS totalAmount, p.created_at AS createdAt,
-       CASE WHEN u.deleted_at IS NOT NULL THEN '（帳號已刪除）' ELSE u.email END AS buyerEmail,
+       ${deletedAccountEmail("u")} AS buyerEmail,
        (p.settled_at IS NOT NULL) AS settled,
        p.settlement_account AS settlementAccount, p.settlement_amount AS settlementAmount
      FROM purchases p
@@ -1410,7 +1257,7 @@ export async function getOrdersForAdmin(
      LEFT JOIN users u ON u.id = p.buyer_id
      ${where}
      ORDER BY ${orderByExpr}
-     LIMIT ${ORDERS_PAGE_SIZE} OFFSET ${offset}`,
+     LIMIT ${limit} OFFSET ${offset}`,
     selectParams,
   );
   const orders = (rows as (Omit<OrderSummary, "settled"> & { settled: number })[]).map((row) => ({
@@ -1418,36 +1265,6 @@ export async function getOrdersForAdmin(
     settled: Boolean(row.settled),
   }));
   return { orders, total };
-}
-
-// Mirrors markListingSettled/unsettleListing (see their comments) but for
-// individual purchases rather than whole listings.
-export async function markOrderSettled(orderId: number, account: string, amount: number): Promise<void> {
-  const db = await getDb();
-  await db.query(
-    "UPDATE purchases SET settled_at = NOW(), settlement_account = ?, settlement_amount = ? WHERE id = ?",
-    [account, amount, orderId],
-  );
-}
-
-export async function unsettleOrder(orderId: number): Promise<void> {
-  const db = await getDb();
-  await db.query("UPDATE purchases SET settled_at = NULL WHERE id = ?", [orderId]);
-}
-
-// Powers the orders page's expandable "買家資料" section — the fixed_price
-// equivalent of getWinnerProfileForListing.
-export async function getBuyerProfileForOrder(orderId: number): Promise<WinnerProfile | null> {
-  const db = await getDb();
-  const [rows] = await db.query(
-    `SELECT u.display_name AS displayName, u.phone AS phone, u.address AS address
-     FROM purchases p
-     JOIN users u ON u.id = p.buyer_id
-     WHERE p.id = ?
-     LIMIT 1`,
-    [orderId],
-  );
-  return (rows as WinnerProfile[])[0] ?? null;
 }
 
 export async function getPhotoFileNames(listingId: number): Promise<string[]> {
