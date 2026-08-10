@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createUser, findUserByEmail } from "@/lib/auth";
+import { isValidEmail } from "@/lib/emailValidation";
 import { validateProfile } from "@/lib/profile";
 import { createEmailVerificationToken, isEmailVerificationRateLimited, verifyEmailPath } from "@/lib/emailVerification";
 import { sendVerificationEmail } from "@/lib/notifications";
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
   const address = typeof body?.address === "string" ? body.address : "";
   const locale = routing.locales.includes(body?.locale) ? body.locale : routing.defaultLocale;
 
-  if (!email || !email.includes("@")) {
+  if (!isValidEmail(email)) {
     return NextResponse.json({ ok: false, errorCode: "EMAIL_INVALID" }, { status: 400 });
   }
   if (password.length < 8) {

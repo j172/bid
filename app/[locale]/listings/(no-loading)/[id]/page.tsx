@@ -6,6 +6,7 @@ import { getMinimumNextBid } from "@/lib/bidding/domain";
 import { currencyForLocale, formatConvertedApprox, formatNtd } from "@/lib/currency";
 import { getLatestStoredRate } from "@/lib/exchangeRates";
 import { formatRemaining } from "@/lib/format";
+import { safeJsonLdString } from "@/lib/jsonLdScript";
 import { maskDisplayName } from "@/lib/mask";
 import { getListingActivityFeed, getListingById, listOpenListings } from "@/lib/listings";
 import {
@@ -196,8 +197,12 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      {/* JSON-LD requires raw <script> content; productJsonLd is server-built from trusted DB fields, not user-supplied markup. */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />
+      {/* JSON-LD requires raw <script> content. productJsonLd carries admin-editable
+          fields (listing.title is not sanitizeDescriptionHtml'd), so it goes through
+          safeJsonLdString rather than bare JSON.stringify — see lib/jsonLdScript.ts
+          for why JSON.stringify alone lets a `</script>` in a title break out (issue
+          #140 M-1). */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLdString(productJsonLd) }} />
       <div className="rounded-2xl bg-white px-5 py-4 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">
           <Link href="/" className="hover:text-interactive-primary">
