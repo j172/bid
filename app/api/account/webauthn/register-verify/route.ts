@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyRegistrationResponse } from "@simplewebauthn/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/apiAuth";
 import {
   clearWebauthnChallengeCookie,
   consumeWebauthnChallenge,
@@ -20,10 +20,8 @@ const DEVICE_NAME_MAX_LENGTH = 100;
 // logged-in visitor so a challenge issued to one account can't be redeemed
 // while logged in as another.
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, errorCode: "MUST_LOGIN" }, { status: 401 });
-  }
+  const auth = await requireUser();
+  if (auth.response) return auth.response;
 
   const body = await request.json().catch(() => null);
   const response = body?.response;
@@ -37,7 +35,7 @@ export async function POST(request: Request) {
   }
 
   const challengeResult = await consumeWebauthnChallenge(token, "register");
-  if (!challengeResult.ok || challengeResult.userId !== user.id) {
+  if (!challengeResult.ok || challengeResult.userId !== auth.user.id) {
     return NextResponse.json({ ok: false, errorCode: "WEBAUTHN_CHALLENGE_INVALID" }, { status: 400 });
   }
 
@@ -58,7 +56,7 @@ export async function POST(request: Request) {
   }
 
   const createdAt = new Date();
-  await saveCredential(user.id, verification.registrationInfo.credential, deviceName);
+  await saveCredential(auth.user.id, verification.registrationInfo.credential, deviceName);
 
   return NextResponse.json({
     ok: true,

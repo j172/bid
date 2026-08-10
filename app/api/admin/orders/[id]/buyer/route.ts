@@ -1,16 +1,15 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/apiAuth";
 import { getBuyerProfileForOrder } from "@/lib/listings";
+import { parseIdParam } from "@/lib/routeParams";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const { id } = await params;
-  const orderId = Number(id);
-  if (!Number.isFinite(orderId)) {
+  const orderId = parseIdParam(id);
+  if (orderId === null) {
     return NextResponse.json({ ok: false, error: "找不到這筆訂單" }, { status: 404 });
   }
 

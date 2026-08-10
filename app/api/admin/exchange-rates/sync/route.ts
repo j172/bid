@@ -3,14 +3,12 @@
 // error text), instead of only finding out via SSH + pm2 logs after the
 // scheduled 08:10 Asia/Taipei tick has already failed silently.
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/apiAuth";
 import { getAllLatestStoredRates, SyncExchangeRatesError, syncExchangeRates } from "@/lib/exchangeRates";
 
 export async function POST() {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   try {
     const result = await syncExchangeRates();
@@ -33,10 +31,8 @@ export async function POST() {
 // So the admin page can show current stored rates right after a sync
 // without a full page reload.
 export async function GET() {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const rates = await getAllLatestStoredRates();
   return NextResponse.json({ ok: true, rates });

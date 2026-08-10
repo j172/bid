@@ -1,18 +1,13 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/apiAuth";
 import { reorderHomepageSections } from "@/lib/homepageSections";
 
 // Bulk re-sequence: body is { sectionType, orderedIds: number[] } — see
 // reorderHomepageSections' comment for why this is a single atomic call
 // rather than one PATCH per row.
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, error: "請先登入" }, { status: 401 });
-  }
-  if (user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const body = await request.json().catch(() => null);
   const sectionType = typeof body?.sectionType === "string" ? body.sectionType.trim() : "";

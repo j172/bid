@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/apiAuth";
 import { csvEscape } from "@/lib/csv";
 import { CLOSE_REASON_LABELS, listClosedListings, type ListClosedListingsOptions } from "@/lib/listings";
 
@@ -7,10 +7,11 @@ function formatDate(date: Date): string {
 }
 
 export async function GET(request: Request) {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "admin") {
-    return new Response("僅限管理員", { status: 403 });
-  }
+  // The success path below is CSV, but a rejection is a JSON { ok, error }
+  // like every other admin route (issue #139 L2) — it used to be the one
+  // place answering with a bare text/plain body.
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const url = new URL(request.url);
   const options: ListClosedListingsOptions = {

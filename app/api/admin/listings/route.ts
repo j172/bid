@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/apiAuth";
 import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
 import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
 import { addListingPhotos, deleteListing, insertListing, updateListingDescription, type NewListingInput } from "@/lib/listings";
@@ -16,13 +16,8 @@ import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
 import { descriptionImageUrl, saveDescriptionImages, saveListingPhotos } from "@/lib/uploads";
 
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, error: "請先登入" }, { status: 401 });
-  }
-  if (user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const form = await request.formData();
   const listingType = form.get("listingType") === "fixed_price" ? "fixed_price" : "auction";
@@ -74,7 +69,7 @@ export async function POST(request: Request) {
     // description is filled in after insertListing, once its final HTML
     // (with description-image placeholders resolved and the whole thing
     // sanitized) is ready — see the comment below insertListing.
-    input = { listingType, title, description: "", price, stockQuantity, createdBy: user.id, loftId };
+    input = { listingType, title, description: "", price, stockQuantity, createdBy: auth.user.id, loftId };
   } else {
     const startingPrice = Number(form.get("startingPrice"));
     const buyItNowPriceRaw = String(form.get("buyItNowPrice") ?? "").trim();
@@ -108,7 +103,7 @@ export async function POST(request: Request) {
       }
     }
 
-    input = { listingType, title, description: "", startingPrice, buyItNowPrice, startsAt, endsAt, createdBy: user.id, loftId };
+    input = { listingType, title, description: "", startingPrice, buyItNowPrice, startsAt, endsAt, createdBy: auth.user.id, loftId };
   }
 
   // The listing's own id names its photo/description-image directories, so

@@ -23,7 +23,7 @@ export default function CancelBroadcastButton({ broadcastId }: { broadcastId: st
 
     setSubmitting(false);
     if (!data.ok) {
-      setError("取消失敗");
+      setError(data.error ?? "取消失敗");
       return;
     }
     router.refresh();

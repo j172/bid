@@ -183,3 +183,37 @@ export function newsImageUrl(fileName: string): string {
 export async function deleteNewsImageFile(fileName: string): Promise<void> {
   await unlink(join(UPLOADS_ROOT, "news", fileName)).catch(() => {});
 }
+
+// The two halves of the "upload a 主圖, then write the row" dance that the
+// news and pigeon-showcase create/edit routes each spelled out identically
+// (issue #139 M2). Kept as two small helpers rather than one do-everything
+// wrapper because the four call sites differ in between the two steps (input
+// building, sanitizing, retiring the previous image).
+
+export type SaveImageOutcome = { ok: true; fileName: string } | { ok: false; error: string };
+
+// saveSingleImage rejects an unsupported type / oversized file by throwing,
+// and every caller turns that into the same 400 — so the message extraction
+// lives here instead of in four separate catch blocks.
+export async function saveImageOrError(save: () => Promise<string>): Promise<SaveImageOutcome> {
+  try {
+    return { ok: true, fileName: await save() };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "圖片上傳失敗" };
+  }
+}
+
+// Runs the create/update and, if the row was never written, deletes the file
+// that was just uploaded for it — otherwise a rejected write leaves an
+// orphaned image behind forever. Returns the write's own outcome untouched
+// so the caller still owns the response.
+export async function withImageRollback<T extends { ok: boolean }>(
+  write: () => Promise<T>,
+  rollback: () => Promise<void>,
+): Promise<T> {
+  const result = await write();
+  if (!result.ok) {
+    await rollback();
+  }
+  return result;
+}

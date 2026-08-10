@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/apiAuth";
 import { createNews, isNewsPageSize, listNews, setNewsBroadcastId, type NewsPostInput } from "@/lib/news";
 import { validateNewsContent, validateNewsTitle } from "@/lib/newsValidation";
 import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
-import { deleteNewsImageFile, saveNewsImage } from "@/lib/uploads";
+import { deleteNewsImageFile, saveImageOrError, saveNewsImage, withImageRollback } from "@/lib/uploads";
 import { buildNewsBroadcastHtml, createBroadcast, sendBroadcast } from "@/lib/newsletter";
 import { newsletterErrorMessage, parseScheduledAt, resolveOrigin } from "@/lib/newsNewsletterSync";
 
@@ -13,13 +13,8 @@ import { newsletterErrorMessage, parseScheduledAt, resolveOrigin } from "@/lib/n
 // listNews directly (server component), same as every other public page in
 // this app reading straight from lib/*.ts.
 export async function GET(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, error: "請先登入" }, { status: 401 });
-  }
-  if (user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search")?.trim() || undefined;
@@ -34,13 +29,8 @@ export async function GET(request: Request) {
 // Submits FormData (not JSON) as of issue #70 — 主圖 upload is required on
 // every create, front and back end both (see NewsFormModal.tsx).
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, error: "請先登入" }, { status: 401 });
-  }
-  if (user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const form = await request.formData();
   const title = String(form.get("title") ?? "").trim();
@@ -65,19 +55,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "請上傳主圖" }, { status: 400 });
   }
 
-  let imageFileName: string;
-  try {
-    imageFileName = await saveNewsImage(image);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "圖片上傳失敗";
-    return NextResponse.json({ ok: false, error: message }, { status: 400 });
+  const saved = await saveImageOrError(() => saveNewsImage(image));
+  if (!saved.ok) {
+    return NextResponse.json({ ok: false, error: saved.error }, { status: 400 });
   }
+  const imageFileName = saved.fileName;
 
   const input: NewsPostInput = { title, content: sanitizeDescriptionHtml(content), imageFileName };
-  const result = await createNews(input);
+  // Rollback: if the row was never created, don't leave the just-uploaded
+  // file orphaned (issue #139 M2 — the same pairing as the edit route below
+  // and both pigeon-showcase routes).
+  const result = await withImageRollback(
+    () => createNews(input),
+    () => deleteNewsImageFile(imageFileName),
+  );
   if (!result.ok) {
-    // Row was never created — don't leave the just-uploaded file orphaned.
-    await deleteNewsImageFile(imageFileName);
     return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
   }
   // createNews always sets id alongside ok:true — NewsPostOutcome's `id` is

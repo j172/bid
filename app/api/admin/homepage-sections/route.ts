@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/apiAuth";
 import { createHomepageSection, listHomepageSections } from "@/lib/homepageSections";
 import { homepageSectionImageUrl, saveHomepageSectionImage } from "@/lib/uploads";
 
@@ -11,13 +11,8 @@ const SECTION_TYPE_MAX = 30;
 // — includes inactive rows by default so admins can re-enable them; pass
 // ?activeOnly=1 for the same active-only view the public homepage uses.
 export async function GET(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, error: "請先登入" }, { status: 401 });
-  }
-  if (user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const { searchParams } = new URL(request.url);
   const sectionType = searchParams.get("sectionType")?.trim() ?? "";
@@ -34,13 +29,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, error: "請先登入" }, { status: 401 });
-  }
-  if (user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const form = await request.formData();
   const sectionType = String(form.get("sectionType") ?? "").trim();

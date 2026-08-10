@@ -1,20 +1,19 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/apiAuth";
 import { getListingById, updateListingStartsAt } from "@/lib/listings";
 import { validateStartsAt } from "@/lib/listingValidation";
+import { parseIdParam } from "@/lib/routeParams";
 
 // Admin-only: corrects a still-'scheduled' auction's start time (or clears
 // it to open the listing immediately) — see updateListingStartsAt's comment
 // for why this is scoped so much narrower than a full auction edit.
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const { id } = await params;
-  const listingId = Number(id);
-  if (!Number.isFinite(listingId)) {
+  const listingId = parseIdParam(id);
+  if (listingId === null) {
     return NextResponse.json({ ok: false, error: "找不到這個商品" }, { status: 404 });
   }
 

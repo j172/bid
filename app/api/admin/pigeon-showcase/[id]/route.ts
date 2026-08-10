@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/apiAuth";
 import { deletePigeonShowcase, getPigeonShowcaseById, updatePigeonShowcase, type PigeonShowcaseInput } from "@/lib/pigeonShowcase";
 import {
   isPigeonShowcaseCategory,
@@ -7,7 +7,13 @@ import {
   validatePigeonShowcaseName,
 } from "@/lib/pigeonShowcaseValidation";
 import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
-import { deletePigeonShowcaseImageFile, savePigeonShowcaseImage } from "@/lib/uploads";
+import {
+  deletePigeonShowcaseImageFile,
+  saveImageOrError,
+  savePigeonShowcaseImage,
+  withImageRollback,
+} from "@/lib/uploads";
+import { parseIdParam } from "@/lib/routeParams";
 
 // Submits FormData (not JSON) as of issue #70 — unlike homepage_sections'
 // PATCH route (image replacement optional, keeps the existing file when
@@ -15,17 +21,12 @@ import { deletePigeonShowcaseImageFile, savePigeonShowcaseImage } from "@/lib/up
 // per issue #70's explicit "新增／編輯時前後端都強制要求上傳" requirement —
 // so this always saves a new file and always retires the old one.
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, error: "請先登入" }, { status: 401 });
-  }
-  if (user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const { id } = await params;
-  const showcaseId = Number(id);
-  if (!Number.isFinite(showcaseId)) {
+  const showcaseId = parseIdParam(id);
+  if (showcaseId === null) {
     return NextResponse.json({ ok: false, error: "找不到這筆鴿況資料" }, { status: 404 });
   }
 
@@ -59,13 +60,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ ok: false, error: "請上傳主圖" }, { status: 400 });
   }
 
-  let imageFileName: string;
-  try {
-    imageFileName = await savePigeonShowcaseImage(image);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "圖片上傳失敗";
-    return NextResponse.json({ ok: false, error: message }, { status: 400 });
+  const saved = await saveImageOrError(() => savePigeonShowcaseImage(image));
+  if (!saved.ok) {
+    return NextResponse.json({ ok: false, error: saved.error }, { status: 400 });
   }
+  const imageFileName = saved.fileName;
 
   const input: PigeonShowcaseInput = {
     category,
@@ -74,9 +73,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     description: sanitizeDescriptionHtml(description),
     imageFileName,
   };
-  const result = await updatePigeonShowcase(showcaseId, input);
+  const result = await withImageRollback(
+    () => updatePigeonShowcase(showcaseId, input),
+    () => deletePigeonShowcaseImageFile(imageFileName),
+  );
   if (!result.ok) {
-    await deletePigeonShowcaseImageFile(imageFileName);
     return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
   }
 
@@ -87,17 +88,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, error: "請先登入" }, { status: 401 });
-  }
-  if (user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const { id } = await params;
-  const showcaseId = Number(id);
-  if (!Number.isFinite(showcaseId)) {
+  const showcaseId = parseIdParam(id);
+  if (showcaseId === null) {
     return NextResponse.json({ ok: false, error: "找不到這筆鴿況資料" }, { status: 404 });
   }
 

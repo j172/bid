@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/apiAuth";
 import { closeExpiredListings } from "@/lib/listings";
 import { getDb } from "@/lib/db";
 
 export async function GET(request: Request) {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "僅限管理員" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
   const { searchParams } = new URL(request.url);
   const query = (searchParams.get("q") ?? "").trim();
@@ -15,6 +13,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: true, listings: [], users: [] });
   }
 
+  // Yes, a write from a read-only search endpoint (issue #139 L4). This
+  // deployment has no background worker: every path that reads listings
+  // sweeps the expired ones closed first (see lib/listings.ts'
+  // syncListingLifecycle header comment), so without this the palette would
+  // report a long-past auction as still 開放中 and let an admin act on a
+  // stale status. Kept as-is, and kept as the narrower closeExpiredListings
+  // rather than syncListingLifecycle, since the palette only ever needs the
+  // status text to be honest about what has already ended.
   await closeExpiredListings();
   const db = await getDb();
   const like = `%${query}%`;
