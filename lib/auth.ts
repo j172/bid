@@ -2,6 +2,7 @@ import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import { getDb } from "@/lib/db";
 import { findBlockingObligation } from "@/lib/listings";
+import { paginate } from "@/lib/pagination";
 import type { ErrorCode } from "@/lib/errorCodes";
 
 const SESSION_COOKIE = "session";
@@ -201,8 +202,7 @@ export async function listUsers(options: ListUsersOptions = {}): Promise<{ users
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
   const orderBy = SORT_CLAUSES[options.sort ?? "created_desc"];
-  const page = Math.max(1, options.page ?? 1);
-  const offset = (page - 1) * USERS_PAGE_SIZE;
+  const { offset, limit } = paginate(options.page, USERS_PAGE_SIZE);
 
   const [countRows] = await db.query(`SELECT COUNT(*) AS cnt FROM users u ${whereClause}`, params);
   const total = (countRows as { cnt: number }[])[0].cnt;
@@ -218,7 +218,7 @@ export async function listUsers(options: ListUsersOptions = {}): Promise<{ users
      FROM users u
      ${whereClause}
      ORDER BY ${orderBy}
-     LIMIT ${USERS_PAGE_SIZE} OFFSET ${offset}`,
+     LIMIT ${limit} OFFSET ${offset}`,
     params,
   );
   return { users: rows as UserSummary[], total };
