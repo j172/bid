@@ -29,6 +29,7 @@ import HomeListingRow from "../components/HomeListingRow";
 import HomeProductCard from "../components/HomeProductCard";
 import PigeonShowcaseCarouselCard from "../components/PigeonShowcaseCarouselCard";
 import NewsCarouselCard from "../components/NewsCarouselCard";
+import ExchangeRateStrip from "../components/ExchangeRateStrip";
 
 export const dynamic = "force-dynamic";
 
@@ -223,7 +224,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           leads the page, directly above the hero auction rail. */}
       <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-          <div className="lg:col-span-2">
+          {/* Issue #150: stacks the exchange-rate card below the news card so
+              this column's total height auto-matches the right column's two
+              stacked pigeon-showcase cards via flex-1, instead of sitting
+              visibly shorter. */}
+          <div className="flex h-full flex-col gap-5 lg:col-span-2">
             <NewsCarouselCard
               items={newsCarouselItems}
               activeBadge={t("newsCarouselBadge")}
@@ -231,6 +236,10 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               emptyStateTitle={t("emptyStateTitle")}
               emptyStateDesc={t("newsCarouselEmptyDesc")}
             />
+
+            <div className="flex-1">
+              <ExchangeRateStrip className="flex h-full flex-col justify-center" />
+            </div>
           </div>
 
           <div className="grid gap-5">
