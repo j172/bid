@@ -117,24 +117,35 @@ const SAMPLE_CSV = [
 ].join("\n");
 
 describe("parseTaifexCsv", () => {
-  it("parses YYYYMMDD dates into YYYY-MM-DD and pulls the USD/CNY TWD columns", () => {
+  it("parses YYYYMMDD dates into YYYY-MM-DD and pulls the USD/CNY TWD columns plus the computed EUR/TWD rate", () => {
     const rows = parseTaifexCsv(SAMPLE_CSV);
     expect(rows).toEqual([
-      { date: "2026-07-01", usdTwd: 31.874, cnyTwd: 4.687295 },
-      { date: "2026-07-02", usdTwd: 31.91, cnyTwd: 4.699896 },
-      { date: "2026-08-03", usdTwd: 32.438, cnyTwd: 4.80303 },
+      { date: "2026-07-01", usdTwd: 31.874, cnyTwd: 4.687295, eurTwd: 31.874 * 1.14005 },
+      { date: "2026-07-02", usdTwd: 31.91, cnyTwd: 4.699896, eurTwd: 31.91 * 1.14165 },
+      { date: "2026-08-03", usdTwd: 32.438, cnyTwd: 4.80303, eurTwd: 32.438 * 1.1527 },
     ]);
   });
 
   it("skips malformed rows instead of throwing", () => {
-    const csv = ["日期,美元_新台幣(匯率),人民幣_新台幣(匯率)", "not-a-date,31.874,4.687295", "20260701,,4.687295"].join(
-      "\n",
-    );
+    const csv = [
+      "日期,美元_新台幣(匯率),人民幣_新台幣(匯率),歐元_美元(匯率)",
+      "not-a-date,31.874,4.687295,1.14005",
+      "20260701,,4.687295,1.14005",
+    ].join("\n");
+    expect(parseTaifexCsv(csv)).toEqual([]);
+  });
+
+  it("skips a row whose EUR/USD column doesn't parse cleanly, same fallback style as the USD/CNY columns", () => {
+    const csv = [
+      "日期,美元_新台幣(匯率),人民幣_新台幣(匯率),歐元_美元(匯率)",
+      "20260701,31.874,4.687295,",
+      "20260702,31.91,4.699896,not-a-number",
+    ].join("\n");
     expect(parseTaifexCsv(csv)).toEqual([]);
   });
 
   it("ignores blank trailing lines", () => {
-    const csv = `日期,美元_新台幣(匯率),人民幣_新台幣(匯率)\n20260701,31.874,4.687295\n\n`;
+    const csv = `日期,美元_新台幣(匯率),人民幣_新台幣(匯率),歐元_美元(匯率)\n20260701,31.874,4.687295,1.14005\n\n`;
     expect(parseTaifexCsv(csv)).toHaveLength(1);
   });
 });
@@ -143,7 +154,7 @@ describe("fetchLatestTaifexRow", () => {
   it("returns the last row of the feed (the feed is oldest-first)", async () => {
     queueHttpsSuccess(200, SAMPLE_CSV);
     const row = await fetchLatestTaifexRow();
-    expect(row).toEqual({ date: "2026-08-03", usdTwd: 32.438, cnyTwd: 4.80303 });
+    expect(row).toEqual({ date: "2026-08-03", usdTwd: 32.438, cnyTwd: 4.80303, eurTwd: 32.438 * 1.1527 });
   });
 
   it("returns null after exhausting retries on a non-ok response, logging each attempt", async () => {
@@ -223,7 +234,7 @@ describe("fetchLatestTaifexRow", () => {
     await advanceThroughRetries(1);
     const row = await promise;
 
-    expect(row).toEqual({ date: "2026-08-03", usdTwd: 32.438, cnyTwd: 4.80303 });
+    expect(row).toEqual({ date: "2026-08-03", usdTwd: 32.438, cnyTwd: 4.80303, eurTwd: 32.438 * 1.1527 });
     expect(requestMock).toHaveBeenCalledTimes(2);
     expect(errorSpy).toHaveBeenCalledTimes(1);
     errorSpy.mockRestore();
@@ -253,37 +264,44 @@ describe("getLatestStoredRate", () => {
 });
 
 describe("getAllLatestStoredRates", () => {
-  it("returns both currencies keyed by code", async () => {
+  it("returns all three currencies keyed by code", async () => {
     queryMock.mockResolvedValueOnce([[{ currency: "USD", rate: "32", rate_date: "2026-08-03", source_date: "2026-08-03" }]]);
     queryMock.mockResolvedValueOnce([[]]);
+    queryMock.mockResolvedValueOnce([[{ currency: "EUR", rate: "36.34", rate_date: "2026-08-03", source_date: "2026-08-03" }]]);
 
     const rates = await getAllLatestStoredRates();
 
     expect(rates.USD).toEqual({ currency: "USD", rate: 32, rateDate: "2026-08-03", sourceDate: "2026-08-03" });
     expect(rates.CNY).toBeNull();
+    expect(rates.EUR).toEqual({ currency: "EUR", rate: 36.34, rateDate: "2026-08-03", sourceDate: "2026-08-03" });
   });
 });
 
 describe("syncExchangeRates", () => {
-  it("upserts today's row for both currencies from a fresh TAIFEX fetch", async () => {
+  it("upserts today's row for all three currencies from a fresh TAIFEX fetch", async () => {
     queueHttpsSuccess(200, SAMPLE_CSV);
     queryMock.mockResolvedValue([{ affectedRows: 1 }]);
 
     const result = await syncExchangeRates();
 
-    expect(queryMock).toHaveBeenCalledTimes(2);
+    expect(queryMock).toHaveBeenCalledTimes(3);
     const [usdSql, usdParams] = queryMock.mock.calls[0];
     expect(usdSql).toContain("ON DUPLICATE KEY UPDATE");
     expect(usdParams[0]).toBe("USD");
     expect(usdParams[2]).toBe("2026-08-03"); // source_date from the feed's latest row
     expect(usdParams[3]).toBe(32.438);
     expect(queryMock.mock.calls[1][1][0]).toBe("CNY");
+    const eurParams = queryMock.mock.calls[2][1];
+    expect(eurParams[0]).toBe("EUR");
+    expect(eurParams[2]).toBe("2026-08-03");
+    expect(eurParams[3]).toBe(32.438 * 1.1527); // usdTwd * eurUsd (issue #153)
 
     expect(result).toEqual({
       fetchedFresh: true,
       updated: [
         { currency: "USD", rate: 32.438, sourceDate: "2026-08-03", usedFallback: false },
         { currency: "CNY", rate: 4.80303, sourceDate: "2026-08-03", usedFallback: false },
+        { currency: "EUR", rate: 32.438 * 1.1527, sourceDate: "2026-08-03", usedFallback: false },
       ],
       failed: [],
     });
@@ -298,6 +316,9 @@ describe("syncExchangeRates", () => {
     // CNY fallback lookup — also has a stored value
     queryMock.mockResolvedValueOnce([[{ currency: "CNY", rate: "4.7", rate_date: "2026-08-01", source_date: "2026-07-31" }]]);
     queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]); // CNY upsert
+    // EUR fallback lookup — also has a stored value
+    queryMock.mockResolvedValueOnce([[{ currency: "EUR", rate: "36.1", rate_date: "2026-08-01", source_date: "2026-07-31" }]]);
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]); // EUR upsert
 
     const promise = syncExchangeRates();
     await advanceThroughRetries();
@@ -307,12 +328,13 @@ describe("syncExchangeRates", () => {
     // USD: fallback found -> upserted with the fallback's source_date (not today)
     const usdUpsertParams = queryMock.mock.calls[1][1];
     expect(usdUpsertParams).toEqual(["USD", expect.any(String), "2026-07-31", 31.9]);
-    expect(queryMock).toHaveBeenCalledTimes(4);
+    expect(queryMock).toHaveBeenCalledTimes(6);
     expect(result.fetchedFresh).toBe(false);
     expect(result.failed).toEqual([]);
     expect(result.updated).toEqual([
       { currency: "USD", rate: 31.9, sourceDate: "2026-07-31", usedFallback: true },
       { currency: "CNY", rate: 4.7, sourceDate: "2026-07-31", usedFallback: true },
+      { currency: "EUR", rate: 36.1, sourceDate: "2026-07-31", usedFallback: true },
     ]);
   });
 
@@ -328,6 +350,9 @@ describe("syncExchangeRates", () => {
     queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]); // USD upsert
     // CNY fallback lookup — nothing stored at all
     queryMock.mockResolvedValueOnce([[]]);
+    // EUR fallback lookup — also has a stored value (isolates this test to a single failing currency)
+    queryMock.mockResolvedValueOnce([[{ currency: "EUR", rate: "36.1", rate_date: "2026-08-01", source_date: "2026-07-31" }]]);
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]); // EUR upsert
 
     const promise = syncExchangeRates();
     promise.catch(() => {}); // avoid a Vitest "unhandled rejection" false-positive before the awaits below
@@ -338,7 +363,7 @@ describe("syncExchangeRates", () => {
     // USD still got written even though CNY ultimately failed.
     const usdUpsertParams = queryMock.mock.calls[1][1];
     expect(usdUpsertParams).toEqual(["USD", expect.any(String), "2026-07-31", 31.9]);
-    expect(queryMock).toHaveBeenCalledTimes(3);
+    expect(queryMock).toHaveBeenCalledTimes(5);
   });
 
   it("SyncExchangeRatesError carries the partial result (which currencies failed)", async () => {
@@ -346,6 +371,7 @@ describe("syncExchangeRates", () => {
     queueHttpsErrorRepeating(new Error("network down"));
     queryMock.mockResolvedValueOnce([[]]); // USD: no fallback either
     queryMock.mockResolvedValueOnce([[]]); // CNY: no fallback either
+    queryMock.mockResolvedValueOnce([[]]); // EUR: no fallback either
 
     const promise = syncExchangeRates();
     promise.catch(() => {}); // avoid a Vitest "unhandled rejection" false-positive before the awaits below
@@ -359,7 +385,7 @@ describe("syncExchangeRates", () => {
       expect((error as SyncExchangeRatesError).result).toEqual({
         fetchedFresh: false,
         updated: [],
-        failed: ["USD", "CNY"],
+        failed: ["USD", "CNY", "EUR"],
       });
     }
     errorSpy.mockRestore();

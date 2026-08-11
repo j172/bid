@@ -36,6 +36,7 @@ export default async function ExchangeRateStrip({ className }: ExchangeRateStrip
       <div className="mt-3 flex flex-col gap-1.5 text-sm font-semibold text-ink">
         <span>{rates.USD ? t("exchangeRateUsd", { rate: rates.USD.rate.toFixed(2) }) : t("exchangeRateUnavailable")}</span>
         <span>{rates.CNY ? t("exchangeRateCny", { rate: rates.CNY.rate.toFixed(2) }) : t("exchangeRateUnavailable")}</span>
+        <span>{rates.EUR ? t("exchangeRateEur", { rate: rates.EUR.rate.toFixed(2) }) : t("exchangeRateUnavailable")}</span>
       </div>
       <p className="mt-2 text-xs italic text-ink-light">{t("exchangeRateDisclaimer")}</p>
     </section>

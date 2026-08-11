@@ -14,13 +14,15 @@
 //   20260803,32.438,4.80303,1.1527,...
 //
 // Column 1 is YYYYMMDD; column 2 is TWD per 1 USD; column 3 is TWD per 1
-// CNY. Only those three columns matter here — the rest (EUR/USD, USD/JPY,
-// etc.) are irrelevant to this site's zh-TW/zh-CN/en currency display.
+// CNY; column 4 is EUR/USD (EUR expressed in USD, *not* TWD — issue #153),
+// which is converted to TWD per 1 EUR as usdTwd * eurUsd. Only those four
+// columns matter here — the rest (USD/JPY, etc.) are irrelevant to this
+// site's zh-TW/zh-CN/en currency display.
 import { httpsRequest } from "@/lib/httpsRequest";
 import { getDb } from "@/lib/db";
 
-export type CurrencyCode = "USD" | "CNY";
-export const CURRENCY_CODES: CurrencyCode[] = ["USD", "CNY"];
+export type CurrencyCode = "USD" | "CNY" | "EUR";
+export const CURRENCY_CODES: CurrencyCode[] = ["USD", "CNY", "EUR"];
 
 const TAIFEX_URL = "https://www.taifex.com.tw/data_gov/taifex_open_data.asp?data_name=DailyForeignExchangeRates";
 
@@ -31,6 +33,8 @@ export interface TaifexRow {
   usdTwd: number;
   /** TWD per 1 CNY */
   cnyTwd: number;
+  /** TWD per 1 EUR (= usdTwd * eurUsd, the feed's 4th column) */
+  eurTwd: number;
 }
 
 // Pure/sync so it's directly unit-testable without mocking fetch. Tolerant
@@ -47,20 +51,24 @@ export function parseTaifexCsv(csvText: string): TaifexRow[] {
     const rawDate = cols[0]?.trim();
     const rawUsd = cols[1]?.trim();
     const rawCny = cols[2]?.trim();
+    const rawEurUsd = cols[3]?.trim();
     const usdTwd = Number(rawUsd);
     const cnyTwd = Number(rawCny);
+    const eurUsd = Number(rawEurUsd);
     if (
       !rawDate ||
       !/^\d{8}$/.test(rawDate) ||
       !rawUsd ||
       !rawCny ||
+      !rawEurUsd ||
       !Number.isFinite(usdTwd) ||
-      !Number.isFinite(cnyTwd)
+      !Number.isFinite(cnyTwd) ||
+      !Number.isFinite(eurUsd)
     ) {
       continue;
     }
     const date = `${rawDate.slice(0, 4)}-${rawDate.slice(4, 6)}-${rawDate.slice(6, 8)}`;
-    rows.push({ date, usdTwd, cnyTwd });
+    rows.push({ date, usdTwd, cnyTwd, eurTwd: usdTwd * eurUsd });
   }
 
   return rows;
@@ -241,8 +249,12 @@ async function getLatestStoredRateOrNull(currency: CurrencyCode): Promise<Stored
 }
 
 export async function getAllLatestStoredRates(): Promise<Record<CurrencyCode, StoredExchangeRate | null>> {
-  const [usd, cny] = await Promise.all([getLatestStoredRateOrNull("USD"), getLatestStoredRateOrNull("CNY")]);
-  return { USD: usd, CNY: cny };
+  const [usd, cny, eur] = await Promise.all([
+    getLatestStoredRateOrNull("USD"),
+    getLatestStoredRateOrNull("CNY"),
+    getLatestStoredRateOrNull("EUR"),
+  ]);
+  return { USD: usd, CNY: cny, EUR: eur };
 }
 
 async function upsertRate(currency: CurrencyCode, rateDate: string, sourceDate: string, rate: number): Promise<void> {
@@ -283,7 +295,7 @@ export class SyncExchangeRatesError extends Error {
 }
 
 // Runs once per scheduled tick (see lib/scheduler.ts) — fetches today's
-// TWD/USD and TWD/CNY rates from TAIFEX and records them under today's
+// TWD/USD, TWD/CNY, and TWD/EUR rates from TAIFEX and records them under today's
 // calendar date. If TAIFEX has nothing new yet (holiday, not-yet-published,
 // fetch failure), reuses the most recent successfully stored rate for each
 // currency instead of leaving the day blank, but keeps that rate's original
@@ -301,6 +313,7 @@ export async function syncExchangeRates(): Promise<SyncExchangeRatesResult> {
   const targets: { currency: CurrencyCode; freshRate: number | undefined }[] = [
     { currency: "USD", freshRate: latest?.usdTwd },
     { currency: "CNY", freshRate: latest?.cnyTwd },
+    { currency: "EUR", freshRate: latest?.eurTwd },
   ];
 
   const updated: SyncExchangeRatesResult["updated"] = [];

@@ -490,6 +490,7 @@
     "exchangeRateTitle": "即時參考匯率",
     "exchangeRateUsd": "1 USD ≈ NT${rate}",
     "exchangeRateCny": "1 CNY ≈ NT${rate}",
+    "exchangeRateEur": "1 EUR ≈ NT${rate}",
     "exchangeRateDisclaimer": "匯率僅供參考，實際交易金額一律以新台幣結算。",
     "exchangeRateUnavailable": "匯率資料更新中"
   },

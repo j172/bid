@@ -490,6 +490,7 @@
     "exchangeRateTitle": "Live reference exchange rate",
     "exchangeRateUsd": "1 USD ≈ NT${rate}",
     "exchangeRateCny": "1 CNY ≈ NT${rate}",
+    "exchangeRateEur": "1 EUR ≈ NT${rate}",
     "exchangeRateDisclaimer": "Rates are for reference only — all transactions are settled in New Taiwan Dollars.",
     "exchangeRateUnavailable": "Exchange rate updating"
   },

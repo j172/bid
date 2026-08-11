@@ -6,23 +6,33 @@
 // see immediately whether it worked — and if not, exactly why — instead of
 // needing an engineer to SSH in and read pm2 logs.
 import { useState } from "react";
+// Type-only import: lib/exchangeRates.ts pulls in lib/db.ts (mysql2), which
+// isn't safe to bundle into this "use client" component — a runtime import
+// of that module (e.g. its CURRENCY_CODES value) breaks `next build`
+// (mysql2 -> node:tls has no browser shim). CURRENCY_CODES is duplicated
+// below as CURRENCY_CODES_DISPLAY_ORDER instead, kept in sync by hand.
+import type { CurrencyCode } from "@/lib/exchangeRates";
+
+// Must stay in sync with lib/exchangeRates.ts's CURRENCY_CODES (see the
+// import comment above for why this can't just import that value).
+const CURRENCY_CODES_DISPLAY_ORDER: readonly CurrencyCode[] = ["USD", "CNY", "EUR"];
 
 export interface ExchangeRateDisplay {
-  currency: "USD" | "CNY";
+  currency: CurrencyCode;
   rate: number;
   rateDate: string;
   sourceDate: string;
 }
 
-type StoredRates = Record<"USD" | "CNY", ExchangeRateDisplay | null>;
+type StoredRates = Record<CurrencyCode, ExchangeRateDisplay | null>;
 
 interface SyncResponse {
   ok: boolean;
   error?: string;
   result?: {
     fetchedFresh: boolean;
-    updated: { currency: "USD" | "CNY"; rate: number; sourceDate: string; usedFallback: boolean }[];
-    failed: ("USD" | "CNY")[];
+    updated: { currency: CurrencyCode; rate: number; sourceDate: string; usedFallback: boolean }[];
+    failed: CurrencyCode[];
   };
 }
 
@@ -97,8 +107,8 @@ export default function ExchangeRateSyncPanel({ initialRates }: { initialRates: 
         <p className={`mt-3 text-sm ${status === "error" ? "text-ended" : "text-interactive-primary"}`}>{message}</p>
       )}
 
-      <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {(["USD", "CNY"] as const).map((currency) => (
+      <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {CURRENCY_CODES_DISPLAY_ORDER.map((currency) => (
           <div key={currency} className="rounded-lg border border-border p-3">
             <dt className="text-xs text-ink-light">TWD / {currency}</dt>
             <dd className="mt-1 text-sm font-semibold">{formatRate(rates[currency])}</dd>

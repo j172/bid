@@ -345,7 +345,7 @@ CREATE TABLE IF NOT EXISTS homepage_sections (
 -- reuses the most recent successful rate instead of leaving the day blank.
 CREATE TABLE IF NOT EXISTS exchange_rates (
   id BIGINT NOT NULL AUTO_INCREMENT,
-  currency VARCHAR(10) NOT NULL,              -- 'USD' | 'CNY' — TWD is always the implicit base
+  currency VARCHAR(10) NOT NULL,              -- 'USD' | 'CNY' | 'EUR' — TWD is always the implicit base
   rate_date DATE NOT NULL,
   source_date DATE NOT NULL,
   rate DECIMAL(12,6) NOT NULL,                -- TWD per 1 unit of `currency`
