@@ -81,7 +81,7 @@ export default function NewsCarouselCard({
   const href = `/news/${current.id}`;
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-white p-4 shadow-sm">
+    <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-white p-4 shadow-sm">
       <div className="mb-2">
         <span className="inline-flex items-center rounded-full bg-twilight-indigo-600 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-md">
           {activeBadge}

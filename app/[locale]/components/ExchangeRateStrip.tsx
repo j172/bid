@@ -33,7 +33,7 @@ export default async function ExchangeRateStrip({ className }: ExchangeRateStrip
       className={`rounded-2xl bg-[radial-gradient(circle_at_top_right,_#d9edf2_0,_#ecf6f9_40%,_#f8fafc_100%)] px-6 py-7${className ? ` ${className}` : ""}`}
     >
       <h3 className="text-2xl font-black text-ink">{t("exchangeRateTitle")}</h3>
-      <div className="mt-3 flex flex-col gap-1.5 text-sm font-semibold text-ink sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+      <div className="mt-3 flex flex-col gap-1.5 text-sm font-semibold text-ink">
         <span>{rates.USD ? t("exchangeRateUsd", { rate: rates.USD.rate.toFixed(2) }) : t("exchangeRateUnavailable")}</span>
         <span>{rates.CNY ? t("exchangeRateCny", { rate: rates.CNY.rate.toFixed(2) }) : t("exchangeRateUnavailable")}</span>
       </div>
