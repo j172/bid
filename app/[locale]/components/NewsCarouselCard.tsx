@@ -17,12 +17,23 @@ import { useRotatingIndex } from "@/lib/useRotatingIndex";
 // slot occupied (so the surrounding grid doesn't reflow) but shows a
 // neutral "尚無內容" placeholder instead.
 //
-// Issue #146 reworks the active layout into the site-wide showcase language:
-// a full-bleed cover image with a bottom-up gradient scrim, a solid pill
-// badge in the top-left corner, and the title/excerpt/meta stack overlaid on
-// the bottom of the image. Colors come from the project's own brand scales in
-// app/styles/design-tokens.css (baltic-blue for the dark ground,
-// twilight-indigo for the badge) rather than raw Tailwind defaults.
+// Issue #146 originally reworked the active layout into the site-wide
+// showcase language: a full-bleed cover image with a bottom-up gradient
+// scrim, a solid pill badge in the top-left corner, and the title/excerpt/meta
+// stack overlaid on the bottom of the image. Issue #148 found that this news
+// photo's real aspect ratio (~1.41:1) is much narrower than the card's
+// letterbox, so `object-contain` left the bottom scrim sitting on blank
+// letterbox space instead of the photo — and #149 concluded the underlying
+// conflict ("show the whole image, uncropped" vs. "overlay text needs a dark
+// scrim for contrast") can't be tuned away. So this card now matches the
+// white-card language used by the rest of the homepage grid
+// (app/[locale]/components/HomeProductCard.tsx): badge above the image,
+// image on a light letterbox background, and title/excerpt/meta laid out
+// below the image in normal flow instead of overlaid on it. The badge still
+// uses the brand twilight-indigo pill styling (not HomeProductCard's subtle
+// badge) so it keeps reading as a distinct "news" tag. The two
+// PigeonShowcaseCarouselCard siblings deliberately keep the old dark
+// overlay style — only this card changed.
 export interface NewsCarouselItem {
   id: number;
   title: string;
@@ -70,40 +81,34 @@ export default function NewsCarouselCard({
   const href = `/news/${current.id}`;
 
   return (
-    <article className="group relative flex h-full flex-col justify-between overflow-hidden rounded-3xl bg-baltic-blue-900 shadow-xl">
-      <div className="relative aspect-[16/10] w-full overflow-hidden bg-baltic-blue-900 sm:aspect-[21/10]">
+    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-white p-4 shadow-sm">
+      <div className="mb-2">
+        <span className="inline-flex items-center rounded-full bg-twilight-indigo-600 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-md">
+          {activeBadge}
+        </span>
+      </div>
+      <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-slate-100">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={current.imageUrl}
           alt={current.title}
           className="absolute inset-0 h-full w-full object-contain transition-transform duration-700 ease-out group-hover:scale-105"
         />
-        {/* Scrim shrunk to just the bottom text band (issue #148) — object-contain
-            no longer fills the whole box, so a full-height gradient washed the
-            entire letterboxed image out to near-black. */}
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-baltic-blue-950 via-baltic-blue-950/70 to-transparent" />
-        <div className="absolute left-6 top-6">
-          <span className="inline-flex items-center rounded-full bg-twilight-indigo-600 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-md">
-            {activeBadge}
-          </span>
-        </div>
-        <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
-          <h3 className="max-w-3xl text-xl font-extrabold leading-snug tracking-tight text-white sm:text-2xl lg:text-3xl">
-            <Link href={href} className="transition-opacity hover:opacity-90">
-              {current.title}
-            </Link>
-          </h3>
-          <p className="mt-2.5 line-clamp-2 max-w-2xl text-xs text-slate-300 sm:text-sm">{current.excerpt}</p>
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-2 text-xs text-slate-300">
-            <span>{current.createdAt}</span>
-            <Link
-              href={href}
-              className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-xs font-bold text-baltic-blue-900 transition-colors hover:bg-twilight-indigo-600 hover:text-white"
-            >
-              {ctaLabel}
-            </Link>
-          </div>
-        </div>
+      </div>
+      <h3 className="mt-3 text-xl font-extrabold leading-snug tracking-tight text-ink sm:text-2xl">
+        <Link href={href} className="transition-opacity hover:opacity-80">
+          {current.title}
+        </Link>
+      </h3>
+      <p className="mt-2.5 line-clamp-2 text-xs text-ink-light sm:text-sm">{current.excerpt}</p>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3 text-xs text-ink-light">
+        <span>{current.createdAt}</span>
+        <Link
+          href={href}
+          className="inline-flex items-center gap-1.5 rounded-full bg-header px-4 py-1.5 text-xs font-bold text-white transition-colors hover:bg-twilight-indigo-600"
+        >
+          {ctaLabel}
+        </Link>
       </div>
     </article>
   );
