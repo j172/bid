@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useRotatingIndex } from "@/lib/useRotatingIndex";
 
@@ -66,7 +67,8 @@ export default function NewsCarouselCard({
   emptyStateTitle: string;
   emptyStateDesc: string;
 }) {
-  const index = useRotatingIndex(items.length, ROTATE_INTERVAL_MS);
+  const t = useTranslations("home");
+  const [index, setIndex] = useRotatingIndex(items.length, ROTATE_INTERVAL_MS);
 
   if (items.length === 0) {
     return (
@@ -95,6 +97,46 @@ export default function NewsCarouselCard({
           className="absolute inset-0 h-full w-full object-contain transition-transform duration-700 ease-out group-hover:scale-105"
         />
       </div>
+      {items.length > 1 && (
+        // Manual dot/arrow controls (issue #156) — dark solid styling since
+        // this is a white card (Hero's white/translucent style would be
+        // invisible here). Clicking either just calls the shared rotating
+        // index's setter; the 5s auto-advance timer in useRotatingIndex
+        // keeps running regardless, matching HeroSection's behaviour.
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            {items.map((item, itemIndex) => (
+              <button
+                key={item.id}
+                type="button"
+                aria-label={t("slideGoTo", { index: itemIndex + 1 })}
+                onClick={() => setIndex(itemIndex)}
+                className={`h-2.5 rounded-full transition ${
+                  itemIndex === index ? "w-8 bg-header" : "w-2.5 bg-ink/20 hover:bg-ink/40"
+                }`}
+              />
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label={t("slidePrevious")}
+              onClick={() => setIndex((previous) => (previous - 1 + items.length) % items.length)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-header text-sm text-white transition hover:bg-twilight-indigo-600"
+            >
+              ←
+            </button>
+            <button
+              type="button"
+              aria-label={t("slideNext")}
+              onClick={() => setIndex((previous) => (previous + 1) % items.length)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-header text-sm text-white transition hover:bg-twilight-indigo-600"
+            >
+              →
+            </button>
+          </div>
+        </div>
+      )}
       <h3 className="mt-3 text-xl font-extrabold leading-snug tracking-tight text-ink sm:text-2xl">
         <Link href={href} className="transition-opacity hover:opacity-80">
           {current.title}
