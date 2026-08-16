@@ -11,6 +11,7 @@
 // unit-testable without mocking @/lib/db.
 import { randomBytes } from "crypto";
 import { getDb } from "@/lib/db";
+import { isCooldownRateLimited } from "@/lib/rateLimiting";
 import type { ErrorCode } from "@/lib/errorCodes";
 import { routing } from "@/i18n/routing";
 
@@ -43,29 +44,17 @@ export function isEmailVerificationTokenValid(row: EmailVerificationTokenRow | n
 // minutes) has already triggered a verification email recently — same two
 // checks, same constants, and same "derived from the token table's
 // created_at directly rather than a separate rate-limit store" approach as
-// lib/passwordReset.ts's isPasswordResetRateLimited. Used by both POST
-// /api/auth/register (issue #118 §3) and POST /api/auth/resend-verification
-// (§6) so a visitor can't hammer either endpoint to spam an inbox.
+// lib/passwordReset.ts's isPasswordResetRateLimited — both go through the
+// shared lib/rateLimiting.ts's isCooldownRateLimited (issue #139 M6). Used by
+// both POST /api/auth/register (issue #118 §3) and POST
+// /api/auth/resend-verification (§6) so a visitor can't hammer either
+// endpoint to spam an inbox.
 export async function isEmailVerificationRateLimited(userId: number, ip: string | null): Promise<boolean> {
-  const db = await getDb();
-
-  const [emailRows] = await db.query(
-    `SELECT COUNT(*) AS cnt FROM email_verification_tokens
-     WHERE user_id = ? AND created_at > NOW() - INTERVAL ${EMAIL_COOLDOWN_SECONDS} SECOND`,
-    [userId],
-  );
-  if ((emailRows as { cnt: number }[])[0].cnt > 0) return true;
-
-  if (ip) {
-    const [ipRows] = await db.query(
-      `SELECT COUNT(*) AS cnt FROM email_verification_tokens
-       WHERE request_ip = ? AND created_at > NOW() - INTERVAL ${IP_WINDOW_MINUTES} MINUTE`,
-      [ip],
-    );
-    if ((ipRows as { cnt: number }[])[0].cnt >= IP_MAX_REQUESTS) return true;
-  }
-
-  return false;
+  return isCooldownRateLimited("email_verification_tokens", userId, ip, {
+    cooldownSeconds: EMAIL_COOLDOWN_SECONDS,
+    windowMinutes: IP_WINDOW_MINUTES,
+    maxRequests: IP_MAX_REQUESTS,
+  });
 }
 
 // Caller (register/resend-verification routes) is expected to have already

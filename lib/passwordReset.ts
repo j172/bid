@@ -10,6 +10,7 @@
 import { randomBytes } from "crypto";
 import { getDb } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
+import { isCooldownRateLimited } from "@/lib/rateLimiting";
 import type { ErrorCode } from "@/lib/errorCodes";
 import { routing } from "@/i18n/routing";
 
@@ -39,27 +40,16 @@ export function isResetTokenValid(row: PasswordResetTokenRow | null, now: Date =
 // header comment — so the caller never needs to know *which* limit tripped.
 // Both limits are derived from password_reset_tokens.created_at directly
 // (per issue #89: "用 MySQL 查 password_reset_tokens 表的 created_at 就能
-// 算，不用額外服務") rather than a separate rate-limit store.
+// 算，不用額外服務") rather than a separate rate-limit store. The two-query
+// shape itself lives in lib/rateLimiting.ts's isCooldownRateLimited, shared
+// with lib/emailVerification.ts/lib/emailOtp.ts's identical checks (issue
+// #139 M6).
 export async function isPasswordResetRateLimited(userId: number, ip: string | null): Promise<boolean> {
-  const db = await getDb();
-
-  const [emailRows] = await db.query(
-    `SELECT COUNT(*) AS cnt FROM password_reset_tokens
-     WHERE user_id = ? AND created_at > NOW() - INTERVAL ${EMAIL_COOLDOWN_SECONDS} SECOND`,
-    [userId],
-  );
-  if ((emailRows as { cnt: number }[])[0].cnt > 0) return true;
-
-  if (ip) {
-    const [ipRows] = await db.query(
-      `SELECT COUNT(*) AS cnt FROM password_reset_tokens
-       WHERE request_ip = ? AND created_at > NOW() - INTERVAL ${IP_WINDOW_MINUTES} MINUTE`,
-      [ip],
-    );
-    if ((ipRows as { cnt: number }[])[0].cnt >= IP_MAX_REQUESTS) return true;
-  }
-
-  return false;
+  return isCooldownRateLimited("password_reset_tokens", userId, ip, {
+    cooldownSeconds: EMAIL_COOLDOWN_SECONDS,
+    windowMinutes: IP_WINDOW_MINUTES,
+    maxRequests: IP_MAX_REQUESTS,
+  });
 }
 
 // Caller (the forgot-password route) is expected to have already checked
