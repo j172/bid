@@ -1,38 +1,27 @@
-import { request } from "https";
+import { httpsRequest } from "@/lib/httpsRequest";
 
 // Cloudflare Turnstile anti-abuse check for the public /contact form (issue
 // #104). CLOUDFLARE_TURNSTILE_SITE_KEY (not secret — safe in the client
 // form) and CLOUDFLARE_TURNSTILE_SECRET_KEY belong to the site's existing
 // "j172tw" Turnstile widget; both live in .env only, never committed.
 
-// Deliberately node:https instead of the global fetch(), same reasoning as
-// lib/email.ts's resendRequest: fetch()'s underlying undici implementation
-// OOMs under this host's memory ceiling, so every outbound call in this
-// project goes through node:https instead.
+// Deliberately node:https instead of the global fetch() underneath (and why
+// it isn't fetch()) — see lib/httpsRequest.ts, the shared transport this now
+// goes through alongside lib/email.ts's resendRequest/lib/exchangeRates.ts's
+// taifexGet (issue #139 M11: all three used to hand-roll the same ~10 lines
+// of stream plumbing).
 function turnstileSiteverifyRequest(secret: string, token: string, remoteIp: string | null): Promise<{ status: number; body: string }> {
-  return new Promise((resolve, reject) => {
-    const params = new URLSearchParams({ secret, response: token });
-    if (remoteIp) params.set("remoteip", remoteIp);
-    const payload = params.toString();
+  const params = new URLSearchParams({ secret, response: token });
+  if (remoteIp) params.set("remoteip", remoteIp);
+  const payload = params.toString();
 
-    const req = request(
-      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "Content-Length": String(Buffer.byteLength(payload)),
-        },
-      },
-      (res) => {
-        let data = "";
-        res.on("data", (chunk) => (data += chunk));
-        res.on("end", () => resolve({ status: res.statusCode ?? 0, body: data }));
-      },
-    );
-    req.on("error", reject);
-    req.write(payload);
-    req.end();
+  return httpsRequest("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "Content-Length": String(Buffer.byteLength(payload)),
+    },
+    body: payload,
   });
 }
 

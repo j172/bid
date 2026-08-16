@@ -2,7 +2,7 @@
 // directly unit-testable, same split as lib/pigeonShowcaseValidation.ts /
 // lib/listingValidation.ts.
 
-import { validateRichTextField, type FieldValidationResult } from "@/lib/richTextValidation";
+import { validateRequiredTextField, validateRichTextField, type FieldValidationResult } from "@/lib/richTextValidation";
 
 export const TITLE_MAX = 100;
 // Measured against plain text (HTML tags stripped) since content is
@@ -16,14 +16,11 @@ export const CONTENT_HTML_MAX = 20_000;
 export type { FieldValidationResult };
 
 export function validateNewsTitle(title: string): FieldValidationResult {
-  const trimmed = title.trim();
-  if (trimmed.length === 0) {
-    return { ok: false, error: "請輸入標題" };
-  }
-  if (trimmed.length > TITLE_MAX) {
-    return { ok: false, error: `標題不能超過 ${TITLE_MAX} 個字` };
-  }
-  return { ok: true };
+  return validateRequiredTextField(title, {
+    requiredError: "請輸入標題",
+    tooLongError: `標題不能超過 ${TITLE_MAX} 個字`,
+    max: TITLE_MAX,
+  });
 }
 
 export function validateNewsContent(content: string): FieldValidationResult {

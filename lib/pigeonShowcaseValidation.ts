@@ -1,7 +1,7 @@
 // Pure validation for pigeon_showcase fields (issue #54) — no HTTP/DB
 // involved, directly unit-testable, same split as lib/listingValidation.ts.
 
-import { validateRichTextField, type FieldValidationResult } from "@/lib/richTextValidation";
+import { validateRequiredTextField, validateRichTextField, type FieldValidationResult } from "@/lib/richTextValidation";
 
 export const PIGEON_SHOWCASE_CATEGORIES = ["award", "imported"] as const;
 export type PigeonShowcaseCategory = (typeof PIGEON_SHOWCASE_CATEGORIES)[number];
@@ -22,14 +22,11 @@ export function isPigeonShowcaseCategory(value: unknown): value is PigeonShowcas
 }
 
 export function validatePigeonShowcaseName(name: string): FieldValidationResult {
-  const trimmed = name.trim();
-  if (trimmed.length === 0) {
-    return { ok: false, error: "請輸入名稱" };
-  }
-  if (trimmed.length > NAME_MAX) {
-    return { ok: false, error: `名稱不能超過 ${NAME_MAX} 個字` };
-  }
-  return { ok: true };
+  return validateRequiredTextField(name, {
+    requiredError: "請輸入名稱",
+    tooLongError: `名稱不能超過 ${NAME_MAX} 個字`,
+    max: NAME_MAX,
+  });
 }
 
 export function validatePigeonShowcaseDescription(description: string): FieldValidationResult {

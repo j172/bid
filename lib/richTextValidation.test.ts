@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { plainTextLength, validateRichTextField } from "./richTextValidation";
+import { plainTextLength, validateRequiredTextField, validateRichTextField } from "./richTextValidation";
 import { htmlToPlainText } from "./htmlText";
 
 const rules = {
@@ -9,6 +9,38 @@ const rules = {
   htmlMax: 100,
   textMax: 10,
 };
+
+const requiredTextRules = {
+  requiredError: "請輸入標題",
+  tooLongError: "標題不能超過 10 個字",
+  max: 10,
+};
+
+describe("validateRequiredTextField", () => {
+  it("accepts non-blank text within the max length", () => {
+    expect(validateRequiredTextField("標題", requiredTextRules)).toEqual({ ok: true });
+  });
+
+  it("rejects blank and whitespace-only input", () => {
+    expect(validateRequiredTextField("", requiredTextRules)).toEqual({ ok: false, error: requiredTextRules.requiredError });
+    expect(validateRequiredTextField("   ", requiredTextRules)).toEqual({
+      ok: false,
+      error: requiredTextRules.requiredError,
+    });
+  });
+
+  it("accepts exactly at the max length and rejects one over", () => {
+    expect(validateRequiredTextField("a".repeat(10), requiredTextRules)).toEqual({ ok: true });
+    expect(validateRequiredTextField("a".repeat(11), requiredTextRules)).toEqual({
+      ok: false,
+      error: requiredTextRules.tooLongError,
+    });
+  });
+
+  it("trims leading/trailing whitespace before checking length", () => {
+    expect(validateRequiredTextField(`  ${"a".repeat(10)}  `, requiredTextRules)).toEqual({ ok: true });
+  });
+});
 
 describe("validateRichTextField", () => {
   it("accepts text within both ceilings", () => {

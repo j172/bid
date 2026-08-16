@@ -6,6 +6,7 @@
 // email_otp_challenges (see db/init.sql for the table's header comment).
 import { createHash, randomBytes, randomInt, timingSafeEqual } from "crypto";
 import { getDb } from "@/lib/db";
+import { isCooldownRateLimited } from "@/lib/rateLimiting";
 import type { ErrorCode } from "@/lib/errorCodes";
 
 export const EMAIL_OTP_TTL_MS = 10 * 60 * 1000; // 10 minutes
@@ -61,27 +62,14 @@ export function isEmailOtpChallengeUsable(row: EmailOtpChallengeRow | null, now:
 // here per issue #93's "比照 #89 的門檻" instruction. Both limits are
 // derived from email_otp_challenges.created_at directly, no separate
 // rate-limit store, mirroring lib/passwordReset.ts's
-// isPasswordResetRateLimited.
+// isPasswordResetRateLimited — both go through the shared
+// lib/rateLimiting.ts's isCooldownRateLimited (issue #139 M6).
 export async function isEmailOtpRateLimited(userId: number, ip: string | null): Promise<boolean> {
-  const db = await getDb();
-
-  const [accountRows] = await db.query(
-    `SELECT COUNT(*) AS cnt FROM email_otp_challenges
-     WHERE user_id = ? AND created_at > NOW() - INTERVAL ${EMAIL_COOLDOWN_SECONDS} SECOND`,
-    [userId],
-  );
-  if ((accountRows as { cnt: number }[])[0].cnt > 0) return true;
-
-  if (ip) {
-    const [ipRows] = await db.query(
-      `SELECT COUNT(*) AS cnt FROM email_otp_challenges
-       WHERE request_ip = ? AND created_at > NOW() - INTERVAL ${IP_WINDOW_MINUTES} MINUTE`,
-      [ip],
-    );
-    if ((ipRows as { cnt: number }[])[0].cnt >= IP_MAX_REQUESTS) return true;
-  }
-
-  return false;
+  return isCooldownRateLimited("email_otp_challenges", userId, ip, {
+    cooldownSeconds: EMAIL_COOLDOWN_SECONDS,
+    windowMinutes: IP_WINDOW_MINUTES,
+    maxRequests: IP_MAX_REQUESTS,
+  });
 }
 
 // Caller (the login route) is expected to have already checked
