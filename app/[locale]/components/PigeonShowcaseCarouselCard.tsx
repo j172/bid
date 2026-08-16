@@ -89,7 +89,7 @@ export default function PigeonShowcaseCarouselCard({
           alt={current.name}
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
         />
-        <div className={`absolute inset-0 ${scrimClass}`} />
+        <Link href={href} className={`absolute inset-0 ${scrimClass}`} aria-hidden="true" tabIndex={-1} />
         <div className="absolute left-5 top-5">
           <span className={`inline-flex items-center rounded-full px-3.5 py-1 text-xs font-bold uppercase tracking-wider shadow-md ${badgeClass}`}>
             {badgeLabel}
