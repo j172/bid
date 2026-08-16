@@ -104,3 +104,14 @@ export function validateStockRemaining(value: number): FieldValidationResult {
   }
   return { ok: true };
 }
+
+// loftId is optional (null means "no linked loft") — only validated when the
+// admin actually picked one. Shared by listing create and edit (issue #160
+// M5), both of which parse an empty form field to null upstream before
+// calling this.
+export function validateLoftId(loftId: number | null): FieldValidationResult {
+  if (loftId !== null && (!Number.isFinite(loftId) || !Number.isInteger(loftId) || loftId <= 0)) {
+    return { ok: false, error: "合作鴿舍不正確" };
+  }
+  return { ok: true };
+}
