@@ -11,16 +11,8 @@ import { pigeonShowcaseImageUrl } from "@/lib/uploads";
 import AdminPageIntro from "../AdminPageIntro";
 import AdminPagination from "../components/AdminPagination";
 import { parseFirstParam, parsePageParam, type SearchParams } from "../components/searchParams";
-import {
-  filterControlClass,
-  filterFormClass,
-  filterLabelClass,
-  filterSubmitClass,
-  tableRowClass,
-  tableWrapperClass,
-  td,
-  th,
-} from "../components/tableStyles";
+import { AdminTable, AdminTableCell, AdminTableRow } from "../components/AdminTable";
+import { filterControlClass, filterFormClass, filterLabelClass, filterSubmitClass } from "../components/tableStyles";
 import PigeonShowcaseFormModal from "./PigeonShowcaseFormModal";
 import DeleteConfirmButton from "../components/DeleteConfirmButton";
 
@@ -102,58 +94,46 @@ export default async function PigeonShowcaseAdminPage({ searchParams }: { search
       {items.length === 0 ? (
         <p className="mt-6 text-ink-light">找不到符合條件的鴿況資料。</p>
       ) : (
-        <div className={tableWrapperClass}>
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                <th className={th}>主圖</th>
-                <th className={th}>鴿種</th>
-                <th className={th}>名稱</th>
-                <th className={th}>鴿舍</th>
-                <th className={th}>簡介</th>
-                <th className={th}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => {
-                const imageUrl = item.imageFileName ? pigeonShowcaseImageUrl(item.imageFileName) : "/images/hero-placeholder.png";
-                return (
-                  <tr key={item.id} className={tableRowClass}>
-                    <td className={td}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={imageUrl} alt={item.name} className="h-14 w-14 rounded-lg border border-border object-cover" />
-                    </td>
-                    <td className={td}>{CATEGORY_LABEL[item.category]}</td>
-                    <td className={`${td} font-medium`}>{item.name}</td>
-                    <td className={td}>{item.loftTitle}</td>
-                    <td className={`${td} max-w-xs truncate text-ink-light`}>{item.description.replace(/<[^>]*>/g, " ").trim()}</td>
-                    <td className={`${td} text-right`}>
-                      <div className="flex items-center justify-end gap-2">
-                        <PigeonShowcaseFormModal
-                          mode="edit"
-                          lofts={loftOptions}
-                          item={{
-                            id: item.id,
-                            category: item.category,
-                            name: item.name,
-                            loftId: item.loftId,
-                            description: item.description,
-                            imageUrl,
-                          }}
-                        />
-                        <DeleteConfirmButton
-                          endpoint={`/api/admin/pigeon-showcase/${item.id}`}
-                          itemLabel={item.name}
-                          itemNoun="這筆鴿況資料"
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <AdminTable headers={["主圖", "鴿種", "名稱", "鴿舍", "簡介", ""]}>
+          {items.map((item) => {
+            const imageUrl = item.imageFileName ? pigeonShowcaseImageUrl(item.imageFileName) : "/images/hero-placeholder.png";
+            return (
+              <AdminTableRow key={item.id}>
+                <AdminTableCell>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={imageUrl} alt={item.name} className="h-14 w-14 rounded-lg border border-border object-cover" />
+                </AdminTableCell>
+                <AdminTableCell>{CATEGORY_LABEL[item.category]}</AdminTableCell>
+                <AdminTableCell className="font-medium">{item.name}</AdminTableCell>
+                <AdminTableCell>{item.loftTitle}</AdminTableCell>
+                <AdminTableCell className="max-w-xs truncate text-ink-light">
+                  {item.description.replace(/<[^>]*>/g, " ").trim()}
+                </AdminTableCell>
+                <AdminTableCell className="text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <PigeonShowcaseFormModal
+                      mode="edit"
+                      lofts={loftOptions}
+                      item={{
+                        id: item.id,
+                        category: item.category,
+                        name: item.name,
+                        loftId: item.loftId,
+                        description: item.description,
+                        imageUrl,
+                      }}
+                    />
+                    <DeleteConfirmButton
+                      endpoint={`/api/admin/pigeon-showcase/${item.id}`}
+                      itemLabel={item.name}
+                      itemNoun="這筆鴿況資料"
+                    />
+                  </div>
+                </AdminTableCell>
+              </AdminTableRow>
+            );
+          })}
+        </AdminTable>
       )}
 
       <AdminPagination

@@ -1,27 +1,16 @@
 import Link from "next/link";
 import { getCurrentUser, listUsers, USERS_PAGE_SIZE, type ListUsersOptions } from "@/lib/auth";
+import { formatAdminDateTime } from "@/lib/format";
 import RoleToggleButton from "./RoleToggleButton";
 import SuspendToggleButton from "./SuspendToggleButton";
 import ResetPasswordButton from "./ResetPasswordButton";
 import AdminPageIntro from "../AdminPageIntro";
 import AdminPagination from "../components/AdminPagination";
 import { parseFirstParam, parsePageParam, type SearchParams } from "../components/searchParams";
-import {
-  filterControlClass,
-  filterFormClass,
-  filterLabelClass,
-  filterSubmitClass,
-  tableRowClass,
-  tableWrapperClass,
-  td,
-  th,
-} from "../components/tableStyles";
+import { AdminTable, AdminTableCell, AdminTableRow } from "../components/AdminTable";
+import { filterControlClass, filterFormClass, filterLabelClass, filterSubmitClass } from "../components/tableStyles";
 
 export const dynamic = "force-dynamic";
-
-function formatDate(date: Date): string {
-  return new Date(date).toLocaleString("zh-TW", { hour12: false });
-}
 
 const STATUS_LABEL: Record<string, string> = { active: "正常", suspended: "停權", deleted: "已刪除" };
 
@@ -85,54 +74,38 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
       {users.length === 0 ? (
         <p className="mt-6 text-ink-light">找不到符合條件的使用者。</p>
       ) : (
-        <div className={tableWrapperClass}>
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                <th className={th}>Email</th>
-                <th className={th}>顯示名稱</th>
-                <th className={th}>角色</th>
-                <th className={th}>帳號狀態</th>
-                <th className={th}>註冊時間</th>
-                <th className={th}>出價次數</th>
-                <th className={th}>總成交額</th>
-                <th className={th}>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr key={user.id} className={tableRowClass}>
-                  <td className={td}>
-                    <Link href={`/z04urru6/users/${user.id}`} className="font-medium text-interactive-primary hover:underline">
-                      {user.email}
-                    </Link>
-                  </td>
-                  <td className={td}>{user.displayName ?? "—"}</td>
-                  <td className={td}>{user.role === "admin" ? "管理員" : "一般使用者"}</td>
-                  <td className={td}>{STATUS_LABEL[user.status]}</td>
-                  <td className={td}>{formatDate(user.createdAt)}</td>
-                  <td className={td}>{user.bidCount}</td>
-                  <td className={td}>{user.totalWon}</td>
-                  <td className={td}>
-                    {user.status === "deleted" ? (
-                      <span className="text-xs text-ink-light">已刪除，無法操作</span>
-                    ) : (
-                      <div className="flex flex-col gap-2">
-                        <RoleToggleButton userId={user.id} currentRole={user.role} isSelf={user.id === currentUser?.id} />
-                        <SuspendToggleButton
-                          userId={user.id}
-                          isSuspended={user.status === "suspended"}
-                          isSelf={user.id === currentUser?.id}
-                        />
-                        <ResetPasswordButton userId={user.id} email={user.email} />
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <AdminTable headers={["Email", "顯示名稱", "角色", "帳號狀態", "註冊時間", "出價次數", "總成交額", "操作"]}>
+          {users.map((user) => (
+            <AdminTableRow key={user.id}>
+              <AdminTableCell>
+                <Link href={`/z04urru6/users/${user.id}`} className="font-medium text-interactive-primary hover:underline">
+                  {user.email}
+                </Link>
+              </AdminTableCell>
+              <AdminTableCell>{user.displayName ?? "—"}</AdminTableCell>
+              <AdminTableCell>{user.role === "admin" ? "管理員" : "一般使用者"}</AdminTableCell>
+              <AdminTableCell>{STATUS_LABEL[user.status]}</AdminTableCell>
+              <AdminTableCell>{formatAdminDateTime(user.createdAt)}</AdminTableCell>
+              <AdminTableCell>{user.bidCount}</AdminTableCell>
+              <AdminTableCell>{user.totalWon}</AdminTableCell>
+              <AdminTableCell>
+                {user.status === "deleted" ? (
+                  <span className="text-xs text-ink-light">已刪除，無法操作</span>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <RoleToggleButton userId={user.id} currentRole={user.role} isSelf={user.id === currentUser?.id} />
+                    <SuspendToggleButton
+                      userId={user.id}
+                      isSuspended={user.status === "suspended"}
+                      isSelf={user.id === currentUser?.id}
+                    />
+                    <ResetPasswordButton userId={user.id} email={user.email} />
+                  </div>
+                )}
+              </AdminTableCell>
+            </AdminTableRow>
+          ))}
+        </AdminTable>
       )}
 
       <AdminPagination

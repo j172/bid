@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { SECONDARY_TRIGGER_CLASS } from "../components/adminButtonClasses";
 import AdminModal from "../components/AdminModal";
 import ModalFormActions from "../components/ModalFormActions";
 import { ENDS_AT_MAX_DAYS } from "@/lib/listingValidation";
@@ -54,7 +55,7 @@ export default function EditScheduleModal({ listingId, startsAt }: { listingId: 
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface-muted"
+        className={SECONDARY_TRIGGER_CLASS}
       >
         調整起標時間
       </button>

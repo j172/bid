@@ -1,15 +1,12 @@
 "use client";
 
+import { formatAdminDateTime } from "@/lib/format";
 import { useLazyExpand } from "../../components/useLazyExpand";
 
 interface Bidder {
   email: string;
   amount: number;
   bidAt: string;
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString("zh-TW", { hour12: false });
 }
 
 export default function BiddersExpand({ listingId, bidCount }: { listingId: number; bidCount: number }) {
@@ -38,7 +35,7 @@ export default function BiddersExpand({ listingId, bidCount }: { listingId: numb
             <div key={index} className="flex justify-between gap-3">
               <span>{bidder.email}</span>
               <span className="font-medium">{bidder.amount}</span>
-              <span className="text-ink-light">{formatDate(bidder.bidAt)}</span>
+              <span className="text-ink-light">{formatAdminDateTime(bidder.bidAt)}</span>
             </div>
           ))}
         </div>

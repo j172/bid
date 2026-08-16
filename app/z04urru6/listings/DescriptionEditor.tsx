@@ -5,9 +5,9 @@ import { Editor } from "@tinymce/tinymce-react";
 import type { Editor as TinyMCEEditor } from "tinymce";
 import { convertPhotoToWebp } from "@/lib/convertPhotoToWebp";
 import { DESCRIPTION_IMAGE_MAX_BYTES, DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
-import { COLOR_MAP } from "@/lib/editorColorMap";
 import { DESCRIPTION_MAX, descriptionPlainTextLength } from "@/lib/listingValidation";
 import { extractYouTubeId } from "@/lib/youtubeEmbed";
+import { TINYMCE_BASE_INIT, TINYMCE_LICENSE_KEY, TINYMCE_SCRIPT_SRC } from "../components/richTextEditorConfig";
 
 export interface DescriptionEditorHandle {
   // Called at form-submit time: swaps every locally-buffered image's blob:
@@ -52,31 +52,22 @@ const DescriptionEditor = forwardRef<DescriptionEditorHandle, DescriptionEditorP
   return (
     <div className="flex flex-col gap-1">
       <Editor
-        tinymceScriptSrc="/tinymce/tinymce.min.js"
-        licenseKey="gpl"
+        tinymceScriptSrc={TINYMCE_SCRIPT_SRC}
+        licenseKey={TINYMCE_LICENSE_KEY}
         value={value}
         onEditorChange={onChange}
         onInit={(_event, editor) => {
           editorRef.current = editor;
         }}
         init={{
+          ...TINYMCE_BASE_INIT,
           height: 360,
-          menubar: false,
-          branding: false,
-          promotion: false,
-          language: "zh-TW",
-          // Native statusbar would show its own word/char count, duplicating
-          // (and disagreeing with, since it counts differently) the custom
-          // counter already rendered below tied to DESCRIPTION_MAX.
-          statusbar: false,
           plugins: "lists link image table fullscreen searchreplace code",
           toolbar:
             "undo redo | blocks fontsize | bold italic underline strikethrough | forecolor backcolor | " +
             "alignleft aligncenter alignright alignjustify | bullist numlist | blockquote hr | " +
             "subscript superscript codeformat | link image insertyoutube table | removeformat | " +
             "searchreplace fullscreen code",
-          block_formats: "段落=p; 標題=h2; 副標題=h3",
-          color_map: COLOR_MAP,
           setup: (editor) => {
             editor.ui.registry.addButton("insertyoutube", {
               icon: "embed",

@@ -62,6 +62,17 @@ export function breakdownRemainingMs(remainingMs: number): {
   };
 }
 
+// Admin-only, hardcoded Traditional Chinese date+time formatting — same
+// "outside next-intl" reasoning as formatRemainingZhHant below. This exact
+// `toLocaleString("zh-TW", { hour12: false })` call was copied identically
+// into 7 places across app/z04urru6 (RecentActivity, listings/closed,
+// orders, users list/detail pages, BiddersExpand, WinnerExpand) — see
+// issue #139 M24. Accepts either a Date or an ISO string since callers used
+// both interchangeably (new Date() is idempotent on a Date instance).
+export function formatAdminDateTime(date: Date | string): string {
+  return new Date(date).toLocaleString("zh-TW", { hour12: false });
+}
+
 // Admin-only, hardcoded Traditional Chinese — the admin backend (app/z04urru6)
 // sits outside next-intl's routing/provider tree entirely (see the i18n
 // ticket that introduced app/[locale]/), so it can't call formatRemaining

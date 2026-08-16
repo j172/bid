@@ -1,28 +1,17 @@
 import Link from "next/link";
 import { getOrdersForAdmin, ORDERS_PAGE_SIZE, type ListOrdersOptions } from "@/lib/listings";
+import { formatAdminDateTime } from "@/lib/format";
 import SettlementExpand from "../listings/closed/SettlementExpand";
 import BuyerExpand from "./BuyerExpand";
 import SettleModal from "../components/SettleModal";
-import OrderUnsettleButton from "./OrderUnsettleButton";
+import UnsettleButton from "../components/UnsettleButton";
 import AdminPageIntro from "../AdminPageIntro";
 import AdminPagination from "../components/AdminPagination";
 import { parseFirstParam, parsePageParam, type SearchParams } from "../components/searchParams";
-import {
-  filterControlClass,
-  filterFormClass,
-  filterLabelClass,
-  filterSubmitClass,
-  tableRowClass,
-  tableWrapperClass,
-  td,
-  th,
-} from "../components/tableStyles";
+import { AdminTable, AdminTableCell, AdminTableRow } from "../components/AdminTable";
+import { filterControlClass, filterFormClass, filterLabelClass, filterSubmitClass } from "../components/tableStyles";
 
 export const dynamic = "force-dynamic";
-
-function formatDate(date: Date): string {
-  return new Date(date).toLocaleString("zh-TW", { hour12: false });
-}
 
 const QUERY_KEYS = ["search", "buyerEmail", "status", "sort", "page"] as const;
 
@@ -76,61 +65,49 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
       {orders.length === 0 ? (
         <p className="mt-6 text-ink-light">找不到符合條件的訂單。</p>
       ) : (
-        <div className={tableWrapperClass}>
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                <th className={th}>商品</th>
-                <th className={th}>買家</th>
-                <th className={th}>數量</th>
-                <th className={th}>總金額</th>
-                <th className={th}>購買時間</th>
-                <th className={th}>交易狀態</th>
-                <th className={th}>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => (
-                <tr key={order.id} className={tableRowClass}>
-                  <td className={td}>
-                    <Link href={`/listings/${order.listingId}`} className="font-medium text-interactive-primary hover:underline">
-                      {order.listingTitle}
-                    </Link>
-                  </td>
-                  <td className={td}>
-                    <BuyerExpand orderId={order.id} email={order.buyerEmail} />
-                  </td>
-                  <td className={td}>{order.quantity}</td>
-                  <td className={`${td} font-semibold`}>{order.totalAmount}</td>
-                  <td className={td}>{formatDate(order.createdAt)}</td>
-                  <td className={td}>
-                    {order.settled ? (
-                      <SettlementExpand
-                        account={order.settlementAccount}
-                        amount={order.settlementAmount}
-                        profileUrl={`/api/admin/orders/${order.id}/buyer`}
-                      />
-                    ) : (
-                      <span className="text-sm text-ink-light">尚未完成</span>
-                    )}
-                  </td>
-                  <td className={td}>
-                    {order.settled ? (
-                      <OrderUnsettleButton orderId={order.id} />
-                    ) : (
-                      <SettleModal
-                        endpoint={`/api/admin/orders/${order.id}/settle`}
-                        defaultAmount={order.totalAmount}
-                        previousAccount={order.settlementAccount}
-                        previousAmount={order.settlementAmount}
-                      />
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <AdminTable headers={["商品", "買家", "數量", "總金額", "購買時間", "交易狀態", "操作"]}>
+          {orders.map((order) => (
+            <AdminTableRow key={order.id}>
+              <AdminTableCell>
+                <Link href={`/listings/${order.listingId}`} className="font-medium text-interactive-primary hover:underline">
+                  {order.listingTitle}
+                </Link>
+              </AdminTableCell>
+              <AdminTableCell>
+                <BuyerExpand orderId={order.id} email={order.buyerEmail} />
+              </AdminTableCell>
+              <AdminTableCell>{order.quantity}</AdminTableCell>
+              <AdminTableCell className="font-semibold">{order.totalAmount}</AdminTableCell>
+              <AdminTableCell>{formatAdminDateTime(order.createdAt)}</AdminTableCell>
+              <AdminTableCell>
+                {order.settled ? (
+                  <SettlementExpand
+                    account={order.settlementAccount}
+                    amount={order.settlementAmount}
+                    profileUrl={`/api/admin/orders/${order.id}/buyer`}
+                  />
+                ) : (
+                  <span className="text-sm text-ink-light">尚未完成</span>
+                )}
+              </AdminTableCell>
+              <AdminTableCell>
+                {order.settled ? (
+                  <UnsettleButton
+                    apiPath={`/api/admin/orders/${order.id}/unsettle`}
+                    confirmMessage="確定要取消這筆訂單的「已完成交易」標記嗎？"
+                  />
+                ) : (
+                  <SettleModal
+                    endpoint={`/api/admin/orders/${order.id}/settle`}
+                    defaultAmount={order.totalAmount}
+                    previousAccount={order.settlementAccount}
+                    previousAmount={order.settlementAmount}
+                  />
+                )}
+              </AdminTableCell>
+            </AdminTableRow>
+          ))}
+        </AdminTable>
       )}
 
       <AdminPagination

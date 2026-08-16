@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { MODAL_TRIGGER_CLASS } from "../../components/adminButtonClasses";
 import AdminModal from "../../components/AdminModal";
 import ImageUploadField from "../../components/ImageUploadField";
 import ModalFormActions from "../../components/ModalFormActions";
@@ -93,11 +94,7 @@ export default function PartnerLoftFormModal(props: Props) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={
-          isEdit
-            ? "rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface-muted"
-            : "rounded-lg bg-interactive-primary px-4 py-2 text-sm font-medium text-white hover:bg-interactive-primary-active"
-        }
+        className={MODAL_TRIGGER_CLASS(isEdit)}
       >
         {isEdit ? "編輯" : "＋ 新增合作鴿舍"}
       </button>

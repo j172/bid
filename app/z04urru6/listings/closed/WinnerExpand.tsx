@@ -1,16 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { formatAdminDateTime } from "@/lib/format";
 import { useLazyExpand } from "../../components/useLazyExpand";
 
 interface Winner {
   displayName: string | null;
   phone: string | null;
   address: string | null;
-}
-
-function formatDateTime(date: Date): string {
-  return new Date(date).toLocaleString("zh-TW", { hour12: false });
 }
 
 export default function WinnerExpand({
@@ -69,7 +66,7 @@ export default function WinnerExpand({
           )}
           <div className="mt-1 flex flex-col gap-1 border-t border-border pt-1">
             {notifiedAt ? (
-              <p className="text-leading">得標信已寄送 {formatDateTime(notifiedAt)}</p>
+              <p className="text-leading">得標信已寄送 {formatAdminDateTime(notifiedAt)}</p>
             ) : (
               <p className="text-ink-light">尚未寄送成功</p>
             )}

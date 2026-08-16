@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import DescriptionEditor, { type DescriptionEditorHandle } from "./DescriptionEditor";
 import PhotoGalleryEditor, { type PhotoItem } from "./PhotoGalleryEditor";
 import { usePartnerLofts } from "./usePartnerLofts";
+import { SECONDARY_TRIGGER_CLASS } from "../components/adminButtonClasses";
 import AdminModal from "../components/AdminModal";
 import ModalFormActions from "../components/ModalFormActions";
 import { PRICE_MAX, TITLE_MAX } from "@/lib/listingValidation";
@@ -115,7 +116,7 @@ export default function EditListingModal({ listingId }: { listingId: number }) {
       <button
         type="button"
         onClick={handleOpen}
-        className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface-muted"
+        className={SECONDARY_TRIGGER_CLASS}
       >
         編輯
       </button>
