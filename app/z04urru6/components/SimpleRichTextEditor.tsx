@@ -10,8 +10,8 @@
 // 不如整個 "image" plugin 都不要載入。
 
 import { Editor } from "@tinymce/tinymce-react";
-import { COLOR_MAP } from "@/lib/editorColorMap";
 import { descriptionPlainTextLength } from "@/lib/listingValidation";
+import { TINYMCE_BASE_INIT, TINYMCE_LICENSE_KEY, TINYMCE_SCRIPT_SRC } from "./richTextEditorConfig";
 
 export default function SimpleRichTextEditor({
   value,
@@ -30,25 +30,18 @@ export default function SimpleRichTextEditor({
   return (
     <div className="flex flex-col gap-1">
       <Editor
-        tinymceScriptSrc="/tinymce/tinymce.min.js"
-        licenseKey="gpl"
+        tinymceScriptSrc={TINYMCE_SCRIPT_SRC}
+        licenseKey={TINYMCE_LICENSE_KEY}
         value={value}
         onEditorChange={onChange}
         init={{
+          ...TINYMCE_BASE_INIT,
           height: 320,
-          menubar: false,
-          branding: false,
-          promotion: false,
-          language: "zh-TW",
-          // Native statusbar would duplicate the custom counter below.
-          statusbar: false,
           plugins: "lists link table fullscreen searchreplace code",
           toolbar:
             "undo redo | blocks fontsize | bold italic underline strikethrough | forecolor backcolor | " +
             "alignleft aligncenter alignright | bullist numlist | blockquote hr | link table removeformat | " +
             "searchreplace fullscreen code",
-          block_formats: "段落=p; 標題=h2; 副標題=h3",
-          color_map: COLOR_MAP,
         }}
       />
       <div className="flex items-center justify-between">

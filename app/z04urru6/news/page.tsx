@@ -5,16 +5,8 @@ import { BROADCAST_STATUS_LABEL } from "@/lib/broadcastStatusLabel";
 import AdminPageIntro from "../AdminPageIntro";
 import AdminPagination from "../components/AdminPagination";
 import { parseFirstParam, parsePageParam, type SearchParams } from "../components/searchParams";
-import {
-  filterControlClass,
-  filterFormClass,
-  filterLabelClass,
-  filterSubmitClass,
-  tableRowClass,
-  tableWrapperClass,
-  td,
-  th,
-} from "../components/tableStyles";
+import { AdminTable, AdminTableCell, AdminTableRow } from "../components/AdminTable";
+import { filterControlClass, filterFormClass, filterLabelClass, filterSubmitClass } from "../components/tableStyles";
 import NewsFormModal from "./NewsFormModal";
 import DeleteConfirmButton from "../components/DeleteConfirmButton";
 import CancelBroadcastButton from "./CancelBroadcastButton";
@@ -77,66 +69,54 @@ export default async function NewsAdminPage({ searchParams }: { searchParams: Pr
       {items.length === 0 ? (
         <p className="mt-6 text-ink-light">找不到符合條件的訊息。</p>
       ) : (
-        <div className={tableWrapperClass}>
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                <th className={th}>主圖</th>
-                <th className={th}>標題</th>
-                <th className={th}>內容</th>
-                <th className={th}>發布時間</th>
-                <th className={th}>電子報狀態</th>
-                <th className={th}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => {
-                const imageUrl = item.imageFileName ? newsImageUrl(item.imageFileName) : "/images/hero-placeholder.png";
-                const broadcast = item.broadcastId ? broadcastsById.get(item.broadcastId) : undefined;
-                return (
-                  <tr key={item.id} className={tableRowClass}>
-                    <td className={td}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={imageUrl} alt={item.title} className="h-14 w-14 rounded-lg border border-border object-cover" />
-                    </td>
-                    <td className={`${td} font-medium`}>{item.title}</td>
-                    <td className={`${td} max-w-xs truncate text-ink-light`}>{item.content.replace(/<[^>]*>/g, " ").trim()}</td>
-                    <td className={`${td} whitespace-nowrap text-ink-light`}>{item.createdAt.toLocaleString("zh-TW")}</td>
-                    <td className={td}>
-                      {!item.broadcastId ? (
-                        <span className="text-xs text-ink-light">—</span>
-                      ) : broadcast ? (
-                        <div className="flex flex-col items-start gap-1">
-                          <span className="text-ink-light">{BROADCAST_STATUS_LABEL[broadcast.status] ?? broadcast.status}</span>
-                          {(broadcast.status === "draft" || broadcast.status === "scheduled") && (
-                            <CancelBroadcastButton broadcastId={broadcast.id} />
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-ink-light">無法讀取</span>
+        <AdminTable headers={["主圖", "標題", "內容", "發布時間", "電子報狀態", ""]}>
+          {items.map((item) => {
+            const imageUrl = item.imageFileName ? newsImageUrl(item.imageFileName) : "/images/hero-placeholder.png";
+            const broadcast = item.broadcastId ? broadcastsById.get(item.broadcastId) : undefined;
+            return (
+              <AdminTableRow key={item.id}>
+                <AdminTableCell>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={imageUrl} alt={item.title} className="h-14 w-14 rounded-lg border border-border object-cover" />
+                </AdminTableCell>
+                <AdminTableCell className="font-medium">{item.title}</AdminTableCell>
+                <AdminTableCell className="max-w-xs truncate text-ink-light">
+                  {item.content.replace(/<[^>]*>/g, " ").trim()}
+                </AdminTableCell>
+                <AdminTableCell className="whitespace-nowrap text-ink-light">{item.createdAt.toLocaleString("zh-TW")}</AdminTableCell>
+                <AdminTableCell>
+                  {!item.broadcastId ? (
+                    <span className="text-xs text-ink-light">—</span>
+                  ) : broadcast ? (
+                    <div className="flex flex-col items-start gap-1">
+                      <span className="text-ink-light">{BROADCAST_STATUS_LABEL[broadcast.status] ?? broadcast.status}</span>
+                      {(broadcast.status === "draft" || broadcast.status === "scheduled") && (
+                        <CancelBroadcastButton broadcastId={broadcast.id} />
                       )}
-                    </td>
-                    <td className={`${td} text-right`}>
-                      <div className="flex items-center justify-end gap-2">
-                        <NewsFormModal
-                          mode="edit"
-                          item={{
-                            id: item.id,
-                            title: item.title,
-                            content: item.content,
-                            imageUrl,
-                            broadcast: broadcast ? { id: broadcast.id, status: broadcast.status, scheduledAt: broadcast.scheduledAt } : null,
-                          }}
-                        />
-                        <DeleteConfirmButton endpoint={`/api/admin/news/${item.id}`} itemLabel={item.title} itemNoun="這則訊息" />
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-ink-light">無法讀取</span>
+                  )}
+                </AdminTableCell>
+                <AdminTableCell className="text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <NewsFormModal
+                      mode="edit"
+                      item={{
+                        id: item.id,
+                        title: item.title,
+                        content: item.content,
+                        imageUrl,
+                        broadcast: broadcast ? { id: broadcast.id, status: broadcast.status, scheduledAt: broadcast.scheduledAt } : null,
+                      }}
+                    />
+                    <DeleteConfirmButton endpoint={`/api/admin/news/${item.id}`} itemLabel={item.title} itemNoun="這則訊息" />
+                  </div>
+                </AdminTableCell>
+              </AdminTableRow>
+            );
+          })}
+        </AdminTable>
       )}
 
       <AdminPagination

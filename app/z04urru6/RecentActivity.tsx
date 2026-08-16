@@ -1,12 +1,9 @@
 import Link from "next/link";
 import type { RecentActivity as RecentActivityData } from "@/lib/dashboard";
+import { formatAdminDateTime } from "@/lib/format";
 import { LISTING_TYPE_LABEL } from "@/lib/listingTypeLabel";
 
 const cardClass = "rounded-lg border border-border bg-surface p-4 shadow-sm";
-
-function formatDate(date: Date): string {
-  return new Date(date).toLocaleString("zh-TW", { hour12: false });
-}
 
 export default function RecentActivity({ activity }: { activity: RecentActivityData }) {
   return (
@@ -22,7 +19,7 @@ export default function RecentActivity({ activity }: { activity: RecentActivityD
                 <Link href={`/z04urru6/users/${user.id}`} className="truncate text-interactive-primary hover:underline">
                   {user.displayName ?? user.email}
                 </Link>
-                <span className="text-xs text-ink-light">{formatDate(user.createdAt)}</span>
+                <span className="text-xs text-ink-light">{formatAdminDateTime(user.createdAt)}</span>
               </li>
             ))}
           </ul>
@@ -43,7 +40,7 @@ export default function RecentActivity({ activity }: { activity: RecentActivityD
                   </Link>{" "}
                   <span className="text-xs text-ink-light">（{LISTING_TYPE_LABEL[listing.listingType]}）</span>
                 </span>
-                <span className="text-xs text-ink-light">{formatDate(listing.createdAt)}</span>
+                <span className="text-xs text-ink-light">{formatAdminDateTime(listing.createdAt)}</span>
               </li>
             ))}
           </ul>
@@ -65,7 +62,7 @@ export default function RecentActivity({ activity }: { activity: RecentActivityD
                   </Link>{" "}
                   <span className="font-semibold">{bid.amount.toLocaleString()}</span>
                 </span>
-                <span className="text-xs text-ink-light">{formatDate(bid.createdAt)}</span>
+                <span className="text-xs text-ink-light">{formatAdminDateTime(bid.createdAt)}</span>
               </li>
             ))}
           </ul>

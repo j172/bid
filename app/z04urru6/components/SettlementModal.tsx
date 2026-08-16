@@ -10,15 +10,21 @@ const inputClass = "rounded-md border border-border px-3 py-2 focus:border-inter
 /**
  * 「標記已完成交易」表單，已結標商品（/api/admin/listings/[id]/settle）與
  * 訂單（/api/admin/orders/[id]/settle）共用一份 —— 兩邊原本是逐行相同的
- * 複製體（issue #139 H2），差別只有 API 位置與金額預設值。
+ * 複製體（issue #139 H9），差別只有 entity 種類與 API 位置、金額預設值。
  */
-export default function SettleModal({
-  endpoint,
+export default function SettlementModal({
+  entityId,
+  entityLabel,
+  apiPath,
   defaultAmount,
   previousAccount,
   previousAmount,
 }: {
-  endpoint: string;
+  /** 這筆交易所屬的商品／訂單 id，只用來讓觸發按鈕有穩定、可識別的無障礙標籤。 */
+  entityId: number;
+  /** 這筆交易的量詞說法，例如「商品」「訂單」，同樣只用於無障礙標籤，不影響畫面文案。 */
+  entityLabel: string;
+  apiPath: string;
   /** 尚未填過金額時帶入的預設值：商品的成交價或訂單的總金額。 */
   defaultAmount: number;
   previousAccount: string | null;
@@ -42,7 +48,7 @@ export default function SettleModal({
     setSubmitting(true);
     setError(null);
 
-    const response = await fetch(endpoint, {
+    const response = await fetch(apiPath, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ account, amount: Number(amount) }),
@@ -63,6 +69,7 @@ export default function SettleModal({
       <button
         type="button"
         onClick={() => setOpen(true)}
+        aria-label={`為${entityLabel} #${entityId} 標記已完成交易`}
         className="rounded-md border border-leading px-3 py-1.5 text-sm font-medium text-leading hover:bg-leading-bg"
       >
         標記已完成交易

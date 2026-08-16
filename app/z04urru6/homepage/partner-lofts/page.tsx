@@ -1,7 +1,7 @@
 import { listHomepageSections } from "@/lib/homepageSections";
 import { homepageSectionImageUrl } from "@/lib/uploads";
 import AdminPageIntro from "../../AdminPageIntro";
-import { tableRowClass, tableWrapperClass, td, th } from "../../components/tableStyles";
+import { AdminTable, AdminTableCell, AdminTableRow } from "../../components/AdminTable";
 import PartnerLoftFormModal from "./PartnerLoftFormModal";
 import DeleteButton from "./DeleteButton";
 
@@ -29,62 +29,48 @@ export default async function PartnerLoftsAdminPage() {
       {sections.length === 0 ? (
         <p className="mt-6 text-ink-light">目前沒有任何合作鴿舍卡片，請點選上方「新增合作鴿舍」建立第一筆資料。</p>
       ) : (
-        <div className={tableWrapperClass}>
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                <th className={th}>圖片</th>
-                <th className={th}>標題</th>
-                <th className={th}>簡介</th>
-                <th className={th}>排序</th>
-                <th className={th}>狀態</th>
-                <th className={th}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {sections.map((section) => {
-                const imageUrl = homepageSectionImageUrl(section.imageFileName);
-                return (
-                  <tr key={section.id} className={tableRowClass}>
-                    <td className={td}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={imageUrl} alt={section.title} className="h-14 w-14 rounded-lg border border-border object-cover" />
-                    </td>
-                    <td className={`${td} font-medium`}>{section.title}</td>
-                    <td className={`${td} max-w-xs truncate text-ink-light`} title={section.bio ?? ""}>
-                      {section.bio ?? "—"}
-                    </td>
-                    <td className={td}>{section.sortOrder}</td>
-                    <td className={td}>
-                      {section.isActive ? (
-                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">啟用中</span>
-                      ) : (
-                        <span className="rounded-full bg-surface-muted px-2 py-0.5 text-xs font-medium text-ink-light">已停用</span>
-                      )}
-                    </td>
-                    <td className={`${td} text-right`}>
-                      <div className="flex items-center justify-end gap-2">
-                        <PartnerLoftFormModal
-                          mode="edit"
-                          sectionType={SECTION_TYPE}
-                          section={{
-                            id: section.id,
-                            title: section.title,
-                            bio: section.bio,
-                            sortOrder: section.sortOrder,
-                            isActive: section.isActive,
-                            imageUrl,
-                          }}
-                        />
-                        <DeleteButton id={section.id} title={section.title} />
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <AdminTable headers={["圖片", "標題", "簡介", "排序", "狀態", ""]}>
+          {sections.map((section) => {
+            const imageUrl = homepageSectionImageUrl(section.imageFileName);
+            return (
+              <AdminTableRow key={section.id}>
+                <AdminTableCell>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={imageUrl} alt={section.title} className="h-14 w-14 rounded-lg border border-border object-cover" />
+                </AdminTableCell>
+                <AdminTableCell className="font-medium">{section.title}</AdminTableCell>
+                <AdminTableCell className="max-w-xs truncate text-ink-light" title={section.bio ?? ""}>
+                  {section.bio ?? "—"}
+                </AdminTableCell>
+                <AdminTableCell>{section.sortOrder}</AdminTableCell>
+                <AdminTableCell>
+                  {section.isActive ? (
+                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">啟用中</span>
+                  ) : (
+                    <span className="rounded-full bg-surface-muted px-2 py-0.5 text-xs font-medium text-ink-light">已停用</span>
+                  )}
+                </AdminTableCell>
+                <AdminTableCell className="text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <PartnerLoftFormModal
+                      mode="edit"
+                      sectionType={SECTION_TYPE}
+                      section={{
+                        id: section.id,
+                        title: section.title,
+                        bio: section.bio,
+                        sortOrder: section.sortOrder,
+                        isActive: section.isActive,
+                        imageUrl,
+                      }}
+                    />
+                    <DeleteButton id={section.id} title={section.title} />
+                  </div>
+                </AdminTableCell>
+              </AdminTableRow>
+            );
+          })}
+        </AdminTable>
       )}
     </main>
   );

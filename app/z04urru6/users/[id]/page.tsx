@@ -2,13 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCurrentUser, getUserDetail } from "@/lib/auth";
 import { getBidHistoryForUser, getListingsCreatedByUser } from "@/lib/listings";
+import { formatAdminDateTime } from "@/lib/format";
 import StatusBadge from "../../../components/StatusBadge";
 import RoleToggleButton from "../RoleToggleButton";
 import SuspendToggleButton from "../SuspendToggleButton";
 import ResetPasswordButton from "../ResetPasswordButton";
 import DisableTwoFactorButton from "../DisableTwoFactorButton";
 import AdminPageIntro from "../../AdminPageIntro";
-import { td, th } from "../../components/tableStyles";
+import { AdminTable, AdminTableCell, AdminTableRow } from "../../components/AdminTable";
 
 export const dynamic = "force-dynamic";
 
@@ -17,10 +18,6 @@ const STATUS_LABEL: Record<string, string> = { active: "正常", suspended: "停
 // share the same DisableTwoFactorButton rescue path below, but the detail
 // label needs to say which one is actually active.
 const TWO_FACTOR_LABEL: Record<string, string> = { none: "未啟用", email_otp: "Email 驗證碼", totp: "App 驗證碼（TOTP）" };
-
-function formatDate(date: Date): string {
-  return new Date(date).toLocaleString("zh-TW", { hour12: false });
-}
 
 export default async function AdminUserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -64,7 +61,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
             <dt className="text-ink-light">兩階段驗證</dt>
             <dd>{TWO_FACTOR_LABEL[detail.twoFactorMethod] ?? "未啟用"}</dd>
             <dt className="text-ink-light">註冊時間</dt>
-            <dd>{formatDate(detail.createdAt)}</dd>
+            <dd>{formatAdminDateTime(detail.createdAt)}</dd>
           </dl>
 
           {detail.status === "deleted" ? (
@@ -109,36 +106,26 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
         {bids.length === 0 ? (
           <p className="mt-4 text-sm text-ink-light">這個帳號從未出過價。</p>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr>
-                  <th className={th}>商品</th>
-                  <th className={th}>出價金額</th>
-                  <th className={th}>出價時間</th>
-                  <th className={th}>目前價格</th>
-                  <th className={th}>狀態</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bids.map((bid, index) => (
-                  <tr key={index} className="transition hover:bg-surface-muted/80">
-                    <td className={td}>
-                      <Link href={`/listings/${bid.listingId}`} className="font-medium text-interactive-primary hover:underline">
-                        {bid.listingTitle}
-                      </Link>
-                    </td>
-                    <td className={td}>{bid.bidAmount}</td>
-                    <td className={td}>{formatDate(bid.bidAt)}</td>
-                    <td className={`${td} font-semibold`}>{bid.listingCurrentPrice}</td>
-                    <td className={td}>
-                      <StatusBadge status={bid.listingStatus} isLeading={bid.isLeading} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <AdminTable
+            headers={["商品", "出價金額", "出價時間", "目前價格", "狀態"]}
+            wrapperClassName="mt-4 overflow-x-auto"
+          >
+            {bids.map((bid, index) => (
+              <AdminTableRow key={index}>
+                <AdminTableCell>
+                  <Link href={`/listings/${bid.listingId}`} className="font-medium text-interactive-primary hover:underline">
+                    {bid.listingTitle}
+                  </Link>
+                </AdminTableCell>
+                <AdminTableCell>{bid.bidAmount}</AdminTableCell>
+                <AdminTableCell>{formatAdminDateTime(bid.bidAt)}</AdminTableCell>
+                <AdminTableCell className="font-semibold">{bid.listingCurrentPrice}</AdminTableCell>
+                <AdminTableCell>
+                  <StatusBadge status={bid.listingStatus} isLeading={bid.isLeading} />
+                </AdminTableCell>
+              </AdminTableRow>
+            ))}
+          </AdminTable>
         )}
       </div>
     </main>

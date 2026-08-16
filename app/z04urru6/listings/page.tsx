@@ -8,16 +8,8 @@ import EditScheduleModal from "./EditScheduleModal";
 import AdminPageIntro from "../AdminPageIntro";
 import AdminPagination from "../components/AdminPagination";
 import { parseFirstParam, parsePageParam, type SearchParams } from "../components/searchParams";
-import {
-  filterControlClass,
-  filterFormClass,
-  filterLabelClass,
-  filterSubmitClass,
-  tableRowClass,
-  tableWrapperClass,
-  td,
-  th,
-} from "../components/tableStyles";
+import { AdminTable, AdminTableCell, AdminTableRow } from "../components/AdminTable";
+import { filterControlClass, filterFormClass, filterLabelClass, filterSubmitClass } from "../components/tableStyles";
 
 export const dynamic = "force-dynamic";
 
@@ -73,58 +65,45 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
       {listings.length === 0 ? (
         <p className="mt-6 text-ink-light">找不到符合條件的商品。</p>
       ) : (
-        <div className={tableWrapperClass}>
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                <th className={th}>商品</th>
-                <th className={th}>分類</th>
-                <th className={th}>價格</th>
-                <th className={th}>剩餘時間 / 庫存</th>
-                <th className={th}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {listings.map((listing) => (
-                <tr key={listing.id} className={tableRowClass}>
-                  <td className={td}>
-                    <Link href={`/listings/${listing.id}`} className="font-medium text-interactive-primary hover:underline">
-                      {listing.title}
-                    </Link>
-                  </td>
-                  <td className={td}>{LISTING_TYPE_LABEL[listing.listingType]}</td>
-                  <td className={`${td} font-semibold`}>{listing.currentPrice}</td>
-                  <td className={td}>
-                    {listing.listingType === "fixed_price" ? (
-                      listing.stockRemaining === 0 ? (
-                        "已售罄"
-                      ) : (
-                        `剩餘 ${listing.stockRemaining} / ${listing.stockQuantity}`
-                      )
-                    ) : listing.status === "scheduled" && listing.startsAt ? (
-                      <span className="text-interactive-primary">尚未開標・距離開標 {formatRemainingZhHant(listing.startsAt).replace("剩餘 ", "")}</span>
-                    ) : (
-                      listing.endsAt && formatRemainingZhHant(listing.endsAt)
-                    )}
-                  </td>
-                  <td className={`${td} text-right`}>
-                    <div className="flex items-center justify-end gap-2">
-                      {listing.listingType === "fixed_price" && <EditListingModal listingId={listing.id} />}
-                      {listing.listingType === "auction" && listing.status === "scheduled" && listing.startsAt && (
-                        <EditScheduleModal listingId={listing.id} startsAt={listing.startsAt} />
-                      )}
-                      {listing.canCancel ? (
-                        <CancelButton listingId={listing.id} />
-                      ) : (
-                        <span className="text-xs text-ink-light">已有出價，無法下架</span>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <AdminTable headers={["商品", "分類", "價格", "剩餘時間 / 庫存", ""]}>
+          {listings.map((listing) => (
+            <AdminTableRow key={listing.id}>
+              <AdminTableCell>
+                <Link href={`/listings/${listing.id}`} className="font-medium text-interactive-primary hover:underline">
+                  {listing.title}
+                </Link>
+              </AdminTableCell>
+              <AdminTableCell>{LISTING_TYPE_LABEL[listing.listingType]}</AdminTableCell>
+              <AdminTableCell className="font-semibold">{listing.currentPrice}</AdminTableCell>
+              <AdminTableCell>
+                {listing.listingType === "fixed_price" ? (
+                  listing.stockRemaining === 0 ? (
+                    "已售罄"
+                  ) : (
+                    `剩餘 ${listing.stockRemaining} / ${listing.stockQuantity}`
+                  )
+                ) : listing.status === "scheduled" && listing.startsAt ? (
+                  <span className="text-interactive-primary">尚未開標・距離開標 {formatRemainingZhHant(listing.startsAt).replace("剩餘 ", "")}</span>
+                ) : (
+                  listing.endsAt && formatRemainingZhHant(listing.endsAt)
+                )}
+              </AdminTableCell>
+              <AdminTableCell className="text-right">
+                <div className="flex items-center justify-end gap-2">
+                  {listing.listingType === "fixed_price" && <EditListingModal listingId={listing.id} />}
+                  {listing.listingType === "auction" && listing.status === "scheduled" && listing.startsAt && (
+                    <EditScheduleModal listingId={listing.id} startsAt={listing.startsAt} />
+                  )}
+                  {listing.canCancel ? (
+                    <CancelButton listingId={listing.id} />
+                  ) : (
+                    <span className="text-xs text-ink-light">已有出價，無法下架</span>
+                  )}
+                </div>
+              </AdminTableCell>
+            </AdminTableRow>
+          ))}
+        </AdminTable>
       )}
 
       <AdminPagination
