@@ -578,6 +578,8 @@
     "pageInfo": "第 {page} / {totalPages} 页（共 {total} 笔）",
     "breadcrumbHome": "首页",
     "loftLine": "鸽舍：{loft}",
+    "loftAwardTitle": "{loft} 的入赏鸽",
+    "loftImportedTitle": "{loft} 的进口鸽",
     "sidebarLatestAward": "最新入赏鸽",
     "sidebarLatestImported": "最新进口鸽",
     "backToList": "查看更多"

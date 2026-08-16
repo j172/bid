@@ -18,7 +18,7 @@ import PaginationFooter from "../components/PaginationFooter";
 export const dynamic = "force-dynamic";
 
 const LIST_EXCERPT_LENGTH = 100;
-const QUERY_KEYS = ["category", "pageSize", "page"] as const;
+const QUERY_KEYS = ["category", "pageSize", "page", "loftId"] as const;
 
 // Shares its card grid and pagination footer with app/[locale]/news/page.tsx
 // (issue #139 item 8); the category tabs are this page's own.
@@ -34,9 +34,24 @@ export default async function PigeonShowcaseListPage({ searchParams }: { searchP
   const pageSizeRaw = Number(firstParam(params.pageSize));
   const pageSize = isPigeonShowcasePageSize(pageSizeRaw) ? pageSizeRaw : DEFAULT_PIGEON_SHOWCASE_PAGE_SIZE;
   const page = Math.max(1, Number(firstParam(params.page) ?? "1") || 1);
+  // ?loftId= filters to one loft's items (issue #155 item 1, linked from the
+  // detail page's "鴿舍：OOO" line). Anything non-numeric/non-positive is
+  // treated as absent rather than sent to the DB.
+  const loftIdRaw = Number(firstParam(params.loftId));
+  const loftId = Number.isInteger(loftIdRaw) && loftIdRaw > 0 ? loftIdRaw : undefined;
 
-  const { items, total } = await listPigeonShowcase({ category, page, pageSize });
+  const { items, total } = await listPigeonShowcase({ category, page, pageSize, loftId });
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const categoryTitle = category === "award" ? t("awardTitle") : t("importedTitle");
+  // The loft title comes from the filtered results themselves (they're
+  // already JOINed with homepage_sections in lib/pigeonShowcase.ts) rather
+  // than a second query. If the filter matched nothing there's no title to
+  // read, so fall back to the plain category title instead of failing.
+  const loftTitle = items[0]?.loftTitle;
+  const pageTitle =
+    loftId !== undefined && loftTitle
+      ? t(category === "award" ? "loftAwardTitle" : "loftImportedTitle", { loft: loftTitle })
+      : categoryTitle;
 
   const tabClass = (active: boolean) =>
     `rounded-full px-4 py-2 text-sm font-semibold transition ${
@@ -45,18 +60,20 @@ export default async function PigeonShowcaseListPage({ searchParams }: { searchP
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <h1 className="text-3xl font-black text-ink">{category === "award" ? t("awardTitle") : t("importedTitle")}</h1>
+      <h1 className="text-3xl font-black text-ink">{pageTitle}</h1>
       <p className="mt-2 text-sm text-ink-light">{t("listSubtitle")}</p>
 
       <div className="mt-6 flex flex-wrap gap-2">
+        {/* Switching category tabs returns to that category's full list —
+            clears loftId rather than carrying it along. */}
         <Link
-          href={`/pigeon-showcase?${buildQuery(params, QUERY_KEYS, { category: "award", page: "1" })}`}
+          href={`/pigeon-showcase?${buildQuery(params, QUERY_KEYS, { category: "award", page: "1", loftId: "" })}`}
           className={tabClass(category === "award")}
         >
           {t("awardTitle")}
         </Link>
         <Link
-          href={`/pigeon-showcase?${buildQuery(params, QUERY_KEYS, { category: "imported", page: "1" })}`}
+          href={`/pigeon-showcase?${buildQuery(params, QUERY_KEYS, { category: "imported", page: "1", loftId: "" })}`}
           className={tabClass(category === "imported")}
         >
           {t("importedTitle")}

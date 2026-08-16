@@ -37,6 +37,9 @@ export default async function PigeonShowcaseDetailPage({ params }: { params: Pro
     .filter((candidate) => candidate.id !== item.id)
     .slice(0, SIDEBAR_LATEST_LIMIT);
   const categoryHref = `/pigeon-showcase?category=${item.category}`;
+  // Same loft, same category — the list page reads ?loftId= (issue #155
+  // item 1) and clears it again on tab switches.
+  const loftHref = `/pigeon-showcase?category=${item.category}&loftId=${item.loftId}`;
 
   return (
     <DetailWithSidebar
@@ -67,13 +70,18 @@ export default async function PigeonShowcaseDetailPage({ params }: { params: Pro
       <img
         src={item.imageFileName ? pigeonShowcaseImageUrl(item.imageFileName) : IMAGE_FALLBACK_SRC}
         alt={item.name}
-        className="max-h-96 w-full rounded-xl object-cover"
+        className="max-h-96 w-full rounded-xl bg-slate-100 object-contain"
       />
       <span className="mt-6 inline-flex rounded-full bg-interactive-primary-subtle px-3 py-1 text-xs font-bold uppercase tracking-wide text-interactive-primary">
         {t(CATEGORY_LABEL_KEY[item.category])}
       </span>
       <h1 className="mt-4 text-3xl font-black text-ink">{item.name}</h1>
-      <p className="mt-2 text-sm font-semibold text-ink-light">{t("loftLine", { loft: item.loftTitle })}</p>
+      <Link
+        href={loftHref}
+        className="mt-2 inline-block text-sm font-semibold text-ink-light hover:text-interactive-primary"
+      >
+        {t("loftLine", { loft: item.loftTitle })}
+      </Link>
       <RichTextContent html={item.description} className="mt-6 border-t border-border pt-6 leading-7 text-ink-light" />
     </DetailWithSidebar>
   );

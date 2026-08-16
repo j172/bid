@@ -578,6 +578,8 @@
     "pageInfo": "第 {page} / {totalPages} 頁（共 {total} 筆）",
     "breadcrumbHome": "首頁",
     "loftLine": "鴿舍：{loft}",
+    "loftAwardTitle": "{loft} 的入賞鴿",
+    "loftImportedTitle": "{loft} 的進口鴿",
     "sidebarLatestAward": "最新入賞鴿",
     "sidebarLatestImported": "最新進口鴿",
     "backToList": "查看更多"
