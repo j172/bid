@@ -44,6 +44,21 @@ export async function verifyPassword(password: string, hash: string, salt: strin
   return timingSafeEqual(stored, derivedKey);
 }
 
+// Shared "does this account's current password match?" check — changePassword
+// and setTwoFactorMethod below, plus lib/totp.ts's confirmTotpSetup, each
+// re-derived the same SELECT password_hash/password_salt + verifyPassword
+// step before allowing a sensitive change through (issue #139 M7). A fresh
+// SELECT rather than a passed-in row: none of the three callers already hold
+// one (changePassword/setTwoFactorMethod/confirmTotpSetup only receive a
+// userId), and the scrypt comparison is the expensive part anyway.
+export async function verifyCurrentPassword(userId: number, password: string): Promise<boolean> {
+  const db = await getDb();
+  const [rows] = await db.query("SELECT password_hash, password_salt FROM users WHERE id = ? LIMIT 1", [userId]);
+  const row = (rows as { password_hash: string; password_salt: string }[])[0];
+  if (!row) return false;
+  return verifyPassword(password, row.password_hash, row.password_salt);
+}
+
 function roleForEmail(email: string): Role {
   const adminEmail = (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase();
   return adminEmail !== "" && email.trim().toLowerCase() === adminEmail ? "admin" : "user";
@@ -400,12 +415,10 @@ export async function changePassword(
   oldPassword: string,
   newPassword: string,
 ): Promise<ChangePasswordOutcome> {
-  const db = await getDb();
-  const [rows] = await db.query("SELECT password_hash, password_salt FROM users WHERE id = ? LIMIT 1", [userId]);
-  const row = (rows as { password_hash: string; password_salt: string }[])[0];
-  if (!row || !(await verifyPassword(oldPassword, row.password_hash, row.password_salt))) {
+  if (!(await verifyCurrentPassword(userId, oldPassword))) {
     return { ok: false, errorCode: "WRONG_OLD_PASSWORD" };
   }
+  const db = await getDb();
   if (newPassword.length < 8) {
     return { ok: false, errorCode: "NEW_PASSWORD_TOO_SHORT" };
   }
@@ -438,13 +451,11 @@ export async function setTwoFactorMethod(
   currentPassword: string,
   method: TwoFactorMethod,
 ): Promise<SetTwoFactorMethodOutcome> {
-  const db = await getDb();
-  const [rows] = await db.query("SELECT password_hash, password_salt FROM users WHERE id = ? LIMIT 1", [userId]);
-  const row = (rows as { password_hash: string; password_salt: string }[])[0];
-  if (!row || !(await verifyPassword(currentPassword, row.password_hash, row.password_salt))) {
+  if (!(await verifyCurrentPassword(userId, currentPassword))) {
     return { ok: false, errorCode: "WRONG_OLD_PASSWORD" };
   }
 
+  const db = await getDb();
   await db.query("UPDATE users SET two_factor_method = ? WHERE id = ?", [method, userId]);
   return { ok: true };
 }

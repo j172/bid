@@ -19,7 +19,7 @@ import { createHash, randomBytes } from "crypto";
 import * as OTPAuth from "otpauth";
 import { getDb } from "@/lib/db";
 import { RP_NAME } from "@/lib/webauthn";
-import { setTwoFactorMethod, verifyPassword, type SetTwoFactorMethodOutcome } from "@/lib/auth";
+import { setTwoFactorMethod, verifyCurrentPassword, type SetTwoFactorMethodOutcome } from "@/lib/auth";
 import type { ErrorCode } from "@/lib/errorCodes";
 
 export const TOTP_SETUP_TTL_MS = 10 * 60 * 1000; // 10 minutes — enough time to switch to an Authenticator app and back
@@ -180,14 +180,11 @@ export async function confirmTotpSetup(
   token: string,
   code: string,
 ): Promise<ConfirmTotpSetupOutcome> {
-  const db = await getDb();
-
-  const [userRows] = await db.query("SELECT password_hash, password_salt FROM users WHERE id = ? LIMIT 1", [userId]);
-  const userRow = (userRows as { password_hash: string; password_salt: string }[])[0];
-  if (!userRow || !(await verifyPassword(currentPassword, userRow.password_hash, userRow.password_salt))) {
+  if (!(await verifyCurrentPassword(userId, currentPassword))) {
     return { ok: false, errorCode: "WRONG_OLD_PASSWORD" };
   }
 
+  const db = await getDb();
   const [challengeRows] = await db.query(
     "SELECT user_id, secret, expires_at, used_at FROM totp_setup_challenges WHERE token = ? LIMIT 1",
     [token],
