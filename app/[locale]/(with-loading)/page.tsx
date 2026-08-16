@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { getLocale, getTranslations } from "next-intl/server";
 import { listOpenListings } from "@/lib/listings";
 import { listingPhotoUrl, homepageSectionImageUrl, pigeonShowcaseImageUrl, newsImageUrl } from "@/lib/uploads";
@@ -27,6 +26,7 @@ import { Link } from "@/i18n/navigation";
 import HeroSection from "../components/HeroSection";
 import HomeListingRow from "../components/HomeListingRow";
 import HomeProductCard from "../components/HomeProductCard";
+import PartnerLoftImage from "../components/PartnerLoftImage";
 import PigeonShowcaseCarouselCard from "../components/PigeonShowcaseCarouselCard";
 import NewsCarouselCard from "../components/NewsCarouselCard";
 import ExchangeRateStrip from "../components/ExchangeRateStrip";
@@ -329,7 +329,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                 displayCurrency,
                 rateValue,
               )}
-              quickActionLabel={tListings("quickAction")}
               ctaLabel={item.listing_type === "fixed_price" ? t("promoFixedCta") : t("promoAuctionCta")}
               eager={index < homeEagerCount}
             />
@@ -357,12 +356,10 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                 className="group overflow-hidden rounded-2xl border border-border bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-100">
-                  <Image
+                  <PartnerLoftImage
                     src={homepageSectionImageUrl(loft.imageFileName)}
                     alt={loft.title}
-                    fill
                     sizes="(min-width: 1024px) 25vw, 50vw"
-                    className="object-cover transition group-hover:scale-105"
                   />
                 </div>
                 <p className="mt-3 text-sm font-bold text-ink">{loft.title}</p>
@@ -401,7 +398,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                 displayCurrency,
                 rateValue,
               )}
-              quickActionLabel={tListings("quickAction")}
               ctaLabel={item.listing_type === "fixed_price" ? t("promoFixedCta") : t("promoAuctionCta")}
               eager={index < 1}
             />

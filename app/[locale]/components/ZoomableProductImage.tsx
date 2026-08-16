@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { useImageFallback } from "@/lib/imageFallback";
+import { IMAGE_FALLBACK_SRC, useImageFallback } from "@/lib/imageFallback";
 
 // Safety net for the intermittent case where neither `onLoad` nor `onError`
 // ever fires on the <Image> (observed in production; the file itself loads
@@ -10,6 +10,16 @@ import { useImageFallback } from "@/lib/imageFallback";
 // opacity-0 forever. If nothing has settled the load by this point, we treat
 // it the same as an `onError` and fall back to the shared placeholder.
 const LOAD_TIMEOUT_MS = 7000;
+
+// Second, shorter safety net for the placeholder image itself: the same
+// "no onLoad/onError ever fires" failure can also hit the fallback src once
+// LOAD_TIMEOUT_MS has switched us over to it, in which case `loaded` would
+// never flip and the card stays permanently blank (opacity-0) even though
+// we've already given up and moved to the placeholder. Once displaySrc is
+// the placeholder, force the image area visible if it still hasn't settled
+// after this — no need to markFailed again, useImageFallback's markFailed is
+// already a no-op once we're showing the placeholder.
+const FALLBACK_SETTLE_TIMEOUT_MS = 3000;
 
 interface ZoomableProductImageProps {
   src: string;
@@ -91,6 +101,20 @@ export default function ZoomableProductImage({
 
     return () => window.clearTimeout(timeoutId);
   }, [src, markFailed]);
+
+  // Runs whenever displaySrc becomes the placeholder (via the timeout above
+  // or a normal onError) and `loaded` is still false. Re-arms itself if
+  // `loaded` flips back to false for a new `src`, and is a no-op once the
+  // placeholder has actually loaded.
+  useEffect(() => {
+    if (displaySrc !== IMAGE_FALLBACK_SRC || loaded) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setLoaded(true);
+    }, FALLBACK_SETTLE_TIMEOUT_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [displaySrc, loaded]);
 
   useEffect(() => {
     if (!hovering) {

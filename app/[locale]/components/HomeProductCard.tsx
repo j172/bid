@@ -23,7 +23,6 @@ interface HomeProductCardProps {
   /** "N 次出價" / "N 次購買", already pluralised by the caller. */
   countLabel: string;
   priceText: string;
-  quickActionLabel: string;
   ctaLabel: string;
   eager: boolean;
 }
@@ -37,7 +36,6 @@ export default function HomeProductCard({
   statusLabel,
   countLabel,
   priceText,
-  quickActionLabel,
   ctaLabel,
   eager,
 }: HomeProductCardProps) {
@@ -72,9 +70,11 @@ export default function HomeProductCard({
       <div className="mt-2 flex items-end gap-2">
         <p className="text-lg font-black text-ink">{priceText}</p>
       </div>
-      <div className="mt-3 flex items-center gap-2 text-[11px]">
-        <span className="rounded-md bg-slate-100 px-2 py-1 font-semibold text-ink">{quickActionLabel}</span>
-        <Link href={`/listings/${id}`} className="rounded-md bg-header px-2 py-1 font-semibold text-white">
+      <div className="mt-3 text-[11px]">
+        <Link
+          href={`/listings/${id}`}
+          className="block w-full rounded-md bg-header px-2 py-1 text-center font-semibold text-white"
+        >
           {ctaLabel}
         </Link>
       </div>

@@ -78,4 +78,48 @@ describe("ZoomableProductImage load timeout fallback", () => {
 
     expect(img.src).toContain("hero-placeholder.png");
   });
+
+  // Regression test for issue #155 item 5: if the same "neither onLoad nor
+  // onError ever fires" failure mode also hits the placeholder <img> itself
+  // (after the 7s timeout above has already switched to it), `loaded` must
+  // still eventually flip to true instead of leaving the card permanently
+  // invisible (opacity-0, not a broken-image icon — worse, since nothing
+  // ever tells the user something's wrong).
+  it("still becomes visible if the placeholder image itself never fires onLoad/onError", () => {
+    vi.useFakeTimers();
+    render(<ZoomableProductImage src="/uploads/listings/48/example.webp" alt="example" />);
+
+    const img = screen.getByAltText("example") as HTMLImageElement;
+
+    act(() => {
+      vi.advanceTimersByTime(7000);
+    });
+    expect(img.src).toContain("hero-placeholder.png");
+    expect(img.className).toContain("opacity-0");
+
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+    expect(img.className).toContain("opacity-100");
+  });
+
+  it("does not force-show early if the placeholder's onLoad fires before its own timeout", async () => {
+    vi.useFakeTimers();
+    render(<ZoomableProductImage src="/uploads/listings/48/example.webp" alt="example" />);
+
+    const img = screen.getByAltText("example") as HTMLImageElement;
+
+    act(() => {
+      vi.advanceTimersByTime(7000);
+    });
+    expect(img.src).toContain("hero-placeholder.png");
+
+    await act(async () => {
+      fireEvent.load(img);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(img.className).toContain("opacity-100");
+  });
 });

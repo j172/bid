@@ -3,7 +3,6 @@ import { getAccountProfile, getCurrentUser } from "@/lib/auth";
 import { redirect } from "@/i18n/navigation";
 import { listPasskeysForUser } from "@/lib/webauthnCredentials";
 import ChangePasswordForm from "./ChangePasswordForm";
-import DeleteAccountButton from "./DeleteAccountButton";
 import PasskeySection from "./PasskeySection";
 import ProfileForm from "./ProfileForm";
 import TotpSection from "./TotpSection";
@@ -74,13 +73,11 @@ export default async function AccountPage() {
         </div>
       </section>
 
-      <section className="mt-6 rounded-lg border border-ended/30 bg-surface p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-ended">{t("deleteTitle")}</h2>
-        <p className="mt-2 text-sm text-ink-light">{t("deleteWarning")}</p>
-        <div className="mt-4">
-          <DeleteAccountButton />
-        </div>
-      </section>
+      {/* "刪除帳戶" section intentionally hidden from the front-end only
+          (issue #155 item 2) — the backend (DeleteAccountButton, the
+          /api/account/delete route, lib/auth.ts's deleteAccount, and the
+          deleteTitle/deleteWarning/deleteAccountButton.* i18n keys) is left
+          untouched so this can be restored by adding the JSX back. */}
     </main>
   );
 }
