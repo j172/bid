@@ -209,6 +209,8 @@
     "galleryKeyboardHint": "使用 ← / → 切換照片",
     "galleryLightboxLabel": "{title} 大圖預覽",
     "galleryClose": "關閉",
+    "galleryPrevious": "上一張照片",
+    "galleryNext": "下一張照片",
     "currencyReferenceOnly": "匯率參考用，實際交易一律以新台幣結算。"
   },
   "bidForm": {

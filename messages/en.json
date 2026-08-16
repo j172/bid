@@ -209,6 +209,8 @@
     "galleryKeyboardHint": "Use ← / → to switch photos",
     "galleryLightboxLabel": "{title} full-size preview",
     "galleryClose": "Close",
+    "galleryPrevious": "Previous photo",
+    "galleryNext": "Next photo",
     "currencyReferenceOnly": "For reference only — all transactions are settled in New Taiwan Dollars."
   },
   "bidForm": {

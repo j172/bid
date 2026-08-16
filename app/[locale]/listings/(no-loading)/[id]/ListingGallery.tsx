@@ -70,20 +70,54 @@ export default function ListingGallery({ title, imageUrls }: ListingGalleryProps
 
   return (
     <div className="flex flex-col gap-4" ref={galleryRef}>
-      <button
-        type="button"
-        onClick={() => setLightboxOpen(true)}
-        className="aspect-video cursor-zoom-in overflow-hidden rounded-2xl border border-border bg-surface-muted shadow-sm"
-        aria-label={t("galleryZoomLabel", { title })}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={resolveSrc(selectedUrl)}
-          alt={title}
-          className="h-full w-full object-contain"
-          onError={() => markFailed(selectedUrl)}
-        />
-      </button>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setLightboxOpen(true)}
+          className="aspect-video w-full cursor-zoom-in overflow-hidden rounded-2xl border border-border bg-surface-muted shadow-sm"
+          aria-label={t("galleryZoomLabel", { title })}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={resolveSrc(selectedUrl)}
+            alt={title}
+            className="h-full w-full object-contain"
+            onError={() => markFailed(selectedUrl)}
+          />
+        </button>
+
+        {urls.length > 1 && (
+          // Visible prev/next arrows (issue #156) — the thumbnail strip below
+          // already doubles as a position indicator, so this only adds
+          // navigation, not a duplicate dot row. stopPropagation keeps a
+          // click here from also triggering the button above (opening the
+          // lightbox).
+          <>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                moveSelection(-1);
+              }}
+              aria-label={t("galleryPrevious")}
+              className="absolute left-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-sm transition hover:bg-white"
+            >
+              ←
+            </button>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                moveSelection(1);
+              }}
+              aria-label={t("galleryNext")}
+              className="absolute right-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-sm transition hover:bg-white"
+            >
+              →
+            </button>
+          </>
+        )}
+      </div>
 
       {urls.length > 1 && (
         <div className="flex gap-3 overflow-x-auto pb-1">
@@ -124,7 +158,7 @@ export default function ListingGallery({ title, imageUrls }: ListingGalleryProps
           <button type="button" className="absolute right-4 top-4 rounded-full bg-white/90 px-3 py-1 text-sm font-semibold text-ink" onClick={() => setLightboxOpen(false)}>
             {t("galleryClose")}
           </button>
-          <div className="max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-2xl bg-black">
+          <div className="relative max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-2xl bg-black">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={resolveSrc(selectedUrl)}
@@ -132,6 +166,33 @@ export default function ListingGallery({ title, imageUrls }: ListingGalleryProps
               className="h-full max-h-[90vh] w-full object-contain"
               onError={() => markFailed(selectedUrl)}
             />
+
+            {urls.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    moveSelection(-1);
+                  }}
+                  aria-label={t("galleryPrevious")}
+                  className="absolute left-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-sm transition hover:bg-white"
+                >
+                  ←
+                </button>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    moveSelection(1);
+                  }}
+                  aria-label={t("galleryNext")}
+                  className="absolute right-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-sm transition hover:bg-white"
+                >
+                  →
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
