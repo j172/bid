@@ -3,7 +3,7 @@ import { getOrdersForAdmin, ORDERS_PAGE_SIZE, type ListOrdersOptions } from "@/l
 import { formatAdminDateTime } from "@/lib/format";
 import SettlementExpand from "../listings/closed/SettlementExpand";
 import BuyerExpand from "./BuyerExpand";
-import SettleModal from "../components/SettleModal";
+import SettlementModal from "../components/SettlementModal";
 import UnsettleButton from "../components/UnsettleButton";
 import AdminPageIntro from "../AdminPageIntro";
 import AdminPagination from "../components/AdminPagination";
@@ -97,8 +97,10 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                     confirmMessage="確定要取消這筆訂單的「已完成交易」標記嗎？"
                   />
                 ) : (
-                  <SettleModal
-                    endpoint={`/api/admin/orders/${order.id}/settle`}
+                  <SettlementModal
+                    entityId={order.id}
+                    entityLabel="訂單"
+                    apiPath={`/api/admin/orders/${order.id}/settle`}
                     defaultAmount={order.totalAmount}
                     previousAccount={order.settlementAccount}
                     previousAmount={order.settlementAmount}

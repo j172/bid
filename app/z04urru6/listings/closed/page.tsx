@@ -6,7 +6,7 @@ import {
   type ListClosedListingsOptions,
 } from "@/lib/listings";
 import { formatAdminDateTime } from "@/lib/format";
-import SettleModal from "../../components/SettleModal";
+import SettlementModal from "../../components/SettlementModal";
 import UnsettleButton from "../../components/UnsettleButton";
 import BiddersExpand from "./BiddersExpand";
 import WinnerExpand from "./WinnerExpand";
@@ -128,8 +128,10 @@ export default async function ClosedListingsPage({ searchParams }: { searchParam
                     confirmMessage="確定要取消這筆交易的「已完成交易」標記嗎？"
                   />
                 ) : (
-                  <SettleModal
-                    endpoint={`/api/admin/listings/${listing.id}/settle`}
+                  <SettlementModal
+                    entityId={listing.id}
+                    entityLabel="商品"
+                    apiPath={`/api/admin/listings/${listing.id}/settle`}
                     defaultAmount={listing.finalPrice}
                     previousAccount={listing.settlementAccount}
                     previousAmount={listing.settlementAmount}
