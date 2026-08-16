@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import ProgressiveImage from "@/app/components/ProgressiveImage";
+import CarouselControls from "./CarouselControls";
 import CountdownTiles from "./CountdownTiles";
 import ZoomableProductImage from "./ZoomableProductImage";
 import { useHeroCountdown } from "@/lib/useHeroCountdown";
@@ -220,41 +221,17 @@ export default function HeroSection({
                   </div>
                 </div>
 
-                {cards.length > 1 && (
-                  <div className="relative z-10 mt-6 flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      {cards.map((item, index) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          aria-label={tHome("slideGoTo", { index: index + 1 })}
-                          onClick={() => setActiveIndex(index)}
-                          className={`h-2.5 rounded-full transition ${
-                            index === activeIndex ? "w-8 bg-white" : "w-2.5 bg-white/35 hover:bg-white/60"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        aria-label={tHome("slidePrevious")}
-                        onClick={() => setActiveIndex((index) => (index - 1 + cards.length) % cards.length)}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-lg text-white backdrop-blur-sm transition hover:bg-white/20"
-                      >
-                        ←
-                      </button>
-                      <button
-                        type="button"
-                        aria-label={tHome("slideNext")}
-                        onClick={() => setActiveIndex((index) => (index + 1) % cards.length)}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-lg text-white backdrop-blur-sm transition hover:bg-white/20"
-                      >
-                        →
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <CarouselControls
+                  itemCount={cards.length}
+                  activeIndex={activeIndex}
+                  onSelect={setActiveIndex}
+                  onPrev={() => setActiveIndex((index) => (index - 1 + cards.length) % cards.length)}
+                  onNext={() => setActiveIndex((index) => (index + 1) % cards.length)}
+                  variant="translucentLarge"
+                  dotLabel={(index) => tHome("slideGoTo", { index: index + 1 })}
+                  previousLabel={tHome("slidePrevious")}
+                  nextLabel={tHome("slideNext")}
+                />
               </>
             ) : (
               <div className="relative z-10 max-w-xl">

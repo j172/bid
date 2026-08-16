@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import CarouselControls from "./CarouselControls";
 import { useRotatingIndex } from "@/lib/useRotatingIndex";
 
 // Homepage carousel card (issue #54) — replaces the static "即刻入手"/"本週
@@ -102,46 +103,22 @@ export default function PigeonShowcaseCarouselCard({
             </Link>
           </h3>
           <p className="mt-2 line-clamp-2 text-xs text-slate-300">{current.excerpt}</p>
-          {items.length > 1 && (
-            // Manual dot/arrow controls (issue #156) — this card is a dark
-            // overlay card like the Hero, so it reuses HeroSection's own
-            // white/translucent dot+arrow styling verbatim (just sized down
-            // to fit this card's smaller footprint), kept on its own row so
-            // it doesn't compete with the CTA row below for space.
-            <div className="mt-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-1.5">
-                {items.map((item, itemIndex) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    aria-label={t("slideGoTo", { index: itemIndex + 1 })}
-                    onClick={() => setIndex(itemIndex)}
-                    className={`h-2 rounded-full transition ${
-                      itemIndex === index ? "w-6 bg-white" : "w-2 bg-white/35 hover:bg-white/60"
-                    }`}
-                  />
-                ))}
-              </div>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  aria-label={t("slidePrevious")}
-                  onClick={() => setIndex((previous) => (previous - 1 + items.length) % items.length)}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/10 text-sm text-white backdrop-blur-sm transition hover:bg-white/20"
-                >
-                  ←
-                </button>
-                <button
-                  type="button"
-                  aria-label={t("slideNext")}
-                  onClick={() => setIndex((previous) => (previous + 1) % items.length)}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/10 text-sm text-white backdrop-blur-sm transition hover:bg-white/20"
-                >
-                  →
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Manual dot/arrow controls (issue #156) — this card is a dark
+              overlay card like the Hero, so it reuses HeroSection's own
+              white/translucent dot+arrow styling verbatim (just sized down
+              to fit this card's smaller footprint), kept on its own row so
+              it doesn't compete with the CTA row below for space. */}
+          <CarouselControls
+            itemCount={items.length}
+            activeIndex={index}
+            onSelect={setIndex}
+            onPrev={() => setIndex((previous) => (previous - 1 + items.length) % items.length)}
+            onNext={() => setIndex((previous) => (previous + 1) % items.length)}
+            variant="translucentSmall"
+            dotLabel={(itemIndex) => t("slideGoTo", { index: itemIndex + 1 })}
+            previousLabel={t("slidePrevious")}
+            nextLabel={t("slideNext")}
+          />
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-3 text-xs">
             <Link href={href} className={`inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-xs font-bold transition-colors hover:text-white ${ctaClass}`}>
               {viewCtaLabel}
