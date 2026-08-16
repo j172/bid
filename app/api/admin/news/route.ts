@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/apiAuth";
-import { createNews, isNewsPageSize, listNews, setNewsBroadcastId, type NewsPostInput } from "@/lib/news";
+import { createNews, isNewsPageSize, listNews, type NewsPostInput } from "@/lib/news";
 import { validateNewsContent, validateNewsTitle } from "@/lib/newsValidation";
 import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
 import { deleteNewsImageFile, saveImageOrError, saveNewsImage, withImageRollback } from "@/lib/uploads";
-import { buildNewsBroadcastHtml, createBroadcast, sendBroadcast } from "@/lib/newsletter";
-import { newsletterErrorMessage, parseScheduledAt, resolveOrigin } from "@/lib/newsNewsletterSync";
+import { createAndSendNewsBroadcast, resolveOrigin } from "@/lib/newsNewsletterSync";
 
 // Admin list view — matches the filters issue #56 asks for: title substring
 // search, selectable page size (30/50/100). No JOIN-only public equivalent
@@ -84,27 +83,16 @@ export async function POST(request: Request) {
   // its own notice.
   let newsletterError: string | undefined;
   if (sendNewsletter) {
-    const schedule = parseScheduledAt(scheduledAtRaw);
-    if (!schedule.ok) {
-      newsletterError = "排程時間必須是有效的未來時間，電子報未寄送。";
-    } else {
-      const detailUrl = `${resolveOrigin(request)}/news/${newsId}`;
-      const html = buildNewsBroadcastHtml(input.content, detailUrl);
-      const created = await createBroadcast(title, html);
-      if (!created.ok) {
-        newsletterError = newsletterErrorMessage(created.errorCode, "create");
-      } else {
-        // Persisted as soon as the broadcast exists — even if the send
-        // below fails, the post stays linked to this (still-draft)
-        // broadcast so a later edit can retry/cancel it instead of orphaning
-        // a Resend draft nothing ever points back to.
-        await setNewsBroadcastId(newsId, created.id);
-        const sent = await sendBroadcast(created.id, schedule.scheduledAt);
-        if (!sent.ok) {
-          newsletterError = newsletterErrorMessage(sent.errorCode, "send");
-        }
-      }
-    }
+    const detailUrl = `${resolveOrigin(request)}/news/${newsId}`;
+    const outcome = await createAndSendNewsBroadcast({
+      newsId,
+      title,
+      content: input.content,
+      detailUrl,
+      scheduledAtRaw,
+      invalidScheduleError: "排程時間必須是有效的未來時間，電子報未寄送。",
+    });
+    newsletterError = outcome.newsletterError;
   }
 
   return NextResponse.json({ ok: true, id: result.id, newsletterError });

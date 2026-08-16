@@ -7,6 +7,7 @@ import {
   TITLE_MAX,
   validateDescription,
   validateEndsAt,
+  validateLoftId,
   validatePrice,
   validateStockQuantity,
   validateStockRemaining,
@@ -135,5 +136,22 @@ describe("validateStockRemaining", () => {
     expect(validateStockRemaining(NaN).ok).toBe(false);
     expect(validateStockRemaining(-1).ok).toBe(false);
     expect(validateStockRemaining(1.5).ok).toBe(false);
+  });
+});
+
+describe("validateLoftId", () => {
+  it("accepts null (no linked loft)", () => {
+    expect(validateLoftId(null)).toEqual({ ok: true });
+  });
+
+  it("accepts a positive integer", () => {
+    expect(validateLoftId(3)).toEqual({ ok: true });
+  });
+
+  it("rejects non-finite, zero, negative, or non-integer values", () => {
+    expect(validateLoftId(NaN).ok).toBe(false);
+    expect(validateLoftId(0).ok).toBe(false);
+    expect(validateLoftId(-1).ok).toBe(false);
+    expect(validateLoftId(1.5).ok).toBe(false);
   });
 });

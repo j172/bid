@@ -1,32 +1,12 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/apiAuth";
-import { deleteNews, getNewsById, setNewsBroadcastId, updateNews, type NewsPostInput } from "@/lib/news";
+import { deleteNews, getNewsById, updateNews, type NewsPostInput } from "@/lib/news";
 import { validateNewsContent, validateNewsTitle } from "@/lib/newsValidation";
 import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
 import { deleteNewsImageFile, saveImageOrError, saveNewsImage, withImageRollback } from "@/lib/uploads";
-import { buildNewsBroadcastHtml, cancelBroadcast, createBroadcast, getBroadcast, sendBroadcast, type BroadcastStatus } from "@/lib/newsletter";
-import { newsletterErrorMessage, parseScheduledAt, resolveOrigin } from "@/lib/newsNewsletterSync";
+import { cancelBroadcast } from "@/lib/newsletter";
+import { createAndSendNewsBroadcast, resolveBroadcastLock, resolveOrigin } from "@/lib/newsNewsletterSync";
 import { parseIdParam } from "@/lib/routeParams";
-
-// Resolves whether newsId's linked broadcast (if any) is still editable, per
-// issue #5's "只要...電子報狀態還沒到已寄出（sent），編輯...都可以勾選/取消/
-// 改排程" rule. Three outcomes:
-// - no broadcastId yet → nothing to lock, starts fresh if opted in below.
-// - broadcastId set and its live status fetched successfully → "sent" locks
-//   further changes; everything else (draft/scheduled/queued/canceled) stays
-//   editable.
-// - status fetch failed (Resend down/not configured/broadcast gone) →
-//   "unknown", handled by the caller as "don't touch it" rather than guessed.
-async function resolveBroadcastLock(
-  broadcastId: string | null,
-): Promise<{ status: BroadcastStatus | null; unknown: boolean }> {
-  if (!broadcastId) return { status: null, unknown: false };
-
-  const fetched = await getBroadcast(broadcastId);
-  if (fetched.ok) return { status: fetched.broadcast.status, unknown: false };
-  if (fetched.errorCode === "NOT_FOUND") return { status: null, unknown: false };
-  return { status: null, unknown: true };
-}
 
 // Submits FormData (not JSON) as of issue #70 — unlike homepage_sections'
 // PATCH route (image replacement optional, keeps the existing file when
@@ -112,32 +92,30 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         // the whole audience, so this window is refused rather than raced.
         newsletterError = "電子報正在寄送中，請稍後再編輯電子報設定。";
       } else {
-        const schedule = parseScheduledAt(scheduledAtRaw);
-        if (!schedule.ok) {
-          newsletterError = "排程時間必須是有效的未來時間，電子報未更新。";
-        } else {
+        const detailUrl = `${resolveOrigin(request)}/news/${newsId}`;
+        const outcome = await createAndSendNewsBroadcast({
+          newsId,
+          title,
+          content: input.content,
+          detailUrl,
+          scheduledAtRaw,
+          invalidScheduleError: "排程時間必須是有效的未來時間，電子報未更新。",
           // lib/newsletter.ts has no "update broadcast" call, only
           // create/send/cancel (issue #80 keeps that surface as-is) — so a
           // content/schedule change replaces the old broadcast with a fresh
           // one instead of editing it in place. Best-effort: an
           // already-terminal old broadcast (e.g. already canceled) failing
-          // to cancel again doesn't block creating the new one.
-          if (currentBroadcastId && currentStatus && currentStatus !== "canceled") {
-            await cancelBroadcast(currentBroadcastId);
-          }
-          const detailUrl = `${resolveOrigin(request)}/news/${newsId}`;
-          const html = buildNewsBroadcastHtml(input.content, detailUrl);
-          const created = await createBroadcast(title, html);
-          if (!created.ok) {
-            newsletterError = newsletterErrorMessage(created.errorCode, "create");
-          } else {
-            await setNewsBroadcastId(newsId, created.id);
-            const sent = await sendBroadcast(created.id, schedule.scheduledAt);
-            if (!sent.ok) {
-              newsletterError = newsletterErrorMessage(sent.errorCode, "send");
-            }
-          }
-        }
+          // to cancel again doesn't block creating the new one. Only runs
+          // once the new schedule is confirmed valid, so an invalid schedule
+          // never touches the still-active old broadcast.
+          beforeCreate:
+            currentBroadcastId && currentStatus && currentStatus !== "canceled"
+              ? async () => {
+                  await cancelBroadcast(currentBroadcastId);
+                }
+              : undefined,
+        });
+        newsletterError = outcome.newsletterError;
       }
     } else if (currentBroadcastId && currentStatus && currentStatus !== "canceled") {
       if (currentStatus === "queued") {

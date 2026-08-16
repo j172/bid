@@ -6,6 +6,7 @@ import { addListingPhotos, deleteListing, insertListing, updateListingDescriptio
 import {
   validateDescription,
   validateEndsAt,
+  validateLoftId,
   validatePrice,
   validateStartsAt,
   validateStockQuantity,
@@ -47,8 +48,9 @@ export async function POST(request: Request) {
   if (descriptionImages.length > DESCRIPTION_IMAGE_MAX_COUNT) {
     return NextResponse.json({ ok: false, error: `描述圖片最多 ${DESCRIPTION_IMAGE_MAX_COUNT} 張` }, { status: 400 });
   }
-  if (loftId !== null && (!Number.isFinite(loftId) || !Number.isInteger(loftId) || loftId <= 0)) {
-    return NextResponse.json({ ok: false, error: "合作鴿舍不正確" }, { status: 400 });
+  const loftIdResult = validateLoftId(loftId);
+  if (!loftIdResult.ok) {
+    return NextResponse.json({ ok: false, error: loftIdResult.error }, { status: 400 });
   }
 
   let input: NewListingInput;

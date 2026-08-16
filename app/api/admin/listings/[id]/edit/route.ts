@@ -9,7 +9,7 @@ import {
   replaceListingPhotos,
   updateFixedPriceListing,
 } from "@/lib/listings";
-import { validateDescription, validatePrice, validateStockRemaining, validateTitle } from "@/lib/listingValidation";
+import { validateDescription, validateLoftId, validatePrice, validateStockRemaining, validateTitle } from "@/lib/listingValidation";
 import { MAX_PHOTO_COUNT } from "@/lib/photoLimits";
 import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
 import { deleteListingPhotoFiles, descriptionImageUrl, saveDescriptionImages, saveListingPhotos } from "@/lib/uploads";
@@ -72,8 +72,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!stockResult.ok) {
     return NextResponse.json({ ok: false, error: stockResult.error }, { status: 400 });
   }
-  if (loftId !== null && (!Number.isFinite(loftId) || !Number.isInteger(loftId) || loftId <= 0)) {
-    return NextResponse.json({ ok: false, error: "合作鴿舍不正確" }, { status: 400 });
+  const loftIdResult = validateLoftId(loftId);
+  if (!loftIdResult.ok) {
+    return NextResponse.json({ ok: false, error: loftIdResult.error }, { status: 400 });
   }
   if (order.length === 0) {
     return NextResponse.json({ ok: false, error: "至少需要一張照片" }, { status: 400 });

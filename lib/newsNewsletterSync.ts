@@ -6,8 +6,23 @@
 // lives here once instead of duplicated per route. Pure/no I/O (resolveOrigin
 // only reads from the Request it's given) — directly unit-testable, same
 // split as this project's other lib/*Validation.ts-style helpers.
+//
+// createAndSendNewsBroadcast/resolveBroadcastLock (issue #160 M4) do involve
+// I/O (Resend + the news_posts row) — they used to be ~60 lines of state
+// machine written directly in the edit route handler, with the create route
+// hand-copying the create+send half of the same sequence. Sunk here so both
+// routes stay thin controllers that just decide *when* to call this, not
+// *how* the sync works.
 
-import type { BroadcastErrorCode } from "@/lib/newsletter";
+import {
+  buildNewsBroadcastHtml,
+  createBroadcast,
+  getBroadcast,
+  sendBroadcast,
+  type BroadcastErrorCode,
+  type BroadcastStatus,
+} from "@/lib/newsletter";
+import { setNewsBroadcastId } from "@/lib/news";
 
 export type ScheduleParseResult = { ok: true; scheduledAt?: string } | { ok: false };
 
@@ -54,4 +69,76 @@ export function resolveOrigin(request: Request): string {
   if (!forwardedHost) return new URL(request.url).origin;
   const forwardedProto = request.headers.get("x-forwarded-proto") ?? "https";
   return `${forwardedProto}://${forwardedHost}`;
+}
+
+// Resolves whether newsId's linked broadcast (if any) is still editable, per
+// issue #5's "只要...電子報狀態還沒到已寄出（sent），編輯...都可以勾選/取消/
+// 改排程" rule. Three outcomes:
+// - no broadcastId yet → nothing to lock, starts fresh if opted in below.
+// - broadcastId set and its live status fetched successfully → "sent" locks
+//   further changes; everything else (draft/scheduled/queued/canceled) stays
+//   editable.
+// - status fetch failed (Resend down/not configured/broadcast gone) →
+//   "unknown", handled by the caller as "don't touch it" rather than guessed.
+export async function resolveBroadcastLock(
+  broadcastId: string | null,
+): Promise<{ status: BroadcastStatus | null; unknown: boolean }> {
+  if (!broadcastId) return { status: null, unknown: false };
+
+  const fetched = await getBroadcast(broadcastId);
+  if (fetched.ok) return { status: fetched.broadcast.status, unknown: false };
+  if (fetched.errorCode === "NOT_FOUND") return { status: null, unknown: false };
+  return { status: null, unknown: true };
+}
+
+export type CreateAndSendBroadcastParams = {
+  newsId: number;
+  title: string;
+  content: string;
+  detailUrl: string;
+  scheduledAtRaw: string;
+  // The two call sites (create/edit) phrase an invalid schedule differently
+  // ("電子報未寄送" vs "電子報未更新") — everything else about the sequence
+  // is identical, so the message stays the one thing the caller supplies.
+  invalidScheduleError: string;
+  // Edit-only: replacing an existing draft/scheduled broadcast cancels it
+  // first (lib/newsletter.ts has no "update broadcast" call — see the edit
+  // route's own comment on this). Runs only after the schedule is confirmed
+  // valid, same ordering as the original inline logic, so an invalid
+  // schedule never touches the still-active old broadcast. Create passes
+  // nothing here — there's never a prior broadcast to cancel.
+  beforeCreate?: () => Promise<void>;
+};
+
+// The create+send sequence shared verbatim by the news create and edit
+// routes once an admin opts in to (re)sending the newsletter (issue #160
+// M4): validate the schedule, create the Resend broadcast, persist its id
+// on the news post immediately (so a later edit can retry/cancel even if the
+// send below fails), then send it.
+export async function createAndSendNewsBroadcast(
+  params: CreateAndSendBroadcastParams,
+): Promise<{ newsletterError?: string }> {
+  const schedule = parseScheduledAt(params.scheduledAtRaw);
+  if (!schedule.ok) {
+    return { newsletterError: params.invalidScheduleError };
+  }
+
+  await params.beforeCreate?.();
+
+  const html = buildNewsBroadcastHtml(params.content, params.detailUrl);
+  const created = await createBroadcast(params.title, html);
+  if (!created.ok) {
+    return { newsletterError: newsletterErrorMessage(created.errorCode, "create") };
+  }
+
+  // Persisted as soon as the broadcast exists — even if the send below
+  // fails, the post stays linked to this (still-draft) broadcast so a later
+  // edit can retry/cancel it instead of orphaning a Resend draft nothing
+  // ever points back to.
+  await setNewsBroadcastId(params.newsId, created.id);
+  const sent = await sendBroadcast(created.id, schedule.scheduledAt);
+  if (!sent.ok) {
+    return { newsletterError: newsletterErrorMessage(sent.errorCode, "send") };
+  }
+  return {};
 }

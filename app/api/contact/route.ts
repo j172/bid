@@ -4,7 +4,7 @@ import { verifyTurnstileToken } from "@/lib/turnstile";
 import { insertContactMessage } from "@/lib/contact";
 import { sendContactMessageEmails } from "@/lib/notifications";
 import { getClientIpFromHeaders } from "@/lib/clientIp";
-import { routing } from "@/i18n/routing";
+import { resolveRequestLocale } from "@/lib/requestLocale";
 
 // Public /contact form submit (issue #104) — no login required. Order of
 // operations matters: validate fields -> verify Turnstile -> insert into
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
   const subject = typeof body?.subject === "string" ? body.subject : "";
   const message = typeof body?.message === "string" ? body.message : "";
   const turnstileToken = typeof body?.turnstileToken === "string" ? body.turnstileToken : "";
-  const locale = routing.locales.includes(body?.locale) ? body.locale : routing.defaultLocale;
+  const locale = resolveRequestLocale(body);
 
   const validation = validateContact({ name, email, subject, message });
   if (!validation.ok) {
