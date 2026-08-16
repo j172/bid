@@ -4,7 +4,7 @@ import { createPasswordResetToken, isPasswordResetRateLimited, resetPasswordPath
 import { sendPasswordResetEmail } from "@/lib/notifications";
 import { getClientIpFromHeaders } from "@/lib/clientIp";
 import { resolveOrigin } from "@/lib/newsNewsletterSync";
-import { routing } from "@/i18n/routing";
+import { resolveRequestLocale } from "@/lib/requestLocale";
 
 // Always responds with the same { ok: true } neutral outcome — whether the
 // email doesn't belong to any account, belongs to a suspended account, or
@@ -21,7 +21,7 @@ function neutralResponse() {
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const email = typeof body?.email === "string" ? body.email.trim() : "";
-  const locale = routing.locales.includes(body?.locale) ? body.locale : routing.defaultLocale;
+  const locale = resolveRequestLocale(body);
 
   if (!email) {
     return neutralResponse();

@@ -6,7 +6,7 @@ import { createEmailVerificationToken, isEmailVerificationRateLimited, verifyEma
 import { sendVerificationEmail } from "@/lib/notifications";
 import { getClientIpFromHeaders } from "@/lib/clientIp";
 import { resolveOrigin } from "@/lib/newsNewsletterSync";
-import { routing } from "@/i18n/routing";
+import { resolveRequestLocale } from "@/lib/requestLocale";
 
 // Display name is optional at registration (issue #101): a blank/whitespace
 // value gets a generated placeholder before validation/insert, so the shared
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   const displayName = rawDisplayName.trim() ? rawDisplayName : generateDefaultDisplayName();
   const phone = typeof body?.phone === "string" ? body.phone : "";
   const address = typeof body?.address === "string" ? body.address : "";
-  const locale = routing.locales.includes(body?.locale) ? body.locale : routing.defaultLocale;
+  const locale = resolveRequestLocale(body);
 
   if (!isValidEmail(email)) {
     return NextResponse.json({ ok: false, errorCode: "EMAIL_INVALID" }, { status: 400 });

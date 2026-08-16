@@ -4,7 +4,7 @@ import { createEmailVerificationToken, isEmailVerificationRateLimited, verifyEma
 import { sendVerificationEmail } from "@/lib/notifications";
 import { getClientIpFromHeaders } from "@/lib/clientIp";
 import { resolveOrigin } from "@/lib/newsNewsletterSync";
-import { routing } from "@/i18n/routing";
+import { resolveRequestLocale } from "@/lib/requestLocale";
 
 // Same neutral { ok: true } response regardless of outcome — unknown email,
 // already-verified account, or rate-limited — as
@@ -18,7 +18,7 @@ function neutralResponse() {
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const email = typeof body?.email === "string" ? body.email.trim() : "";
-  const locale = routing.locales.includes(body?.locale) ? body.locale : routing.defaultLocale;
+  const locale = resolveRequestLocale(body);
 
   if (!email) {
     return neutralResponse();
