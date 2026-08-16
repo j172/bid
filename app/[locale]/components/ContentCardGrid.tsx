@@ -38,7 +38,7 @@ export default function ContentCardGrid({ items, emptyLabel, viewDetailsLabel }:
           className="group flex flex-col overflow-hidden rounded-xl border border-border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={item.imageUrl} alt={item.title} className="h-40 w-full object-cover" />
+          <img src={item.imageUrl} alt={item.title} className="h-40 w-full bg-slate-100 object-contain" />
           <div className="flex flex-1 flex-col p-5">
             {item.dateLabel && <p className="text-xs font-semibold text-ink-light">{item.dateLabel}</p>}
             <h2 className={`${item.dateLabel ? "mt-1 " : ""}truncate text-lg font-bold text-ink`}>{item.title}</h2>
