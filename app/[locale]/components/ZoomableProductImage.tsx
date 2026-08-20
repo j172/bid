@@ -90,6 +90,14 @@ export default function ZoomableProductImage({
     setHoverVisible(false);
     setCursor({ x: 50, y: 50, pctX: 50, pctY: 50, width: 100, height: 100 });
     setPanePosition({ left: VIEWPORT_EDGE_PADDING, top: VIEWPORT_EDGE_PADDING });
+  }, [src]);
+
+  // Watchdog for whichever request is currently in flight. Keyed on
+  // `displaySrc`, not `src`: useImageFallback now gives a failed image one
+  // retry under a new URL (issue #171), which is a request the browser has
+  // never attempted and so deserves this same "did anything ever happen"
+  // protection, not just the one window starting at mount.
+  useEffect(() => {
     settledRef.current = false;
 
     const timeoutId = window.setTimeout(() => {
@@ -100,7 +108,7 @@ export default function ZoomableProductImage({
     }, LOAD_TIMEOUT_MS);
 
     return () => window.clearTimeout(timeoutId);
-  }, [src, markFailed]);
+  }, [displaySrc, markFailed]);
 
   // Runs whenever displaySrc becomes the placeholder (via the timeout above
   // or a normal onError) and `loaded` is still false. Re-arms itself if
