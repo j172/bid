@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { listOpenListings, type ListingType } from "@/lib/listings";
+import { listHomepageSections } from "@/lib/homepageSections";
 import { currencyForLocale, formatDualPrice, formatNtd } from "@/lib/currency";
+import { homepageSectionImageUrl } from "@/lib/uploads";
 import { getLatestStoredRate } from "@/lib/exchangeRates";
 import { formatRemaining } from "@/lib/format";
 import { maskDisplayName } from "@/lib/mask";
@@ -18,6 +20,7 @@ import {
 import { firstParam, numberParam, type SearchParams } from "@/lib/searchParams";
 import { Link } from "@/i18n/navigation";
 import ProductCard from "../../components/ProductCard";
+import PartnerLoftImage from "../../components/PartnerLoftImage";
 
 export const dynamic = "force-dynamic";
 
@@ -114,6 +117,10 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   const loftId = numberParam(params.loft);
 
   const listings = await listOpenListings(type, { loftId });
+  // 名家專區 (issue #168) — independent homepage_sections section_type from
+  // 合作鴿舍; same card grid/layout, shown full-width above the filters +
+  // listing grid two-column layout below.
+  const featuredLofts = await listHomepageSections("featured_loft", { activeOnly: true });
   const t = await getTranslations("listings");
   const tNav = await getTranslations("nav");
   const tFormat = await getTranslations("format");
@@ -176,6 +183,40 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
         </p>
         <h1 className="mt-2 text-3xl font-black text-ink">{t("title")}</h1>
       </div>
+
+      {featuredLofts.length > 0 && (
+        // Full-width, deliberately placed above the filters+grid two-column
+        // layout below (not squeezed into the 280px sidebar) — mirrors the
+        // homepage 合作鴿舍 block's layout/styling exactly (issue #168).
+        <section className="mt-6">
+          <div className="mb-1 flex items-end justify-between">
+            <h2 className="text-2xl font-bold">{t("featuredLoftsTitle")}</h2>
+            <Link href="/listings" className="text-sm font-semibold text-interactive-primary hover:text-header">
+              {t("featuredLoftsViewAll")}
+            </Link>
+          </div>
+          <p className="text-sm text-ink-light">{t("featuredLoftsSubtitle")}</p>
+          <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {featuredLofts.map((loft) => (
+              <Link
+                key={loft.id}
+                href={`/listings?loft=${loft.id}`}
+                className="group overflow-hidden rounded-2xl border border-border bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-100">
+                  <PartnerLoftImage
+                    src={homepageSectionImageUrl(loft.imageFileName)}
+                    alt={loft.title}
+                    sizes="(min-width: 1024px) 25vw, 50vw"
+                  />
+                </div>
+                <p className="mt-3 text-sm font-bold text-ink">{loft.title}</p>
+                {loft.bio && <p className="mt-1 line-clamp-2 text-xs text-ink-light">{loft.bio}</p>}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[280px,1fr]">
         <aside className="space-y-4">

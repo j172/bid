@@ -45,6 +45,9 @@
     "partnerLoftsTitle": "Partner Lofts",
     "partnerLoftsSubtitle": "Our trusted long-term partner lofts — browse each loft's dedicated listings",
     "partnerLoftsViewAll": "View all listings",
+    "featuredLoftsTitle": "Featured Lofts",
+    "featuredLoftsSubtitle": "A curated selection of renowned lofts in the industry — browse their dedicated listings",
+    "featuredLoftsViewAll": "View all listings",
     "timeless": "Always available",
     "cardCta": "View details",
     "serviceFast": "Fast publishing",
@@ -161,7 +164,10 @@
     "buyItNowPrice": "Buy it now: {price}",
     "noBidsYet": "No bids yet",
     "currentLeader": "Currently leading: {name}",
-    "totalBids": "{count} total bids"
+    "totalBids": "{count} total bids",
+    "featuredLoftsTitle": "Featured Lofts",
+    "featuredLoftsSubtitle": "A curated selection of renowned lofts in the industry — browse their dedicated listings",
+    "featuredLoftsViewAll": "View all listings"
   },
   "listingDetail": {
     "shopDetails": "Shop Details",
