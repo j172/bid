@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { listOpenListings, type ListingType } from "@/lib/listings";
-import { listHomepageSections } from "@/lib/homepageSections";
+import { listLatestFeaturedLoftPosts } from "@/lib/featuredLoftPosts";
 import { currencyForLocale, formatDualPrice, formatNtd } from "@/lib/currency";
-import { homepageSectionImageUrl } from "@/lib/uploads";
+import { featuredLoftPostImageUrl } from "@/lib/uploads";
+import { excerptHtml } from "@/lib/htmlText";
+import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
 import { getLatestStoredRate } from "@/lib/exchangeRates";
 import { formatRemaining } from "@/lib/format";
 import { maskDisplayName } from "@/lib/mask";
@@ -118,10 +120,13 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   const loftId = numberParam(params.loft);
 
   const listings = await listOpenListings(type, { loftId });
-  // 名家專區 (issue #168) — independent homepage_sections section_type from
-  // 合作鴿舍; same card grid/layout, shown full-width above the filters +
-  // listing grid two-column layout below.
-  const featuredLofts = await listHomepageSections("featured_loft", { activeOnly: true });
+  // 名家專區 (issue #176) — replaces issue #168's homepage_sections-based
+  // cards with the new featured_loft_posts table; same full-width card grid
+  // shown above the filters + listing grid two-column layout below (position
+  // deliberately unchanged from #168 — only the data source and each card's
+  // link target changed, see the JSX below).
+  const FEATURED_LOFTS_GRID_LIMIT = 8;
+  const featuredLoftPosts = await listLatestFeaturedLoftPosts(FEATURED_LOFTS_GRID_LIMIT);
   const t = await getTranslations("listings");
   const tNav = await getTranslations("nav");
   const tFormat = await getTranslations("format");
@@ -199,34 +204,37 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
         <h1 className="mt-2 text-3xl font-black text-ink">{t("title")}</h1>
       </div>
 
-      {featuredLofts.length > 0 && (
+      {featuredLoftPosts.length > 0 && (
         // Full-width, deliberately placed above the filters+grid two-column
-        // layout below (not squeezed into the 280px sidebar) — mirrors the
-        // homepage 合作鴿舍 block's layout/styling exactly (issue #168).
+        // layout below (not squeezed into the 280px sidebar) — layout/
+        // styling unchanged from issue #168; only the data source
+        // (featured_loft_posts, issue #176) and each card's link target
+        // (its own /featured-lofts/<id> article instead of straight to
+        // /listings?loft=<id>) changed.
         <section className="mt-6">
           <div className="mb-1 flex items-end justify-between">
             <h2 className="text-2xl font-bold">{t("featuredLoftsTitle")}</h2>
-            <Link href="/listings" className="text-sm font-semibold text-interactive-primary hover:text-header">
+            <Link href="/featured-lofts" className="text-sm font-semibold text-interactive-primary hover:text-header">
               {t("featuredLoftsViewAll")}
             </Link>
           </div>
           <p className="text-sm text-ink-light">{t("featuredLoftsSubtitle")}</p>
           <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {featuredLofts.map((loft) => (
+            {featuredLoftPosts.map((post) => (
               <Link
-                key={loft.id}
-                href={`/listings?loft=${loft.id}`}
+                key={post.id}
+                href={`/featured-lofts/${post.id}`}
                 className="group overflow-hidden rounded-2xl border border-border bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-100">
                   <PartnerLoftImage
-                    src={homepageSectionImageUrl(loft.imageFileName)}
-                    alt={loft.title}
+                    src={post.imageFileName ? featuredLoftPostImageUrl(post.imageFileName) : IMAGE_FALLBACK_SRC}
+                    alt={post.title}
                     sizes="(min-width: 1024px) 25vw, 50vw"
                   />
                 </div>
-                <p className="mt-3 text-sm font-bold text-ink">{loft.title}</p>
-                {loft.bio && <p className="mt-1 line-clamp-2 text-xs text-ink-light">{loft.bio}</p>}
+                <p className="mt-3 text-sm font-bold text-ink">{post.title}</p>
+                <p className="mt-1 line-clamp-2 text-xs text-ink-light">{excerptHtml(post.content, DESCRIPTION_SNIPPET_LENGTH)}</p>
               </Link>
             ))}
           </div>

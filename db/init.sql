@@ -315,18 +315,21 @@ CREATE TABLE IF NOT EXISTS purchases (
 -- content, never a real transactable product.
 
 -- Generic image+sort_order homepage block entries. section_type is an
--- application-level tag ('partner_loft' / 合作鴿舍, and since issue #168
--- 'featured_loft' / 名家專區 — a second, independent block using the same
--- table/CRUD but never sharing rows) rather than its own lookup table, since
--- new section types are expected to be rare and code-driven (each type gets
--- its own front-end placement).
+-- application-level tag ('partner_loft' / 合作鴿舍 is the only one still in
+-- use) rather than its own lookup table, since new section types are
+-- expected to be rare and code-driven (each type gets its own front-end
+-- placement). Issue #168 added a second tag, 'featured_loft' / 名家專區;
+-- issue #176 replaced that whole mechanism with its own independent table
+-- (featured_loft_posts, see below) and 'featured_loft' is no longer a valid
+-- section_type for new rows — any pre-existing rows with it are harmless
+-- orphaned data, deliberately left as-is (not migrated/deleted) by #176.
 -- No link_url (removed in issue #45's GRILL ME follow-up): homepage cards
 -- now link to /listings?loft=<id> (that loft's listings, via listings.loft_id
 -- below) rather than an admin-entered URL. bio is an optional free-text
 -- excerpt shown on both the admin form and the homepage card.
 CREATE TABLE IF NOT EXISTS homepage_sections (
   id BIGINT NOT NULL AUTO_INCREMENT,
-  section_type VARCHAR(30) NOT NULL,          -- 'partner_loft' (合作鴿舍) | 'featured_loft' (名家專區)
+  section_type VARCHAR(30) NOT NULL,          -- 'partner_loft' (合作鴿舍)
   title VARCHAR(255) NOT NULL,
   image_file_name VARCHAR(255) NOT NULL,
   bio TEXT NULL,                              -- optional 簡介 shown in admin + homepage card excerpt
@@ -417,6 +420,40 @@ CREATE TABLE IF NOT EXISTS news_posts (
   updated_at DATETIME NOT NULL,
   PRIMARY KEY (id),
   KEY idx_news_posts_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 名家專區 articles (issue #176) — replaces issue #168's lightweight
+-- homepage_sections('featured_loft') cards with an independent, "文章式"
+-- table modeled directly on news_posts above: full rich-text content + its
+-- own detail page instead of a bare image+blurb card linking straight to
+-- /listings?loft=<id>. Brand-new table, whole final schema from day one,
+-- same as news_posts/contact_messages below. Deliberately NO broadcast_id
+-- or any other newsletter field — unlike news_posts this feature never
+-- sends a newsletter.
+-- image_file_name — same NULL-only-for-rows-with-no-upload-yet story as
+-- news_posts.image_file_name above (every create/edit here requires one at
+-- the application layer regardless).
+-- loft_id is an OPTIONAL pointer at homepage_sections(id) — same "FK to
+-- homepage_sections but only rows where section_type='partner_loft'" shape
+-- as pigeon_showcase.loft_id above, so it's NOT a DB-level FK (MySQL can't
+-- scope one to matching rows only) and is instead checked at the
+-- application layer by lib/featuredLoftPosts.ts's isPartnerLoft(), mirroring
+-- lib/pigeonShowcase.ts's identical helper. NULL means the post has no
+-- linked loft, in which case its detail page omits the "查看商品" button.
+-- Issue #176 explicitly leaves any pre-existing
+-- homepage_sections(section_type='featured_loft') rows untouched — they're
+-- orphaned data this table doesn't migrate from, not something this table
+-- reads.
+CREATE TABLE IF NOT EXISTS featured_loft_posts (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  title VARCHAR(100) NOT NULL,
+  image_file_name VARCHAR(255) NULL,
+  content TEXT NOT NULL,           -- sanitizeDescriptionHtml'd TinyMCE HTML, 2000-char plain-text cap
+  loft_id BIGINT NULL,             -- optional homepage_sections.id (合作鴿舍); NULL = no loft link
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_featured_loft_posts_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Public /contact form submissions (issue #104) — a brand-new table, whole
