@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { listOpenListings, type ListingType } from "@/lib/listings";
 import { listLatestFeaturedLoftPosts } from "@/lib/featuredLoftPosts";
+import { listHomepageSections } from "@/lib/homepageSections";
 import { currencyForLocale, formatDualPrice, formatNtd } from "@/lib/currency";
 import { featuredLoftPostImageUrl } from "@/lib/uploads";
 import { excerptHtml } from "@/lib/htmlText";
@@ -17,7 +18,6 @@ import {
   parseSortKey,
   sortListings,
   type ListingCategory,
-  type ListingSortKey,
 } from "@/lib/listingFilters";
 import { firstParam, numberParam, type SearchParams } from "@/lib/searchParams";
 import { Link } from "@/i18n/navigation";
@@ -38,22 +38,6 @@ function descriptionSnippet(description: string): string {
   return trimmed.length > DESCRIPTION_SNIPPET_LENGTH
     ? `${trimmed.slice(0, DESCRIPTION_SNIPPET_LENGTH)}…`
     : trimmed;
-}
-
-function tabHref(
-  tabValue: ListingType | "",
-  perfMode: "balanced" | "aggressive",
-  searchQuery?: string,
-  sort?: ListingSortKey,
-): string {
-  // Deliberately drops status/withinHours — switching the type tab exits any
-  // homepage-card-specific filtering rather than compounding it.
-  return listingsHref({
-    type: tabValue || undefined,
-    perf: perfMode === "aggressive" ? "aggressive" : undefined,
-    q: searchQuery?.trim() || undefined,
-    sort: sort && sort !== "newest" ? sort : undefined,
-  });
 }
 
 // <title>/<meta description> for the listings list/category page (issue
@@ -116,10 +100,15 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   const perfMode = perfModeFromSearchParams(params);
   const gridEagerCount = perfMode === "aggressive" ? 6 : 4;
   // Powers the homepage partner-loft card click-through: /listings?loft=<id>
-  // (issue #45 — replaces the removed homepage_sections.link_url).
+  // (issue #45 — replaces the removed homepage_sections.link_url), and now
+  // (issue #178) the filter card's own 合作鴿舍 dropdown below.
   const loftId = numberParam(params.loft);
+  const selectedLoftId = loftId !== undefined ? String(loftId) : "";
 
   const listings = await listOpenListings(type, { loftId });
+  // Same source as the homepage/`/featured-lofts` partner-loft lists (issue
+  // #178) — options show loft title only, no per-loft listing counts.
+  const partnerLofts = await listHomepageSections("partner_loft", { activeOnly: true });
   // 名家專區 (issue #176) — replaces issue #168's homepage_sections-based
   // cards with the new featured_loft_posts table; same full-width card grid
   // shown above the filters + listing grid two-column layout below (position
@@ -151,7 +140,13 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   const sortedListings = sortListings(filteredListings, sort);
   const categoryCounts = countByCategory(listings);
 
-  /** Current filter set with `partial` applied on top — powers every facet link below. */
+  /**
+   * Current filter set with `partial` applied on top — the single link
+   * builder for every facet in the filter card (type/category/loft dropdowns
+   * below), so switching one always carries the other two forward (issue
+   * #178). Type, category and loft mutually preserve each other by all
+   * three routing through this same reserved-param list.
+   */
   function withFilters(partial: Record<string, string | undefined>): string {
     return listingsHref({
       perf: firstParam(params.perf),
@@ -163,14 +158,27 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
       sort: firstParam(params.sort),
       status: firstParam(params.status),
       withinHours: firstParam(params.withinHours),
+      loft: firstParam(params.loft),
       ...partial,
     });
   }
 
-  const TYPE_TABS: { value: ListingType | ""; label: string }[] = [
-    { value: "", label: t("tabAll") },
-    { value: "auction", label: t("tabAuction") },
-    { value: "fixed_price", label: t("tabFixedPrice") },
+  // Each option's href deliberately drops status/withinHours — switching the
+  // type filter exits any homepage-card-specific filtering rather than
+  // compounding it (unchanged behavior from the old tabHref(), see issue
+  // #178; category/loft below have no such exception).
+  const TYPE_OPTIONS: CategorySelectOption[] = [
+    { value: "", label: t("tabAll"), href: withFilters({ type: undefined, status: undefined, withinHours: undefined }) },
+    {
+      value: "auction",
+      label: t("tabAuction"),
+      href: withFilters({ type: "auction", status: undefined, withinHours: undefined }),
+    },
+    {
+      value: "fixed_price",
+      label: t("tabFixedPrice"),
+      href: withFilters({ type: "fixed_price", status: undefined, withinHours: undefined }),
+    },
   ];
 
   const CATEGORY_OPTIONS: CategorySelectOption[] = [
@@ -185,6 +193,15 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
       label: `${t("tabFixedPrice")} (${categoryCounts.fixed_price})`,
       href: withFilters({ category: "fixed_price" }),
     },
+  ];
+
+  const LOFT_OPTIONS: CategorySelectOption[] = [
+    { value: "", label: t("loftAll"), href: withFilters({ loft: undefined }) },
+    ...partnerLofts.map((loft) => ({
+      value: String(loft.id),
+      label: loft.title,
+      href: withFilters({ loft: String(loft.id) }),
+    })),
   ];
 
   const TYPE_BADGE_LABEL: Record<ListingType, string> = {
@@ -245,21 +262,17 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
         <aside className="space-y-4">
           <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
             <p className="text-sm font-bold uppercase tracking-wide text-ink">{t("filtersTitle")}</p>
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                {TYPE_TABS.map((tab) => (
-                  <Link
-                    key={tab.value}
-                    href={tabHref(tab.value, perfMode, searchQuery, sort)}
-                    className={`block rounded-md px-3 py-2 text-sm font-medium ${
-                      (type ?? "") === tab.value
-                        ? "bg-interactive-primary-subtle text-interactive-primary-active"
-                        : "bg-slate-50 text-ink-light hover:bg-slate-100"
-                    }`}
-                  >
-                    {tab.label}
-                  </Link>
-                ))}
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">{t("typeTitle")}</p>
+                <div className="mt-2">
+                  <CategorySelect
+                    ariaLabel={t("typeTitle")}
+                    value={type ?? ""}
+                    options={TYPE_OPTIONS}
+                    className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-ink"
+                  />
+                </div>
               </div>
 
               <div>
@@ -269,6 +282,18 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
                     ariaLabel={t("categoryTitle")}
                     value={selectedCategory ?? ""}
                     options={CATEGORY_OPTIONS}
+                    className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-ink"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">{t("loftTitle")}</p>
+                <div className="mt-2">
+                  <CategorySelect
+                    ariaLabel={t("loftTitle")}
+                    value={selectedLoftId}
+                    options={LOFT_OPTIONS}
                     className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-ink"
                   />
                 </div>

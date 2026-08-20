@@ -179,4 +179,14 @@ describe("listingsHref", () => {
   it("encodes values", () => {
     expect(listingsHref({ q: "冠軍 鴿" })).toBe("/listings?q=%E5%86%A0%E8%BB%8D+%E9%B4%BF");
   });
+
+  // Issue #178: the /listings filter card's type/category/loft dropdowns all
+  // build their option hrefs through the same helper, so switching one must
+  // carry the other two forward — asserted here on the underlying primitive
+  // they share.
+  it("keeps type, category and loft together so switching one preserves the others", () => {
+    expect(listingsHref({ type: "auction", category: "auction", loft: "5" })).toBe(
+      "/listings?type=auction&category=auction&loft=5",
+    );
+  });
 });
