@@ -108,6 +108,7 @@
     "pillFixedPicks": "Fixed-Price Picks",
     "pillPriceDesc": "Premium Price Lots",
     "importedPigeonBadge": "Imported Pigeons",
+    "representativePigeonBadge": "Representative Pigeons",
     "pigeonShowcaseViewCta": "View Pigeon",
     "pigeonShowcaseViewMore": "View More",
     "pigeonShowcaseEmptyDesc": "There are no showcase pigeons to show right now — check back soon.",
@@ -571,7 +572,8 @@
   "pigeonShowcase": {
     "awardTitle": "Award Pigeons",
     "importedTitle": "Imported Pigeons",
-    "listSubtitle": "Browse the latest award and imported pigeons — tap a card for full details.",
+    "representativeTitle": "Representative Pigeons",
+    "listSubtitle": "Browse the latest award, imported, and representative pigeons — tap a card for full details.",
     "noItems": "No entries yet.",
     "viewDetails": "View Details",
     "pageSizeLabel": "Per page:",
@@ -582,8 +584,10 @@
     "loftLine": "Loft: {loft}",
     "loftAwardTitle": "{loft}'s Award Pigeons",
     "loftImportedTitle": "{loft}'s Imported Pigeons",
+    "loftRepresentativeTitle": "{loft}'s Representative Pigeons",
     "sidebarLatestAward": "Latest Award Pigeons",
     "sidebarLatestImported": "Latest Imported Pigeons",
+    "sidebarLatestRepresentative": "Latest Representative Pigeons",
     "backToList": "View More"
   },
   "news": {

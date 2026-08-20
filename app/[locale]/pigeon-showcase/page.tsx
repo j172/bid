@@ -20,6 +20,21 @@ export const dynamic = "force-dynamic";
 const LIST_EXCERPT_LENGTH = 100;
 const QUERY_KEYS = ["category", "pageSize", "page", "loftId"] as const;
 
+// category -> pigeonShowcase.* translation key, used both for the plain
+// category title and (via CATEGORY_LOFT_TITLE_KEY below) the "{loft} 的 XX"
+// variant shown when ?loftId= is set. Kept as maps rather than a binary
+// ternary now that there are three categories (issue #170's 代表種鴿).
+const CATEGORY_TITLE_KEY: Record<PigeonShowcaseCategory, "awardTitle" | "importedTitle" | "representativeTitle"> = {
+  award: "awardTitle",
+  imported: "importedTitle",
+  representative: "representativeTitle",
+};
+const CATEGORY_LOFT_TITLE_KEY: Record<PigeonShowcaseCategory, "loftAwardTitle" | "loftImportedTitle" | "loftRepresentativeTitle"> = {
+  award: "loftAwardTitle",
+  imported: "loftImportedTitle",
+  representative: "loftRepresentativeTitle",
+};
+
 // Shares its card grid and pagination footer with app/[locale]/news/page.tsx
 // (issue #139 item 8); the category tabs are this page's own.
 export default async function PigeonShowcaseListPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
@@ -42,16 +57,14 @@ export default async function PigeonShowcaseListPage({ searchParams }: { searchP
 
   const { items, total } = await listPigeonShowcase({ category, page, pageSize, loftId });
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const categoryTitle = category === "award" ? t("awardTitle") : t("importedTitle");
+  const categoryTitle = t(CATEGORY_TITLE_KEY[category]);
   // The loft title comes from the filtered results themselves (they're
   // already JOINed with homepage_sections in lib/pigeonShowcase.ts) rather
   // than a second query. If the filter matched nothing there's no title to
   // read, so fall back to the plain category title instead of failing.
   const loftTitle = items[0]?.loftTitle;
   const pageTitle =
-    loftId !== undefined && loftTitle
-      ? t(category === "award" ? "loftAwardTitle" : "loftImportedTitle", { loft: loftTitle })
-      : categoryTitle;
+    loftId !== undefined && loftTitle ? t(CATEGORY_LOFT_TITLE_KEY[category], { loft: loftTitle }) : categoryTitle;
 
   const tabClass = (active: boolean) =>
     `rounded-full px-4 py-2 text-sm font-semibold transition ${
@@ -77,6 +90,12 @@ export default async function PigeonShowcaseListPage({ searchParams }: { searchP
           className={tabClass(category === "imported")}
         >
           {t("importedTitle")}
+        </Link>
+        <Link
+          href={`/pigeon-showcase?${buildQuery(params, QUERY_KEYS, { category: "representative", page: "1", loftId: "" })}`}
+          className={tabClass(category === "representative")}
+        >
+          {t("representativeTitle")}
         </Link>
       </div>
 

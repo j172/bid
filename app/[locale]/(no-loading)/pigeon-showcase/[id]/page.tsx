@@ -11,7 +11,12 @@ export const dynamic = "force-dynamic";
 
 const SIDEBAR_LATEST_LIMIT = 5;
 
-const CATEGORY_LABEL_KEY = { award: "awardTitle", imported: "importedTitle" } as const;
+const CATEGORY_LABEL_KEY = { award: "awardTitle", imported: "importedTitle", representative: "representativeTitle" } as const;
+const SIDEBAR_TITLE_KEY = {
+  award: "sidebarLatestAward",
+  imported: "sidebarLatestImported",
+  representative: "sidebarLatestRepresentative",
+} as const;
 
 // Layout reference: NextMerce's "blog-details-with-sidebar" (issue #54) —
 // main column carries the category tag/name/loft/full description, sidebar
@@ -55,7 +60,7 @@ export default async function PigeonShowcaseDetailPage({ params }: { params: Pro
           / {item.name}
         </>
       }
-      sidebarTitle={item.category === "award" ? t("sidebarLatestAward") : t("sidebarLatestImported")}
+      sidebarTitle={t(SIDEBAR_TITLE_KEY[item.category])}
       sidebarItems={sidebarItems.map((sidebarItem) => ({
         id: sidebarItem.id,
         href: `/pigeon-showcase/${sidebarItem.id}`,

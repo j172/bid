@@ -57,6 +57,7 @@
     "promoAuctionDesc": "追蹤目前價格、剩餘時間與領先者狀態，隨時掌握戰況。",
     "promoAuctionCta": "立即出價",
     "awardPigeonBadge": "入賞鴿",
+    "representativePigeonBadge": "代表種鴿",
     "promoFixedTitle": "一般商品快速購買",
     "promoFixedCta": "立即購買",
     "bestAuction": "人氣競標",
@@ -571,7 +572,8 @@
   "pigeonShowcase": {
     "awardTitle": "入賞鴿",
     "importedTitle": "進口鴿",
-    "listSubtitle": "掌握最新入賞鴿／進口鴿資訊，點選卡片查看完整介紹。",
+    "representativeTitle": "代表種鴿",
+    "listSubtitle": "掌握最新入賞鴿／進口鴿／代表種鴿資訊，點選卡片查看完整介紹。",
     "noItems": "目前沒有相關資料。",
     "viewDetails": "查看鴿況",
     "pageSizeLabel": "每頁顯示：",
@@ -582,8 +584,10 @@
     "loftLine": "鴿舍：{loft}",
     "loftAwardTitle": "{loft} 的入賞鴿",
     "loftImportedTitle": "{loft} 的進口鴿",
+    "loftRepresentativeTitle": "{loft} 的代表種鴿",
     "sidebarLatestAward": "最新入賞鴿",
     "sidebarLatestImported": "最新進口鴿",
+    "sidebarLatestRepresentative": "最新代表種鴿",
     "backToList": "查看更多"
   },
   "news": {

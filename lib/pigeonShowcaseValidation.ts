@@ -3,7 +3,7 @@
 
 import { validateRequiredTextField, validateRichTextField, type FieldValidationResult } from "@/lib/richTextValidation";
 
-export const PIGEON_SHOWCASE_CATEGORIES = ["award", "imported"] as const;
+export const PIGEON_SHOWCASE_CATEGORIES = ["award", "imported", "representative"] as const;
 export type PigeonShowcaseCategory = (typeof PIGEON_SHOWCASE_CATEGORIES)[number];
 
 export const NAME_MAX = 100;
