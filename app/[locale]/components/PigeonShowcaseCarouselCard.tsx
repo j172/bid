@@ -25,10 +25,13 @@ import { useRotatingIndex } from "@/lib/useRotatingIndex";
 // single bottom row. The image runs at a portrait-ish 4:5 ratio (not the news
 // card's wide 21:10) because this card only occupies one of the homepage
 // grid's three columns, so a wide crop would leave the overlay text cramped.
-// The two variants stay visually distinct through their brand scale: the dark
+// The variants stay visually distinct through their brand scale: the dark
 // variant (入賞鴿) is baltic-blue with a translucent white badge, the light
 // variant (進口鴿) is steel-azure — the interactive/primary scale — with a
-// solid badge.
+// solid badge. The accent variant (代表種鴿, issue #170) reuses the third
+// brand scale already defined in app/styles/design-tokens.css —
+// twilight-indigo — paired with a solid badge like the light variant, so all
+// three read as one consistent family without any two ever sharing a scale.
 export interface PigeonShowcaseCarouselItem {
   id: number;
   name: string;
@@ -38,6 +41,30 @@ export interface PigeonShowcaseCarouselItem {
 }
 
 const ROTATE_INTERVAL_MS = 5000;
+
+// One style bundle per brand scale (see the header comment above for why
+// each variant gets its own scale). Looked up by `variant` instead of the
+// old two-way `isDark` ternary now that there are three (issue #170).
+const VARIANT_STYLES = {
+  dark: {
+    wrapperClass: "bg-baltic-blue-900",
+    scrimClass: "bg-gradient-to-t from-baltic-blue-950 via-baltic-blue-950/50 to-transparent",
+    badgeClass: "bg-white/15 text-white backdrop-blur-sm",
+    ctaClass: "text-baltic-blue-900 hover:bg-twilight-indigo-600",
+  },
+  light: {
+    wrapperClass: "bg-steel-azure-900",
+    scrimClass: "bg-gradient-to-t from-steel-azure-950 via-steel-azure-950/50 to-transparent",
+    badgeClass: "bg-steel-azure-600 text-white",
+    ctaClass: "text-steel-azure-900 hover:bg-steel-azure-600",
+  },
+  accent: {
+    wrapperClass: "bg-twilight-indigo-900",
+    scrimClass: "bg-gradient-to-t from-twilight-indigo-950 via-twilight-indigo-950/50 to-transparent",
+    badgeClass: "bg-twilight-indigo-600 text-white",
+    ctaClass: "text-twilight-indigo-900 hover:bg-twilight-indigo-600",
+  },
+} as const;
 
 export default function PigeonShowcaseCarouselCard({
   items,
@@ -50,7 +77,7 @@ export default function PigeonShowcaseCarouselCard({
   viewMoreHref,
 }: {
   items: PigeonShowcaseCarouselItem[];
-  variant: "dark" | "light";
+  variant: "dark" | "light" | "accent";
   badgeLabel: string;
   emptyStateTitle: string;
   emptyStateDesc: string;
@@ -61,13 +88,7 @@ export default function PigeonShowcaseCarouselCard({
   const t = useTranslations("home");
   const [index, setIndex] = useRotatingIndex(items.length, ROTATE_INTERVAL_MS);
 
-  const isDark = variant === "dark";
-  const wrapperClass = isDark ? "bg-baltic-blue-900" : "bg-steel-azure-900";
-  const scrimClass = isDark
-    ? "bg-gradient-to-t from-baltic-blue-950 via-baltic-blue-950/50 to-transparent"
-    : "bg-gradient-to-t from-steel-azure-950 via-steel-azure-950/50 to-transparent";
-  const badgeClass = isDark ? "bg-white/15 text-white backdrop-blur-sm" : "bg-steel-azure-600 text-white";
-  const ctaClass = isDark ? "text-baltic-blue-900 hover:bg-twilight-indigo-600" : "text-steel-azure-900 hover:bg-steel-azure-600";
+  const { wrapperClass, scrimClass, badgeClass, ctaClass } = VARIANT_STYLES[variant];
 
   if (items.length === 0) {
     return (

@@ -60,6 +60,7 @@
     "promoAuctionDesc": "追踪当前价格、剩余时间与领先者状态，随时掌握战况。",
     "promoAuctionCta": "立即出价",
     "awardPigeonBadge": "入赏鸽",
+    "representativePigeonBadge": "代表种鸽",
     "promoFixedTitle": "一般商品快速购买",
     "promoFixedCta": "立即购买",
     "bestAuction": "人气竞标",
@@ -573,7 +574,8 @@
   "pigeonShowcase": {
     "awardTitle": "入赏鸽",
     "importedTitle": "进口鸽",
-    "listSubtitle": "掌握最新入赏鸽／进口鸽信息，点选卡片查看完整介绍。",
+    "representativeTitle": "代表种鸽",
+    "listSubtitle": "掌握最新入赏鸽／进口鸽／代表种鸽信息，点选卡片查看完整介绍。",
     "noItems": "目前没有相关数据。",
     "viewDetails": "查看鸽况",
     "pageSizeLabel": "每页显示：",
@@ -584,8 +586,10 @@
     "loftLine": "鸽舍：{loft}",
     "loftAwardTitle": "{loft} 的入赏鸽",
     "loftImportedTitle": "{loft} 的进口鸽",
+    "loftRepresentativeTitle": "{loft} 的代表种鸽",
     "sidebarLatestAward": "最新入赏鸽",
     "sidebarLatestImported": "最新进口鸽",
+    "sidebarLatestRepresentative": "最新代表种鸽",
     "backToList": "查看更多"
   },
   "news": {

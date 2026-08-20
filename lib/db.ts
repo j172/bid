@@ -226,10 +226,12 @@ CREATE TABLE IF NOT EXISTS exchange_rates (
   KEY idx_exchange_rates_currency_date (currency, rate_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 入賞鴿／進口鴿 showcase entries (issue #54) — deliberately NOT a revival of
--- the pigeon_gallery_* tables removed in #52 ("方向錯誤"): only two fixed
--- categories (no custom category table), admin CRUD + a homepage carousel/
--- category list/detail page instead of a standalone gallery. loft_id is a
+-- 入賞鴿／進口鴿／代表種鴿 showcase entries (issue #54; 'representative' 代表種鴿
+-- added by issue #170 — see ensurePigeonShowcaseCategories below for how it's
+-- added to already-deployed databases) — deliberately NOT a revival of the
+-- pigeon_gallery_* tables removed in #52 ("方向錯誤"): only a small set of
+-- fixed categories (no custom category table), admin CRUD + a homepage
+-- carousel/category list/detail page instead of a standalone gallery. loft_id is a
 -- real DB-level FK to homepage_sections(id) (unlike listings.loft_id, which
 -- stays a plain BIGINT per its own comment above) because this ticket
 -- explicitly requires deletes of a still-referenced 合作鴿舍 to be rejected
@@ -243,7 +245,7 @@ CREATE TABLE IF NOT EXISTS exchange_rates (
 -- below for how it's added to already-deployed databases.
 CREATE TABLE IF NOT EXISTS pigeon_showcase (
   id BIGINT NOT NULL AUTO_INCREMENT,
-  category ENUM('award','imported') NOT NULL,  -- 'award' 入賞鴿 | 'imported' 進口鴿
+  category ENUM('award','imported','representative') NOT NULL,  -- 'award' 入賞鴿 | 'imported' 進口鴿 | 'representative' 代表種鴿
   name VARCHAR(100) NOT NULL,
   loft_id BIGINT NOT NULL,
   image_file_name VARCHAR(255) NULL,            -- 主圖 (issue #70); NULL only on pre-#70 rows
@@ -515,6 +517,20 @@ export async function ensureEmailVerificationColumns(db: mysql.Pool): Promise<vo
   }
 }
 
+// Issue #170: adds the third 'representative' (代表種鴿) pigeon_showcase
+// category alongside 'award'/'imported'. Same story as
+// ensureBuyItNowNullable/ensureEndsAtNullable above — an already-deployed
+// database's category column was created with the two-value ENUM from
+// SCHEMA_SQL's original CREATE TABLE, so a fresh install picks up the third
+// value from SCHEMA_SQL directly but an existing one needs its ENUM
+// definition widened explicitly. MODIFY COLUMN is idempotent (re-running it
+// once the ENUM already includes 'representative' is a no-op), so this is
+// safe to call unconditionally on every boot rather than probing
+// information_schema first.
+async function ensurePigeonShowcaseCategories(db: mysql.Pool): Promise<void> {
+  await db.query("ALTER TABLE pigeon_showcase MODIFY COLUMN category ENUM('award','imported','representative') NOT NULL");
+}
+
 function createPool(): mysql.Pool {
   return mysql.createPool({
     host: process.env.MYSQL_HOST,
@@ -569,6 +585,7 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensureShowcaseNewsImageColumns(db);
   await ensureNewsBroadcastColumn(db);
   await ensureEmailVerificationColumns(db);
+  await ensurePigeonShowcaseCategories(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {

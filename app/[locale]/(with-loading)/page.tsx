@@ -104,13 +104,15 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const displayCurrency = currencyForLocale(locale);
   const displayRate = displayCurrency === "TWD" ? null : await getLatestStoredRate(displayCurrency);
   const rateValue = displayRate?.rate ?? null;
-  // 入賞鴿／進口鴿首頁輪播 (issue #54) — latest 10 per category, feeding the
-  // two small promo cards below (replacing their static marketing copy when
+  // 入賞鴿／進口鴿／代表種鴿首頁輪播 (issue #54; 'representative' 代表種鴿卡片
+  // added by issue #170) — latest 10 per category, feeding the three small
+  // promo cards below (replacing their static marketing copy when
   // non-empty; see PigeonShowcaseCarouselCard's own fallback branch).
   const PIGEON_CAROUSEL_EXCERPT_LENGTH = 60;
-  const [awardPigeons, importedPigeons] = await Promise.all([
+  const [awardPigeons, importedPigeons, representativePigeons] = await Promise.all([
     listLatestPigeonShowcase("award", 10),
     listLatestPigeonShowcase("imported", 10),
+    listLatestPigeonShowcase("representative", 10),
   ]);
   const awardCarouselItems = awardPigeons.map((pigeon) => ({
     id: pigeon.id,
@@ -119,6 +121,12 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     imageUrl: pigeon.imageFileName ? pigeonShowcaseImageUrl(pigeon.imageFileName) : "/images/hero-placeholder.png",
   }));
   const importedCarouselItems = importedPigeons.map((pigeon) => ({
+    id: pigeon.id,
+    name: pigeon.name,
+    excerpt: excerptHtml(pigeon.description, PIGEON_CAROUSEL_EXCERPT_LENGTH),
+    imageUrl: pigeon.imageFileName ? pigeonShowcaseImageUrl(pigeon.imageFileName) : "/images/hero-placeholder.png",
+  }));
+  const representativeCarouselItems = representativePigeons.map((pigeon) => ({
     id: pigeon.id,
     name: pigeon.name,
     excerpt: excerptHtml(pigeon.description, PIGEON_CAROUSEL_EXCERPT_LENGTH),
@@ -229,9 +237,12 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
           {/* Issue #150: stacks the exchange-rate card below the news card so
-              this column's total height auto-matches the right column's two
+              this column's total height auto-matches the right column's
               stacked pigeon-showcase cards via flex-1, instead of sitting
-              visibly shorter. */}
+              visibly shorter. Still holds after issue #170 added a third
+              pigeon-showcase card to the right column — flex-1 just expands
+              further to keep matching whatever height the right column ends
+              up at, no extra layout work needed here. */}
           <div className="flex h-full flex-col gap-5 lg:col-span-2">
             <NewsCarouselCard
               items={newsCarouselItems}
@@ -267,6 +278,17 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               viewCtaLabel={t("pigeonShowcaseViewCta")}
               viewMoreLabel={t("pigeonShowcaseViewMore")}
               viewMoreHref="/pigeon-showcase?category=imported"
+            />
+
+            <PigeonShowcaseCarouselCard
+              items={representativeCarouselItems}
+              variant="accent"
+              badgeLabel={t("representativePigeonBadge")}
+              emptyStateTitle={t("emptyStateTitle")}
+              emptyStateDesc={t("pigeonShowcaseEmptyDesc")}
+              viewCtaLabel={t("pigeonShowcaseViewCta")}
+              viewMoreLabel={t("pigeonShowcaseViewMore")}
+              viewMoreHref="/pigeon-showcase?category=representative"
             />
           </div>
         </div>
