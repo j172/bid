@@ -14,6 +14,11 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { label: "訂單管理", href: "/z04urru6/orders", section: "commerce" },
   { label: "使用者列表", href: "/z04urru6/users", section: "commerce" },
   { label: "合作鴿舍管理", href: "/z04urru6/homepage/partner-lofts", section: "content" },
+  // 名家專區管理 (issue #168) — a second, fully independent CRUD page on the
+  // same generic homepage_sections table as 合作鴿舍 above, using its own
+  // section_type ('featured_loft') so the two never share or affect each
+  // other's cards.
+  { label: "名家專區管理", href: "/z04urru6/homepage/featured-lofts", section: "content" },
   // 入賞鴿／進口鴿管理 (issue #54) — deliberately NOT a revival of the
   // pigeon_gallery_* admin UI removed by #52; a brand-new, simpler CRUD on
   // top of the new pigeon_showcase table (two fixed categories, no

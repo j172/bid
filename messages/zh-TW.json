@@ -45,6 +45,9 @@
     "partnerLoftsTitle": "合作鴿舍",
     "partnerLoftsSubtitle": "與我們長期合作的優質鴿舍，點選前往鴿舍專屬商品頁",
     "partnerLoftsViewAll": "查看全部商品",
+    "featuredLoftsTitle": "名家專區",
+    "featuredLoftsSubtitle": "精選業界知名的優秀名家，點選前往專屬商品頁",
+    "featuredLoftsViewAll": "查看全部商品",
     "timeless": "長期販售",
     "cardCta": "查看詳情",
     "serviceFast": "快速上架",
@@ -157,7 +160,10 @@
     "buyItNowPrice": "買斷價 {price}",
     "noBidsYet": "尚無人出價",
     "currentLeader": "目前領先：{name}",
-    "totalBids": "總出價次數 {count}"
+    "totalBids": "總出價次數 {count}",
+    "featuredLoftsTitle": "名家專區",
+    "featuredLoftsSubtitle": "精選業界知名的優秀名家，點選前往專屬商品頁",
+    "featuredLoftsViewAll": "查看全部商品"
   },
   "listingDetail": {
     "shopDetails": "商品詳情",

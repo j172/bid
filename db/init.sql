@@ -315,16 +315,18 @@ CREATE TABLE IF NOT EXISTS purchases (
 -- content, never a real transactable product.
 
 -- Generic image+sort_order homepage block entries. section_type is an
--- application-level tag (currently only 'partner_loft' / 合作鴿舍) rather
--- than its own lookup table, since new section types are expected to be rare
--- and code-driven (each type gets its own homepage placement).
+-- application-level tag ('partner_loft' / 合作鴿舍, and since issue #168
+-- 'featured_loft' / 名家專區 — a second, independent block using the same
+-- table/CRUD but never sharing rows) rather than its own lookup table, since
+-- new section types are expected to be rare and code-driven (each type gets
+-- its own front-end placement).
 -- No link_url (removed in issue #45's GRILL ME follow-up): homepage cards
 -- now link to /listings?loft=<id> (that loft's listings, via listings.loft_id
 -- below) rather than an admin-entered URL. bio is an optional free-text
 -- excerpt shown on both the admin form and the homepage card.
 CREATE TABLE IF NOT EXISTS homepage_sections (
   id BIGINT NOT NULL AUTO_INCREMENT,
-  section_type VARCHAR(30) NOT NULL,          -- 'partner_loft' (合作鴿舍)
+  section_type VARCHAR(30) NOT NULL,          -- 'partner_loft' (合作鴿舍) | 'featured_loft' (名家專區)
   title VARCHAR(255) NOT NULL,
   image_file_name VARCHAR(255) NOT NULL,
   bio TEXT NULL,                              -- optional 簡介 shown in admin + homepage card excerpt
