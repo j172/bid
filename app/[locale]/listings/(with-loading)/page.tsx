@@ -17,6 +17,7 @@ import {
 } from "@/lib/listingFilters";
 import { firstParam, numberParam, type SearchParams } from "@/lib/searchParams";
 import { Link } from "@/i18n/navigation";
+import CategorySelect, { type CategorySelectOption } from "../../components/CategorySelect";
 import ProductCard from "../../components/ProductCard";
 
 export const dynamic = "force-dynamic";
@@ -160,6 +161,20 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
     { value: "fixed_price", label: t("tabFixedPrice") },
   ];
 
+  const CATEGORY_OPTIONS: CategorySelectOption[] = [
+    { value: "", label: t("categoryAll"), href: withFilters({ category: undefined }) },
+    {
+      value: "auction",
+      label: `${t("tabAuction")} (${categoryCounts.auction})`,
+      href: withFilters({ category: "auction" }),
+    },
+    {
+      value: "fixed_price",
+      label: `${t("tabFixedPrice")} (${categoryCounts.fixed_price})`,
+      href: withFilters({ category: "fixed_price" }),
+    },
+  ];
+
   const TYPE_BADGE_LABEL: Record<ListingType, string> = {
     auction: t("badgeAuction"),
     fixed_price: t("badgeFixedPrice"),
@@ -181,49 +196,33 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
         <aside className="space-y-4">
           <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
             <p className="text-sm font-bold uppercase tracking-wide text-ink">{t("filtersTitle")}</p>
-            <div className="mt-4 space-y-2">
-              {TYPE_TABS.map((tab) => (
-                <Link
-                  key={tab.value}
-                  href={tabHref(tab.value, perfMode, searchQuery, sort)}
-                  className={`block rounded-md px-3 py-2 text-sm font-medium ${
-                    (type ?? "") === tab.value
-                      ? "bg-interactive-primary-subtle text-interactive-primary-active"
-                      : "bg-slate-50 text-ink-light hover:bg-slate-100"
-                  }`}
-                >
-                  {tab.label}
-                </Link>
-              ))}
-            </div>
-
-            <div className="mt-5 border-t border-border pt-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">{t("categoryTitle")}</p>
-              <div className="mt-2 space-y-2">
-                <Link href={withFilters({ category: undefined })} className={`block rounded-md px-3 py-2 text-sm ${!selectedCategory ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
-                  {t("categoryAll")}
-                </Link>
-                <Link href={withFilters({ category: "auction" })} className={`block rounded-md px-3 py-2 text-sm ${selectedCategory === "auction" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
-                  {t("tabAuction")} ({categoryCounts.auction})
-                </Link>
-                <Link href={withFilters({ category: "fixed_price" })} className={`block rounded-md px-3 py-2 text-sm ${selectedCategory === "fixed_price" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
-                  {t("tabFixedPrice")} ({categoryCounts.fixed_price})
-                </Link>
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                {TYPE_TABS.map((tab) => (
+                  <Link
+                    key={tab.value}
+                    href={tabHref(tab.value, perfMode, searchQuery, sort)}
+                    className={`block rounded-md px-3 py-2 text-sm font-medium ${
+                      (type ?? "") === tab.value
+                        ? "bg-interactive-primary-subtle text-interactive-primary-active"
+                        : "bg-slate-50 text-ink-light hover:bg-slate-100"
+                    }`}
+                  >
+                    {tab.label}
+                  </Link>
+                ))}
               </div>
-            </div>
 
-            <div className="mt-5 border-t border-border pt-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">{t("priceTitle")}</p>
-              <div className="mt-2 space-y-2">
-                <Link href={withFilters({ minPrice: undefined, maxPrice: undefined })} className={`block rounded-md px-3 py-2 text-sm ${minPrice === undefined && maxPrice === undefined ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
-                  {t("priceAny")}
-                </Link>
-                <Link href={withFilters({ minPrice: "501", maxPrice: "1000" })} className={`block rounded-md px-3 py-2 text-sm ${minPrice === 501 && maxPrice === 1000 ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
-                  {t("priceMid")}
-                </Link>
-                <Link href={withFilters({ minPrice: "1001", maxPrice: undefined })} className={`block rounded-md px-3 py-2 text-sm ${minPrice === 1001 && maxPrice === undefined ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-50 text-ink-light hover:bg-slate-100"}`}>
-                  {t("priceHigh")}
-                </Link>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">{t("categoryTitle")}</p>
+                <div className="mt-2">
+                  <CategorySelect
+                    ariaLabel={t("categoryTitle")}
+                    value={selectedCategory ?? ""}
+                    options={CATEGORY_OPTIONS}
+                    className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-ink"
+                  />
+                </div>
               </div>
             </div>
           </div>
