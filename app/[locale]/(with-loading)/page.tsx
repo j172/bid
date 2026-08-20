@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { listOpenListings } from "@/lib/listings";
-import { listingPhotoUrl, homepageSectionImageUrl, pigeonShowcaseImageUrl, newsImageUrl } from "@/lib/uploads";
+import { listingPhotoUrl, homepageSectionImageUrl, pigeonShowcaseImageUrl, newsImageUrl, featuredLoftPostImageUrl } from "@/lib/uploads";
 import { listHomepageSections } from "@/lib/homepageSections";
 import { listLatestPigeonShowcase } from "@/lib/pigeonShowcase";
 import { listLatestNews } from "@/lib/news";
+import { listLatestFeaturedLoftPosts } from "@/lib/featuredLoftPosts";
 import { excerptHtml } from "@/lib/htmlText";
 import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
 import { currencyForLocale, formatDualPrice, formatNtd } from "@/lib/currency";
@@ -29,6 +30,7 @@ import HomeProductCard from "../components/HomeProductCard";
 import PartnerLoftImage from "../components/PartnerLoftImage";
 import PigeonShowcaseCarouselCard from "../components/PigeonShowcaseCarouselCard";
 import NewsCarouselCard from "../components/NewsCarouselCard";
+import FeaturedLoftCarouselCard from "../components/FeaturedLoftCarouselCard";
 import ExchangeRateStrip from "../components/ExchangeRateStrip";
 
 export const dynamic = "force-dynamic";
@@ -91,10 +93,20 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const allFetchedListings = await listOpenListings();
   const listings = allFetchedListings.filter((item) => item.status === "open");
   const partnerLofts = await listHomepageSections("partner_loft", { activeOnly: true });
-  // 名家專區 (issue #168) — independent homepage_sections section_type from
-  // 合作鴿舍 above; separate query, separate cards, only shares the generic
-  // homepage_sections CRUD/table.
-  const featuredLofts = await listHomepageSections("featured_loft", { activeOnly: true });
+  // 名家專區首頁輪播 (issue #176) — replaces issue #168's static
+  // homepage_sections('featured_loft') card grid with its own
+  // featured_loft_posts table + a NewsCarouselCard-style rotating card
+  // (see FeaturedLoftCarouselCard below). Latest 10, same "carousel of the
+  // newest N" convention as 最新訊息/入賞鴿/進口鴿 below.
+  const FEATURED_LOFT_CAROUSEL_EXCERPT_LENGTH = 30;
+  const latestFeaturedLoftPosts = await listLatestFeaturedLoftPosts(10);
+  const featuredLoftCarouselItems = latestFeaturedLoftPosts.map((post) => ({
+    id: post.id,
+    title: post.title,
+    excerpt: excerptHtml(post.content, FEATURED_LOFT_CAROUSEL_EXCERPT_LENGTH),
+    imageUrl: post.imageFileName ? featuredLoftPostImageUrl(post.imageFileName) : "/images/hero-placeholder.png",
+    createdAt: post.createdAt.toLocaleDateString(),
+  }));
 
   // Reference-only currency conversion (issue #45, wired into the homepage
   // for issue #103) — same pattern as the listings page and listing detail
@@ -362,39 +374,24 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </div>
       </section>
 
-      {featuredLofts.length > 0 && (
-        <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-6">
-          <div className="mb-1 flex items-end justify-between">
-            <h2 className="text-2xl font-bold">{t("featuredLoftsTitle")}</h2>
-            <Link href="/listings" className="text-sm font-semibold text-interactive-primary hover:text-header">
-              {t("featuredLoftsViewAll")}
-            </Link>
-          </div>
-          <p className="text-sm text-ink-light">{t("featuredLoftsSubtitle")}</p>
-          <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {featuredLofts.map((loft) => (
-              // Clicking a card goes to that card's own listings, same
-              // /listings?loft=<id> mechanism as 合作鴿舍 below (issue #168 —
-              // mirrors that block's link pattern exactly).
-              <Link
-                key={loft.id}
-                href={`/listings?loft=${loft.id}`}
-                className="group overflow-hidden rounded-2xl border border-border bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-100">
-                  <PartnerLoftImage
-                    src={homepageSectionImageUrl(loft.imageFileName)}
-                    alt={loft.title}
-                    sizes="(min-width: 1024px) 25vw, 50vw"
-                  />
-                </div>
-                <p className="mt-3 text-sm font-bold text-ink">{loft.title}</p>
-                {loft.bio && <p className="mt-1 line-clamp-2 text-xs text-ink-light">{loft.bio}</p>}
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* 名家專區首頁輪播 (issue #176) — always rendered (not gated on
+          `.length > 0`), same "keep the layout slot occupied, show a neutral
+          empty state instead of hiding the section" convention as
+          NewsCarouselCard/PigeonShowcaseCarouselCard use; the component
+          itself decides whether to render its empty state. */}
+      <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-6">
+        <div className="mx-auto max-w-3xl">
+          <FeaturedLoftCarouselCard
+            items={featuredLoftCarouselItems}
+            activeBadge={t("featuredLoftsCarouselBadge")}
+            ctaLabel={t("featuredLoftsCarouselCta")}
+            viewMoreLabel={t("featuredLoftsCarouselViewMore")}
+            viewMoreHref="/featured-lofts"
+            emptyStateTitle={t("emptyStateTitle")}
+            emptyStateDesc={t("featuredLoftsCarouselEmptyDesc")}
+          />
+        </div>
+      </section>
 
       {partnerLofts.length > 0 && (
         <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-6">
