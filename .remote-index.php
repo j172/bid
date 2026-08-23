@@ -247,6 +247,50 @@ if (str_starts_with($path, '/__ops/')) {
     // without anyone noticing a 502 first — see $buildApplyCommand's comment.
     if ($path === '/__ops/pm2-ensure-running') {
         header('Content-Type: text/plain; charset=utf-8');
+        $now = date('Y-m-d H:i:s');
+
+        // Fast path first, and it spawns nothing.
+        //
+        // The `pm2 jlist` below is a full Node process, and this endpoint is
+        // meant to be hit by cron every 1-2 minutes (see the 502 runbook), so
+        // the old unconditional jlist burned dozens of process spawns an hour
+        // purely to be told nothing was wrong. health.j172.tw's watchdog does
+        // the same thing on the same shared account: on 2026-08-23 the pair
+        // filled that account's 20-slot Entry Process ceiling with idle pm2
+        // helpers — orphaned Node children left behind whenever the host
+        // killed their wrapper mid-call — and wedged it so hard the watchdog
+        // could no longer spawn the very process it needed to recover.
+        // fsockopen costs zero processes, so the healthy case (almost every
+        // tick) now runs entirely inside PHP.
+        //
+        // This is a fast path, NOT a replacement for the pm2 check. Anything
+        // short of a clean HTTP status line falls through to the original
+        // logic below, so a slow-but-healthy app costs exactly what it used to
+        // and still cannot trigger a spurious restart: the jlist path will see
+        // bid-web online and take no action.
+        //
+        // Deliberate trade-off: while the app answers on :3001 this no longer
+        // notices a dead pm2 daemon. That is the right call — a dead daemon
+        // with a healthy app is not an outage, and the escalation below still
+        // rebuilds it the moment the app actually stops answering.
+        $probe = @fsockopen('127.0.0.1', $appPort, $probeErrno, $probeErrstr, 2);
+        if ($probe !== false) {
+            // A connect alone only proves something holds the port; ask for a
+            // status line so a wedged listener still escalates.
+            $servingHttp = false;
+            @stream_set_timeout($probe, 5);
+            if (@fwrite($probe, "HEAD / HTTP/1.0\r\nHost: bid.j172.tw\r\nConnection: close\r\n\r\n")) {
+                $statusLine = (string) @fgets($probe, 128);
+                $servingHttp = (stripos($statusLine, 'HTTP/') === 0);
+            }
+            @fclose($probe);
+
+            if ($servingHttp) {
+                echo "[{$now}] bid-web is online (socket probe, no process spawned). No action taken.\n";
+                exit;
+            }
+        }
+
         $jlist = shell_exec(escapeshellarg($nodeBin) . ' ' . escapeshellarg($pm2Bin) . ' jlist 2>/dev/null');
         $procs = json_decode($jlist ?: '[]', true);
         if (!is_array($procs)) {
@@ -260,7 +304,6 @@ if (str_starts_with($path, '/__ops/')) {
             }
         }
 
-        $now = date('Y-m-d H:i:s');
         $watchdogLog = $appDir . '/.pm2-watchdog.log';
 
         if ($isOnline) {
