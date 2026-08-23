@@ -291,20 +291,50 @@ if (str_starts_with($path, '/__ops/')) {
             }
         }
 
-        $jlist = shell_exec(escapeshellarg($nodeBin) . ' ' . escapeshellarg($pm2Bin) . ' jlist 2>/dev/null');
-        $procs = json_decode($jlist ?: '[]', true);
-        if (!is_array($procs)) {
-            $procs = [];
-        }
-        $isOnline = false;
-        foreach ($procs as $proc) {
-            if (($proc['name'] ?? '') === 'bid-web' && ($proc['pm2_env']['status'] ?? '') === 'online') {
-                $isOnline = true;
-                break;
-            }
-        }
-
         $watchdogLog = $appDir . '/.pm2-watchdog.log';
+
+        // `pm2 jlist` talks to the pm2 daemon over a unix socket, so when the
+        // daemon itself is dead — not just bid-web — a bare shell_exec() waits
+        // on a socket nothing is listening on and hangs until PHP's own
+        // max_execution_time kills the request. The watchdog then goes silent
+        // at precisely the moment it is needed: no output, no log line, no
+        // restart. health.j172.tw watched that happen during its 2026-08-01
+        // outage, where its watchdog fired reliably ~14 times over four days
+        // for ordinary "app got killed" events and then said nothing at all
+        // once the daemon died. `timeout 5` turns the hang into a fast,
+        // detectable failure (exit 124).
+        exec('timeout 5 ' . escapeshellarg($nodeBin) . ' ' . escapeshellarg($pm2Bin) . ' jlist 2>/dev/null', $jlistOutput, $jlistExit);
+        $daemonResponsive = ($jlistExit === 0);
+
+        $isOnline = false;
+        if ($daemonResponsive) {
+            $procs = json_decode(implode("\n", $jlistOutput) ?: '[]', true);
+            if (!is_array($procs)) {
+                $procs = [];
+            }
+            foreach ($procs as $proc) {
+                if (($proc['name'] ?? '') === 'bid-web' && ($proc['pm2_env']['status'] ?? '') === 'online') {
+                    $isOnline = true;
+                    break;
+                }
+            }
+        } else {
+            // Deliberately no daemon rebuild here, unlike health.j172.tw's
+            // watchdog (pm2 kill / pkill / unlink the runtime sockets /
+            // resurrect). That daemon is shared by both sites on this
+            // account, health's watchdog already owns rebuilding it, and its
+            // `pm2 resurrect` restores bid-web along with health-web — two
+            // watchdogs racing to pkill the same daemon would just deepen the
+            // process pile-up this file spent 2026-08-23 digging out of.
+            // Falling through as "offline" is enough on its own: the apply
+            // below ends in `pm2 start`, which spawns a fresh daemon when
+            // none is running.
+            @file_put_contents(
+                $watchdogLog,
+                "[{$now}] pm2 jlist did not respond (exit={$jlistExit}) — the pm2 daemon itself looks dead; treating bid-web as offline so the apply below rebuilds it.\n",
+                FILE_APPEND
+            );
+        }
 
         if ($isOnline) {
             echo "[{$now}] bid-web is online. No action taken.\n";
