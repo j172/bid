@@ -23,15 +23,27 @@
 
 set -u
 
-APP_DIR="/home/tw123457/bid_app"
+# Every path below is derived from $HOME rather than hard-coded to one cPanel
+# account (see issue #182, the sng101 -> sng105 migration). Which host this
+# script runs on is decided by the DEPLOY_SSH_HOST secret, not by anything in
+# the repo, so a hard-coded home directory breaks the deploy the instant the
+# secret and the repo disagree about which account is current — including
+# during the migration's cutover window. Deriving from $HOME keeps one copy of
+# this script correct on both hosts, which reduces the cutover to changing
+# secrets and DNS. $HOME is always set here: this runs as the account's own
+# login shell over SSH.
+NODE_VERSION="v24.19.0"
+NVM_NODE_DIR="$HOME/.nvm/versions/node/$NODE_VERSION"
+
+APP_DIR="$HOME/bid_app"
 APP_PORT=3001
-NODE_BIN="/home/tw123457/.nvm/versions/node/v24.19.0/bin/node"
+NODE_BIN="$NVM_NODE_DIR/bin/node"
 # bin/npm's shebang (`#!/usr/bin/env node`) resolves to whatever `node` is
 # first on PATH in a non-interactive shell, which may not be the nvm-managed
 # version this app needs (see the matching comment in .remote-index.php).
 # Invoking npm-cli.js directly via $NODE_BIN sidesteps that.
-NPM_CLI_JS="/home/tw123457/.nvm/versions/node/v24.19.0/lib/node_modules/npm/bin/npm-cli.js"
-PM2_BIN="/home/tw123457/.nvm/versions/node/v24.19.0/lib/node_modules/pm2/bin/pm2"
+NPM_CLI_JS="$NVM_NODE_DIR/lib/node_modules/npm/bin/npm-cli.js"
+PM2_BIN="$NVM_NODE_DIR/lib/node_modules/pm2/bin/pm2"
 
 cd "$APP_DIR" || exit 1
 

@@ -1,11 +1,25 @@
+// Paths are derived from the account's home directory rather than hard-coded
+// to one cPanel account, so this file stays correct on both the current host
+// and the sng105 migration target (issue #182) — see the matching comment in
+// scripts/remote-apply.sh. Missing this file during the migration would be
+// especially nasty: pm2 would only fail at the very end of an otherwise
+// successful deploy, when it tries to start bid-web from a home directory
+// that doesn't exist on the host it's running on.
+//
+// os.homedir() resolves to $HOME when set and falls back to the passwd entry
+// for the running uid otherwise, so it holds under pm2's daemon as well as
+// under a login shell.
+const homeDir = require("os").homedir();
+const nvmNodeDir = `${homeDir}/.nvm/versions/node/v24.19.0`;
+
 module.exports = {
   apps: [
     {
       name: "bid-web",
-      cwd: "/home/tw123457/bid_app",
+      cwd: `${homeDir}/bid_app`,
       script: "node_modules/next/dist/bin/next",
       args: "start",
-      interpreter: "/home/tw123457/.nvm/versions/node/v24.19.0/bin/node",
+      interpreter: `${nvmNodeDir}/bin/node`,
       instances: 1,
       exec_mode: "fork",
       env: {
