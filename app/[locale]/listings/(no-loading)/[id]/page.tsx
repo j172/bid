@@ -19,7 +19,7 @@ import {
   stripHtmlToPlainText,
   truncateForMetaDescription,
 } from "@/lib/seo";
-import { listingPhotoUrl } from "@/lib/uploads";
+import { homepageSectionImageUrl, listingPhotoUrl } from "@/lib/uploads";
 import { getPathname, Link } from "@/i18n/navigation";
 // Absolute imports (rather than relative "../../../components/...") because
 // this page moved into the (no-loading) route group (issue #74) — see that
@@ -284,7 +284,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                     <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-border bg-slate-200">
                       {loft.imageFileName ? (
                         <PartnerLoftImage
-                          src={`/uploads/sections/${loft.imageFileName}`}
+                          src={homepageSectionImageUrl(loft.imageFileName)}
                           alt={loft.title}
                           sizes="40px"
                         />

@@ -23,10 +23,12 @@ export function resolveImageSrc(src: string, failed: boolean): string {
 /**
  * Uploaded files are served straight from disk and must bypass Next's image
  * optimizer (they are already WebP-converted on upload — see
- * lib/convertPhotoToWebp.ts).
+ * lib/convertPhotoToWebp.ts). Bundled fallback assets (/images/logo.png) also
+ * bypass the optimizer so failed images don't trigger server-side optimizer stalls
+ * or 502s during fallback.
  */
 export function shouldBypassImageOptimizer(src: string): boolean {
-  return src.includes("/uploads/");
+  return src.includes("/uploads/") || src === IMAGE_FALLBACK_SRC || src.startsWith("/images/");
 }
 
 // A single `onError` isn't proof an image is actually broken — the file is
