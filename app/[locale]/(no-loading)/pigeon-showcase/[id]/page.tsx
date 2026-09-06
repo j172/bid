@@ -1,13 +1,62 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { getPigeonShowcaseById, listLatestPigeonShowcase } from "@/lib/pigeonShowcase";
 import { pigeonShowcaseImageUrl } from "@/lib/uploads";
 import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
 import { Link } from "@/i18n/navigation";
+import {
+  absoluteUrl,
+  buildBreadcrumbListJsonLd,
+  canonicalUrl,
+  hreflangAlternates,
+  stripHtmlToPlainText,
+  truncateForMetaDescription,
+} from "@/lib/seo";
+import { safeJsonLdString } from "@/lib/jsonLdScript";
 import DetailWithSidebar from "../../../components/DetailWithSidebar";
 import RichTextContent from "../../../components/RichTextContent";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; id: string }>;
+}): Promise<Metadata> {
+  const { locale, id } = await params;
+  const showcaseId = Number(id);
+  if (!Number.isFinite(showcaseId)) return {};
+
+  const item = await getPigeonShowcaseById(showcaseId);
+  if (!item) return {};
+
+  const description = truncateForMetaDescription(stripHtmlToPlainText(item.description));
+  const pathname = `/pigeon-showcase/${item.id}`;
+  const imageUrl = item.imageFileName
+    ? absoluteUrl(pigeonShowcaseImageUrl(item.imageFileName))
+    : absoluteUrl("/images/logo.png");
+
+  return {
+    title: item.name,
+    description,
+    alternates: {
+      canonical: canonicalUrl(locale, pathname),
+      languages: hreflangAlternates(pathname),
+    },
+    openGraph: {
+      title: item.name,
+      description,
+      images: [{ url: imageUrl }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: item.name,
+      description,
+      images: [imageUrl],
+    },
+  };
+}
 
 const SIDEBAR_LATEST_LIMIT = 5;
 
@@ -46,6 +95,12 @@ export default async function PigeonShowcaseDetailPage({ params }: { params: Pro
   // item 1) and clears it again on tab switches.
   const loftHref = `/pigeon-showcase?category=${item.category}&loftId=${item.loftId}`;
 
+  const breadcrumbJsonLd = buildBreadcrumbListJsonLd([
+    { name: t("breadcrumbHome"), pathname: "/" },
+    { name: t(CATEGORY_LABEL_KEY[item.category]), pathname: categoryHref },
+    { name: item.name, pathname: `/pigeon-showcase/${item.id}` },
+  ]);
+
   return (
     <DetailWithSidebar
       breadcrumb={
@@ -71,10 +126,16 @@ export default async function PigeonShowcaseDetailPage({ params }: { params: Pro
       backHref={categoryHref}
       backLabel={t("backToList")}
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLdString(breadcrumbJsonLd) }}
+      />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={item.imageFileName ? pigeonShowcaseImageUrl(item.imageFileName) : IMAGE_FALLBACK_SRC}
         alt={item.name}
+        loading="eager"
+        fetchPriority="high"
         className="max-h-96 w-full rounded-xl bg-slate-100 object-contain"
       />
       <span className="mt-6 inline-flex rounded-full bg-interactive-primary-subtle px-3 py-1 text-xs font-bold uppercase tracking-wide text-interactive-primary">

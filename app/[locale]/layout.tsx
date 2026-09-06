@@ -5,6 +5,9 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { routing } from "@/i18n/routing";
+import { SITE_URL } from "@/lib/siteUrl";
+import { absoluteUrl, buildOrganizationJsonLd, buildWebSiteJsonLd } from "@/lib/seo";
+import { safeJsonLdString } from "@/lib/jsonLdScript";
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
@@ -28,7 +31,12 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "home" });
   const tNav = await getTranslations({ locale, namespace: "nav" });
+  const siteName = tNav("siteName");
+  const defaultTitle = t("title");
+  const description = t("metaDescription");
+
   return {
+    metadataBase: new URL(SITE_URL),
     // `template` lets every child page's generateMetadata just return a
     // plain string title (e.g. a listing's own title) and automatically get
     // " | <site name>" appended by Next — see the listing detail/list pages'
@@ -36,10 +44,49 @@ export async function generateMetadata({
     // itself keeps its own full title via `default` rather than going
     // through the template.
     title: {
-      default: t("title"),
-      template: `%s | ${tNav("siteName")}`,
+      default: defaultTitle,
+      template: `%s | ${siteName}`,
     },
-    description: t("metaDescription"),
+    description,
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
+    },
+    openGraph: {
+      type: "website",
+      siteName,
+      title: defaultTitle,
+      description,
+      url: SITE_URL,
+      locale: locale === "zh-TW" ? "zh_TW" : locale === "zh-CN" ? "zh_CN" : "en_US",
+      alternateLocale: routing.locales
+        .filter((l) => l !== locale)
+        .map((l) => (l === "zh-TW" ? "zh_TW" : l === "zh-CN" ? "zh_CN" : "en_US")),
+      images: [
+        {
+          url: absoluteUrl("/images/logo.png"),
+          width: 600,
+          height: 600,
+          alt: siteName,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: defaultTitle,
+      description,
+      images: [absoluteUrl("/images/logo.png")],
+    },
+    verification: {
+      google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
+    },
     // No `icons` key on purpose. An explicit one overrides Next's file
     // convention, and app/icon.png is deliberately not the same image as the
     // header logo: it is the 翔 glyph cropped out of it, because the full
@@ -62,8 +109,21 @@ export default async function LocaleLayout({
   }
   setRequestLocale(locale);
 
+  const websiteJsonLd = buildWebSiteJsonLd();
+  const organizationJsonLd = buildOrganizationJsonLd();
+
   return (
     <html lang={locale}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLdString(websiteJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLdString(organizationJsonLd) }}
+        />
+      </head>
       <body className="min-h-screen font-sans text-ink">
         <NextIntlClientProvider>
           <Suspense fallback={null}>

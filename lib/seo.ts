@@ -193,6 +193,27 @@ export function buildListingProductJsonLd(listing: ListingJsonLdInput, pathname:
       priceCurrency: "TWD",
       price,
       availability: listingAvailability(listing),
+      itemCondition: "https://schema.org/NewCondition",
+      seller: {
+        "@type": "Organization",
+        name: "翔水賽鴿網",
+        url: SITE_URL,
+      },
+      hasMerchantReturnPolicy: {
+        "@type": "MerchantReturnPolicy",
+        applicableCountry: "TW",
+        returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+        merchantReturnDays: 7,
+        returnMethod: "https://schema.org/ReturnByMail",
+        returnFees: "https://schema.org/FreeReturn",
+      },
+      shippingDetails: {
+        "@type": "OfferShippingDetails",
+        shippingDestination: {
+          "@type": "DefinedRegion",
+          addressCountry: "TW",
+        },
+      },
       // Only auction listings have a real deadline (fixed_price listings
       // sell indefinitely until stock runs out — see lib/listings.ts's
       // Listing.ends_at comment) — omitted entirely rather than emitted as
@@ -201,6 +222,150 @@ export function buildListingProductJsonLd(listing: ListingJsonLdInput, pathname:
       ...(listing.ends_at ? { priceValidUntil: listing.ends_at.toISOString().slice(0, 10) } : {}),
     },
   };
+}
+
+// Builds schema.org WebSite JSON-LD with Sitelinks Searchbox potentialAction
+export function buildWebSiteJsonLd(): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "翔水賽鴿網",
+    alternateName: ["Xiangshui Racing Pigeon Network", "翔水賽鴿"],
+    url: SITE_URL,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${SITE_URL}/listings?q={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
+}
+
+// Builds schema.org Organization JSON-LD for Xiangshui Racing Pigeon Network
+export function buildOrganizationJsonLd(): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "翔水賽鴿網",
+    alternateName: "Xiangshui Racing Pigeon Network",
+    url: SITE_URL,
+    logo: absoluteUrl("/images/logo.png"),
+    description: "專業賽鴿拍賣、銘鴿結標與種鴿直購平台",
+    contactPoint: {
+      "@type": "ContactPoint",
+      contactType: "customer support",
+      url: absoluteUrl("/contact"),
+    },
+  };
+}
+
+// Builds schema.org BreadcrumbList JSON-LD
+export function buildBreadcrumbListJsonLd(
+  items: { name: string; pathname: string }[],
+): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: absoluteUrl(item.pathname),
+    })),
+  };
+}
+
+// Builds schema.org FAQPage JSON-LD
+export function buildFaqPageJsonLd(
+  faqs: { question: string; answer: string }[],
+): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((f) => ({
+      "@type": "Question",
+      name: f.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: f.answer,
+      },
+    })),
+  };
+}
+
+// Builds schema.org NewsArticle JSON-LD
+export function buildNewsArticleJsonLd(article: {
+  title: string;
+  description: string;
+  pathname: string;
+  datePublished: string;
+  imageUrl?: string | null;
+}): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    headline: article.title,
+    description: article.description,
+    url: absoluteUrl(article.pathname),
+    datePublished: article.datePublished,
+    image: article.imageUrl ? [absoluteUrl(article.imageUrl)] : [absoluteUrl("/images/logo.png")],
+    author: {
+      "@type": "Organization",
+      name: "翔水賽鴿網",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "翔水賽鴿網",
+      logo: {
+        "@type": "ImageObject",
+        url: absoluteUrl("/images/logo.png"),
+      },
+    },
+  };
+}
+
+// Builds detailed /llms-full.txt Markdown documentation for LLM / AI agents
+export function buildLlmsFullTxt(): string {
+  const lines = [
+    "# Xiangshui Racing Pigeon Network（翔水賽鴿網）- 完整平台架構與競標指引 (Full Documentation)",
+    "",
+    "> 翔水賽鴿網 (Xiangshui Racing Pigeon Network) 是台灣領先的專業賽鴿拍賣、銘鴿競標與優良血統種鴿直購平台。",
+    "> 平台提供即時競標、自動代理出價、直購結帳、名家專區介紹、入賞代表鴿展示與完整多語系支援（繁體中文、簡體中文、英文）。",
+    "",
+    "## 平台核心導覽 (Key Pages)",
+    "",
+    `- 首頁 [Home](${absoluteUrl("/")}): 即時拍賣輪播、熱門結標搶購、名家專區、入賞代表鴿介紹。`,
+    `- 競標與商品列表 [Listings](${absoluteUrl("/listings")}): 所有拍賣與一口價商品，可依分類篩選 (\`?type=auction\` 或 \`?type=fixed_price\`) 與名家鴿舍篩選。`,
+    `- 名家專區 [Featured Lofts](${absoluteUrl("/featured-lofts")}): 合作名家鴿舍專題介紹與名系文章。`,
+    `- 名鴿展示 [Pigeon Showcase](${absoluteUrl("/pigeon-showcase")}): 包含入賞鴿 (Award)、進口鴿 (Imported)、代表種鴿 (Representative)。`,
+    `- 最新訊息 [News](${absoluteUrl("/news")}): 平台公告、拍賣會通知與賽事情報。`,
+    `- 常見問題 [FAQ](${absoluteUrl("/faq")}): 競標規則、帳號註冊、付款取鴿常見解答。`,
+    `- 聯絡我們 [Contact](${absoluteUrl("/contact")}): 客服諮詢與技術支援管道。`,
+    `- 服務條款 [Terms](${absoluteUrl("/terms")}) & 隱私政策 [Privacy](${absoluteUrl("/privacy")}).`,
+    "",
+    "## 拍賣與競標機制 (Auction & Bidding Rules)",
+    "",
+    "1. **結算幣別 (Currency)**: 平台全站權威結算貨幣為新台幣 (TWD / NTD)。系統亦依據即時匯率提供 USD、EUR、CNY 等參考估算。",
+    "2. **出價與代理出價 (Auto-Bidding)**: 競標者可輸入自己的心理最高出價，系統將以最小加價級距自動為競標者代為出價，直到達到設定上限。",
+    "3. **結標防偷襲機制 (Anti-Sniping)**: 若在結標前最後倒數時間內有新出價，結標時間將自動順延，確保所有買家擁有充足競標權利。",
+    "4. **直購 (Buy-It-Now)**: 標有固定售價之商品可直接加入購物車或立即結帳購買，售完為止。",
+    "",
+    "## 賽鴿安全運送與保障 (Shipping & Guarantees)",
+    "",
+    "- 所有得標與購買之賽鴿，均由合作鴿舍與平台專用安全運送管道直送，確保賽鴿健康無虞。",
+    "- 提供得標者血統書、足環號碼查驗與平台履約保障。",
+    "",
+    "## 機器可讀端點 (Machine-Readable Endpoints)",
+    "",
+    `- 站點地圖 Sitemap: ${absoluteUrl("/sitemap.xml")}`,
+    `- 爬蟲規範 Robots: ${absoluteUrl("/robots.txt")}`,
+    `- 簡要 AI 指引: ${absoluteUrl("/llms.txt")}`,
+    `- 完整 AI 指引: ${absoluteUrl("/llms-full.txt")}`,
+    "",
+  ];
+  return lines.join("\n");
 }
 
 // /llms.txt content (issue #107 item 8) — the emerging llms.txt convention
@@ -225,14 +390,17 @@ export function buildLlmsTxt(): string {
     `- [Home](${absoluteUrl("/")}): featured/new listings, categories, partner lofts.`,
     `- [Listings](${absoluteUrl("/listings")}): every open auction and fixed-price listing, filterable by ` +
       `category (\`?type=auction\` or \`?type=fixed_price\`).`,
+    `- [Featured lofts](${absoluteUrl("/featured-lofts")}): partner lofts and exclusive articles.`,
     `- [Contact](${absoluteUrl("/contact")}): support contact details.`,
     `- [News](${absoluteUrl("/news")}): announcements and updates.`,
     `- [Pigeon showcase](${absoluteUrl("/pigeon-showcase")}): featured pigeon photos and write-ups.`,
+    `- [FAQ](${absoluteUrl("/faq")}): bidding rules, payments, and account help.`,
     "",
     "## Machine-readable resources",
     "",
     `- [sitemap.xml](${absoluteUrl("/sitemap.xml")}): every listing/category/static page, across all 3 locales.`,
     `- [robots.txt](${absoluteUrl("/robots.txt")}): crawl rules — the admin backend and API routes are disallowed.`,
+    `- [llms-full.txt](${absoluteUrl("/llms-full.txt")}): complete documentation for LLMs and AI search engines.`,
     "- Listing detail pages (`/listings/<id>`) embed schema.org Product/Offer JSON-LD with name, image, " +
       "description, price (TWD), and availability.",
     "",

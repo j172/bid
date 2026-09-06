@@ -9,10 +9,25 @@ import { SITE_URL } from "@/lib/siteUrl";
 // (lib/siteUrl.ts) added in issue #107.
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: {
-      userAgent: "*",
-      disallow: ["/z04urru6", "/api"],
-    },
+    rules: [
+      {
+        userAgent: "*",
+        allow: "/",
+        disallow: ["/z04urru6", "/api"],
+      },
+      {
+        userAgent: [
+          "Google-Extended",
+          "GPTBot",
+          "OAI-SearchBot",
+          "PerplexityBot",
+          "Claude-Web",
+          "anthropic-ai",
+        ],
+        allow: "/",
+        disallow: ["/z04urru6", "/api"],
+      },
+    ],
     sitemap: `${SITE_URL}/sitemap.xml`,
     host: SITE_URL,
   };

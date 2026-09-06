@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import {
   DEFAULT_PIGEON_SHOWCASE_PAGE_SIZE,
@@ -10,12 +11,30 @@ import { isPigeonShowcaseCategory } from "@/lib/pigeonShowcaseValidation";
 import { pigeonShowcaseImageUrl } from "@/lib/uploads";
 import { excerptHtml } from "@/lib/htmlText";
 import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
+import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
 import { buildQuery, firstParam, type SearchParams } from "@/lib/searchParams";
 import { Link } from "@/i18n/navigation";
 import ContentCardGrid from "../components/ContentCardGrid";
 import PaginationFooter from "../components/PaginationFooter";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "pigeonShowcase" });
+  return {
+    title: t("title"),
+    description: t("subtitle"),
+    alternates: {
+      canonical: canonicalUrl(locale, "/pigeon-showcase"),
+      languages: hreflangAlternates("/pigeon-showcase"),
+    },
+  };
+}
 
 const LIST_EXCERPT_LENGTH = 100;
 const QUERY_KEYS = ["category", "pageSize", "page", "loftId"] as const;
