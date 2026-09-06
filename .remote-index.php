@@ -3,17 +3,31 @@ $uri = $_SERVER['REQUEST_URI'] ?? '/';
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $path = parse_url($uri, PHP_URL_PATH) ?: '/';
 
-$appDir = '/home/tw123457/bid_app';
+// Paths are derived from the account's home directory rather than hard-coded
+// to one cPanel account, so this file stays correct on both the current host
+// and the sng105 migration target (issue #182) — see the matching comment in
+// scripts/remote-apply.sh, which this is kept in lockstep with.
+//
+// $HOME is deliberately NOT used here: this runs under PHP-FPM, whose
+// environment is not the account's login shell and may not carry HOME.
+// dirname(__DIR__) is deterministic instead — deploy-ftps.yml uploads this
+// file to `<ftp root>/bid.j172.tw/index.php`, and the FTP root is the account
+// home, so __DIR__ is always `<home>/bid.j172.tw` and its parent is the home
+// directory. If that upload destination ever changes, this must change with it.
+$homeDir = dirname(__DIR__);
+$nvmNodeDir = $homeDir . '/.nvm/versions/node/v24.19.0';
+
+$appDir = $homeDir . '/bid_app';
 $appPort = 3001;
-$nodeBin = '/home/tw123457/.nvm/versions/node/v24.19.0/bin/node';
+$nodeBin = $nvmNodeDir . '/bin/node';
 // bin/npm is a shebang (`#!/usr/bin/env node`) script — fine when invoked
 // interactively where PATH has the nvm dir first, but PHP's exec() gives the
 // shell a bare PATH that resolves `env node` to some other/older system node
 // instead, which then can't require() npm's `node:`-prefixed core-module
 // specifiers. Invoking the actual JS entrypoint via $nodeBin directly (same
 // as $pm2Bin below) sidesteps the shebang/PATH lookup entirely.
-$npmCliJs = '/home/tw123457/.nvm/versions/node/v24.19.0/lib/node_modules/npm/bin/npm-cli.js';
-$pm2Bin = '/home/tw123457/.nvm/versions/node/v24.19.0/lib/node_modules/pm2/bin/pm2';
+$npmCliJs = $nvmNodeDir . '/lib/node_modules/npm/bin/npm-cli.js';
+$pm2Bin = $nvmNodeDir . '/lib/node_modules/pm2/bin/pm2';
 
 // Cloudflare's published edge-node IP ranges — source:
 // https://www.cloudflare.com/ips-v4 and https://www.cloudflare.com/ips-v6,
