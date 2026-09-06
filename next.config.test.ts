@@ -10,12 +10,19 @@ const config = nextConfig as {
 };
 
 describe("next.config.js headers()", () => {
-  it("applies the baseline security headers to every route", async () => {
+  it("applies static asset caching and baseline security headers", async () => {
     const rules = await config.headers();
-    expect(rules).toHaveLength(1);
-    expect(rules[0].source).toBe("/:path*");
+    expect(rules).toHaveLength(2);
 
-    const headers = Object.fromEntries(rules[0].headers.map(({ key, value }) => [key, value]));
+    const staticRule = rules.find((r) => r.source === "/_next/static/:path*");
+    expect(staticRule).toBeDefined();
+    expect(staticRule?.headers).toEqual([
+      { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+    ]);
+
+    const catchAllRule = rules.find((r) => r.source === "/:path*");
+    expect(catchAllRule).toBeDefined();
+    const headers = Object.fromEntries(catchAllRule!.headers.map(({ key, value }) => [key, value]));
     expect(headers).toEqual({
       "X-Frame-Options": "SAMEORIGIN",
       "Content-Security-Policy": "frame-ancestors 'self'",

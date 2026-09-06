@@ -27,8 +27,18 @@ const nextConfig = {
   // clickjacking control, and unlike X-Frame-Options it is honoured by
   // browsers that have dropped the older header. A fuller CSP is left as
   // separate, individually-verifiable work.
+  images: {
+    formats: ["image/avif", "image/webp"],
+  },
+
   async headers() {
     return [
+      {
+        source: "/_next/static/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
       {
         source: "/:path*",
         headers: [

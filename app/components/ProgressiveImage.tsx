@@ -33,7 +33,7 @@ export default function ProgressiveImage({
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      {!loaded && <div className="absolute inset-0 animate-pulse bg-slate-200" aria-hidden="true" />}
+      {!eager && !loaded && <div className="absolute inset-0 animate-pulse bg-slate-200" aria-hidden="true" />}
       <Image
         src={displaySrc}
         alt={alt}
@@ -45,7 +45,7 @@ export default function ProgressiveImage({
         fetchPriority={fetchPriority}
         onLoad={() => setLoaded(true)}
         onError={markFailed}
-        className={`${className} transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"}`}
+        className={`${className} ${eager ? "opacity-100" : `transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"}`}`}
       />
     </div>
   );
