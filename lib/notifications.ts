@@ -289,8 +289,8 @@ export async function sendEmailOtpEmail(email: string, locale: string, code: str
   }
 }
 
-// Public /contact form (issue #104) email pair — a fixed admin notification
-// to CONTACT_ADMIN_EMAIL plus a locale-appropriate confirmation to whoever
+// Public /contact form (issue #104) email pair — an admin notification to
+// CONTACT_ADMIN_EMAIL plus a locale-appropriate confirmation to whoever
 // submitted the form. Unlike the rest of this file's tables, the admin
 // notification is deliberately NOT looked up via EMAIL_MESSAGES/
 // resolveLocale: it always goes to the site admin in hardcoded Traditional
@@ -305,7 +305,31 @@ export interface ContactMessageDetails {
   message: string;
 }
 
-const CONTACT_ADMIN_EMAIL = "j172@j172.tw";
+// Where contact-form submissions are *delivered* — a receiving end, not a
+// value shown to anyone (the support address visitors see lives in
+// messages/*.json under contact.supportEmail). Getting it wrong loses
+// customer enquiries silently instead of displaying something obviously
+// wrong, which is why it isn't just swapped to the new domain outright.
+//
+// Env-driven since #182 made this one repo deploy two sites: bid.j172.tw
+// (frozen) has no CONTACT_ADMIN_EMAIL in its .env, so the fallback keeps
+// that deployment byte-identical to before, while xiangshuicn.cc sets its
+// own address on the host — and a future address change is an .env edit,
+// not a code change plus redeploy. Hence the fallback is deliberately the
+// old domain and must stay that way.
+//
+// A blank or whitespace-only value counts as unset (?? alone would not):
+// .env.example ships the key empty, so an operator who copies it without
+// filling it in would otherwise address every notification to "".
+// Parametrized rather than reading process.env at the call site, same shape
+// as lib/siteUrl.ts's resolveSiteUrl, so it stays directly unit-testable.
+export function resolveContactAdminEmail(env: Record<string, string | undefined> = process.env): string {
+  const configured = env.CONTACT_ADMIN_EMAIL?.trim();
+  if (configured) return configured;
+  return "j172@j172.tw";
+}
+
+const CONTACT_ADMIN_EMAIL = resolveContactAdminEmail();
 
 // Pure/no I/O so it's directly unit-testable, same split as
 // lib/newsletter.ts's buildNewsBroadcastHtml. escapeHtml is required here
