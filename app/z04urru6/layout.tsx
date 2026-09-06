@@ -16,14 +16,11 @@ import "../globals.css";
 export const metadata: Metadata = {
   title: "後台管理",
   description: "翔水賽鴿網後台管理",
-  // hero-placeholder.png is the fallback shown for content rows that have no
-  // image of their own; it was never a brand mark and made a poor tab icon.
-  // Points at the real logo now that there is one.
-  icons: {
-    icon: "/images/logo.png",
-    shortcut: "/images/logo.png",
-    apple: "/images/logo.png",
-  },
+  // No `icons` key on purpose — see the matching comment in
+  // app/[locale]/layout.tsx. app/icon.png (the cropped 翔 glyph) serves both
+  // trees; an explicit entry here would override it with something that does
+  // not survive being scaled to 16x16. This previously pointed at
+  // hero-placeholder.png, which was never a brand mark at all.
   robots: {
     index: false,
     follow: false,

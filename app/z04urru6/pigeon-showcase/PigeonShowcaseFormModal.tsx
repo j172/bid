@@ -23,7 +23,7 @@ type EditItem = {
   name: string;
   loftId: number;
   description: string;
-  /** Resolved to the site placeholder when the row has no image yet (pre-issue-#70 data) — see pigeonShowcaseImageUrl/hero-placeholder.png in the caller. */
+  /** Resolved to the site placeholder when the row has no image yet (pre-issue-#70 data) — see pigeonShowcaseImageUrl/logo.png in the caller. */
   imageUrl: string;
 };
 

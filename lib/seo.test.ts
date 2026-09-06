@@ -169,7 +169,7 @@ describe("buildListingProductJsonLd", () => {
 
   it("falls back to the placeholder image when the listing has no photos", () => {
     const jsonLd = buildListingProductJsonLd({ ...baseListing, photos: [] }, "/listings/42");
-    expect(jsonLd.image).toEqual(["https://xiangshuicn.cc/images/hero-placeholder.png"]);
+    expect(jsonLd.image).toEqual(["https://xiangshuicn.cc/images/logo.png"]);
   });
 
   it("uses `price` (not current_price) for a fixed_price listing", () => {

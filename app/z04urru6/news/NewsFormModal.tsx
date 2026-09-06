@@ -24,7 +24,7 @@ type EditItem = {
   id: number;
   title: string;
   content: string;
-  /** Resolved to the site placeholder when the row has no image yet (pre-issue-#70 data) — see newsImageUrl/hero-placeholder.png in the caller. */
+  /** Resolved to the site placeholder when the row has no image yet (pre-issue-#70 data) — see newsImageUrl/logo.png in the caller. */
   imageUrl: string;
   /** NULL when no newsletter has ever been associated with this post (issue #80). */
   broadcast: NewsBroadcastInfo | null;

@@ -177,7 +177,7 @@ export function buildListingProductJsonLd(listing: ListingJsonLdInput, pathname:
   const images =
     listing.photos.length > 0
       ? listing.photos.map((fileName) => absoluteUrl(listingPhotoUrl(listing.id, fileName)))
-      : [absoluteUrl("/images/hero-placeholder.png")];
+      : [absoluteUrl("/images/logo.png")];
   const url = absoluteUrl(pathname);
 
   return {
