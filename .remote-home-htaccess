@@ -1,0 +1,44 @@
+# Account home directory .htaccess — the single source of truth for this
+# site's URL routing.
+#
+# Why the home directory and not the document root: on these cPanel accounts
+# the docroot (~/bid.j172.tw on the legacy host, ~/public_html on the new
+# one) sits one level below the account home, and Apache merges the .htaccess
+# files of every directory on the path down to the requested one, so this
+# file is read for every request to either site. The docroot file
+# (.remote-htaccess) carries PHP directives only and has never contained a
+# single rewrite rule — the rules below are the whole of the routing, and
+# until now they lived nowhere but a file somebody created by hand on the
+# server on 2026-07-25.
+#
+# That is exactly what bit the #182 migration: the new host had no home-level
+# .htaccess, so `/` answered 200 (index.php is a DirectoryIndex) while every
+# other path 404'd — a symptom misleading enough to send the investigation
+# after Node, pm2 and the proxy first. Tracking the file here means the next
+# host rebuild gets the routing from the deploy instead of from memory.
+#
+# Deliberately NOT included: the cPanel-generated error_log / log_errors
+# block. It names /home/<account>/logs/php.error.log outright, .htaccess
+# cannot parameterise a path, and one repo now deploys two accounts — so any
+# literal here is wrong on one of the two hosts by construction. The same
+# reasoning already removed that block from .remote-htaccess (commit
+# 714ad47). PHP still logs errors; it just falls back to the server default
+# instead of an account path this repo cannot know.
+#
+# Edit with care: a syntax error here takes the ENTIRE site to HTTP 500.
+# After deploying, verify /, /listings, /news, /contact, /zh-CN, /en and
+# /api/health all answer 200, that /news/ still 301s to /news, and that a
+# real image under /uploads/ still loads (the -f condition below is what
+# keeps real files ahead of the PHP front controller).
+
+DirectoryIndex index.html index.php
+RewriteEngine On
+RewriteRule ^favicon\.ico$ - [L]
+RewriteRule ^news/$ /news [R=301,L]
+RewriteRule ^index\.php$ - [L]
+# Serve real static files and directories before the legacy PHP front controller.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+RewriteRule ^.*$ index.php [L,QSA]
