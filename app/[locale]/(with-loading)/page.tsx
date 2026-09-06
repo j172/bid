@@ -116,16 +116,21 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   }));
 
   // Reference-only currency conversion (issue #45, wired into the homepage
-  // for issue #103) — same pattern as the listings page and listing detail
-  // page: NTD is always the authoritative price, this only picks which
-  // secondary "≈" currency (if any) to show alongside it for this locale.
+  // for issue #103; extended to multiple currencies per locale in issue
+  // #154) — same pattern as the listings page and listing detail page: NTD
+  // is always the authoritative price, this only picks which secondary "≈"
+  // currencies (if any) to show alongside it for this locale.
   const locale = await getLocale();
-  const displayCurrency = currencyForLocale(locale);
-  const displayRate =
-    displayCurrency === "TWD"
-      ? null
-      : await cachedQuery(`home:rate:${displayCurrency}`, 20, () => getLatestStoredRate(displayCurrency));
-  const rateValue = displayRate?.rate ?? null;
+  const displayCurrencies = currencyForLocale(locale);
+  const currencyRates = await Promise.all(
+    displayCurrencies.map(async (currency) => ({
+      currency,
+      rate:
+        currency === "TWD"
+          ? null
+          : ((await cachedQuery(`home:rate:${currency}`, 20, () => getLatestStoredRate(currency)))?.rate ?? null),
+    })),
+  );
   // 入賞鴿／進口鴿／代表種鴿首頁輪播 (issue #54; 'representative' 代表種鴿卡片
   // added by issue #170) — latest 10 per category, feeding the three small
   // promo cards below (replacing their static marketing copy when
@@ -323,8 +328,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         cards={heroCards}
         topPriceCards={topPriceHeroCards}
         renderedAt={heroRenderedAt}
-        displayCurrency={displayCurrency}
-        rateValue={rateValue}
+        currencyRates={currencyRates}
       />
 
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
@@ -376,8 +380,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               }
               priceText={formatDualPrice(
                 item.listing_type === "auction" ? item.current_price : item.price!,
-                displayCurrency,
-                rateValue,
+                currencyRates,
               )}
               ctaLabel={item.listing_type === "fixed_price" ? t("promoFixedCta") : t("promoAuctionCta")}
               eager={index < homeEagerCount}
@@ -464,8 +467,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               }
               priceText={formatDualPrice(
                 item.listing_type === "auction" ? item.current_price : item.price!,
-                displayCurrency,
-                rateValue,
+                currencyRates,
               )}
               ctaLabel={item.listing_type === "fixed_price" ? t("promoFixedCta") : t("promoAuctionCta")}
               eager={index < 1}
@@ -483,7 +485,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                     <p className="truncate text-sm font-semibold">{item.title}</p>
                     <p className="text-xs text-ink-light">{item.bidCount === 0 ? tListings("noBidsYet") : tListings("totalBids", { count: item.bidCount })}</p>
                   </div>
-                  <p className="ml-3 shrink-0 text-sm font-bold text-interactive-primary">{formatDualPrice(item.current_price, displayCurrency, rateValue)}</p>
+                  <p className="ml-3 shrink-0 text-sm font-bold text-interactive-primary">{formatDualPrice(item.current_price, currencyRates)}</p>
                 </Link>
               ))}
             </div>
@@ -498,7 +500,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                     <p className="truncate text-sm font-semibold">{item.title}</p>
                     <p className="text-xs text-ink-light">{t("purchaseCountShort", { count: item.purchaseCount })}</p>
                   </div>
-                  <p className="ml-3 shrink-0 text-sm font-bold text-interactive-primary">{formatDualPrice(item.price!, displayCurrency, rateValue)}</p>
+                  <p className="ml-3 shrink-0 text-sm font-bold text-interactive-primary">{formatDualPrice(item.price!, currencyRates)}</p>
                 </Link>
               ))}
             </div>
@@ -539,8 +541,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                   <p className="text-base font-black text-ink">
                     {formatDualPrice(
                       item.listing_type === "auction" ? item.current_price : item.price!,
-                      displayCurrency,
-                      rateValue,
+                      currencyRates,
                     )}
                   </p>
                   {/* M-15 (issue #139): this struck-through "original price" is
@@ -590,7 +591,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                       : t("fixedPriceSectionItemLabel")}
                   </p>
                   <div className="mt-2 flex items-end gap-2">
-                    <p className="text-base font-black text-ink">{formatDualPrice(item.price!, displayCurrency, rateValue)}</p>
+                    <p className="text-base font-black text-ink">{formatDualPrice(item.price!, currencyRates)}</p>
                   </div>
                 </HomeListingRow>
               ))}

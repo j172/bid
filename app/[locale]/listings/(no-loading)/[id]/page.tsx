@@ -119,14 +119,19 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
   const locale = await getLocale();
   const imageUrls = listing.photos.map((fileName) => listingPhotoUrl(listing.id, fileName));
 
-  // Reference-only currency conversion (issue #45) — public pages only
-  // (admin stays pure NTD). zh-TW visitors get "TWD" back (no conversion
-  // needed); zh-CN/en get the latest synced rate, or null before the first
-  // successful sync, in which case formatConvertedApprox below just omits
-  // the secondary line entirely.
-  const displayCurrency = currencyForLocale(locale);
-  const displayRate = displayCurrency === "TWD" ? null : await getLatestStoredRate(displayCurrency);
-  const rateValue = displayRate?.rate ?? null;
+  // Reference-only currency conversion (issue #45; multi-currency per issue
+  // #154) — public pages only (admin stays pure NTD). zh-TW visitors get []
+  // back (no conversion needed); zh-CN gets [CNY], en gets [USD, EUR], each
+  // paired with its latest synced rate, or null before the first successful
+  // sync, in which case formatConvertedApprox below just omits that
+  // currency's line entirely.
+  const displayCurrencies = currencyForLocale(locale);
+  const currencyRates = await Promise.all(
+    displayCurrencies.map(async (currency) => ({
+      currency,
+      rate: currency === "TWD" ? null : ((await getLatestStoredRate(currency))?.rate ?? null),
+    })),
+  );
 
   const isAuction = listing.listing_type === "auction";
   const discountRate =
@@ -319,12 +324,12 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                   <span className="text-4xl font-black text-interactive-primary">{formatNtd(listing.price!)}</span>
                   <StatusBadge status={listing.status} isFixedPrice />
                 </div>
-                {formatConvertedApprox(listing.price!, displayCurrency, rateValue) && (
-                  <p className="text-sm font-semibold text-ink-light">
-                    {formatConvertedApprox(listing.price!, displayCurrency, rateValue)}{" "}
+                {formatConvertedApprox(listing.price!, currencyRates).map((approx) => (
+                  <p key={approx} className="text-sm font-semibold text-ink-light">
+                    {approx}{" "}
                     <span className="text-xs font-normal italic">({t("currencyReferenceOnly")})</span>
                   </p>
-                )}
+                ))}
                 <p className="text-sm text-ink-light">{stockLabel}</p>
               </div>
             ) : (
@@ -335,12 +340,12 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                   )}
                   <span className="text-4xl font-black text-interactive-primary">{formatNtd(listing.current_price)}</span>
                 </div>
-                {formatConvertedApprox(listing.current_price, displayCurrency, rateValue) && (
-                  <p className="mb-3 text-sm font-semibold text-ink-light">
-                    {formatConvertedApprox(listing.current_price, displayCurrency, rateValue)}{" "}
+                {formatConvertedApprox(listing.current_price, currencyRates).map((approx) => (
+                  <p key={approx} className="mb-3 text-sm font-semibold text-ink-light">
+                    {approx}{" "}
                     <span className="text-xs font-normal italic">({t("currencyReferenceOnly")})</span>
                   </p>
-                )}
+                ))}
                 <LiveListingStatus
                   listingId={listing.id}
                   initialCurrentPrice={listing.current_price}

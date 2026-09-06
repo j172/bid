@@ -195,12 +195,17 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
     representative: "representativeTitle",
   };
 
-  // Reference-only currency conversion (issue #45) — see the listing detail
-  // page's equivalent comment; admin stays pure NTD, this grid is public.
+  // Reference-only currency conversion (issue #45; multi-currency per issue
+  // #154) — see the listing detail page's equivalent comment; admin stays
+  // pure NTD, this grid is public.
   const locale = await getLocale();
-  const displayCurrency = currencyForLocale(locale);
-  const displayRate = displayCurrency === "TWD" ? null : await getLatestStoredRate(displayCurrency);
-  const rateValue = displayRate?.rate ?? null;
+  const displayCurrencies = currencyForLocale(locale);
+  const currencyRates = await Promise.all(
+    displayCurrencies.map(async (currency) => ({
+      currency,
+      rate: currency === "TWD" ? null : ((await getLatestStoredRate(currency))?.rate ?? null),
+    })),
+  );
 
   const filteredListings = filterListings(listings, {
     category: selectedCategory,
@@ -649,8 +654,7 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
                         ? t("finalPrice", { price: formatNtd(listing.current_price) })
                         : formatDualPrice(
                             listing.listing_type === "fixed_price" ? listing.price! : listing.current_price,
-                            displayCurrency,
-                            rateValue,
+                            currencyRates,
                           )
                     }
                     detailLines={
