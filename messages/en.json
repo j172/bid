@@ -1101,5 +1101,20 @@
   "googlePreference": {
     "buttonText": "Add to Google Preferred",
     "tooltip": "Click check to set Xiangshui Auction as a preferred source and see more stories on Google"
+  },
+  "socialMedia": {
+    "sectionTitle": "Official Social Media & Videos",
+    "sectionSubtitle": "Stay updated with Xiangshui Pigeons on YouTube, Facebook, and TikTok",
+    "tabAll": "All Highlights",
+    "tabYoutube": "YouTube Videos",
+    "tabFacebook": "Facebook Posts",
+    "tabTiktok": "TikTok Shorts",
+    "followYoutube": "Subscribe YouTube",
+    "followFacebook": "Follow Facebook",
+    "followTiktok": "Follow TikTok",
+    "watchVideo": "Watch Video",
+    "viewPost": "View Post",
+    "closePlayer": "Close Player"
   }
 }
+

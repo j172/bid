@@ -33,6 +33,8 @@ import PigeonShowcaseCarouselCard from "../components/PigeonShowcaseCarouselCard
 import NewsCarouselCard from "../components/NewsCarouselCard";
 import FeaturedLoftCarouselCard from "../components/FeaturedLoftCarouselCard";
 import ExchangeRateStrip from "../components/ExchangeRateStrip";
+import SocialMediaSection from "../components/SocialMediaSection";
+import { getSocialMediaFeed } from "@/lib/socialMedia";
 
 export const dynamic = "force-dynamic";
 
@@ -171,6 +173,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     // from the server rendering during hydration (issue #146).
     createdAt: post.createdAt.toLocaleDateString(),
   }));
+
+  const socialItems = await getSocialMediaFeed();
 
   const heroRenderedAt = new Date().toISOString();
   const nowMs = new Date().getTime();
@@ -594,6 +598,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           </div>
         </section>
       )}
+
+      <SocialMediaSection items={socialItems} />
 
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
         <h2 className="text-2xl font-bold">{t("weatherTitle")}</h2>

@@ -1101,5 +1101,20 @@
   "googlePreference": {
     "buttonText": "加入Google首选",
     "tooltip": "请勾选将响水拍卖设为首选来源，在 Google 上查看更多精彩标的与报道"
+  },
+  "socialMedia": {
+    "sectionTitle": "官方社群影音动态",
+    "sectionSubtitle": "即时锁定翔水赛鸽 YouTube 精选影音、Facebook 舍内动态与 TikTok 短影音",
+    "tabAll": "全部精选",
+    "tabYoutube": "YouTube 影音",
+    "tabFacebook": "Facebook 动态",
+    "tabTiktok": "TikTok 短影音",
+    "followYoutube": "订阅 YouTube",
+    "followFacebook": "关注 Facebook",
+    "followTiktok": "关注 TikTok",
+    "watchVideo": "点击播放视频",
+    "viewPost": "前往查看动态",
+    "closePlayer": "关闭播放器"
   }
 }
+
