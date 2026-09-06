@@ -4,7 +4,7 @@ import { listOpenListings, type ListingType } from "@/lib/listings";
 import { listLatestFeaturedLoftPosts } from "@/lib/featuredLoftPosts";
 import { listHomepageSections, getHomepageSectionById } from "@/lib/homepageSections";
 import { currencyForLocale, formatDualPrice, formatNtd } from "@/lib/currency";
-import { featuredLoftPostImageUrl } from "@/lib/uploads";
+import { featuredLoftPostImageUrl, homepageSectionImageUrl } from "@/lib/uploads";
 import { excerptHtml } from "@/lib/htmlText";
 import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
 import { getLatestStoredRate } from "@/lib/exchangeRates";
@@ -89,7 +89,7 @@ export async function generateMetadata({
           : `${selectedLoft.title} - ${t("title")}`;
       const description = selectedLoft.bio || t("metaDescriptionAll");
       const imageUrl = selectedLoft.imageFileName
-        ? absoluteUrl(`/uploads/sections/${selectedLoft.imageFileName}`)
+        ? absoluteUrl(homepageSectionImageUrl(selectedLoft.imageFileName))
         : absoluteUrl("/images/logo.png");
       return {
         title,
@@ -321,7 +321,7 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
               <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-border bg-slate-100 shadow-sm sm:h-20 sm:w-20">
                 {selectedLoft.imageFileName ? (
                   <PartnerLoftImage
-                    src={`/uploads/sections/${selectedLoft.imageFileName}`}
+                    src={homepageSectionImageUrl(selectedLoft.imageFileName)}
                     alt={selectedLoft.title}
                     sizes="(min-width: 640px) 80px, 64px"
                   />

@@ -11,7 +11,7 @@
 - **位置**：右側價格卡片（`rounded-2xl border border-border bg-white p-6 shadow-sm`）的最上方，位於「價格」二字之上。
 - **展示內容**：
   - 若拍品綁定合作鴿舍（`listing.loft_id !== null`）：
-    - 頂部精緻鴿舍列：左側為小圖示/頭像（`/uploads/sections/{imageFileName}`）與「合作鴿舍」小標籤，搭配**粗體鴿舍名稱**。
+    - 頂部精緻鴿舍列：左側為小圖示/頭像（`/uploads/homepage-sections/{imageFileName}`）與「合作鴿舍」小標籤，搭配**粗體鴿舍名稱**。
     - 右側附帶跳轉箭頭圖示（`text-interactive-primary`）。
     - 點擊可導航至 `/listings?loft={listing.loft_id}`。
     - 下方帶有一條細底線（`border-b border-border pb-4 mb-5`）與價格區優雅區隔。

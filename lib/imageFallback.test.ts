@@ -34,9 +34,13 @@ describe("shouldBypassImageOptimizer", () => {
     expect(shouldBypassImageOptimizer("https://example.com/uploads/x.webp")).toBe(true);
   });
 
-  it("keeps optimizing bundled static assets", () => {
-    expect(shouldBypassImageOptimizer(IMAGE_FALLBACK_SRC)).toBe(false);
-    expect(shouldBypassImageOptimizer("/images/logo.png")).toBe(false);
+  it("bypasses Next's optimizer for bundled fallback assets", () => {
+    expect(shouldBypassImageOptimizer(IMAGE_FALLBACK_SRC)).toBe(true);
+    expect(shouldBypassImageOptimizer("/images/logo.png")).toBe(true);
+  });
+
+  it("does not bypass third-party external non-upload assets", () => {
+    expect(shouldBypassImageOptimizer("https://example.com/other.png")).toBe(false);
   });
 });
 

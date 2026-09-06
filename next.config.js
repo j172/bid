@@ -28,7 +28,7 @@ const nextConfig = {
   // browsers that have dropped the older header. A fuller CSP is left as
   // separate, individually-verifiable work.
   images: {
-    formats: ["image/avif", "image/webp"],
+    unoptimized: true,
   },
 
   async headers() {
