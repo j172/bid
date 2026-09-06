@@ -17,6 +17,7 @@ import {
 import { safeJsonLdString } from "@/lib/jsonLdScript";
 import DetailWithSidebar from "../../../components/DetailWithSidebar";
 import RichTextContent from "../../../components/RichTextContent";
+import GooglePreferenceButton from "../../../components/GooglePreferenceButton";
 
 export const dynamic = "force-dynamic";
 
@@ -141,9 +142,12 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
         className="max-h-96 w-full rounded-xl object-cover"
       />
       <h1 className="mt-6 text-3xl font-black text-ink">{item.title}</h1>
-      <p className="mt-2 text-sm font-semibold text-ink-light">
-        {t("publishedLine", { date: item.createdAt.toLocaleString() })}
-      </p>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm font-semibold text-ink-light">
+          {t("publishedLine", { date: item.createdAt.toLocaleString() })}
+        </p>
+        <GooglePreferenceButton />
+      </div>
       <RichTextContent html={item.content} className="mt-6 border-t border-border pt-6 leading-7 text-ink-light" />
     </DetailWithSidebar>
   );
