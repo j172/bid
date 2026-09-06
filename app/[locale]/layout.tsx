@@ -10,6 +10,7 @@ import { absoluteUrl, buildOrganizationJsonLd, buildWebSiteJsonLd } from "@/lib/
 import { safeJsonLdString } from "@/lib/jsonLdScript";
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import GoogleAnalytics from "./components/GoogleAnalytics";
+import MicrosoftClarity from "./components/MicrosoftClarity";
 import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
 import WebVitalsReporter from "./components/WebVitalsReporter";
@@ -128,6 +129,7 @@ export default async function LocaleLayout({
       <body className="min-h-screen font-sans text-ink">
         <NextIntlClientProvider>
           <GoogleAnalytics />
+          <MicrosoftClarity />
           <Suspense fallback={null}>
             <WebVitalsReporter />
           </Suspense>

@@ -15,6 +15,8 @@ import {
 import { MAX_PHOTO_COUNT } from "@/lib/photoLimits";
 import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
 import { descriptionImageUrl, saveDescriptionImages, saveListingPhotos } from "@/lib/uploads";
+import { submitToIndexNow } from "@/lib/indexnow";
+import { localizedUrls } from "@/lib/seo";
 
 export async function POST(request: Request) {
   const auth = await requireAdmin();
@@ -127,6 +129,10 @@ export async function POST(request: Request) {
     const message = error instanceof Error ? error.message : "圖片上傳失敗";
     return NextResponse.json({ ok: false, error: message }, { status: 400 });
   }
+
+  // Push new listing URLs to IndexNow in background (issue #193)
+  const listingUrls = Object.values(localizedUrls(`/listings/${listingId}`));
+  void submitToIndexNow(listingUrls).catch(() => {});
 
   return NextResponse.json({ ok: true, id: listingId });
 }
