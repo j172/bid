@@ -168,9 +168,22 @@
     "totalBids": "總出價次數 {count}",
     "featuredLoftsTitle": "名家專區",
     "featuredLoftsSubtitle": "精選業界知名的優秀名家，點選前往專屬商品頁",
-    "featuredLoftsViewAll": "查看全部商品"
+    "featuredLoftsViewAll": "查看全部商品",
+    "statusTitle": "狀態",
+    "statusScopeActive": "在售中",
+    "statusScopeClosed": "已結標",
+    "statusScopeAll": "全部",
+    "loftBannerAllListings": "查看全站商品",
+    "loftMetaTitle": "{name} - 拍賣與展售清單",
+    "badgeClosed": "已結標",
+    "finalPrice": "結標價 {price}",
+    "finalLeader": "得標者：{name}",
+    "noBidsEnded": "無人出價（已結標）"
   },
   "listingDetail": {
+    "partnerLoft": "合作鴿舍",
+    "viewLoftListings": "前往專區",
+    "specLoft": "所屬鴿舍",
     "shopDetails": "商品詳情",
     "off": "折扣",
     "inStock": "競標進行中",

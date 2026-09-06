@@ -11,7 +11,7 @@
 // dashboard, which had always filtered them out.
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getOverviewStats } from "./listings";
+import { getOverviewStats, listOpenListings } from "./listings";
 import { getGmvSplitByType } from "./dashboard";
 import { AUCTION_GMV_SUBQUERY, FIXED_PRICE_GMV_SUBQUERY } from "./sqlFragments";
 
@@ -99,5 +99,35 @@ describe("GMV definition shared with lib/dashboard.ts", () => {
       expect(overviewSql).toContain(fragment);
       expect(splitSql).toContain(fragment);
     }
+  });
+});
+
+describe("listOpenListings statusScope and loftId", () => {
+  it("defaults statusScope to open/scheduled", async () => {
+    await listOpenListings();
+    const call = queryMock.mock.calls.find((c) => String(c[0]).includes("FROM listings l"));
+    expect(String(call?.[0])).toContain("l.status IN ('open', 'scheduled')");
+    expect(String(call?.[0])).toContain("ORDER BY l.ends_at IS NULL, l.ends_at ASC");
+  });
+
+  it("filters to closed listings when statusScope is closed", async () => {
+    await listOpenListings(undefined, { statusScope: "closed" });
+    const call = queryMock.mock.calls.find((c) => String(c[0]).includes("FROM listings l"));
+    expect(String(call?.[0])).toContain("l.status = 'closed'");
+    expect(String(call?.[0])).toContain("ORDER BY l.ends_at DESC, l.id DESC");
+  });
+
+  it("includes all statuses when statusScope is all", async () => {
+    await listOpenListings(undefined, { statusScope: "all" });
+    const call = queryMock.mock.calls.find((c) => String(c[0]).includes("FROM listings l"));
+    expect(String(call?.[0])).toContain("l.status IN ('open', 'scheduled', 'closed')");
+    expect(String(call?.[0])).toContain("CASE WHEN l.status IN ('open', 'scheduled') THEN 0 ELSE 1 END ASC");
+  });
+
+  it("adds loft_id filter when loftId is provided", async () => {
+    await listOpenListings(undefined, { loftId: 42 });
+    const call = queryMock.mock.calls.find((c) => String(c[0]).includes("FROM listings l"));
+    expect(String(call?.[0])).toContain("l.loft_id = ?");
+    expect(call?.[1]).toContain(42);
   });
 });

@@ -9,6 +9,7 @@ import { formatRemaining } from "@/lib/format";
 import { safeJsonLdString } from "@/lib/jsonLdScript";
 import { maskDisplayName } from "@/lib/mask";
 import { getListingActivityFeed, getListingById, listOpenListings } from "@/lib/listings";
+import { getHomepageSectionById } from "@/lib/homepageSections";
 import {
   absoluteUrl,
   buildBreadcrumbListJsonLd,
@@ -26,6 +27,7 @@ import { getPathname, Link } from "@/i18n/navigation";
 import ZoomableProductImage from "@/app/[locale]/components/ZoomableProductImage";
 import StatusBadge from "@/app/[locale]/components/StatusBadge";
 import GooglePreferenceButton from "@/app/[locale]/components/GooglePreferenceButton";
+import PartnerLoftImage from "@/app/[locale]/components/PartnerLoftImage";
 import BidForm from "./BidForm";
 import BuyNowButton from "./BuyNowButton";
 import HeroCountdownStrip from "./HeroCountdownStrip";
@@ -97,6 +99,8 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
     notFound();
   }
 
+  const loft = listing.loft_id ? await getHomepageSectionById(listing.loft_id) : null;
+
   const relatedListings = (await listOpenListings())
     .filter((candidate) => candidate.id !== listing.id)
     .slice(0, 6);
@@ -145,6 +149,15 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       label: t("specStatus"),
       value: isScheduled ? t("statusScheduled") : isOpen ? t("statusLive") : t("statusEnded"),
     },
+    ...(loft
+      ? [
+          {
+            label: t("specLoft"),
+            value: loft.title,
+            href: `/listings?loft=${loft.id}`,
+          },
+        ]
+      : []),
     { label: t("specCurrentPrice"), value: formatNtd(listing.current_price) },
     {
       label: t("specBuyNow"),
@@ -261,6 +274,44 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
           </div>
 
           <div className="rounded-2xl border border-border bg-white p-6 shadow-sm">
+            {loft && (
+              <div className="mb-5 border-b border-border pb-4">
+                <Link
+                  href={`/listings?loft=${loft.id}`}
+                  className="group flex items-center justify-between rounded-xl bg-slate-50/80 p-3 transition hover:bg-interactive-primary-subtle/50"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-border bg-slate-200">
+                      {loft.imageFileName ? (
+                        <PartnerLoftImage
+                          src={`/uploads/sections/${loft.imageFileName}`}
+                          alt={loft.title}
+                          sizes="40px"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-xs font-bold text-ink-light">
+                          鴿
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-light">
+                        {t("partnerLoft")}
+                      </span>
+                      <p className="truncate text-sm font-bold text-ink transition-colors group-hover:text-interactive-primary">
+                        {loft.title}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="ml-3 flex shrink-0 items-center text-xs font-semibold text-interactive-primary transition-transform group-hover:translate-x-0.5">
+                    <span className="mr-1 hidden sm:inline">{t("viewLoftListings")}</span>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </Link>
+              </div>
+            )}
             <p className="text-sm font-semibold uppercase tracking-wide text-ink-light">{t("priceLabel")}</p>
             {isFixedPrice ? (
               <div className="flex flex-col gap-1">

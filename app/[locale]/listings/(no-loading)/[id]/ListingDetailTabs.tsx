@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import RichTextContent from "../../../components/RichTextContent";
+import { Link } from "@/i18n/navigation";
 
 type TabKey = "description" | "additional" | "activity";
 
@@ -19,7 +20,7 @@ interface ListingDetailTabsProps {
   additionalTitle: string;
   activityTitle: string;
   description: string;
-  specs: Array<{ label: string; value: string }>;
+  specs: Array<{ label: string; value: string; href?: string }>;
   /** Pre-formatted total bid/purchase count sentence — shown once, not per-row (see issue #45). */
   activityTotalCountLabel: string;
   /** Newest-first, already capped to the most recent 20 by getListingActivityFeed. */
@@ -94,7 +95,17 @@ export default function ListingDetailTabs({
             {specs.map((spec) => (
               <div key={spec.label} className="rounded-lg border border-border bg-surface px-4 py-3">
                 <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">{spec.label}</p>
-                <p className="mt-1 text-sm font-semibold text-ink">{spec.value}</p>
+                {spec.href ? (
+                  <Link
+                    href={spec.href}
+                    className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-interactive-primary hover:underline"
+                  >
+                    <span>{spec.value}</span>
+                    <span aria-hidden="true">&rarr;</span>
+                  </Link>
+                ) : (
+                  <p className="mt-1 text-sm font-semibold text-ink">{spec.value}</p>
+                )}
               </div>
             ))}
           </div>

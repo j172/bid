@@ -168,9 +168,22 @@
     "totalBids": "总出价次数 {count}",
     "featuredLoftsTitle": "名家专区",
     "featuredLoftsSubtitle": "精选业界知名的优秀名家，点选前往专属商品页",
-    "featuredLoftsViewAll": "查看全部商品"
+    "featuredLoftsViewAll": "查看全部商品",
+    "statusTitle": "状态",
+    "statusScopeActive": "在售中",
+    "statusScopeClosed": "已结标",
+    "statusScopeAll": "全部",
+    "loftBannerAllListings": "查看全站商品",
+    "loftMetaTitle": "{name} - 拍卖与展售清单",
+    "badgeClosed": "已结标",
+    "finalPrice": "结标价 {price}",
+    "finalLeader": "得标者：{name}",
+    "noBidsEnded": "无人出价（已结标）"
   },
   "listingDetail": {
+    "partnerLoft": "合作鸽舍",
+    "viewLoftListings": "前往专区",
+    "specLoft": "所属鸽舍",
     "shopDetails": "商品详情",
     "off": "折扣",
     "inStock": "竞标进行中",

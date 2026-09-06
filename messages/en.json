@@ -168,9 +168,22 @@
     "totalBids": "{count} total bids",
     "featuredLoftsTitle": "Featured Lofts",
     "featuredLoftsSubtitle": "A curated selection of renowned lofts in the industry — browse their dedicated listings",
-    "featuredLoftsViewAll": "View all listings"
+    "featuredLoftsViewAll": "View all listings",
+    "statusTitle": "Status",
+    "statusScopeActive": "Active",
+    "statusScopeClosed": "Closed",
+    "statusScopeAll": "All",
+    "loftBannerAllListings": "View All Listings",
+    "loftMetaTitle": "{name} - Listings",
+    "badgeClosed": "Closed",
+    "finalPrice": "Winning bid: {price}",
+    "finalLeader": "Winner: {name}",
+    "noBidsEnded": "No bids (Ended)"
   },
   "listingDetail": {
+    "partnerLoft": "Partner Loft",
+    "viewLoftListings": "View Loft Store",
+    "specLoft": "Loft",
     "shopDetails": "Shop Details",
     "off": "OFF",
     "inStock": "Bidding Open",

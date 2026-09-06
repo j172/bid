@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { listOpenListings, type ListingType } from "@/lib/listings";
 import { listLatestFeaturedLoftPosts } from "@/lib/featuredLoftPosts";
-import { listHomepageSections } from "@/lib/homepageSections";
+import { listHomepageSections, getHomepageSectionById } from "@/lib/homepageSections";
 import { currencyForLocale, formatDualPrice, formatNtd } from "@/lib/currency";
 import { featuredLoftPostImageUrl } from "@/lib/uploads";
 import { excerptHtml } from "@/lib/htmlText";
@@ -10,7 +10,7 @@ import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
 import { getLatestStoredRate } from "@/lib/exchangeRates";
 import { formatRemaining } from "@/lib/format";
 import { maskDisplayName } from "@/lib/mask";
-import { canonicalListingsUrl, hreflangAlternates } from "@/lib/seo";
+import { absoluteUrl, canonicalListingsUrl, hreflangAlternates } from "@/lib/seo";
 import {
   countByCategory,
   filterListings,
@@ -61,12 +61,40 @@ export async function generateMetadata({
   const { locale } = await params;
   const sp = await searchParams;
   const rawType = firstParam(sp.type);
+  const loftId = numberParam(sp.loft);
   const t = await getTranslations({ locale, namespace: "listings" });
   const query = rawType === "auction" || rawType === "fixed_price" ? { type: rawType } : undefined;
   const alternates = {
     canonical: canonicalListingsUrl(locale, sp),
     languages: hreflangAlternates("/listings", query),
   };
+
+  if (loftId !== undefined) {
+    const selectedLoft = await getHomepageSectionById(loftId);
+    if (selectedLoft) {
+      const title = `${selectedLoft.title} - ${t("title")}`;
+      const description = selectedLoft.bio || t("metaDescriptionAll");
+      const imageUrl = selectedLoft.imageFileName
+        ? absoluteUrl(`/uploads/sections/${selectedLoft.imageFileName}`)
+        : absoluteUrl("/images/logo.png");
+      return {
+        title,
+        description,
+        alternates,
+        openGraph: {
+          title,
+          description,
+          images: [{ url: imageUrl }],
+        },
+        twitter: {
+          card: "summary_large_image",
+          title,
+          description,
+          images: [imageUrl],
+        },
+      };
+    }
+  }
 
   if (rawType === "auction") {
     return {
@@ -93,9 +121,12 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   const type = firstParam(params.type) as ListingType | undefined;
   const searchQuery = firstParam(params.q)?.trim() ?? "";
   const sort = parseSortKey(firstParam(params.sort));
-  // Only "scheduled" is a supported value today (powers the homepage's
-  // "即將開賣" card) — anything else is treated as no status filter.
-  const statusFilter = firstParam(params.status) === "scheduled" ? "scheduled" : undefined;
+  // "scheduled" filters open/scheduled listings for the homepage card.
+  // "closed" or "all" switch statusScope to include historical ended items.
+  const rawStatus = firstParam(params.status);
+  const statusScope: "open" | "closed" | "all" =
+    rawStatus === "closed" ? "closed" : rawStatus === "all" ? "all" : "open";
+  const statusFilter = rawStatus === "scheduled" ? "scheduled" : undefined;
   const withinHours = numberParam(params.withinHours);
   const perfMode = perfModeFromSearchParams(params);
   const gridEagerCount = perfMode === "aggressive" ? 6 : 4;
@@ -104,8 +135,9 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   // (issue #178) the filter card's own 合作鴿舍 dropdown below.
   const loftId = numberParam(params.loft);
   const selectedLoftId = loftId !== undefined ? String(loftId) : "";
+  const selectedLoft = loftId !== undefined ? await getHomepageSectionById(loftId) : null;
 
-  const listings = await listOpenListings(type, { loftId });
+  const listings = await listOpenListings(type, { loftId, statusScope });
   // Same source as the homepage/`/featured-lofts` partner-loft lists (issue
   // #178) — options show loft title only, no per-loft listing counts.
   const partnerLofts = await listHomepageSections("partner_loft", { activeOnly: true });
@@ -216,10 +248,105 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
           <Link href="/" className="hover:text-interactive-primary">
             {tNav("home")}
           </Link>{" "}
-          / {t("title")}
+          / {selectedLoft ? (
+            <>
+              <Link href="/listings" className="hover:text-interactive-primary">
+                {t("title")}
+              </Link>{" "}
+              / {selectedLoft.title}
+            </>
+          ) : (
+            t("title")
+          )}
         </p>
-        <h1 className="mt-2 text-3xl font-black text-ink">{t("title")}</h1>
+        <h1 className="mt-2 text-3xl font-black text-ink">
+          {selectedLoft ? selectedLoft.title : t("title")}
+        </h1>
       </div>
+
+      {selectedLoft && (
+        <section className="mt-6 overflow-hidden rounded-2xl border border-border bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-4">
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-border bg-slate-100 shadow-sm sm:h-20 sm:w-20">
+                {selectedLoft.imageFileName ? (
+                  <PartnerLoftImage
+                    src={`/uploads/sections/${selectedLoft.imageFileName}`}
+                    alt={selectedLoft.title}
+                    sizes="(min-width: 640px) 80px, 64px"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-xl font-bold text-ink-light">
+                    鴿
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-interactive-primary-subtle px-2.5 py-0.5 text-xs font-bold text-interactive-primary">
+                    {t("loftTitle")}
+                  </span>
+                </div>
+                <h2 className="mt-1 truncate text-2xl font-black text-ink sm:text-3xl">
+                  {selectedLoft.title}
+                </h2>
+                {selectedLoft.bio && (
+                  <p className="mt-1.5 line-clamp-2 max-w-2xl text-sm text-ink-light">
+                    {selectedLoft.bio}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center">
+              <Link
+                href={withFilters({ loft: undefined })}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2 text-xs font-bold text-ink transition hover:border-slate-300 hover:bg-slate-100"
+              >
+                <svg className="h-4 w-4 text-ink-light" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                {t("loftBannerAllListings")}
+              </Link>
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-border pt-4">
+            <span className="mr-2 text-xs font-semibold uppercase tracking-wide text-ink-light">
+              {t("statusTitle")}:
+            </span>
+            <Link
+              href={withFilters({ status: undefined })}
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                statusScope === "open" && !statusFilter
+                  ? "bg-interactive-primary text-white shadow-sm"
+                  : "bg-slate-100 text-ink-light hover:bg-slate-200"
+              }`}
+            >
+              {t("statusScopeActive")}
+            </Link>
+            <Link
+              href={withFilters({ status: "closed" })}
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                statusScope === "closed"
+                  ? "bg-interactive-primary text-white shadow-sm"
+                  : "bg-slate-100 text-ink-light hover:bg-slate-200"
+              }`}
+            >
+              {t("statusScopeClosed")}
+            </Link>
+            <Link
+              href={withFilters({ status: "all" })}
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                statusScope === "all"
+                  ? "bg-interactive-primary text-white shadow-sm"
+                  : "bg-slate-100 text-ink-light hover:bg-slate-200"
+              }`}
+            >
+              {t("statusScopeAll")}
+            </Link>
+          </div>
+        </section>
+      )}
 
       {featuredLoftPosts.length > 0 && (
         // Full-width, deliberately placed above the filters+grid two-column
@@ -357,52 +484,77 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
           {filteredListings.length === 0 && <p className="mt-6 text-ink-light">{t("noListings")}</p>}
 
           <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {sortedListings.map((listing, index) => (
-              <ProductCard
-                key={listing.id}
-                id={listing.id}
-                title={listing.title}
-                description={descriptionSnippet(listing.description)}
-                photo={listing.photos[0]}
-                typeBadgeLabel={TYPE_BADGE_LABEL[listing.listing_type]}
-                loftName={listing.loftName}
-                quickActionLabel={t("quickAction")}
-                viewDetailsLabel={t("viewDetails")}
-                priceText={formatDualPrice(
-                  listing.listing_type === "fixed_price" ? listing.price! : listing.current_price,
-                  displayCurrency,
-                  rateValue,
-                )}
-                detailLines={
-                  listing.listing_type === "fixed_price"
-                    ? [
-                        listing.stock_remaining === 0
-                          ? t("soldOut")
-                          : t("remainingUnits", { count: listing.stock_remaining ?? 0 }),
-                        t("totalPurchases", { count: listing.purchaseCount }),
-                      ]
-                    : listing.status === "scheduled" && listing.starts_at
-                      ? [
-                          formatRemaining(listing.starts_at, tFormat, {
-                            prefixKey: "startsInPrefix",
-                            endedKey: "startingSoon",
-                          }),
-                        ]
-                      : [
-                          ...(listing.buy_it_now_price !== null
-                            ? [t("buyItNowPrice", { price: formatNtd(listing.buy_it_now_price) })]
-                            : []),
-                          listing.ends_at ? formatRemaining(listing.ends_at, tFormat) : t("timeless"),
-                          listing.bidCount === 0
-                            ? t("noBidsYet")
-                            : t("currentLeader", { name: maskDisplayName(listing.leaderDisplayName, anonymousBuyer) }),
-                          t("totalBids", { count: listing.bidCount }),
-                        ]
-                }
-                eager={index < gridEagerCount}
-                highPriorityImage={index < 2}
-              />
-            ))}
+            {sortedListings.map((listing, index) => {
+              const isClosed = listing.status === "closed";
+              return (
+                <ProductCard
+                  key={listing.id}
+                  id={listing.id}
+                  title={listing.title}
+                  description={descriptionSnippet(listing.description)}
+                  photo={listing.photos[0]}
+                  typeBadgeLabel={isClosed ? t("badgeClosed") : TYPE_BADGE_LABEL[listing.listing_type]}
+                  loftName={listing.loftName}
+                  quickActionLabel={isClosed ? t("viewDetails") : t("quickAction")}
+                  viewDetailsLabel={t("viewDetails")}
+                  isClosed={isClosed}
+                  priceText={
+                    isClosed && listing.listing_type === "auction"
+                      ? t("finalPrice", { price: formatNtd(listing.current_price) })
+                      : formatDualPrice(
+                          listing.listing_type === "fixed_price" ? listing.price! : listing.current_price,
+                          displayCurrency,
+                          rateValue,
+                        )
+                  }
+                  detailLines={
+                    isClosed
+                      ? listing.listing_type === "fixed_price"
+                        ? [
+                            t("soldOut"),
+                            t("totalPurchases", { count: listing.purchaseCount }),
+                          ]
+                        : [
+                            listing.ends_at
+                              ? formatRemaining(listing.ends_at, tFormat)
+                              : t("statusEnded"),
+                            listing.bidCount === 0
+                              ? t("noBidsEnded")
+                              : t("finalLeader", {
+                                  name: maskDisplayName(listing.leaderDisplayName, anonymousBuyer),
+                                }),
+                            t("totalBids", { count: listing.bidCount }),
+                          ]
+                      : listing.listing_type === "fixed_price"
+                        ? [
+                            listing.stock_remaining === 0
+                              ? t("soldOut")
+                              : t("remainingUnits", { count: listing.stock_remaining ?? 0 }),
+                            t("totalPurchases", { count: listing.purchaseCount }),
+                          ]
+                        : listing.status === "scheduled" && listing.starts_at
+                          ? [
+                              formatRemaining(listing.starts_at, tFormat, {
+                                prefixKey: "startsInPrefix",
+                                endedKey: "startingSoon",
+                              }),
+                            ]
+                          : [
+                              ...(listing.buy_it_now_price !== null
+                                ? [t("buyItNowPrice", { price: formatNtd(listing.buy_it_now_price) })]
+                                : []),
+                              listing.ends_at ? formatRemaining(listing.ends_at, tFormat) : t("timeless"),
+                              listing.bidCount === 0
+                                ? t("noBidsYet")
+                                : t("currentLeader", { name: maskDisplayName(listing.leaderDisplayName, anonymousBuyer) }),
+                              t("totalBids", { count: listing.bidCount }),
+                            ]
+                  }
+                  eager={index < gridEagerCount}
+                  highPriorityImage={index < 2}
+                />
+              );
+            })}
           </div>
         </section>
       </div>

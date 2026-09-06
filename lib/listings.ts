@@ -430,6 +430,13 @@ export interface ListingCardExtras {
 export interface ListOpenListingsOptions {
   /** Filters to listings belonging to this homepage_sections.id (合作鴿舍) — powers /listings?loft=<id> (issue #45). */
   loftId?: number;
+  /**
+   * Scope of statuses to include:
+   * - "open" (default): 'open' and 'scheduled'
+   * - "closed": 'closed' only
+   * - "all": 'open', 'scheduled', 'closed'
+   */
+  statusScope?: "open" | "closed" | "all";
 }
 
 // Powers the public listings grid's cards (see app/listings/page.tsx) —
@@ -443,10 +450,19 @@ export async function listOpenListings(
   await syncListingLifecycle();
   const db = await getDb();
 
-  // Scheduled (not-yet-started) auctions are included too — they're shown
-  // publicly with a "starts at" badge instead of a bid button (bidding
-  // itself stays blocked server-side, see resolveProxyBid/resolveBuyNow).
-  const conditions = ["l.status IN ('open', 'scheduled')"];
+  const conditions: string[] = [];
+  const statusScope = options.statusScope ?? "open";
+  if (statusScope === "closed") {
+    conditions.push("l.status = 'closed'");
+  } else if (statusScope === "all") {
+    conditions.push("l.status IN ('open', 'scheduled', 'closed')");
+  } else {
+    // Scheduled (not-yet-started) auctions are included too — they're shown
+    // publicly with a "starts at" badge instead of a bid button (bidding
+    // itself stays blocked server-side, see resolveProxyBid/resolveBuyNow).
+    conditions.push("l.status IN ('open', 'scheduled')");
+  }
+
   const params: (string | number)[] = [];
   if (type) {
     conditions.push("l.listing_type = ?");
@@ -457,6 +473,13 @@ export async function listOpenListings(
     params.push(options.loftId);
   }
 
+  const orderBy =
+    statusScope === "closed"
+      ? "l.ends_at DESC, l.id DESC"
+      : statusScope === "all"
+        ? "CASE WHEN l.status IN ('open', 'scheduled') THEN 0 ELSE 1 END ASC, l.ends_at IS NULL, l.ends_at ASC, l.id DESC"
+        : "l.ends_at IS NULL, l.ends_at ASC";
+
   const [rows] = await db.query(
     `SELECT
        l.*, u.display_name AS leaderDisplayName, loft.title AS loftName,
@@ -466,7 +489,7 @@ export async function listOpenListings(
      LEFT JOIN users u ON u.id = l.leader_user_id
      LEFT JOIN homepage_sections loft ON loft.id = l.loft_id
      WHERE ${conditions.join(" AND ")}
-     ORDER BY l.ends_at IS NULL, l.ends_at ASC`,
+     ORDER BY ${orderBy}`,
     params,
   );
   const listings = rows as (Listing & ListingCardExtras)[];
