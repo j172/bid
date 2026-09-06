@@ -178,7 +178,16 @@
     "badgeClosed": "已结标",
     "finalPrice": "结标价 {price}",
     "finalLeader": "得标者：{name}",
-    "noBidsEnded": "无人出价（已结标）"
+    "noBidsEnded": "无人出价（已结标）",
+    "tabLoftListings": "交易商品",
+    "tabLoftShowcase": "舍内名鸽",
+    "showcaseSubAll": "全部名鸽",
+    "showcaseSubAward": "入赏鸽",
+    "showcaseSubImported": "进口鸽",
+    "showcaseSubRepresentative": "代表种鸽",
+    "loftShowcaseEmpty": "此鸽舍目前尚无舍内名鸽资料。",
+    "loftShowcaseMetaTitle": "{name} - 舍内名鸽名鉴",
+    "viewShowcasePigeon": "查看鸽况"
   },
   "listingDetail": {
     "partnerLoft": "合作鸽舍",

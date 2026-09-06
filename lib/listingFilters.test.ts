@@ -189,4 +189,11 @@ describe("listingsHref", () => {
       "/listings?type=auction&category=auction&loft=5",
     );
   });
+
+  // Issue #200: Partner loft storefront tab switching and showcase category filtering
+  it("preserves loft, tab, and showcaseCategory parameters", () => {
+    expect(listingsHref({ loft: "1", tab: "showcase", showcaseCategory: "award" })).toBe(
+      "/listings?loft=1&tab=showcase&showcaseCategory=award",
+    );
+  });
 });

@@ -24,6 +24,16 @@ import { Link } from "@/i18n/navigation";
 import CategorySelect, { type CategorySelectOption } from "../../components/CategorySelect";
 import ProductCard from "../../components/ProductCard";
 import PartnerLoftImage from "../../components/PartnerLoftImage";
+import ContentCardGrid from "../../components/ContentCardGrid";
+import { listPigeonShowcase } from "@/lib/pigeonShowcase";
+import { isPigeonShowcaseCategory, type PigeonShowcaseCategory } from "@/lib/pigeonShowcaseValidation";
+import { pigeonShowcaseImageUrl } from "@/lib/uploads";
+import {
+  countShowcaseByCategory,
+  resolveLoftActiveTab,
+  resolveLoftStatusScope,
+  type LoftActiveTab,
+} from "@/lib/loftStorefront";
 
 export const dynamic = "force-dynamic";
 
@@ -72,7 +82,11 @@ export async function generateMetadata({
   if (loftId !== undefined) {
     const selectedLoft = await getHomepageSectionById(loftId);
     if (selectedLoft) {
-      const title = `${selectedLoft.title} - ${t("title")}`;
+      const activeTab = resolveLoftActiveTab(firstParam(sp.tab));
+      const title =
+        activeTab === "showcase"
+          ? `${selectedLoft.title} - ${t("tabLoftShowcase")} | ${t("title")}`
+          : `${selectedLoft.title} - ${t("title")}`;
       const description = selectedLoft.bio || t("metaDescriptionAll");
       const imageUrl = selectedLoft.imageFileName
         ? absoluteUrl(`/uploads/sections/${selectedLoft.imageFileName}`)
@@ -121,15 +135,11 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   const type = firstParam(params.type) as ListingType | undefined;
   const searchQuery = firstParam(params.q)?.trim() ?? "";
   const sort = parseSortKey(firstParam(params.sort));
-  // "scheduled" filters open/scheduled listings for the homepage card.
-  // "closed" or "all" switch statusScope to include historical ended items.
-  const rawStatus = firstParam(params.status);
-  const statusScope: "open" | "closed" | "all" =
-    rawStatus === "closed" ? "closed" : rawStatus === "all" ? "all" : "open";
-  const statusFilter = rawStatus === "scheduled" ? "scheduled" : undefined;
-  const withinHours = numberParam(params.withinHours);
-  const perfMode = perfModeFromSearchParams(params);
-  const gridEagerCount = perfMode === "aggressive" ? 6 : 4;
+  const activeTab: LoftActiveTab = resolveLoftActiveTab(firstParam(params.tab));
+  const rawShowcaseCat = firstParam(params.showcaseCategory);
+  const showcaseCategory: PigeonShowcaseCategory | undefined =
+    isPigeonShowcaseCategory(rawShowcaseCat) ? rawShowcaseCat : undefined;
+
   // Powers the homepage partner-loft card click-through: /listings?loft=<id>
   // (issue #45 — replaces the removed homepage_sections.link_url), and now
   // (issue #178) the filter card's own 合作鴿舍 dropdown below.
@@ -137,7 +147,32 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   const selectedLoftId = loftId !== undefined ? String(loftId) : "";
   const selectedLoft = loftId !== undefined ? await getHomepageSectionById(loftId) : null;
 
+  // "scheduled" filters open/scheduled listings for the homepage card.
+  // "closed" or "all" switch statusScope to include historical ended items.
+  // Issue #200: When viewing a partner loft, default statusScope to "all" (both open
+  // and closed) so visitors immediately see the loft's full history, preventing
+  // false-empty pages when current auctions have ended.
+  const rawStatus = firstParam(params.status);
+  const statusScope = resolveLoftStatusScope(loftId, rawStatus);
+  const statusFilter = rawStatus === "scheduled" ? "scheduled" : undefined;
+  const withinHours = numberParam(params.withinHours);
+  const perfMode = perfModeFromSearchParams(params);
+  const gridEagerCount = perfMode === "aggressive" ? 6 : 4;
+
   const listings = await listOpenListings(type, { loftId, statusScope });
+
+  // Issue #200: Fetch pigeon showcase items belonging to this loft
+  const showcaseData =
+    loftId !== undefined
+      ? await listPigeonShowcase({ loftId, pageSize: 100 })
+      : { items: [], total: 0 };
+  const allShowcaseItems = showcaseData.items;
+  const showcaseTotal = showcaseData.total;
+  const showcaseCategoryCounts = countShowcaseByCategory(allShowcaseItems);
+  const filteredShowcaseItems = showcaseCategory
+    ? allShowcaseItems.filter((item) => item.category === showcaseCategory)
+    : allShowcaseItems;
+
   // Same source as the homepage/`/featured-lofts` partner-loft lists (issue
   // #178) — options show loft title only, no per-loft listing counts.
   const partnerLofts = await listHomepageSections("partner_loft", { activeOnly: true });
@@ -149,9 +184,16 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   const FEATURED_LOFTS_GRID_LIMIT = 8;
   const featuredLoftPosts = await listLatestFeaturedLoftPosts(FEATURED_LOFTS_GRID_LIMIT);
   const t = await getTranslations("listings");
+  const tPigeonShowcase = await getTranslations("pigeonShowcase");
   const tNav = await getTranslations("nav");
   const tFormat = await getTranslations("format");
   const anonymousBuyer = await getTranslations("mask").then((tMask) => tMask("anonymousBuyer"));
+
+  const PIGEON_CATEGORY_TITLE_KEY: Record<PigeonShowcaseCategory, "awardTitle" | "importedTitle" | "representativeTitle"> = {
+    award: "awardTitle",
+    imported: "importedTitle",
+    representative: "representativeTitle",
+  };
 
   // Reference-only currency conversion (issue #45) — see the listing detail
   // page's equivalent comment; admin stays pure NTD, this grid is public.
@@ -176,8 +218,8 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
    * Current filter set with `partial` applied on top — the single link
    * builder for every facet in the filter card (type/category/loft dropdowns
    * below), so switching one always carries the other two forward (issue
-   * #178). Type, category and loft mutually preserve each other by all
-   * three routing through this same reserved-param list.
+   * #178). Type, category, loft and tab mutually preserve each other by all
+   * routing through this same reserved-param list.
    */
   function withFilters(partial: Record<string, string | undefined>): string {
     return listingsHref({
@@ -191,6 +233,8 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
       status: firstParam(params.status),
       withinHours: firstParam(params.withinHours),
       loft: firstParam(params.loft),
+      tab: firstParam(params.tab),
+      showcaseCategory: firstParam(params.showcaseCategory),
       ...partial,
     });
   }
@@ -228,11 +272,11 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   ];
 
   const LOFT_OPTIONS: CategorySelectOption[] = [
-    { value: "", label: t("loftAll"), href: withFilters({ loft: undefined }) },
+    { value: "", label: t("loftAll"), href: withFilters({ loft: undefined, tab: undefined, showcaseCategory: undefined }) },
     ...partnerLofts.map((loft) => ({
       value: String(loft.id),
       label: loft.title,
-      href: withFilters({ loft: String(loft.id) }),
+      href: withFilters({ loft: String(loft.id), tab: undefined, showcaseCategory: undefined }),
     })),
   ];
 
@@ -254,6 +298,12 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
                 {t("title")}
               </Link>{" "}
               / {selectedLoft.title}
+              {activeTab === "showcase" && (
+                <>
+                  {" "}
+                  / {t("tabLoftShowcase")}
+                </>
+              )}
             </>
           ) : (
             t("title")
@@ -299,7 +349,7 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
             </div>
             <div className="flex shrink-0 items-center">
               <Link
-                href={withFilters({ loft: undefined })}
+                href={withFilters({ loft: undefined, tab: undefined, showcaseCategory: undefined })}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2 text-xs font-bold text-ink transition hover:border-slate-300 hover:bg-slate-100"
               >
                 <svg className="h-4 w-4 text-ink-light" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -310,41 +360,68 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
             </div>
           </div>
 
+          {/* Top-level Major Tabs: 交易商品 vs 舍內名鴿 (issue #200) */}
           <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-border pt-4">
-            <span className="mr-2 text-xs font-semibold uppercase tracking-wide text-ink-light">
-              {t("statusTitle")}:
-            </span>
             <Link
-              href={withFilters({ status: undefined })}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                statusScope === "open" && !statusFilter
+              href={withFilters({ tab: undefined, showcaseCategory: undefined })}
+              className={`rounded-xl px-4 py-2 text-sm font-black transition ${
+                activeTab === "listings"
                   ? "bg-interactive-primary text-white shadow-sm"
                   : "bg-slate-100 text-ink-light hover:bg-slate-200"
               }`}
             >
-              {t("statusScopeActive")}
+              {t("tabLoftListings")} ({listings.length})
             </Link>
             <Link
-              href={withFilters({ status: "closed" })}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                statusScope === "closed"
+              href={withFilters({ tab: "showcase", showcaseCategory: undefined })}
+              className={`rounded-xl px-4 py-2 text-sm font-black transition ${
+                activeTab === "showcase"
                   ? "bg-interactive-primary text-white shadow-sm"
                   : "bg-slate-100 text-ink-light hover:bg-slate-200"
               }`}
             >
-              {t("statusScopeClosed")}
-            </Link>
-            <Link
-              href={withFilters({ status: "all" })}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                statusScope === "all"
-                  ? "bg-interactive-primary text-white shadow-sm"
-                  : "bg-slate-100 text-ink-light hover:bg-slate-200"
-              }`}
-            >
-              {t("statusScopeAll")}
+              {t("tabLoftShowcase")} ({showcaseTotal})
             </Link>
           </div>
+
+          {/* If listings tab is active: show the status filter sub-pills (在售中 / 已結標 / 全部) */}
+          {activeTab === "listings" && (
+            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-dashed border-border pt-3">
+              <span className="mr-2 text-xs font-semibold uppercase tracking-wide text-ink-light">
+                {t("statusTitle")}:
+              </span>
+              <Link
+                href={withFilters({ status: "open" })}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  statusScope === "open" && !statusFilter
+                    ? "bg-header text-white shadow-sm"
+                    : "bg-slate-100 text-ink-light hover:bg-slate-200"
+                }`}
+              >
+                {t("statusScopeActive")}
+              </Link>
+              <Link
+                href={withFilters({ status: "closed" })}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  statusScope === "closed"
+                    ? "bg-header text-white shadow-sm"
+                    : "bg-slate-100 text-ink-light hover:bg-slate-200"
+                }`}
+              >
+                {t("statusScopeClosed")}
+              </Link>
+              <Link
+                href={withFilters({ status: "all" })}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  statusScope === "all"
+                    ? "bg-header text-white shadow-sm"
+                    : "bg-slate-100 text-ink-light hover:bg-slate-200"
+                }`}
+              >
+                {t("statusScopeAll")}
+              </Link>
+            </div>
+          )}
         </section>
       )}
 
@@ -385,179 +462,249 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
         </section>
       )}
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[280px,1fr]">
-        <aside className="space-y-4">
-          <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
-            <p className="text-sm font-bold uppercase tracking-wide text-ink">{t("filtersTitle")}</p>
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {selectedLoft && activeTab === "showcase" ? (
+        <section className="mt-6">
+          <div className="rounded-2xl border border-border bg-white p-5 shadow-sm sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">{t("typeTitle")}</p>
-                <div className="mt-2">
-                  <CategorySelect
-                    ariaLabel={t("typeTitle")}
-                    value={type ?? ""}
-                    options={TYPE_OPTIONS}
-                    className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-ink"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">{t("categoryTitle")}</p>
-                <div className="mt-2">
-                  <CategorySelect
-                    ariaLabel={t("categoryTitle")}
-                    value={selectedCategory ?? ""}
-                    options={CATEGORY_OPTIONS}
-                    className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-ink"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">{t("loftTitle")}</p>
-                <div className="mt-2">
-                  <CategorySelect
-                    ariaLabel={t("loftTitle")}
-                    value={selectedLoftId}
-                    options={LOFT_OPTIONS}
-                    className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-ink"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
-            <p className="text-sm font-bold uppercase tracking-wide text-ink">{t("guideTitle")}</p>
-            <ul className="mt-3 list-disc space-y-2 pl-5 text-xs text-ink-light">
-              <li>{t("guideOne")}</li>
-              <li>{t("guideTwo")}</li>
-              <li>{t("guideThree")}</li>
-            </ul>
-          </div>
-        </aside>
-
-        <section>
-          <div className="flex flex-col gap-3 rounded-xl border border-border bg-white px-4 py-3 text-sm shadow-sm sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <p className="text-ink-light">{t("showingCount", { count: filteredListings.length })}</p>
-              {searchQuery.length > 0 && (
-                <p className="truncate text-xs text-ink-light">
-                  {t("searchPrefix")}
-                  {searchQuery}
+                <h3 className="text-xl font-black text-ink">{t("tabLoftShowcase")}</h3>
+                <p className="mt-1 text-xs text-ink-light">
+                  {selectedLoft.title}
                 </p>
-              )}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  href={withFilters({ tab: "showcase", showcaseCategory: undefined })}
+                  className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+                    !showcaseCategory
+                      ? "bg-header text-white shadow-sm"
+                      : "bg-surface-muted text-ink-light hover:bg-surface"
+                  }`}
+                >
+                  {t("showcaseSubAll")} ({showcaseCategoryCounts.all})
+                </Link>
+                <Link
+                  href={withFilters({ tab: "showcase", showcaseCategory: "award" })}
+                  className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+                    showcaseCategory === "award"
+                      ? "bg-header text-white shadow-sm"
+                      : "bg-surface-muted text-ink-light hover:bg-surface"
+                  }`}
+                >
+                  {t("showcaseSubAward")} ({showcaseCategoryCounts.award})
+                </Link>
+                <Link
+                  href={withFilters({ tab: "showcase", showcaseCategory: "imported" })}
+                  className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+                    showcaseCategory === "imported"
+                      ? "bg-header text-white shadow-sm"
+                      : "bg-surface-muted text-ink-light hover:bg-surface"
+                  }`}
+                >
+                  {t("showcaseSubImported")} ({showcaseCategoryCounts.imported})
+                </Link>
+                <Link
+                  href={withFilters({ tab: "showcase", showcaseCategory: "representative" })}
+                  className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+                    showcaseCategory === "representative"
+                      ? "bg-header text-white shadow-sm"
+                      : "bg-surface-muted text-ink-light hover:bg-surface"
+                  }`}
+                >
+                  {t("showcaseSubRepresentative")} ({showcaseCategoryCounts.representative})
+                </Link>
+              </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wide text-ink-light">{t("sortLabel")}</span>
-              <Link
-                href={withFilters({ sort: undefined })}
-                className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "newest" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
-              >
-                {t("sortNewest")}
-              </Link>
-              <Link
-                href={withFilters({ sort: "price_asc" })}
-                className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "price_asc" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
-              >
-                {t("sortPriceAsc")}
-              </Link>
-              <Link
-                href={withFilters({ sort: "price_desc" })}
-                className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "price_desc" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
-              >
-                {t("sortPriceDesc")}
-              </Link>
-              <Link
-                href={withFilters({ sort: "ends_soon", withinHours: undefined })}
-                className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "ends_soon" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
-              >
-                {t("sortEndsSoon")}
-              </Link>
-              <p className="ml-1 font-semibold text-ink">
-                {type || statusFilter || withinHours !== undefined ? t("filtered") : t("allLive")}
-              </p>
-            </div>
-          </div>
 
-          {filteredListings.length === 0 && <p className="mt-6 text-ink-light">{t("noListings")}</p>}
-
-          <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {sortedListings.map((listing, index) => {
-              const isClosed = listing.status === "closed";
-              return (
-                <ProductCard
-                  key={listing.id}
-                  id={listing.id}
-                  title={listing.title}
-                  description={descriptionSnippet(listing.description)}
-                  photo={listing.photos[0]}
-                  typeBadgeLabel={isClosed ? t("badgeClosed") : TYPE_BADGE_LABEL[listing.listing_type]}
-                  loftName={listing.loftName}
-                  quickActionLabel={isClosed ? t("viewDetails") : t("quickAction")}
-                  viewDetailsLabel={t("viewDetails")}
-                  isClosed={isClosed}
-                  priceText={
-                    isClosed && listing.listing_type === "auction"
-                      ? t("finalPrice", { price: formatNtd(listing.current_price) })
-                      : formatDualPrice(
-                          listing.listing_type === "fixed_price" ? listing.price! : listing.current_price,
-                          displayCurrency,
-                          rateValue,
-                        )
-                  }
-                  detailLines={
-                    isClosed
-                      ? listing.listing_type === "fixed_price"
-                        ? [
-                            t("soldOut"),
-                            t("totalPurchases", { count: listing.purchaseCount }),
-                          ]
-                        : [
-                            listing.ends_at
-                              ? formatRemaining(listing.ends_at, tFormat)
-                              : t("statusEnded"),
-                            listing.bidCount === 0
-                              ? t("noBidsEnded")
-                              : t("finalLeader", {
-                                  name: maskDisplayName(listing.leaderDisplayName, anonymousBuyer),
-                                }),
-                            t("totalBids", { count: listing.bidCount }),
-                          ]
-                      : listing.listing_type === "fixed_price"
-                        ? [
-                            listing.stock_remaining === 0
-                              ? t("soldOut")
-                              : t("remainingUnits", { count: listing.stock_remaining ?? 0 }),
-                            t("totalPurchases", { count: listing.purchaseCount }),
-                          ]
-                        : listing.status === "scheduled" && listing.starts_at
-                          ? [
-                              formatRemaining(listing.starts_at, tFormat, {
-                                prefixKey: "startsInPrefix",
-                                endedKey: "startingSoon",
-                              }),
-                            ]
-                          : [
-                              ...(listing.buy_it_now_price !== null
-                                ? [t("buyItNowPrice", { price: formatNtd(listing.buy_it_now_price) })]
-                                : []),
-                              listing.ends_at ? formatRemaining(listing.ends_at, tFormat) : t("timeless"),
-                              listing.bidCount === 0
-                                ? t("noBidsYet")
-                                : t("currentLeader", { name: maskDisplayName(listing.leaderDisplayName, anonymousBuyer) }),
-                              t("totalBids", { count: listing.bidCount }),
-                            ]
-                  }
-                  eager={index < gridEagerCount}
-                  highPriorityImage={index < 2}
-                />
-              );
-            })}
+            <ContentCardGrid
+              items={filteredShowcaseItems.map((item) => ({
+                id: item.id,
+                href: `/pigeon-showcase/${item.id}`,
+                imageUrl: item.imageFileName ? pigeonShowcaseImageUrl(item.imageFileName) : IMAGE_FALLBACK_SRC,
+                title: item.name,
+                badgeLabel: tPigeonShowcase(PIGEON_CATEGORY_TITLE_KEY[item.category]),
+                excerpt: excerptHtml(item.description, 80),
+              }))}
+              emptyLabel={t("loftShowcaseEmpty")}
+              viewDetailsLabel={t("viewShowcasePigeon")}
+            />
           </div>
         </section>
-      </div>
+      ) : (
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[280px,1fr]">
+          <aside className="space-y-4">
+            <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+              <p className="text-sm font-bold uppercase tracking-wide text-ink">{t("filtersTitle")}</p>
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">{t("typeTitle")}</p>
+                  <div className="mt-2">
+                    <CategorySelect
+                      ariaLabel={t("typeTitle")}
+                      value={type ?? ""}
+                      options={TYPE_OPTIONS}
+                      className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-ink"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">{t("categoryTitle")}</p>
+                  <div className="mt-2">
+                    <CategorySelect
+                      ariaLabel={t("categoryTitle")}
+                      value={selectedCategory ?? ""}
+                      options={CATEGORY_OPTIONS}
+                      className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-ink"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">{t("loftTitle")}</p>
+                  <div className="mt-2">
+                    <CategorySelect
+                      ariaLabel={t("loftTitle")}
+                      value={selectedLoftId}
+                      options={LOFT_OPTIONS}
+                      className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-ink"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+              <p className="text-sm font-bold uppercase tracking-wide text-ink">{t("guideTitle")}</p>
+              <ul className="mt-3 list-disc space-y-2 pl-5 text-xs text-ink-light">
+                <li>{t("guideOne")}</li>
+                <li>{t("guideTwo")}</li>
+                <li>{t("guideThree")}</li>
+              </ul>
+            </div>
+          </aside>
+
+          <section>
+            <div className="flex flex-col gap-3 rounded-xl border border-border bg-white px-4 py-3 text-sm shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-ink-light">{t("showingCount", { count: filteredListings.length })}</p>
+                {searchQuery.length > 0 && (
+                  <p className="truncate text-xs text-ink-light">
+                    {t("searchPrefix")}
+                    {searchQuery}
+                  </p>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wide text-ink-light">{t("sortLabel")}</span>
+                <Link
+                  href={withFilters({ sort: undefined })}
+                  className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "newest" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
+                >
+                  {t("sortNewest")}
+                </Link>
+                <Link
+                  href={withFilters({ sort: "price_asc" })}
+                  className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "price_asc" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
+                >
+                  {t("sortPriceAsc")}
+                </Link>
+                <Link
+                  href={withFilters({ sort: "price_desc" })}
+                  className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "price_desc" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
+                >
+                  {t("sortPriceDesc")}
+                </Link>
+                <Link
+                  href={withFilters({ sort: "ends_soon", withinHours: undefined })}
+                  className={`rounded-md px-2 py-1 text-xs font-medium ${sort === "ends_soon" ? "bg-interactive-primary-subtle text-interactive-primary-active" : "bg-slate-100 text-ink-light hover:bg-slate-200"}`}
+                >
+                  {t("sortEndsSoon")}
+                </Link>
+                <p className="ml-1 font-semibold text-ink">
+                  {type || statusFilter || withinHours !== undefined ? t("filtered") : t("allLive")}
+                </p>
+              </div>
+            </div>
+
+            {filteredListings.length === 0 && <p className="mt-6 text-ink-light">{t("noListings")}</p>}
+
+            <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              {sortedListings.map((listing, index) => {
+                const isClosed = listing.status === "closed";
+                return (
+                  <ProductCard
+                    key={listing.id}
+                    id={listing.id}
+                    title={listing.title}
+                    description={descriptionSnippet(listing.description)}
+                    photo={listing.photos[0]}
+                    typeBadgeLabel={isClosed ? t("badgeClosed") : TYPE_BADGE_LABEL[listing.listing_type]}
+                    loftName={listing.loftName}
+                    quickActionLabel={isClosed ? t("viewDetails") : t("quickAction")}
+                    viewDetailsLabel={t("viewDetails")}
+                    isClosed={isClosed}
+                    priceText={
+                      isClosed && listing.listing_type === "auction"
+                        ? t("finalPrice", { price: formatNtd(listing.current_price) })
+                        : formatDualPrice(
+                            listing.listing_type === "fixed_price" ? listing.price! : listing.current_price,
+                            displayCurrency,
+                            rateValue,
+                          )
+                    }
+                    detailLines={
+                      isClosed
+                        ? listing.listing_type === "fixed_price"
+                          ? [
+                              t("soldOut"),
+                              t("totalPurchases", { count: listing.purchaseCount }),
+                            ]
+                          : [
+                              listing.ends_at
+                                ? formatRemaining(listing.ends_at, tFormat)
+                                : t("statusEnded"),
+                              listing.bidCount === 0
+                                ? t("noBidsEnded")
+                                : t("finalLeader", {
+                                    name: maskDisplayName(listing.leaderDisplayName, anonymousBuyer),
+                                  }),
+                              t("totalBids", { count: listing.bidCount }),
+                            ]
+                        : listing.listing_type === "fixed_price"
+                          ? [
+                              listing.stock_remaining === 0
+                                ? t("soldOut")
+                                : t("remainingUnits", { count: listing.stock_remaining ?? 0 }),
+                              t("totalPurchases", { count: listing.purchaseCount }),
+                            ]
+                          : listing.status === "scheduled" && listing.starts_at
+                            ? [
+                                formatRemaining(listing.starts_at, tFormat, {
+                                  prefixKey: "startsInPrefix",
+                                  endedKey: "startingSoon",
+                                }),
+                              ]
+                            : [
+                                ...(listing.buy_it_now_price !== null
+                                  ? [t("buyItNowPrice", { price: formatNtd(listing.buy_it_now_price) })]
+                                  : []),
+                                listing.ends_at ? formatRemaining(listing.ends_at, tFormat) : t("timeless"),
+                                listing.bidCount === 0
+                                  ? t("noBidsYet")
+                                  : t("currentLeader", { name: maskDisplayName(listing.leaderDisplayName, anonymousBuyer) }),
+                                t("totalBids", { count: listing.bidCount }),
+                              ]
+                    }
+                    eager={index < gridEagerCount}
+                    highPriorityImage={index < 2}
+                  />
+                );
+              })}
+            </div>
+          </section>
+        </div>
+      )}
     </main>
   );
 }

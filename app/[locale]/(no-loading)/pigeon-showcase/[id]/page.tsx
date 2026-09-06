@@ -14,6 +14,7 @@ import {
   truncateForMetaDescription,
 } from "@/lib/seo";
 import { safeJsonLdString } from "@/lib/jsonLdScript";
+import { buildLoftShowcaseUrl } from "@/lib/loftStorefront";
 import DetailWithSidebar from "../../../components/DetailWithSidebar";
 import RichTextContent from "../../../components/RichTextContent";
 
@@ -91,9 +92,9 @@ export default async function PigeonShowcaseDetailPage({ params }: { params: Pro
     .filter((candidate) => candidate.id !== item.id)
     .slice(0, SIDEBAR_LATEST_LIMIT);
   const categoryHref = `/pigeon-showcase?category=${item.category}`;
-  // Same loft, same category — the list page reads ?loftId= (issue #155
-  // item 1) and clears it again on tab switches.
-  const loftHref = `/pigeon-showcase?category=${item.category}&loftId=${item.loftId}`;
+  // Unified loft storefront entrance (issue #200): links directly to that loft's
+  // showcase tab on the listings page.
+  const loftHref = buildLoftShowcaseUrl(item.loftId, { tab: "showcase" });
 
   const breadcrumbJsonLd = buildBreadcrumbListJsonLd([
     { name: t("breadcrumbHome"), pathname: "/" },
