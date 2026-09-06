@@ -72,22 +72,40 @@ fi
 
 date +%s > "$LOCK_FILE"
 
-# One note on the chain below, since a backslash-continued command can't carry
-# an inline comment: the `mkdir -p public` step exists because tar's -C needs
-# that directory to already be there. A host that has deployed before always
-# has it, but a brand-new app directory has nothing — which is exactly how the
+# Two notes on the chain below, since a backslash-continued command can't carry
+# an inline comment.
+#
+# First, the `mkdir -p public` step exists because the swap below needs that
+# directory to already be there. A host that has deployed before always has it,
+# but a brand-new app directory has nothing — which is exactly how the
 # xiangshuicn.cc site's first deploy failed (issue #182). mkdir -p is a no-op
 # wherever the directory already exists, so it costs the established site
-# nothing. Kept in lockstep with .remote-index.php's $buildApplyCommand.
+# nothing.
+#
+# Second, public/ is staged and swapped (public_stage -> public ->
+# public_previous) exactly like .next, rather than untarred over the live
+# directory. `tar -x` overwrites same-named files but never deletes files that
+# the archive no longer contains, so every asset deleted from the repo used to
+# survive on the server forever — hero-placeholder.png stayed reachable for
+# months after commit 9ebba9f removed it (issue #203). Extracting into a fresh
+# public_stage makes the deployed tree exactly the archive's contents, and the
+# two mv's keep it a swap rather than a gap: `rm -rf public && tar -x` would
+# 404 every static asset (public/tinymce, the whole TinyMCE editor included)
+# for the seconds the extraction takes. public_stage/public_previous are
+# cleared at the top of the chain, not just before the swap, so a failure
+# before the swap leaves no public_previous for the rollback block to restore —
+# public was never touched, so there is nothing to roll back to.
+#
+# Kept in lockstep with .remote-index.php's $buildApplyCommand.
 {
   echo "[START] $(date)" > "$LOG_FILE"
-  rm -rf .next_stage >>"$LOG_FILE" 2>&1 \
+  rm -rf .next_stage public_stage public_previous >>"$LOG_FILE" 2>&1 \
     && mkdir -p .next_stage >>"$LOG_FILE" 2>&1 \
     && tar --no-same-owner --no-same-permissions -xzf .prebuilt-next.tgz -C .next_stage >>"$LOG_FILE" 2>&1 \
     && test -s .next_stage/.next/BUILD_ID \
     && test -d .next_stage/.next/server \
     && mkdir -p public >>"$LOG_FILE" 2>&1 \
-    && { if [ -s .prebuilt-public.tgz ]; then tar --no-same-owner --no-same-permissions -xzf .prebuilt-public.tgz -C public >>"$LOG_FILE" 2>&1 && rm -f .prebuilt-public.tgz; fi; } \
+    && { if [ -s .prebuilt-public.tgz ]; then mkdir -p public_stage >>"$LOG_FILE" 2>&1 && tar --no-same-owner --no-same-permissions -xzf .prebuilt-public.tgz -C public_stage >>"$LOG_FILE" 2>&1 && mv public public_previous >>"$LOG_FILE" 2>&1 && mv public_stage public >>"$LOG_FILE" 2>&1 && rm -f .prebuilt-public.tgz; fi; } \
     && rm -rf .next_previous >>"$LOG_FILE" 2>&1 \
     && { if [ -d .next ]; then mv .next .next_previous; fi; } \
     && mv .next_stage/.next .next >>"$LOG_FILE" 2>&1 \
@@ -102,6 +120,11 @@ date +%s > "$LOCK_FILE"
     && echo "[DONE] $(date)" >>"$LOG_FILE"
 } || {
   echo "[ROLLBACK] apply or health probe failed" >>"$LOG_FILE"
+  if [ -d public_previous ]; then
+    rm -rf public_failed
+    mv public public_failed 2>/dev/null
+    mv public_previous public
+  fi
   if [ -d .next_previous ]; then
     rm -rf .next_failed
     mv .next .next_failed 2>/dev/null
