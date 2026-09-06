@@ -9,6 +9,7 @@ import { SITE_URL } from "@/lib/siteUrl";
 import { absoluteUrl, buildOrganizationJsonLd, buildWebSiteJsonLd } from "@/lib/seo";
 import { safeJsonLdString } from "@/lib/jsonLdScript";
 import CookieConsentBanner from "./components/CookieConsentBanner";
+import GoogleAnalytics from "./components/GoogleAnalytics";
 import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
 import WebVitalsReporter from "./components/WebVitalsReporter";
@@ -126,6 +127,7 @@ export default async function LocaleLayout({
       </head>
       <body className="min-h-screen font-sans text-ink">
         <NextIntlClientProvider>
+          <GoogleAnalytics />
           <Suspense fallback={null}>
             <WebVitalsReporter />
           </Suspense>

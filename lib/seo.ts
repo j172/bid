@@ -360,6 +360,7 @@ export function buildLlmsFullTxt(): string {
     "## 機器可讀端點 (Machine-Readable Endpoints)",
     "",
     `- 站點地圖 Sitemap: ${absoluteUrl("/sitemap.xml")}`,
+    `- 新聞地圖 News Sitemap: ${absoluteUrl("/news-sitemap.xml")}`,
     `- 爬蟲規範 Robots: ${absoluteUrl("/robots.txt")}`,
     `- 簡要 AI 指引: ${absoluteUrl("/llms.txt")}`,
     `- 完整 AI 指引: ${absoluteUrl("/llms-full.txt")}`,
@@ -399,6 +400,7 @@ export function buildLlmsTxt(): string {
     "## Machine-readable resources",
     "",
     `- [sitemap.xml](${absoluteUrl("/sitemap.xml")}): every listing/category/static page, across all 3 locales.`,
+    `- [news-sitemap.xml](${absoluteUrl("/news-sitemap.xml")}): Google News formatted XML sitemap.`,
     `- [robots.txt](${absoluteUrl("/robots.txt")}): crawl rules — the admin backend and API routes are disallowed.`,
     `- [llms-full.txt](${absoluteUrl("/llms-full.txt")}): complete documentation for LLMs and AI search engines.`,
     "- Listing detail pages (`/listings/<id>`) embed schema.org Product/Offer JSON-LD with name, image, " +
