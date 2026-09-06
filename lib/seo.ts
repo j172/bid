@@ -177,7 +177,7 @@ export function buildListingProductJsonLd(listing: ListingJsonLdInput, pathname:
   const images =
     listing.photos.length > 0
       ? listing.photos.map((fileName) => absoluteUrl(listingPhotoUrl(listing.id, fileName)))
-      : [absoluteUrl("/images/hero-placeholder.png")];
+      : [absoluteUrl("/images/logo.png")];
   const url = absoluteUrl(pathname);
 
   return {
@@ -212,7 +212,7 @@ export function buildListingProductJsonLd(listing: ListingJsonLdInput, pathname:
 // route.ts stays a thin wrapper and this stays directly unit-testable.
 export function buildLlmsTxt(): string {
   const lines = [
-    "# Bid Auction（拍賣競標）",
+    "# Xiangshui Racing Pigeon Network（翔水賽鴿網）",
     "",
     "> An online marketplace for racing pigeon (賽鴿/種鴿) auctions and " +
       "fixed-price breeding-stock listings, with real-time bidding, auto " +

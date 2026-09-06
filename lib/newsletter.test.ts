@@ -8,10 +8,10 @@ import { buildNewsBroadcastHtml } from "./newsletter";
 
 describe("buildNewsBroadcastHtml", () => {
   it("appends a 查看完整內容 link pointing at the detail URL after the content as-is", () => {
-    const html = buildNewsBroadcastHtml("<p>本週競標時間調整為晚上八點</p>", "https://bid.j172.tw/news/42");
+    const html = buildNewsBroadcastHtml("<p>本週競標時間調整為晚上八點</p>", "https://xiangshuicn.cc/news/42");
 
     expect(html).toContain("<p>本週競標時間調整為晚上八點</p>");
-    expect(html).toContain('<a href="https://bid.j172.tw/news/42">查看完整內容</a>');
+    expect(html).toContain('<a href="https://xiangshuicn.cc/news/42">查看完整內容</a>');
     // Content comes first, link appended after — not prepended.
     expect(html.indexOf("本週競標時間調整為晚上八點")).toBeLessThan(html.indexOf("查看完整內容"));
   });

@@ -104,7 +104,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     id: post.id,
     title: post.title,
     excerpt: excerptHtml(post.content, FEATURED_LOFT_CAROUSEL_EXCERPT_LENGTH),
-    imageUrl: post.imageFileName ? featuredLoftPostImageUrl(post.imageFileName) : "/images/hero-placeholder.png",
+    imageUrl: post.imageFileName ? featuredLoftPostImageUrl(post.imageFileName) : "/images/logo.png",
     createdAt: post.createdAt.toLocaleDateString(),
   }));
 
@@ -130,19 +130,19 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     id: pigeon.id,
     name: pigeon.name,
     excerpt: excerptHtml(pigeon.description, PIGEON_CAROUSEL_EXCERPT_LENGTH),
-    imageUrl: pigeon.imageFileName ? pigeonShowcaseImageUrl(pigeon.imageFileName) : "/images/hero-placeholder.png",
+    imageUrl: pigeon.imageFileName ? pigeonShowcaseImageUrl(pigeon.imageFileName) : "/images/logo.png",
   }));
   const importedCarouselItems = importedPigeons.map((pigeon) => ({
     id: pigeon.id,
     name: pigeon.name,
     excerpt: excerptHtml(pigeon.description, PIGEON_CAROUSEL_EXCERPT_LENGTH),
-    imageUrl: pigeon.imageFileName ? pigeonShowcaseImageUrl(pigeon.imageFileName) : "/images/hero-placeholder.png",
+    imageUrl: pigeon.imageFileName ? pigeonShowcaseImageUrl(pigeon.imageFileName) : "/images/logo.png",
   }));
   const representativeCarouselItems = representativePigeons.map((pigeon) => ({
     id: pigeon.id,
     name: pigeon.name,
     excerpt: excerptHtml(pigeon.description, PIGEON_CAROUSEL_EXCERPT_LENGTH),
-    imageUrl: pigeon.imageFileName ? pigeonShowcaseImageUrl(pigeon.imageFileName) : "/images/hero-placeholder.png",
+    imageUrl: pigeon.imageFileName ? pigeonShowcaseImageUrl(pigeon.imageFileName) : "/images/logo.png",
   }));
 
   // 最新訊息首頁輪播 (issue #56) — latest 10 posts, replacing the large
@@ -156,7 +156,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     id: post.id,
     title: post.title,
     excerpt: excerptHtml(post.content, NEWS_CAROUSEL_EXCERPT_LENGTH),
-    imageUrl: post.imageFileName ? newsImageUrl(post.imageFileName) : "/images/hero-placeholder.png",
+    imageUrl: post.imageFileName ? newsImageUrl(post.imageFileName) : "/images/logo.png",
     // Same date convention as the news list and the news detail sidebar
     // (app/[locale]/news/page.tsx, app/[locale]/(no-loading)/news/[id]/page.tsx):
     // formatted here on the server so the client carousel card can't drift

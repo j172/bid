@@ -79,7 +79,7 @@ export default async function FeaturedLoftsAdminPage({ searchParams }: { searchP
       ) : (
         <AdminTable headers={["主圖", "標題", "內容", "鴿舍", "發布時間", ""]}>
           {items.map((item) => {
-            const imageUrl = item.imageFileName ? featuredLoftPostImageUrl(item.imageFileName) : "/images/hero-placeholder.png";
+            const imageUrl = item.imageFileName ? featuredLoftPostImageUrl(item.imageFileName) : "/images/logo.png";
             return (
               <AdminTableRow key={item.id}>
                 <AdminTableCell>

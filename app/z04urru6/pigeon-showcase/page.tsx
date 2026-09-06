@@ -97,7 +97,7 @@ export default async function PigeonShowcaseAdminPage({ searchParams }: { search
       ) : (
         <AdminTable headers={["主圖", "鴿種", "名稱", "鴿舍", "簡介", ""]}>
           {items.map((item) => {
-            const imageUrl = item.imageFileName ? pigeonShowcaseImageUrl(item.imageFileName) : "/images/hero-placeholder.png";
+            const imageUrl = item.imageFileName ? pigeonShowcaseImageUrl(item.imageFileName) : "/images/logo.png";
             return (
               <AdminTableRow key={item.id}>
                 <AdminTableCell>

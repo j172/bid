@@ -40,11 +40,12 @@ export async function generateMetadata({
       template: `%s | ${tNav("siteName")}`,
     },
     description: t("metaDescription"),
-    icons: {
-      icon: "/images/hero-placeholder.png",
-      shortcut: "/images/hero-placeholder.png",
-      apple: "/images/hero-placeholder.png",
-    },
+    // No `icons` key on purpose. An explicit one overrides Next's file
+    // convention, and app/icon.png is deliberately not the same image as the
+    // header logo: it is the 翔 glyph cropped out of it, because the full
+    // square artwork — sky, clouds, both characters and a line of English —
+    // is an unreadable smudge at the 16x16 a favicon actually renders at.
+    // Setting icons here would silently reinstate that smudge.
   };
 }
 

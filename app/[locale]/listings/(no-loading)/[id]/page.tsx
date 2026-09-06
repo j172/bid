@@ -59,7 +59,7 @@ export async function generateMetadata({
   const description = truncateForMetaDescription(stripHtmlToPlainText(listing.description));
   const imageUrl = listing.photos[0]
     ? absoluteUrl(listingPhotoUrl(listing.id, listing.photos[0]))
-    : absoluteUrl("/images/hero-placeholder.png");
+    : absoluteUrl("/images/logo.png");
   const pathname = `/listings/${listing.id}`;
 
   return {
@@ -221,7 +221,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
         <div className="mt-6">
           <HeroCountdownStrip
             listingId={listing.id}
-            imageUrl={imageUrls[0] ?? "/images/hero-placeholder.png"}
+            imageUrl={imageUrls[0] ?? "/images/logo.png"}
             initialCurrentPrice={listing.current_price}
             initialBuyItNowPrice={listing.buy_it_now_price}
             initialEndsAt={listing.ends_at!.toISOString()}
@@ -380,7 +380,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
             >
               <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
                 <ZoomableProductImage
-                  src={related.photos[0] ? listingPhotoUrl(related.id, related.photos[0]) : "/images/hero-placeholder.png"}
+                  src={related.photos[0] ? listingPhotoUrl(related.id, related.photos[0]) : "/images/logo.png"}
                   alt={related.title}
                   eager={false}
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

@@ -71,7 +71,7 @@ export default async function NewsAdminPage({ searchParams }: { searchParams: Pr
       ) : (
         <AdminTable headers={["主圖", "標題", "內容", "發布時間", "電子報狀態", ""]}>
           {items.map((item) => {
-            const imageUrl = item.imageFileName ? newsImageUrl(item.imageFileName) : "/images/hero-placeholder.png";
+            const imageUrl = item.imageFileName ? newsImageUrl(item.imageFileName) : "/images/logo.png";
             const broadcast = item.broadcastId ? broadcastsById.get(item.broadcastId) : undefined;
             return (
               <AdminTableRow key={item.id}>

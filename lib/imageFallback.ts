@@ -13,7 +13,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 // lens, a lightbox) and stays where it is — only the fallback bookkeeping
 // and the "should Next optimize this?" test are shared.
 
-export const IMAGE_FALLBACK_SRC = "/images/hero-placeholder.png";
+export const IMAGE_FALLBACK_SRC = "/images/logo.png";
 
 /** Pure form of the fallback decision — exported for the two hooks below and for tests. */
 export function resolveImageSrc(src: string, failed: boolean): string {

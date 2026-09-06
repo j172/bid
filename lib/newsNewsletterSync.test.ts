@@ -101,16 +101,16 @@ describe("newsletterErrorMessage", () => {
 describe("resolveOrigin", () => {
   it("prefers X-Forwarded-Host/Proto when present (this host's reverse proxy)", () => {
     const request = new Request("http://127.0.0.1:3000/api/admin/news", {
-      headers: { "x-forwarded-host": "bid.j172.tw", "x-forwarded-proto": "https" },
+      headers: { "x-forwarded-host": "xiangshuicn.cc", "x-forwarded-proto": "https" },
     });
-    expect(resolveOrigin(request)).toBe("https://bid.j172.tw");
+    expect(resolveOrigin(request)).toBe("https://xiangshuicn.cc");
   });
 
   it("falls back to plain Host with https when no forwarded proto is given", () => {
     const request = new Request("http://127.0.0.1:3000/api/admin/news", {
-      headers: { host: "bid.j172.tw" },
+      headers: { host: "xiangshuicn.cc" },
     });
-    expect(resolveOrigin(request)).toBe("https://bid.j172.tw");
+    expect(resolveOrigin(request)).toBe("https://xiangshuicn.cc");
   });
 
   it("falls back to the request's own URL origin when neither header is present (local dev)", () => {
@@ -150,7 +150,7 @@ describe("createAndSendNewsBroadcast", () => {
     newsId: 42,
     title: "測試標題",
     content: "<p>內容</p>",
-    detailUrl: "https://bid.j172.tw/news/42",
+    detailUrl: "https://xiangshuicn.cc/news/42",
     scheduledAtRaw: "",
     invalidScheduleError: "排程時間必須是有效的未來時間，電子報未寄送。",
   };

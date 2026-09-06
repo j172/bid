@@ -39,7 +39,7 @@ export default function ProductCard({
     >
       <div className="relative aspect-square overflow-hidden bg-slate-100">
         <ZoomableProductImage
-          src={photo ? listingPhotoUrl(id, photo) : "/images/hero-placeholder.png"}
+          src={photo ? listingPhotoUrl(id, photo) : "/images/logo.png"}
           alt={title}
           eager={eager}
           fetchPriority={highPriorityImage ? "high" : "auto"}

@@ -56,7 +56,7 @@ describe("ZoomableProductImage load timeout fallback", () => {
     });
     // The first watchdog gives up and starts the retry — not the
     // placeholder yet.
-    expect(img.src).not.toContain("hero-placeholder.png");
+    expect(img.src).not.toContain("logo.png");
 
     act(() => {
       vi.advanceTimersByTime(800);
@@ -65,7 +65,7 @@ describe("ZoomableProductImage load timeout fallback", () => {
       vi.advanceTimersByTime(7000);
     });
 
-    expect(img.src).toContain("hero-placeholder.png");
+    expect(img.src).toContain("logo.png");
   });
 
   it("does not fall back if onLoad fires before the timeout", async () => {
@@ -103,7 +103,7 @@ describe("ZoomableProductImage load timeout fallback", () => {
     // failure buys a retry (lib/imageFallback.ts's RETRY_DELAY_MS), not an
     // instant, permanent fallback.
     expect(img.src).toContain("/uploads/listings/48/example.webp");
-    expect(img.src).not.toContain("hero-placeholder.png");
+    expect(img.src).not.toContain("logo.png");
 
     act(() => {
       vi.advanceTimersByTime(800);
@@ -111,7 +111,7 @@ describe("ZoomableProductImage load timeout fallback", () => {
     // The retry re-requests the same file under a cache-busting query
     // param, not the placeholder.
     expect(img.src).toContain("/uploads/listings/48/example.webp");
-    expect(img.src).not.toContain("hero-placeholder.png");
+    expect(img.src).not.toContain("logo.png");
 
     // The retry's own 7s watchdog re-arms for this new request — it
     // shouldn't fire early just because the first attempt's window already
@@ -119,7 +119,7 @@ describe("ZoomableProductImage load timeout fallback", () => {
     act(() => {
       vi.advanceTimersByTime(6000);
     });
-    expect(img.src).not.toContain("hero-placeholder.png");
+    expect(img.src).not.toContain("logo.png");
   });
 
   it("falls back only once the retry also fails", () => {
@@ -134,18 +134,18 @@ describe("ZoomableProductImage load timeout fallback", () => {
     act(() => {
       vi.advanceTimersByTime(800);
     });
-    expect(img.src).not.toContain("hero-placeholder.png");
+    expect(img.src).not.toContain("logo.png");
 
     act(() => {
       fireEvent.error(img);
     });
-    expect(img.src).toContain("hero-placeholder.png");
+    expect(img.src).toContain("logo.png");
 
     // Permanent from here — no further retries.
     act(() => {
       fireEvent.error(img);
     });
-    expect(img.src).toContain("hero-placeholder.png");
+    expect(img.src).toContain("logo.png");
   });
 
   it("recovers if the retry succeeds — no fallback, no refresh needed", async () => {
@@ -168,14 +168,14 @@ describe("ZoomableProductImage load timeout fallback", () => {
     });
 
     expect(img.src).toContain("/uploads/listings/48/example.webp");
-    expect(img.src).not.toContain("hero-placeholder.png");
+    expect(img.src).not.toContain("logo.png");
     expect(img.className).toContain("opacity-100");
 
     // No lingering watchdog waiting to undo the recovery.
     act(() => {
       vi.advanceTimersByTime(7000);
     });
-    expect(img.src).not.toContain("hero-placeholder.png");
+    expect(img.src).not.toContain("logo.png");
   });
 
   // Regression test for issue #155 item 5: if the same "neither onLoad nor
@@ -191,7 +191,7 @@ describe("ZoomableProductImage load timeout fallback", () => {
     const img = screen.getByAltText("example") as HTMLImageElement;
 
     advanceThroughSilentRetry();
-    expect(img.src).toContain("hero-placeholder.png");
+    expect(img.src).toContain("logo.png");
     expect(img.className).toContain("opacity-0");
 
     act(() => {
@@ -207,7 +207,7 @@ describe("ZoomableProductImage load timeout fallback", () => {
     const img = screen.getByAltText("example") as HTMLImageElement;
 
     advanceThroughSilentRetry();
-    expect(img.src).toContain("hero-placeholder.png");
+    expect(img.src).toContain("logo.png");
 
     await act(async () => {
       fireEvent.load(img);

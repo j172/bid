@@ -31,7 +31,7 @@ beforeEach(() => {
 
 describe("resolveWebauthnRp", () => {
   it("defaults to the production domain when NODE_ENV is 'production'", () => {
-    expect(resolveWebauthnRp("production")).toEqual({ rpID: "j172.tw", origin: "https://j172.tw" });
+    expect(resolveWebauthnRp("production")).toEqual({ rpID: "xiangshuicn.cc", origin: "https://xiangshuicn.cc" });
   });
 
   it("defaults to localhost for any other NODE_ENV", () => {

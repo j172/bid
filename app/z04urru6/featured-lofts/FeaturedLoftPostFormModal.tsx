@@ -23,7 +23,7 @@ type EditItem = {
   content: string;
   /** Null when this post has no linked 合作鴿舍 — the select falls back to the "不指定" option. */
   loftId: number | null;
-  /** Resolved to the site placeholder when the row has no image yet — see featuredLoftPostImageUrl/hero-placeholder.png in the caller. */
+  /** Resolved to the site placeholder when the row has no image yet — see featuredLoftPostImageUrl/logo.png in the caller. */
   imageUrl: string;
 };
 

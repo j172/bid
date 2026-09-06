@@ -38,8 +38,8 @@ export default async function SiteHeader() {
         <Link href="/" className="mr-2 flex shrink-0 items-center gap-2 text-lg font-black tracking-tight sm:text-xl">
           <span className="inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             <Image
-              src="/images/hero-placeholder.png"
-              alt="Bid logo"
+              src="/images/logo.png"
+              alt="翔水賽鴿網"
               width={36}
               height={36}
               className="h-full w-full object-cover"

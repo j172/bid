@@ -15,12 +15,12 @@ import "../globals.css";
 // outside next-intl's routing (see middleware.ts's matcher) and untranslated.
 export const metadata: Metadata = {
   title: "後台管理",
-  description: "拍賣競標網站後台管理",
-  icons: {
-    icon: "/images/hero-placeholder.png",
-    shortcut: "/images/hero-placeholder.png",
-    apple: "/images/hero-placeholder.png",
-  },
+  description: "翔水賽鴿網後台管理",
+  // No `icons` key on purpose — see the matching comment in
+  // app/[locale]/layout.tsx. app/icon.png (the cropped 翔 glyph) serves both
+  // trees; an explicit entry here would override it with something that does
+  // not survive being scaled to 16x16. This previously pointed at
+  // hero-placeholder.png, which was never a brand mark at all.
   robots: {
     index: false,
     follow: false,
