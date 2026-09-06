@@ -5,6 +5,8 @@ import { validateNewsContent, validateNewsTitle } from "@/lib/newsValidation";
 import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
 import { deleteNewsImageFile, saveImageOrError, saveNewsImage, withImageRollback } from "@/lib/uploads";
 import { createAndSendNewsBroadcast, resolveOrigin } from "@/lib/newsNewsletterSync";
+import { submitToIndexNow } from "@/lib/indexnow";
+import { localizedUrls } from "@/lib/seo";
 
 // Admin list view — matches the filters issue #56 asks for: title substring
 // search, selectable page size (30/50/100). No JOIN-only public equivalent
@@ -94,6 +96,10 @@ export async function POST(request: Request) {
     });
     newsletterError = outcome.newsletterError;
   }
+
+  // Push news URLs to IndexNow in the background (issue #193)
+  const newsUrls = Object.values(localizedUrls(`/news/${newsId}`));
+  void submitToIndexNow(newsUrls).catch(() => {});
 
   return NextResponse.json({ ok: true, id: result.id, newsletterError });
 }
