@@ -175,6 +175,13 @@ if (str_starts_with($path, '/__ops/')) {
             . "&& tar --no-same-owner --no-same-permissions -xzf .prebuilt-next.tgz -C .next_stage >> .apply.log 2>&1 "
             . "&& test -s .next_stage/.next/BUILD_ID "
             . "&& test -d .next_stage/.next/server "
+            // tar's -C needs public/ to already exist. On a host that has
+            // deployed before it always does, but a brand-new app directory
+            // has nothing — which is exactly how the xiangshuicn.cc site's
+            // first deploy failed (issue #182). mkdir -p is a no-op wherever
+            // the directory is already there, so this costs the established
+            // site nothing. Kept in lockstep with scripts/remote-apply.sh.
+            . "&& mkdir -p public >> .apply.log 2>&1 "
             . "&& { if [ -s .prebuilt-public.tgz ]; then tar --no-same-owner --no-same-permissions -xzf .prebuilt-public.tgz -C public >> .apply.log 2>&1 && rm -f .prebuilt-public.tgz; fi; } "
             . "&& rm -rf .next_previous >> .apply.log 2>&1 "
             . "&& { if [ -d .next ]; then mv .next .next_previous; fi; } "

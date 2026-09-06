@@ -72,6 +72,13 @@ fi
 
 date +%s > "$LOCK_FILE"
 
+# One note on the chain below, since a backslash-continued command can't carry
+# an inline comment: the `mkdir -p public` step exists because tar's -C needs
+# that directory to already be there. A host that has deployed before always
+# has it, but a brand-new app directory has nothing — which is exactly how the
+# xiangshuicn.cc site's first deploy failed (issue #182). mkdir -p is a no-op
+# wherever the directory already exists, so it costs the established site
+# nothing. Kept in lockstep with .remote-index.php's $buildApplyCommand.
 {
   echo "[START] $(date)" > "$LOG_FILE"
   rm -rf .next_stage >>"$LOG_FILE" 2>&1 \
@@ -79,6 +86,7 @@ date +%s > "$LOCK_FILE"
     && tar --no-same-owner --no-same-permissions -xzf .prebuilt-next.tgz -C .next_stage >>"$LOG_FILE" 2>&1 \
     && test -s .next_stage/.next/BUILD_ID \
     && test -d .next_stage/.next/server \
+    && mkdir -p public >>"$LOG_FILE" 2>&1 \
     && { if [ -s .prebuilt-public.tgz ]; then tar --no-same-owner --no-same-permissions -xzf .prebuilt-public.tgz -C public >>"$LOG_FILE" 2>&1 && rm -f .prebuilt-public.tgz; fi; } \
     && rm -rf .next_previous >>"$LOG_FILE" 2>&1 \
     && { if [ -d .next ]; then mv .next .next_previous; fi; } \
