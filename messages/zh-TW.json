@@ -1101,5 +1101,20 @@
   "googlePreference": {
     "buttonText": "加入Google首選",
     "tooltip": "請點選打勾將響水拍賣設為首選來源，在 Google 上查看更多精彩標的與報導"
+  },
+  "socialMedia": {
+    "sectionTitle": "官方社群影音動態",
+    "sectionSubtitle": "即時鎖定翔水賽鴿 YouTube 精選影音、Facebook 舍內動態與 TikTok 短影音",
+    "tabAll": "全部精選",
+    "tabYoutube": "YouTube 影音",
+    "tabFacebook": "Facebook 動態",
+    "tabTiktok": "TikTok 短影音",
+    "followYoutube": "訂閱 YouTube",
+    "followFacebook": "追蹤 Facebook",
+    "followTiktok": "關注 TikTok",
+    "watchVideo": "點擊播放影片",
+    "viewPost": "前往查看動態",
+    "closePlayer": "關閉播放器"
   }
 }
+
