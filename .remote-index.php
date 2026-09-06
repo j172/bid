@@ -11,14 +11,25 @@ $path = parse_url($uri, PHP_URL_PATH) ?: '/';
 // $HOME is deliberately NOT used here: this runs under PHP-FPM, whose
 // environment is not the account's login shell and may not carry HOME.
 // dirname(__DIR__) is deterministic instead — deploy-ftps.yml uploads this
-// file to `<ftp root>/bid.j172.tw/index.php`, and the FTP root is the account
-// home, so __DIR__ is always `<home>/bid.j172.tw` and its parent is the home
-// directory. If that upload destination ever changes, this must change with it.
+// file to `<ftp root>/$DOCROOT_DIR/index.php`, and the FTP root is the account
+// home, so __DIR__ is always the site's document root sitting one level under
+// the home directory, and its parent is that home directory. That holds for
+// both sites: bid.j172.tw is an addon domain rooted at `<home>/bid.j172.tw`,
+// and xiangshuicn.cc is sng105's MAIN domain rooted at `<home>/public_html`.
+// If either the upload destination or that one-level-deep layout ever
+// changes, this must change with it.
 $homeDir = dirname(__DIR__);
 $nvmNodeDir = $homeDir . '/.nvm/versions/node/v24.19.0';
 
 $appDir = $homeDir . '/bid_app';
 $appPort = 3001;
+// The public hostname this request came in on. Deliberately derived from the
+// request rather than hard-coded: one copy of this file serves two sites —
+// the legacy bid.j172.tw and the new xiangshuicn.cc (issue #182) — so any
+// literal domain here would be wrong on one of them. 'localhost' is only a
+// floor for the synthetic loopback probe below, which needs *some* Host
+// header; a real browser request always sets HTTP_HOST.
+$publicHost = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $nodeBin = $nvmNodeDir . '/bin/node';
 // bin/npm is a shebang (`#!/usr/bin/env node`) script — fine when invoked
 // interactively where PATH has the nvm dir first, but PHP's exec() gives the
@@ -164,6 +175,13 @@ if (str_starts_with($path, '/__ops/')) {
             . "&& tar --no-same-owner --no-same-permissions -xzf .prebuilt-next.tgz -C .next_stage >> .apply.log 2>&1 "
             . "&& test -s .next_stage/.next/BUILD_ID "
             . "&& test -d .next_stage/.next/server "
+            // tar's -C needs public/ to already exist. On a host that has
+            // deployed before it always does, but a brand-new app directory
+            // has nothing — which is exactly how the xiangshuicn.cc site's
+            // first deploy failed (issue #182). mkdir -p is a no-op wherever
+            // the directory is already there, so this costs the established
+            // site nothing. Kept in lockstep with scripts/remote-apply.sh.
+            . "&& mkdir -p public >> .apply.log 2>&1 "
             . "&& { if [ -s .prebuilt-public.tgz ]; then tar --no-same-owner --no-same-permissions -xzf .prebuilt-public.tgz -C public >> .apply.log 2>&1 && rm -f .prebuilt-public.tgz; fi; } "
             . "&& rm -rf .next_previous >> .apply.log 2>&1 "
             . "&& { if [ -d .next ]; then mv .next .next_previous; fi; } "
@@ -293,7 +311,7 @@ if (str_starts_with($path, '/__ops/')) {
             // status line so a wedged listener still escalates.
             $servingHttp = false;
             @stream_set_timeout($probe, 5);
-            if (@fwrite($probe, "HEAD / HTTP/1.0\r\nHost: bid.j172.tw\r\nConnection: close\r\n\r\n")) {
+            if (@fwrite($probe, "HEAD / HTTP/1.0\r\nHost: {$publicHost}\r\nConnection: close\r\n\r\n")) {
                 $statusLine = (string) @fgets($probe, 128);
                 $servingHttp = (stripos($statusLine, 'HTTP/') === 0);
             }
@@ -423,8 +441,8 @@ foreach ($_SERVER as $key => $value) {
         }
     }
 }
-$headers[] = 'Host: ' . ($_SERVER['HTTP_HOST'] ?? 'bid.j172.tw');
-$headers[] = 'X-Forwarded-Host: ' . ($_SERVER['HTTP_HOST'] ?? 'bid.j172.tw');
+$headers[] = 'Host: ' . $publicHost;
+$headers[] = 'X-Forwarded-Host: ' . $publicHost;
 $headers[] = 'X-Forwarded-Proto: https';
 
 // $_SERVER['REMOTE_ADDR'] here is the raw TCP peer address — whatever
