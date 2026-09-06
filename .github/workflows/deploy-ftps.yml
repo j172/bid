@@ -140,6 +140,15 @@ jobs:
 
           upload_with_retry ".remote-htaccess" "ftp://${FTP_SERVER_CLEAN}:21/${DOCROOT_DIR}/.htaccess"
 
+          # The site's URL routing lives in the account home directory, one
+          # level above the docroot — see .remote-home-htaccess's header for
+          # why. It was untracked until issue #201, which is why the #182
+          # migration produced a new host where `/` answered 200 and every
+          # other path 404'd. No target branch here: the FTP root is the
+          # account home (the two uploads above are relative to it), and both
+          # sites need identical routing, so this one file goes to both.
+          upload_with_retry ".remote-home-htaccess" "ftp://${FTP_SERVER_CLEAN}:21/.htaccess"
+
           upload_with_retry ".ops-key" "ftp://${FTP_SERVER_CLEAN}:21/${DOCROOT_DIR}/.ops-key"
 
       - name: Trigger apply and wait for completion

@@ -5,11 +5,18 @@
 # literal here is wrong on one host by construction — it pointed the new
 # xiangshuicn.cc site's PHP error log at a directory that does not exist there.
 #
-# Dropped rather than parameterised: each account's own home-directory
-# .htaccess already sets error_log and log_errors to that account's real path,
-# and it is the per-host file, so nothing is lost on either site. See the
-# untracked-.htaccess note in issue #182 — that home-level file is where this
-# site's URL routing lives, and it is not in this repo.
+# Dropped rather than parameterised, because this layer never needed to set it
+# at all: cPanel generates a php.ini and a .user.ini in each account's own
+# document root, and both already carry that account's correct error_log path
+# (verified on the new host: /home/xiangshu/logs/php.error.log, log_errors On).
+# Those files are per-account and stay on the server, so PHP keeps logging to
+# the right place on both sites with nothing here to repeat it. Do not
+# reintroduce an error_log directive in any .htaccess this repo ships — it can
+# only ever name one of the two accounts.
+#
+# Note this file holds PHP directives only. The site's URL routing lives one
+# level up, in the account home directory's .htaccess — see
+# .remote-home-htaccess, which the deploy uploads there (issue #201).
 
 # Added: the reverse-proxy handler (index.php) forwards the raw request
 # body via php://input to the Node process. PHP auto-parses
