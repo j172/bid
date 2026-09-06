@@ -21,7 +21,9 @@ import { randomBytes } from "crypto";
 import { cookies } from "next/headers";
 import { getDb } from "@/lib/db";
 
-export const RP_NAME = "拍賣競標";
+// Shown verbatim in the browser's passkey dialog, so it has to read as the
+// site's own name to the person deciding whether to trust the prompt.
+export const RP_NAME = "翔水賽鴿網";
 
 // Resolved from NODE_ENV rather than the request's Host header (contrast
 // lib/newsNewsletterSync.ts's resolveOrigin, used for outbound email link
@@ -38,8 +40,8 @@ export function resolveWebauthnRp(nodeEnv: string | undefined = process.env.NODE
   origin: string;
 } {
   const isProd = nodeEnv === "production";
-  const rpID = process.env.WEBAUTHN_RP_ID ?? (isProd ? "j172.tw" : "localhost");
-  const origin = process.env.WEBAUTHN_ORIGIN ?? (isProd ? "https://j172.tw" : "http://localhost:3000");
+  const rpID = process.env.WEBAUTHN_RP_ID ?? (isProd ? "xiangshuicn.cc" : "localhost");
+  const origin = process.env.WEBAUTHN_ORIGIN ?? (isProd ? "https://xiangshuicn.cc" : "http://localhost:3000");
   return { rpID, origin };
 }
 

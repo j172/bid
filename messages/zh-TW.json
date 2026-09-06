@@ -1,6 +1,6 @@
 {
   "nav": {
-    "siteName": "拍賣競標",
+    "siteName": "翔水賽鴿網",
     "home": "首頁",
     "browse": "瀏覽商品",
     "myBids": "我的出價紀錄",
@@ -32,7 +32,7 @@
     "cartLabel": "購物車"
   },
   "home": {
-    "title": "拍賣競標網站",
+    "title": "翔水賽鴿網",
     "subtitle": "單一賣家英式拍賣 — 出價、自動出價、一鍵買斷，通通支援。",
     "browseButton": "瀏覽競標中商品",
     "heroBadge": "PREMIUM AUCTION DESIGN",
@@ -125,7 +125,7 @@
     "trustTitle": "依真實成交資料掌握熱門鴿況",
     "trustDesc": "首頁的熱門排行、出價次數與成交件數，皆直接反映目前上架中的真實商品資料，而非預先寫死的展示數字。",
     "trustCta": "查看全部商品",
-    "metaDescription": "拍賣競標網站：優質賽鴿與種鴿的線上競標與定價交易平台，支援即時出價、自動出價與一鍵買斷，安全可靠、鴿友信賴之選。"
+    "metaDescription": "翔水賽鴿網：優質賽鴿與種鴿的線上競標與定價交易平台，支援即時出價、自動出價與一鍵買斷，安全可靠、鴿友信賴之選。"
   },
   "listings": {
     "title": "競標中商品",
@@ -466,11 +466,11 @@
     "en": "English"
   },
   "footer": {
-    "brandTitle": "拍賣競標",
+    "brandTitle": "翔水賽鴿網",
     "brandSubtitle": "深耕鴿友信賴的競標與定價種鴿交易平台，出價、自動出價與買斷流程皆嚴格把關。",
     "helpSupportTitle": "客服與支援",
     "supportPhone": "客服專線：(+886) 0909-256-829",
-    "supportEmail": "j172@j172.tw",
+    "supportEmail": "service@xiangshuicn.cc",
     "accountTitle": "帳戶",
     "loginRegister": "登入 / 註冊",
     "accountSettings": "帳戶設定",
@@ -495,7 +495,7 @@
     "newsletterSuccess": "訂閱成功，感謝加入！",
     "newsletterError": "發生錯誤，請稍後再試。",
     "newsletterInvalidEmail": "請輸入有效的 Email 地址。",
-    "copyright": "© 2026 j172tw Bid. All rights reserved.",
+    "copyright": "© 2026 Xiangshui Racing Pigeon Network. All rights reserved.",
     "exchangeRateTitle": "即時參考匯率",
     "exchangeRateUsd": "1 USD ≈ NT${rate}",
     "exchangeRateCny": "1 CNY ≈ NT${rate}",
@@ -512,7 +512,7 @@
     "title": "聯絡我們",
     "subtitle": "若你有訂單、商品或合作問題，歡迎隨時與我們聯繫。",
     "infoTitle": "聯絡資訊",
-    "email": "Email：j172@j172.tw",
+    "email": "Email：service@xiangshuicn.cc",
     "phone": "電話：(+886) 0909-256-829",
     "address": "地址：台北市示範路 100 號",
     "formTitle": "留下訊息",
@@ -775,7 +775,7 @@
         ],
         "bullets": [
           "登記名稱：〔公司登記名稱〕（統一編號：〔統一編號〕）",
-          "Email：j172@j172.tw",
+          "Email：service@xiangshuicn.cc",
           "電話：(+886) 0909-256-829",
           "地址：台北市示範路 100 號",
           "資料保護聯絡窗口：〔資料保護聯絡窗口／DPO〕"
@@ -849,7 +849,7 @@
       {
         "title": "9. 聯絡我們",
         "bullets": [
-          "Email：j172@j172.tw",
+          "Email：service@xiangshuicn.cc",
           "電話：(+886) 0909-256-829",
           "地址：台北市示範路 100 號"
         ]
@@ -869,7 +869,7 @@
           "登記名稱：〔公司登記名稱〕",
           "統一編號：〔統一編號〕",
           "營業地址：〔營業登記地址〕（現行對外聯絡地址：台北市示範路 100 號）",
-          "客服 Email：j172@j172.tw／電話：(+886) 0909-256-829"
+          "客服 Email：service@xiangshuicn.cc／電話：(+886) 0909-256-829"
         ]
       },
       {
@@ -950,7 +950,7 @@
       {
         "title": "13. 聯絡我們",
         "bullets": [
-          "Email：j172@j172.tw",
+          "Email：service@xiangshuicn.cc",
           "電話：(+886) 0909-256-829",
           "地址：台北市示範路 100 號"
         ]
@@ -1010,7 +1010,7 @@
       },
       {
         "question": "還有其他問題，要找誰？",
-        "answer": "歡迎透過聯絡我們頁面的表單留言，或直接寄信到 j172@j172.tw、撥打客服專線 (+886) 0909-256-829。我們會在收到後盡快回覆。"
+        "answer": "歡迎透過聯絡我們頁面的表單留言，或直接寄信到 service@xiangshuicn.cc、撥打客服專線 (+886) 0909-256-829。我們會在收到後盡快回覆。"
       }
     ]
   },
@@ -1035,7 +1035,7 @@
         "bullets": [
           "〔公司登記名稱〕（統一編號：〔統一編號〕）",
           "地址：台北市示範路 100 號",
-          "Email：j172@j172.tw",
+          "Email：service@xiangshuicn.cc",
           "電話：(+886) 0909-256-829",
           "資料保護聯絡窗口：〔資料保護聯絡窗口／DPO〕"
         ]
@@ -1075,7 +1075,7 @@
       {
         "title": "6. 如何行使權利",
         "paragraphs": [
-          "請以 j172@j172.tw 寄信提出，主旨註明「GDPR 權利行使」，並說明你要行使的權利與註冊使用的 Email。為避免資料誤交付給他人，我們可能需要先驗證你的身分。我們原則上會在收到請求後 30 日內回覆；案件複雜時得延長，並於期限內先行告知。此服務不收費，但重複或明顯過度的請求，我們得酌收合理費用或拒絕處理。"
+          "請以 service@xiangshuicn.cc 寄信提出，主旨註明「GDPR 權利行使」，並說明你要行使的權利與註冊使用的 Email。為避免資料誤交付給他人，我們可能需要先驗證你的身分。我們原則上會在收到請求後 30 日內回覆；案件複雜時得延長，並於期限內先行告知。此服務不收費，但重複或明顯過度的請求，我們得酌收合理費用或拒絕處理。"
         ]
       },
       {

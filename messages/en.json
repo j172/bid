@@ -1,6 +1,6 @@
 {
   "nav": {
-    "siteName": "Bid Auction",
+    "siteName": "Xiangshui",
     "home": "Home",
     "browse": "Browse Listings",
     "myBids": "My Bid History",
@@ -32,7 +32,7 @@
     "cartLabel": "Cart"
   },
   "home": {
-    "title": "Auction Bidding Site",
+    "title": "Xiangshui Racing Pigeon Network",
     "subtitle": "Single-seller English auctions — bidding, auto bids, and buy-it-now, all supported.",
     "browseButton": "Browse Live Auctions",
     "heroBadge": "PREMIUM AUCTION DESIGN",
@@ -125,7 +125,7 @@
     "trustTitle": "Real listings, real bidding activity",
     "trustDesc": "Every ranking, bid count, and sold figure on this page reflects live listing data — not static placeholder numbers.",
     "trustCta": "Browse All Listings",
-    "metaDescription": "Bid Auction: an online marketplace for racing pigeon auctions and fixed-price breeding stock, with real-time bidding, auto bidding, and buy-it-now — trusted by pigeon fanciers."
+    "metaDescription": "Xiangshui Racing Pigeon Network: an online marketplace for racing pigeon auctions and fixed-price breeding stock, with real-time bidding, auto bidding, and buy-it-now — trusted by pigeon fanciers."
   },
   "listings": {
     "title": "Live Auctions",
@@ -466,11 +466,11 @@
     "en": "English"
   },
   "footer": {
-    "brandTitle": "Bid Auction",
+    "brandTitle": "Xiangshui Racing Pigeon Network",
     "brandSubtitle": "A trusted marketplace for pigeon auctions and fixed-price breeding stock, with verified bidding, auto bidding, and buy-it-now built in.",
     "helpSupportTitle": "Help & Support",
     "supportPhone": "Support: +886 909-256-829",
-    "supportEmail": "j172@j172.tw",
+    "supportEmail": "service@xiangshuicn.cc",
     "accountTitle": "Account",
     "loginRegister": "Log in / Sign up",
     "accountSettings": "Account settings",
@@ -495,7 +495,7 @@
     "newsletterSuccess": "Thanks for subscribing!",
     "newsletterError": "Something went wrong. Please try again.",
     "newsletterInvalidEmail": "Please enter a valid email address.",
-    "copyright": "© 2026 j172tw Bid. All rights reserved.",
+    "copyright": "© 2026 Xiangshui Racing Pigeon Network. All rights reserved.",
     "exchangeRateTitle": "Live reference exchange rate",
     "exchangeRateUsd": "1 USD ≈ NT${rate}",
     "exchangeRateCny": "1 CNY ≈ NT${rate}",
@@ -512,7 +512,7 @@
     "title": "Contact",
     "subtitle": "Reach out to us for order help, listing questions, or partnership requests.",
     "infoTitle": "Contact Information",
-    "email": "Email: j172@j172.tw",
+    "email": "Email: service@xiangshuicn.cc",
     "phone": "Phone: +886 909-256-829",
     "address": "Address: 685 Market Street, Las Vegas, LA 95820",
     "formTitle": "Send us a message",
@@ -775,7 +775,7 @@
         ],
         "bullets": [
           "Registered name: [Registered Company Name] (Company/Tax ID: [Company Registration Number])",
-          "Email: j172@j172.tw",
+          "Email: service@xiangshuicn.cc",
           "Phone: (+886) 0909-256-829",
           "Address: No. 100, Shifan Rd., Taipei, Taiwan",
           "Data protection contact: [Data Protection Contact / DPO]"
@@ -849,7 +849,7 @@
       {
         "title": "9. Contact us",
         "bullets": [
-          "Email: j172@j172.tw",
+          "Email: service@xiangshuicn.cc",
           "Phone: (+886) 0909-256-829",
           "Address: No. 100, Shifan Rd., Taipei, Taiwan"
         ]
@@ -869,7 +869,7 @@
           "Registered name: [Registered Company Name]",
           "Company/Tax ID: [Company Registration Number]",
           "Registered address: [Registered Business Address] (current contact address: No. 100, Shifan Rd., Taipei, Taiwan)",
-          "Support email: j172@j172.tw / Phone: (+886) 0909-256-829"
+          "Support email: service@xiangshuicn.cc / Phone: (+886) 0909-256-829"
         ]
       },
       {
@@ -950,7 +950,7 @@
       {
         "title": "13. Contact us",
         "bullets": [
-          "Email: j172@j172.tw",
+          "Email: service@xiangshuicn.cc",
           "Phone: (+886) 0909-256-829",
           "Address: No. 100, Shifan Rd., Taipei, Taiwan"
         ]
@@ -1010,7 +1010,7 @@
       },
       {
         "question": "Who do I contact about anything else?",
-        "answer": "Use the form on our Contact page, email j172@j172.tw, or call (+886) 0909-256-829. We reply as quickly as we can."
+        "answer": "Use the form on our Contact page, email service@xiangshuicn.cc, or call (+886) 0909-256-829. We reply as quickly as we can."
       }
     ]
   },
@@ -1035,7 +1035,7 @@
         "bullets": [
           "[Registered Company Name] (Company/Tax ID: [Company Registration Number])",
           "Address: No. 100, Shifan Rd., Taipei, Taiwan",
-          "Email: j172@j172.tw",
+          "Email: service@xiangshuicn.cc",
           "Phone: (+886) 0909-256-829",
           "Data protection contact: [Data Protection Contact / DPO]"
         ]
@@ -1075,7 +1075,7 @@
       {
         "title": "6. How to exercise your rights",
         "paragraphs": [
-          "Email j172@j172.tw with \"GDPR request\" in the subject line, telling us which right you want to exercise and the email address registered with your account. To avoid disclosing data to the wrong person we may need to verify your identity first. We aim to respond within 30 days of receiving a request; complex cases may be extended, and we will tell you within the original period if that happens. There is no charge, though we may charge a reasonable fee or refuse to act on manifestly unfounded or excessive requests."
+          "Email service@xiangshuicn.cc with \"GDPR request\" in the subject line, telling us which right you want to exercise and the email address registered with your account. To avoid disclosing data to the wrong person we may need to verify your identity first. We aim to respond within 30 days of receiving a request; complex cases may be extended, and we will tell you within the original period if that happens. There is no charge, though we may charge a reasonable fee or refuse to act on manifestly unfounded or excessive requests."
         ]
       },
       {

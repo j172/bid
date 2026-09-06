@@ -15,11 +15,14 @@ import "../globals.css";
 // outside next-intl's routing (see middleware.ts's matcher) and untranslated.
 export const metadata: Metadata = {
   title: "後台管理",
-  description: "拍賣競標網站後台管理",
+  description: "翔水賽鴿網後台管理",
+  // hero-placeholder.png is the fallback shown for content rows that have no
+  // image of their own; it was never a brand mark and made a poor tab icon.
+  // Points at the real logo now that there is one.
   icons: {
-    icon: "/images/hero-placeholder.png",
-    shortcut: "/images/hero-placeholder.png",
-    apple: "/images/hero-placeholder.png",
+    icon: "/images/logo.png",
+    shortcut: "/images/logo.png",
+    apple: "/images/logo.png",
   },
   robots: {
     index: false,

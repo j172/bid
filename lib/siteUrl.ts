@@ -1,7 +1,7 @@
 // Canonical source of truth for this site's public origin (issue #107) —
 // every URL built for SEO purposes (sitemap.xml, canonical/hreflang <link>
 // tags, Open Graph og:url, JSON-LD, llms.txt) should read from this one
-// place instead of each hardcoding "https://bid.j172.tw" separately.
+// place instead of each hardcoding "https://xiangshuicn.cc" separately.
 // NEXT_PUBLIC_SITE_URL lets a staging/preview deployment override it (the
 // "NEXT_PUBLIC_" prefix isn't load-bearing here — nothing below ever needs
 // this in client bundles today — it just keeps the name consistent with the
@@ -15,7 +15,7 @@ export function resolveSiteUrl(env: Record<string, string | undefined> = process
   // `${SITE_URL}${pathname}` (pathname already starts with "/") without
   // risking a doubled slash.
   if (configured) return configured.replace(/\/+$/, "");
-  return "https://bid.j172.tw";
+  return "https://xiangshuicn.cc";
 }
 
 export const SITE_URL = resolveSiteUrl();

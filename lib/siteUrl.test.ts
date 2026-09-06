@@ -3,7 +3,7 @@ import { resolveSiteUrl } from "./siteUrl";
 
 describe("resolveSiteUrl", () => {
   it("falls back to the production domain when no env override is set", () => {
-    expect(resolveSiteUrl({})).toBe("https://bid.j172.tw");
+    expect(resolveSiteUrl({})).toBe("https://xiangshuicn.cc");
   });
 
   it("uses NEXT_PUBLIC_SITE_URL when set", () => {
@@ -19,6 +19,6 @@ describe("resolveSiteUrl", () => {
   });
 
   it("ignores a blank/whitespace-only override", () => {
-    expect(resolveSiteUrl({ NEXT_PUBLIC_SITE_URL: "   " })).toBe("https://bid.j172.tw");
+    expect(resolveSiteUrl({ NEXT_PUBLIC_SITE_URL: "   " })).toBe("https://xiangshuicn.cc");
   });
 });
