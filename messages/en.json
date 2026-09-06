@@ -1097,5 +1097,9 @@
         ]
       }
     ]
+  },
+  "googlePreference": {
+    "buttonText": "Add to Google Preferred",
+    "tooltip": "Click check to set Xiangshui Auction as a preferred source and see more stories on Google"
   }
 }

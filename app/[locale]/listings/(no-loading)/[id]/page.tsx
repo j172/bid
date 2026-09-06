@@ -25,6 +25,7 @@ import { getPathname, Link } from "@/i18n/navigation";
 // group's sibling (with-loading)/ folder for why.
 import ZoomableProductImage from "@/app/[locale]/components/ZoomableProductImage";
 import StatusBadge from "@/app/[locale]/components/StatusBadge";
+import GooglePreferenceButton from "@/app/[locale]/components/GooglePreferenceButton";
 import BidForm from "./BidForm";
 import BuyNowButton from "./BuyNowButton";
 import HeroCountdownStrip from "./HeroCountdownStrip";
@@ -221,7 +222,10 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
           </Link>{" "}
           / {t("shopDetails")}
         </p>
-        <h1 className="mt-2 text-3xl font-black text-ink">{listing.title}</h1>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-3xl font-black text-ink">{listing.title}</h1>
+          <GooglePreferenceButton />
+        </div>
       </div>
 
       {isAuction && (

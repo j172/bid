@@ -1097,5 +1097,9 @@
         ]
       }
     ]
+  },
+  "googlePreference": {
+    "buttonText": "加入Google首選",
+    "tooltip": "請點選打勾將響水拍賣設為首選來源，在 Google 上查看更多精彩標的與報導"
   }
 }
