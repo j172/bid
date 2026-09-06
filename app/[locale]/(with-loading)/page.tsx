@@ -10,6 +10,7 @@ import { excerptHtml } from "@/lib/htmlText";
 import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
 import { currencyForLocale, formatDualPrice, formatNtd } from "@/lib/currency";
 import { getLatestStoredRate } from "@/lib/exchangeRates";
+import { cachedQuery } from "@/lib/cache";
 import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
 import { firstParam, type SearchParams } from "@/lib/searchParams";
 import {
@@ -90,16 +91,20 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   // open-only rather than growing their own scheduled-aware treatment. The
   // "分類瀏覽" cards are the one exception (see below) — they intentionally
   // surface scheduled listings too, so they keep the unfiltered result.
-  const allFetchedListings = await listOpenListings();
+  const allFetchedListings = await cachedQuery("home:openListings", 20, () => listOpenListings());
   const listings = allFetchedListings.filter((item) => item.status === "open");
-  const partnerLofts = await listHomepageSections("partner_loft", { activeOnly: true });
+  const partnerLofts = await cachedQuery("home:partnerLofts", 20, () =>
+    listHomepageSections("partner_loft", { activeOnly: true }),
+  );
   // 名家專區首頁輪播 (issue #176) — replaces issue #168's static
   // homepage_sections('featured_loft') card grid with its own
   // featured_loft_posts table + a NewsCarouselCard-style rotating card
   // (see FeaturedLoftCarouselCard below). Latest 10, same "carousel of the
   // newest N" convention as 最新訊息/入賞鴿/進口鴿 below.
   const FEATURED_LOFT_CAROUSEL_EXCERPT_LENGTH = 30;
-  const latestFeaturedLoftPosts = await listLatestFeaturedLoftPosts(10);
+  const latestFeaturedLoftPosts = await cachedQuery("home:latestFeaturedLoftPosts", 20, () =>
+    listLatestFeaturedLoftPosts(10),
+  );
   const featuredLoftCarouselItems = latestFeaturedLoftPosts.map((post) => ({
     id: post.id,
     title: post.title,
@@ -114,7 +119,10 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   // secondary "≈" currency (if any) to show alongside it for this locale.
   const locale = await getLocale();
   const displayCurrency = currencyForLocale(locale);
-  const displayRate = displayCurrency === "TWD" ? null : await getLatestStoredRate(displayCurrency);
+  const displayRate =
+    displayCurrency === "TWD"
+      ? null
+      : await cachedQuery(`home:rate:${displayCurrency}`, 20, () => getLatestStoredRate(displayCurrency));
   const rateValue = displayRate?.rate ?? null;
   // 入賞鴿／進口鴿／代表種鴿首頁輪播 (issue #54; 'representative' 代表種鴿卡片
   // added by issue #170) — latest 10 per category, feeding the three small
@@ -122,9 +130,9 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   // non-empty; see PigeonShowcaseCarouselCard's own fallback branch).
   const PIGEON_CAROUSEL_EXCERPT_LENGTH = 60;
   const [awardPigeons, importedPigeons, representativePigeons] = await Promise.all([
-    listLatestPigeonShowcase("award", 10),
-    listLatestPigeonShowcase("imported", 10),
-    listLatestPigeonShowcase("representative", 10),
+    cachedQuery("home:pigeonShowcase:award", 20, () => listLatestPigeonShowcase("award", 10)),
+    cachedQuery("home:pigeonShowcase:imported", 20, () => listLatestPigeonShowcase("imported", 10)),
+    cachedQuery("home:pigeonShowcase:representative", 20, () => listLatestPigeonShowcase("representative", 10)),
   ]);
   const awardCarouselItems = awardPigeons.map((pigeon) => ({
     id: pigeon.id,
@@ -151,7 +159,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   // copy when there are currently zero news_posts rows; see
   // NewsCarouselCard's own fallback branch).
   const NEWS_CAROUSEL_EXCERPT_LENGTH = 30;
-  const latestNews = await listLatestNews(10);
+  const latestNews = await cachedQuery("home:latestNews", 20, () => listLatestNews(10));
   const newsCarouselItems = latestNews.map((post) => ({
     id: post.id,
     title: post.title,

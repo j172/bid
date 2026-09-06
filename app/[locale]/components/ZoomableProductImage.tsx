@@ -224,7 +224,7 @@ export default function ZoomableProductImage({
           settledRef.current = true;
           markFailed();
         }}
-        className={`h-full w-full object-contain p-2 transition duration-300 ${interactionsEnabled && hoverVisible ? "scale-[1.06]" : "scale-100"} ${loaded ? "opacity-100" : "opacity-0"} ${className}`}
+        className={`h-full w-full object-contain p-2 transition duration-300 ${interactionsEnabled && hoverVisible ? "scale-[1.06]" : "scale-100"} ${eager || loaded ? "opacity-100" : "opacity-0"} ${className}`}
         style={{ transformOrigin: `${cursor.pctX}% ${cursor.pctY}%` }}
       />
 

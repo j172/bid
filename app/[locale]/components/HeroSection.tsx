@@ -179,7 +179,7 @@ export default function HeroSection({
                       alt={activeCard.title}
                       eager
                       fetchPriority="high"
-                      sizes="(max-width: 640px) 34vw, (max-width: 1024px) 38vw, 30vw"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 38vw"
                       className={`h-full w-full drop-shadow-2xl ${activeCard.hasPhoto ? "object-contain" : "object-contain p-2"}`}
                     />
                   </div>
