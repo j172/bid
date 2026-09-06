@@ -22,8 +22,11 @@
 # cannot parameterise a path, and one repo now deploys two accounts — so any
 # literal here is wrong on one of the two hosts by construction. The same
 # reasoning already removed that block from .remote-htaccess (commit
-# 714ad47). PHP still logs errors; it just falls back to the server default
-# instead of an account path this repo cannot know.
+# 714ad47). Nothing is lost by leaving it out: cPanel generates a php.ini and
+# a .user.ini in each account's own document root, and both already set that
+# account's correct error_log path (verified on the new host:
+# /home/xiangshu/logs/php.error.log, log_errors On), so PHP goes on logging to
+# the right file on both sites.
 #
 # Edit with care: a syntax error here takes the ENTIRE site to HTTP 500.
 # After deploying, verify /, /listings, /news, /contact, /zh-CN, /en and
