@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import {
   DEFAULT_FEATURED_LOFT_POST_PAGE_SIZE,
@@ -8,11 +9,29 @@ import {
 import { featuredLoftPostImageUrl } from "@/lib/uploads";
 import { excerptHtml } from "@/lib/htmlText";
 import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
+import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
 import { buildQuery, firstParam, type SearchParams } from "@/lib/searchParams";
 import ContentCardGrid from "../components/ContentCardGrid";
 import PaginationFooter from "../components/PaginationFooter";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "featuredLofts" });
+  return {
+    title: t("title"),
+    description: t("subtitle"),
+    alternates: {
+      canonical: canonicalUrl(locale, "/featured-lofts"),
+      languages: hreflangAlternates("/featured-lofts"),
+    },
+  };
+}
 
 const LIST_EXCERPT_LENGTH = 100;
 const QUERY_KEYS = ["search", "pageSize", "page"] as const;

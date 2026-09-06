@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   absoluteUrl,
+  buildBreadcrumbListJsonLd,
+  buildFaqPageJsonLd,
   buildListingProductJsonLd,
+  buildLlmsFullTxt,
   buildLlmsTxt,
+  buildNewsArticleJsonLd,
+  buildOrganizationJsonLd,
+  buildWebSiteJsonLd,
   canonicalListingsUrl,
   canonicalUrl,
   hreflangAlternates,
@@ -211,6 +217,99 @@ describe("buildListingProductJsonLd", () => {
     const offers = jsonLd.offers as Record<string, unknown>;
     expect(offers).not.toHaveProperty("priceValidUntil");
   });
+
+  it("includes merchant listing fields (itemCondition, seller, returnPolicy, shippingDetails)", () => {
+    const jsonLd = buildListingProductJsonLd(baseListing, "/listings/42");
+    const offers = jsonLd.offers as Record<string, unknown>;
+    expect(offers.itemCondition).toBe("https://schema.org/NewCondition");
+    expect(offers.seller).toEqual({
+      "@type": "Organization",
+      name: "翔水賽鴿網",
+      url: "https://xiangshuicn.cc",
+    });
+    expect(offers.hasMerchantReturnPolicy).toBeDefined();
+    expect(offers.shippingDetails).toBeDefined();
+  });
+});
+
+describe("buildWebSiteJsonLd", () => {
+  it("builds WebSite schema with Sitelinks searchbox action", () => {
+    const jsonLd = buildWebSiteJsonLd();
+    expect(jsonLd["@type"]).toBe("WebSite");
+    expect(jsonLd.name).toBe("翔水賽鴿網");
+    expect(jsonLd.potentialAction).toBeDefined();
+  });
+});
+
+describe("buildOrganizationJsonLd", () => {
+  it("builds Organization schema with logo and contactPoint", () => {
+    const jsonLd = buildOrganizationJsonLd();
+    expect(jsonLd["@type"]).toBe("Organization");
+    expect(jsonLd.name).toBe("翔水賽鴿網");
+    expect(jsonLd.logo).toBe("https://xiangshuicn.cc/images/logo.png");
+    expect(jsonLd.contactPoint).toBeDefined();
+  });
+});
+
+describe("buildBreadcrumbListJsonLd", () => {
+  it("builds BreadcrumbList with correct 1-based positions and absolute URLs", () => {
+    const jsonLd = buildBreadcrumbListJsonLd([
+      { name: "首頁", pathname: "/" },
+      { name: "拍賣競標", pathname: "/listings" },
+      { name: "冠軍鴿", pathname: "/listings/10" },
+    ]);
+    expect(jsonLd["@type"]).toBe("BreadcrumbList");
+    const items = jsonLd.itemListElement as Array<{ position: number; name: string; item: string }>;
+    expect(items).toHaveLength(3);
+    expect(items[0]).toEqual({
+      "@type": "ListItem",
+      position: 1,
+      name: "首頁",
+      item: "https://xiangshuicn.cc/",
+    });
+    expect(items[2]).toEqual({
+      "@type": "ListItem",
+      position: 3,
+      name: "冠軍鴿",
+      item: "https://xiangshuicn.cc/listings/10",
+    });
+  });
+});
+
+describe("buildFaqPageJsonLd", () => {
+  it("builds FAQPage schema from question and answer pairs", () => {
+    const jsonLd = buildFaqPageJsonLd([
+      { question: "如何競標？", answer: "註冊登入後即可出價。" },
+    ]);
+    expect(jsonLd["@type"]).toBe("FAQPage");
+    const entities = jsonLd.mainEntity as Array<{ name: string; acceptedAnswer: { text: string } }>;
+    expect(entities[0].name).toBe("如何競標？");
+    expect(entities[0].acceptedAnswer.text).toBe("註冊登入後即可出價。");
+  });
+});
+
+describe("buildNewsArticleJsonLd", () => {
+  it("builds NewsArticle schema with headline, publisher, and image", () => {
+    const jsonLd = buildNewsArticleJsonLd({
+      title: "春季拍賣會公告",
+      description: "2026年春季拍賣會正式啟動",
+      pathname: "/news/1",
+      datePublished: "2026-03-01T00:00:00.000Z",
+    });
+    expect(jsonLd["@type"]).toBe("NewsArticle");
+    expect(jsonLd.headline).toBe("春季拍賣會公告");
+    expect(jsonLd.url).toBe("https://xiangshuicn.cc/news/1");
+  });
+});
+
+describe("buildLlmsFullTxt", () => {
+  const text = buildLlmsFullTxt();
+
+  it("contains platform overview, auction rules, and machine-readable endpoints", () => {
+    expect(text).toContain("Xiangshui Racing Pigeon Network（翔水賽鴿網）- 完整平台架構與競標指引");
+    expect(text).toContain("Auto-Bidding");
+    expect(text).toContain("https://xiangshuicn.cc/llms-full.txt");
+  });
 });
 
 describe("buildLlmsTxt", () => {
@@ -231,6 +330,8 @@ describe("buildLlmsTxt", () => {
     expect(text).toContain("https://xiangshuicn.cc/contact");
     expect(text).toContain("https://xiangshuicn.cc/news");
     expect(text).toContain("https://xiangshuicn.cc/pigeon-showcase");
+    expect(text).toContain("https://xiangshuicn.cc/featured-lofts");
+    expect(text).toContain("https://xiangshuicn.cc/faq");
   });
 
   it("flags the admin backend and API routes as out of bounds", () => {

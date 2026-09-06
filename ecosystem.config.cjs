@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 // Paths are derived from the account's home directory rather than hard-coded
 // to one cPanel account, so this file stays correct on both the current host
 // and the sng105 migration target (issue #182) — see the matching comment in

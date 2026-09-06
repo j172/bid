@@ -11,6 +11,7 @@ import { maskDisplayName } from "@/lib/mask";
 import { getListingActivityFeed, getListingById, listOpenListings } from "@/lib/listings";
 import {
   absoluteUrl,
+  buildBreadcrumbListJsonLd,
   buildListingProductJsonLd,
   canonicalUrl,
   hreflangAlternates,
@@ -194,6 +195,11 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
   // field mapping/availability rules.
   const listingPathname = getPathname({ href: `/listings/${listing.id}`, locale });
   const productJsonLd = buildListingProductJsonLd(listing, listingPathname);
+  const breadcrumbJsonLd = buildBreadcrumbListJsonLd([
+    { name: tNav("home"), pathname: "/" },
+    { name: tNav("browse"), pathname: "/listings" },
+    { name: listing.title, pathname: listingPathname },
+  ]);
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -203,6 +209,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
           for why JSON.stringify alone lets a `</script>` in a title break out (issue
           #140 M-1). */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLdString(productJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLdString(breadcrumbJsonLd) }} />
       <div className="rounded-2xl bg-white px-5 py-4 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">
           <Link href="/" className="hover:text-interactive-primary">

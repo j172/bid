@@ -81,6 +81,8 @@ export default function ListingGallery({ title, imageUrls }: ListingGalleryProps
           <img
             src={resolveSrc(selectedUrl)}
             alt={title}
+            loading="eager"
+            fetchPriority="high"
             className="h-full w-full object-contain"
             onError={() => markFailed(selectedUrl)}
           />

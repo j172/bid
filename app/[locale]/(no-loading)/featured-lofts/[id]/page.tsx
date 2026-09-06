@@ -1,13 +1,62 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { getFeaturedLoftPostById, listLatestFeaturedLoftPosts } from "@/lib/featuredLoftPosts";
 import { featuredLoftPostImageUrl } from "@/lib/uploads";
 import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
 import { Link } from "@/i18n/navigation";
+import {
+  absoluteUrl,
+  buildBreadcrumbListJsonLd,
+  canonicalUrl,
+  hreflangAlternates,
+  stripHtmlToPlainText,
+  truncateForMetaDescription,
+} from "@/lib/seo";
+import { safeJsonLdString } from "@/lib/jsonLdScript";
 import DetailWithSidebar from "../../../components/DetailWithSidebar";
 import RichTextContent from "../../../components/RichTextContent";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; id: string }>;
+}): Promise<Metadata> {
+  const { locale, id } = await params;
+  const postId = Number(id);
+  if (!Number.isFinite(postId)) return {};
+
+  const item = await getFeaturedLoftPostById(postId);
+  if (!item) return {};
+
+  const description = truncateForMetaDescription(stripHtmlToPlainText(item.content));
+  const pathname = `/featured-lofts/${item.id}`;
+  const imageUrl = item.imageFileName
+    ? absoluteUrl(featuredLoftPostImageUrl(item.imageFileName))
+    : absoluteUrl("/images/logo.png");
+
+  return {
+    title: item.title,
+    description,
+    alternates: {
+      canonical: canonicalUrl(locale, pathname),
+      languages: hreflangAlternates(pathname),
+    },
+    openGraph: {
+      title: item.title,
+      description,
+      images: [{ url: imageUrl }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: item.title,
+      description,
+      images: [imageUrl],
+    },
+  };
+}
 
 const SIDEBAR_LATEST_LIMIT = 5;
 
@@ -42,6 +91,12 @@ export default async function FeaturedLoftPostDetailPage({ params }: { params: P
     .filter((candidate) => candidate.id !== item.id)
     .slice(0, SIDEBAR_LATEST_LIMIT);
 
+  const breadcrumbJsonLd = buildBreadcrumbListJsonLd([
+    { name: t("breadcrumbHome"), pathname: "/" },
+    { name: t("title"), pathname: "/featured-lofts" },
+    { name: item.title, pathname: `/featured-lofts/${item.id}` },
+  ]);
+
   return (
     <DetailWithSidebar
       breadcrumb={
@@ -67,10 +122,16 @@ export default async function FeaturedLoftPostDetailPage({ params }: { params: P
       backHref="/featured-lofts"
       backLabel={t("backToList")}
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLdString(breadcrumbJsonLd) }}
+      />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={item.imageFileName ? featuredLoftPostImageUrl(item.imageFileName) : IMAGE_FALLBACK_SRC}
         alt={item.title}
+        loading="eager"
+        fetchPriority="high"
         className="max-h-96 w-full rounded-xl object-cover"
       />
       <h1 className="mt-6 text-3xl font-black text-ink">{item.title}</h1>

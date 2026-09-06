@@ -1,5 +1,24 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
 import ContactForm from "./ContactForm";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "contactPage" });
+  return {
+    title: t("title"),
+    description: t("subtitle"),
+    alternates: {
+      canonical: canonicalUrl(locale, "/contact"),
+      languages: hreflangAlternates("/contact"),
+    },
+  };
+}
 
 export default async function ContactPage() {
   const t = await getTranslations("contactPage");
