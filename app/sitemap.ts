@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { routing } from "@/i18n/routing";
 import { listOpenListings } from "@/lib/listings";
+import { listNewsForSitemap } from "@/lib/news";
 import { hreflangAlternates, localizedUrls } from "@/lib/seo";
 
 // Dynamic sitemap.xml (issue #107) — DB-backed (open listings change all the
@@ -66,6 +67,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: listing.created_at,
         changeFrequency: "hourly",
         priority: 0.7,
+      }),
+    );
+  }
+
+  // All published news announcements (issue #191) across every locale.
+  const newsItems = await listNewsForSitemap();
+  for (const post of newsItems) {
+    entries.push(
+      ...localeEntries(`/news/${post.id}`, {
+        lastModified: post.updatedAt ?? post.createdAt,
+        changeFrequency: "weekly",
+        priority: 0.6,
       }),
     );
   }

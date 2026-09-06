@@ -154,3 +154,26 @@ export async function setNewsBroadcastId(id: number, broadcastId: string | null)
   const db = await getDb();
   await db.query("UPDATE news_posts SET broadcast_id = ? WHERE id = ?", [broadcastId, id]);
 }
+
+export interface NewsSitemapItem {
+  id: number;
+  title: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Lightweight query for sitemap generation (issue #191) — fetches all news
+// posts with only the fields needed for sitemap.xml and news-sitemap.xml.
+export async function listNewsForSitemap(): Promise<NewsSitemapItem[]> {
+  const db = await getDb();
+  const [rows] = await db.query(
+    "SELECT id, title, created_at, updated_at FROM news_posts ORDER BY created_at DESC, id DESC",
+  );
+  return (rows as { id: number; title: string; created_at: Date; updated_at: Date }[]).map((r) => ({
+    id: r.id,
+    title: r.title,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  }));
+}
+

@@ -4,18 +4,17 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import Button from "@/app/components/Button";
+import { COOKIE_CONSENT_EVENT, COOKIE_CONSENT_KEY } from "./GoogleAnalytics";
 
 // Non-blocking bottom banner shown to every first-time visitor in every
 // locale (issue #121) — no geolocation gating. The choice is recorded in
 // localStorage, not a cookie: the whole point is that this site sets nothing
 // beyond the login session cookie (see the GDPR page's cookie section), so
 // asking about cookies by writing one would be self-defeating.
-const STORAGE_KEY = "cookieConsent";
+const STORAGE_KEY = COOKIE_CONSENT_KEY;
 
-// "rejected" has no functional effect today — there are no non-essential
-// cookies to switch off — it's stored so a future analytics/marketing
-// integration can read the visitor's existing preference instead of asking
-// again.
+// "rejected" disables non-essential analytics storage (Google Consent Mode v2)
+// and stores the visitor's preference in localStorage.
 type Consent = "accepted" | "rejected";
 
 export default function CookieConsentBanner() {
@@ -37,6 +36,7 @@ export default function CookieConsentBanner() {
   function choose(consent: Consent) {
     try {
       window.localStorage.setItem(STORAGE_KEY, consent);
+      window.dispatchEvent(new CustomEvent(COOKIE_CONSENT_EVENT, { detail: consent }));
     } catch {
       // Same as above: if we can't persist the choice we still dismiss the
       // banner for this session rather than trap the visitor with it.
