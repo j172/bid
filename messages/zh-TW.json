@@ -178,7 +178,16 @@
     "badgeClosed": "已結標",
     "finalPrice": "結標價 {price}",
     "finalLeader": "得標者：{name}",
-    "noBidsEnded": "無人出價（已結標）"
+    "noBidsEnded": "無人出價（已結標）",
+    "tabLoftListings": "交易商品",
+    "tabLoftShowcase": "舍內名鴿",
+    "showcaseSubAll": "全部名鴿",
+    "showcaseSubAward": "入賞鴿",
+    "showcaseSubImported": "進口鴿",
+    "showcaseSubRepresentative": "代表種鴿",
+    "loftShowcaseEmpty": "此鴿舍目前尚無舍內名鴿資料。",
+    "loftShowcaseMetaTitle": "{name} - 舍內名鴿名鑑",
+    "viewShowcasePigeon": "查看鴿況"
   },
   "listingDetail": {
     "partnerLoft": "合作鴿舍",

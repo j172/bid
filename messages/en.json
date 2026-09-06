@@ -178,7 +178,16 @@
     "badgeClosed": "Closed",
     "finalPrice": "Winning bid: {price}",
     "finalLeader": "Winner: {name}",
-    "noBidsEnded": "No bids (Ended)"
+    "noBidsEnded": "No bids (Ended)",
+    "tabLoftListings": "Listings",
+    "tabLoftShowcase": "Showcase Pigeons",
+    "showcaseSubAll": "All Pigeons",
+    "showcaseSubAward": "Award Pigeons",
+    "showcaseSubImported": "Imported Pigeons",
+    "showcaseSubRepresentative": "Representative Pigeons",
+    "loftShowcaseEmpty": "No showcase pigeons available for this loft yet.",
+    "loftShowcaseMetaTitle": "{name} - Pigeon Showcase",
+    "viewShowcasePigeon": "View Pigeon"
   },
   "listingDetail": {
     "partnerLoft": "Partner Loft",
