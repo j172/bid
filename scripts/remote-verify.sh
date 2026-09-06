@@ -24,6 +24,12 @@
 
 set -u
 
+# Which public domain to check. One repo now deploys two sites (issue #182) —
+# the legacy bid.j172.tw and xiangshuicn.cc — so this can no longer be a
+# literal. deploy-ftps.yml passes it per target; the default keeps a manual
+# run on the legacy host behaving as it always did.
+PUBLIC_DOMAIN="${PUBLIC_DOMAIN:-bid.j172.tw}"
+
 ORIGIN_HEALTH_OK=0
 for ATTEMPT in 1 2 3; do
   if curl --fail --show-error --silent --max-time 10 \
@@ -42,10 +48,10 @@ echo "Loopback health OK"
 
 PUBLIC_HEALTH="$(curl --show-error --silent --location --max-time 20 \
   --write-out '\nHTTP:%{http_code}' \
-  "https://bid.j172.tw/api/health?verify=$(date +%s)")"
+  "https://${PUBLIC_DOMAIN}/api/health?verify=$(date +%s)")"
 echo "$PUBLIC_HEALTH"
 if ! printf '%s' "$PUBLIC_HEALTH" | grep -q 'HTTP:200'; then
-  echo "Public health endpoint (bid.j172.tw, through Cloudflare) did not return HTTP 200"
+  echo "Public health endpoint ($PUBLIC_DOMAIN, through Cloudflare) did not return HTTP 200"
   exit 1
 fi
 if ! printf '%s' "$PUBLIC_HEALTH" | grep -q '"ok":true'; then
@@ -56,7 +62,7 @@ echo "Public health OK"
 
 PUBLIC_HOME="$(curl --show-error --silent --location --max-time 20 \
   --write-out '\nHTTP:%{http_code}' \
-  "https://bid.j172.tw/?verify=$(date +%s)")"
+  "https://${PUBLIC_DOMAIN}/?verify=$(date +%s)")"
 HOMEPAGE_STATUS="$(printf '%s' "$PUBLIC_HOME" | grep -o 'HTTP:[0-9]*' | tail -1)"
 if [ "$HOMEPAGE_STATUS" != "HTTP:200" ]; then
   echo "Public homepage returned $HOMEPAGE_STATUS"

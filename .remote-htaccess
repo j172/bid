@@ -1,17 +1,15 @@
 
-# BEGIN cPanel-generated php ini directives, do not edit
-# Manual editing of this file may result in unexpected behavior.
-# To make changes to this file, use the cPanel MultiPHP INI Editor (Home >> Software >> MultiPHP INI Editor)
-# For more information, read our documentation (https://go.cpanel.net/EA4ModifyINI)
-<IfModule php8_module>
-   php_value error_log "/home/tw123457/logs/php.error.log"
-   php_flag log_errors On
-</IfModule>
-<IfModule lsapi_module>
-   php_value error_log "/home/tw123457/logs/php.error.log"
-   php_flag log_errors On
-</IfModule>
-# END cPanel-generated php ini directives, do not edit
+# The cPanel-generated error_log/log_errors block that used to sit here named
+# /home/tw123457/logs/php.error.log outright. One repo now deploys two cPanel
+# accounts (issue #182), and .htaccess has no way to parameterise a path, so a
+# literal here is wrong on one host by construction — it pointed the new
+# xiangshuicn.cc site's PHP error log at a directory that does not exist there.
+#
+# Dropped rather than parameterised: each account's own home-directory
+# .htaccess already sets error_log and log_errors to that account's real path,
+# and it is the per-host file, so nothing is lost on either site. See the
+# untracked-.htaccess note in issue #182 — that home-level file is where this
+# site's URL routing lives, and it is not in this repo.
 
 # Added: the reverse-proxy handler (index.php) forwards the raw request
 # body via php://input to the Node process. PHP auto-parses

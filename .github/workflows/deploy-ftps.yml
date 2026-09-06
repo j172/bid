@@ -176,10 +176,17 @@ jobs:
         # here would ever get past it. See scripts/remote-verify.sh's header
         # comment for the full story.
         uses: appleboy/ssh-action@v1
+        env:
+          # Forwarded into the remote shell via `envs` below so
+          # scripts/remote-verify.sh knows which public domain to check.
+          # Without it the script falls back to bid.j172.tw, which would make a
+          # new-site deploy "verify" the legacy site and pass regardless.
+          PUBLIC_DOMAIN: ${{ inputs.target == 'new' && 'xiangshuicn.cc' || 'bid.j172.tw' }}
         with:
           host: ${{ inputs.target == 'new' && secrets.NEW_DEPLOY_SSH_HOST || secrets.DEPLOY_SSH_HOST }}
           port: ${{ inputs.target == 'new' && secrets.NEW_DEPLOY_SSH_PORT || secrets.DEPLOY_SSH_PORT }}
           username: ${{ inputs.target == 'new' && secrets.NEW_DEPLOY_SSH_USER || secrets.DEPLOY_SSH_USER }}
           key: ${{ inputs.target == 'new' && secrets.NEW_DEPLOY_SSH_PRIVATE_KEY || secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          envs: PUBLIC_DOMAIN
           command_timeout: 3m
           script_path: scripts/remote-verify.sh
