@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   absoluteUrl,
   buildBreadcrumbListJsonLd,
-  buildFaqPageJsonLd,
   buildListingProductJsonLd,
   buildLlmsFullTxt,
   buildLlmsTxt,
@@ -233,11 +232,11 @@ describe("buildListingProductJsonLd", () => {
 });
 
 describe("buildWebSiteJsonLd", () => {
-  it("builds WebSite schema with Sitelinks searchbox action", () => {
+  it("builds WebSite schema without a SearchAction (retired by Google, issue #204)", () => {
     const jsonLd = buildWebSiteJsonLd();
     expect(jsonLd["@type"]).toBe("WebSite");
     expect(jsonLd.name).toBe("翔水賽鴿網");
-    expect(jsonLd.potentialAction).toBeDefined();
+    expect(jsonLd.potentialAction).toBeUndefined();
   });
 });
 
@@ -273,18 +272,6 @@ describe("buildBreadcrumbListJsonLd", () => {
       name: "冠軍鴿",
       item: "https://xiangshuicn.cc/listings/10",
     });
-  });
-});
-
-describe("buildFaqPageJsonLd", () => {
-  it("builds FAQPage schema from question and answer pairs", () => {
-    const jsonLd = buildFaqPageJsonLd([
-      { question: "如何競標？", answer: "註冊登入後即可出價。" },
-    ]);
-    expect(jsonLd["@type"]).toBe("FAQPage");
-    const entities = jsonLd.mainEntity as Array<{ name: string; acceptedAnswer: { text: string } }>;
-    expect(entities[0].name).toBe("如何競標？");
-    expect(entities[0].acceptedAnswer.text).toBe("註冊登入後即可出價。");
   });
 });
 
