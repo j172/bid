@@ -265,14 +265,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           leads the page, directly above the hero auction rail. */}
       <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-          {/* Issue #150: stacks the exchange-rate card below the news card so
-              this column's total height auto-matches the right column's
-              stacked pigeon-showcase cards via flex-1, instead of sitting
-              visibly shorter. Still holds after issue #170 added a third
-              pigeon-showcase card to the right column — flex-1 just expands
-              further to keep matching whatever height the right column ends
-              up at, no extra layout work needed here. */}
-          <div className="flex h-full flex-col gap-5 lg:col-span-2">
+          <div className="flex flex-col gap-5 lg:col-span-2">
             <NewsCarouselCard
               items={newsCarouselItems}
               activeBadge={t("newsCarouselBadge")}
@@ -281,9 +274,24 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               emptyStateDesc={t("newsCarouselEmptyDesc")}
             />
 
-            <div className="flex-1">
-              <ExchangeRateStrip className="flex h-full flex-col justify-center" />
-            </div>
+            {/* 名家專區首頁輪播 (issue #176) — moved into this column, under
+                最新消息 (issue #219), to backfill the height this column lost
+                when the exchange-rate card moved out from beside it to below
+                分類瀏覽 further down the page. Still always rendered (not
+                gated on `.length > 0`), same "keep the layout slot occupied,
+                show a neutral empty state instead of hiding the section"
+                convention as NewsCarouselCard/PigeonShowcaseCarouselCard use;
+                the component itself decides whether to render its empty
+                state. */}
+            <FeaturedLoftCarouselCard
+              items={featuredLoftCarouselItems}
+              activeBadge={t("featuredLoftsCarouselBadge")}
+              ctaLabel={t("featuredLoftsCarouselCta")}
+              viewMoreLabel={t("featuredLoftsCarouselViewMore")}
+              viewMoreHref="/featured-lofts"
+              emptyStateTitle={t("emptyStateTitle")}
+              emptyStateDesc={t("featuredLoftsCarouselEmptyDesc")}
+            />
           </div>
 
           <div className="grid gap-5">
@@ -386,25 +394,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               eager={index < homeEagerCount}
             />
           ))}
-        </div>
-      </section>
-
-      {/* 名家專區首頁輪播 (issue #176) — always rendered (not gated on
-          `.length > 0`), same "keep the layout slot occupied, show a neutral
-          empty state instead of hiding the section" convention as
-          NewsCarouselCard/PigeonShowcaseCarouselCard use; the component
-          itself decides whether to render its empty state. */}
-      <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-6">
-        <div className="mx-auto max-w-3xl">
-          <FeaturedLoftCarouselCard
-            items={featuredLoftCarouselItems}
-            activeBadge={t("featuredLoftsCarouselBadge")}
-            ctaLabel={t("featuredLoftsCarouselCta")}
-            viewMoreLabel={t("featuredLoftsCarouselViewMore")}
-            viewMoreHref="/featured-lofts"
-            emptyStateTitle={t("emptyStateTitle")}
-            emptyStateDesc={t("featuredLoftsCarouselEmptyDesc")}
-          />
         </div>
       </section>
 
@@ -741,6 +730,10 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             </Link>
           ))}
         </div>
+      </section>
+
+      <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
+        <ExchangeRateStrip />
       </section>
 
     </main>
