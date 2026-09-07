@@ -273,6 +273,25 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               emptyStateTitle={t("emptyStateTitle")}
               emptyStateDesc={t("newsCarouselEmptyDesc")}
             />
+
+            {/* 名家專區首頁輪播 (issue #176) — moved into this column, under
+                最新消息 (issue #219), to backfill the height this column lost
+                when the exchange-rate card moved out from beside it to below
+                分類瀏覽 further down the page. Still always rendered (not
+                gated on `.length > 0`), same "keep the layout slot occupied,
+                show a neutral empty state instead of hiding the section"
+                convention as NewsCarouselCard/PigeonShowcaseCarouselCard use;
+                the component itself decides whether to render its empty
+                state. */}
+            <FeaturedLoftCarouselCard
+              items={featuredLoftCarouselItems}
+              activeBadge={t("featuredLoftsCarouselBadge")}
+              ctaLabel={t("featuredLoftsCarouselCta")}
+              viewMoreLabel={t("featuredLoftsCarouselViewMore")}
+              viewMoreHref="/featured-lofts"
+              emptyStateTitle={t("emptyStateTitle")}
+              emptyStateDesc={t("featuredLoftsCarouselEmptyDesc")}
+            />
           </div>
 
           <div className="grid gap-5">
@@ -375,25 +394,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               eager={index < homeEagerCount}
             />
           ))}
-        </div>
-      </section>
-
-      {/* 名家專區首頁輪播 (issue #176) — always rendered (not gated on
-          `.length > 0`), same "keep the layout slot occupied, show a neutral
-          empty state instead of hiding the section" convention as
-          NewsCarouselCard/PigeonShowcaseCarouselCard use; the component
-          itself decides whether to render its empty state. */}
-      <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-6">
-        <div className="mx-auto max-w-3xl">
-          <FeaturedLoftCarouselCard
-            items={featuredLoftCarouselItems}
-            activeBadge={t("featuredLoftsCarouselBadge")}
-            ctaLabel={t("featuredLoftsCarouselCta")}
-            viewMoreLabel={t("featuredLoftsCarouselViewMore")}
-            viewMoreHref="/featured-lofts"
-            emptyStateTitle={t("emptyStateTitle")}
-            emptyStateDesc={t("featuredLoftsCarouselEmptyDesc")}
-          />
         </div>
       </section>
 
