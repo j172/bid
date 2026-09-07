@@ -9,11 +9,6 @@ import LogoutButton from "./LogoutButton";
 export default async function SiteHeader() {
   const user = await getCurrentUser();
   const t = await getTranslations("nav");
-  const quickSearches = [
-    { label: t("quickAuction"), href: "/listings?type=auction" },
-    { label: t("quickFixed"), href: "/listings?type=fixed_price" },
-    { label: t("quickAutoBid"), href: "/#auto-bidding-explainer" },
-  ];
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 text-ink shadow-[0_10px_30px_rgba(15,23,42,0.06)] backdrop-blur">
@@ -196,23 +191,6 @@ export default async function SiteHeader() {
               </NextLink>
             )}
           </nav>
-
-          <div className="mt-2 flex items-center justify-between gap-3 border-t border-dashed border-slate-200 pt-2.5">
-            <div className="flex min-w-0 items-center gap-2 text-xs">
-              <span className="shrink-0 font-semibold text-ink-light">{t("trendingSearches")}</span>
-              <div className="flex min-w-0 flex-wrap gap-2">
-                {quickSearches.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-ink shadow-sm hover:border-interactive-primary hover:text-interactive-primary"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </header>
