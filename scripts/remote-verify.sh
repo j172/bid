@@ -3,7 +3,7 @@
 # plain curl calls from the GitHub Actions runner (see .github/workflows/
 # deploy-ftps.yml's "Verify live site" step and issue #64/#67's follow-up).
 #
-# Checking bid.j172.tw's public HTTP(S) surface from a GitHub Actions runner
+# Checking the public HTTP(S) surface from a GitHub Actions runner
 # doesn't work reliably: the production WAF/anti-bot layer in front of this
 # host challenges requests from GitHub Actions' IP ranges regardless of
 # whether the request targets the public domain (through Cloudflare) or the
@@ -18,17 +18,14 @@
 #
 # Running these same checks from inside the host sidesteps the problem:
 # loopback traffic never touches the WAF at all, and the bid-web watchdog
-# cron (crontab -l on this host) has been hitting the public bid.j172.tw
+# cron (crontab -l on this host) has been hitting the public
 # domain from here every 5 minutes without issue, so the host's own outbound
 # IP isn't flagged the way GitHub Actions' is.
 
 set -u
 
-# Which public domain to check. One repo now deploys two sites (issue #182) —
-# the legacy bid.j172.tw and xiangshuicn.cc — so this can no longer be a
-# literal. deploy-ftps.yml passes it per target; the default keeps a manual
-# run on the legacy host behaving as it always did.
-PUBLIC_DOMAIN="${PUBLIC_DOMAIN:-bid.j172.tw}"
+# Which public domain to check. Defaults to xiangshuicn.cc.
+PUBLIC_DOMAIN="${PUBLIC_DOMAIN:-xiangshuicn.cc}"
 
 ORIGIN_HEALTH_OK=0
 for ATTEMPT in 1 2 3; do

@@ -307,16 +307,10 @@ export interface ContactMessageDetails {
 
 // Where contact-form submissions are *delivered* — a receiving end, not a
 // value shown to anyone (the support address visitors see lives in
-// messages/*.json under contact.supportEmail). Getting it wrong loses
-// customer enquiries silently instead of displaying something obviously
-// wrong, which is why it isn't just swapped to the new domain outright.
+// messages/*.json under contact.supportEmail).
 //
-// Env-driven since #182 made this one repo deploy two sites: bid.j172.tw
-// (frozen) has no CONTACT_ADMIN_EMAIL in its .env, so the fallback keeps
-// that deployment byte-identical to before, while xiangshuicn.cc sets its
-// own address on the host — and a future address change is an .env edit,
-// not a code change plus redeploy. Hence the fallback is deliberately the
-// old domain and must stay that way.
+// Defaults to service@xiangshuicn.cc (matching the public contact email)
+// while allowing CONTACT_ADMIN_EMAIL in .env to override it if desired.
 //
 // A blank or whitespace-only value counts as unset (?? alone would not):
 // .env.example ships the key empty, so an operator who copies it without
@@ -326,7 +320,7 @@ export interface ContactMessageDetails {
 export function resolveContactAdminEmail(env: Record<string, string | undefined> = process.env): string {
   const configured = env.CONTACT_ADMIN_EMAIL?.trim();
   if (configured) return configured;
-  return "j172@j172.tw";
+  return "service@xiangshuicn.cc";
 }
 
 const CONTACT_ADMIN_EMAIL = resolveContactAdminEmail();

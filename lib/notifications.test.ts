@@ -49,12 +49,10 @@ describe("buildContactAdminNotificationHtml", () => {
 
 // The contact form's admin notification is a receiving end: if this resolves
 // to the wrong address, customer enquiries are lost with no visible symptom.
-// The fallback is pinned to the old domain on purpose — the frozen
-// bid.j172.tw deployment sets no CONTACT_ADMIN_EMAIL and must keep behaving
-// exactly as it did before #202.
+// The fallback defaults to service@xiangshuicn.cc when no env override is set.
 describe("resolveContactAdminEmail", () => {
-  it("falls back to the original recipient when no env override is set", () => {
-    expect(resolveContactAdminEmail({})).toBe("j172@j172.tw");
+  it("falls back to the default recipient when no env override is set", () => {
+    expect(resolveContactAdminEmail({})).toBe("service@xiangshuicn.cc");
   });
 
   it("uses CONTACT_ADMIN_EMAIL when set", () => {
@@ -64,8 +62,8 @@ describe("resolveContactAdminEmail", () => {
   });
 
   it("ignores a blank/whitespace-only override so a copied-but-unfilled .env cannot black-hole notifications", () => {
-    expect(resolveContactAdminEmail({ CONTACT_ADMIN_EMAIL: "" })).toBe("j172@j172.tw");
-    expect(resolveContactAdminEmail({ CONTACT_ADMIN_EMAIL: "   " })).toBe("j172@j172.tw");
+    expect(resolveContactAdminEmail({ CONTACT_ADMIN_EMAIL: "" })).toBe("service@xiangshuicn.cc");
+    expect(resolveContactAdminEmail({ CONTACT_ADMIN_EMAIL: "   " })).toBe("service@xiangshuicn.cc");
   });
 
   it("trims surrounding whitespace from a configured address", () => {
