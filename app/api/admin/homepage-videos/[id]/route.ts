@@ -62,7 +62,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ ok: false, error: "排序必須是不小於 0 的整數" }, { status: 400 });
   }
 
-  const parsedIsActive = Boolean(isActive);
+  if (typeof isActive !== "boolean") {
+    return NextResponse.json({ ok: false, error: "啟用狀態格式錯誤" }, { status: 400 });
+  }
+
+  const parsedIsActive = isActive;
 
   const result = await updateHomepageVideo(videoId, {
     title,

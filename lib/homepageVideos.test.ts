@@ -9,14 +9,17 @@ import {
   updateHomepageVideo,
 } from "./homepageVideos";
 
-const { queryMock } = vi.hoisted(() => ({ queryMock: vi.fn() }));
+const { queryMock, invalidateCacheMock } = vi.hoisted(() => ({
+  queryMock: vi.fn(),
+  invalidateCacheMock: vi.fn(),
+}));
 
 vi.mock("@/lib/db", () => ({
   getDb: async () => ({ query: queryMock }),
 }));
 
 vi.mock("@/lib/cache", () => ({
-  invalidateCache: vi.fn(),
+  invalidateCache: invalidateCacheMock,
 }));
 
 beforeEach(() => {
@@ -86,6 +89,7 @@ describe("countHomepageVideos", () => {
     queryMock.mockResolvedValueOnce([[{ cnt: 4 }]]);
     const count = await countHomepageVideos();
     expect(count).toBe(4);
+    expect(queryMock.mock.calls[0][0]).toContain("WHERE is_active = 1");
   });
 });
 
@@ -110,6 +114,7 @@ describe("createHomepageVideo", () => {
   });
 
   it("rejects when already at HOMEPAGE_VIDEOS_MAX (6)", async () => {
+    queryMock.mockResolvedValueOnce([[]]); // duplicate check
     queryMock.mockResolvedValueOnce([[{ cnt: HOMEPAGE_VIDEOS_MAX }]]);
 
     const res = await createHomepageVideo({
@@ -119,12 +124,39 @@ describe("createHomepageVideo", () => {
 
     expect(res).toEqual({
       ok: false,
-      error: `最多只能設定 ${HOMEPAGE_VIDEOS_MAX} 則指定影音，請先刪除或編輯現有影音`,
+      error: `最多只能設定 ${HOMEPAGE_VIDEOS_MAX} 則啟用中的指定影音，請先停用其他影音`,
     });
   });
 
+  it("allows an inactive video when all active slots are occupied", async () => {
+    queryMock.mockResolvedValueOnce([[]]); // duplicate check
+    queryMock.mockResolvedValueOnce([[{ nextOrder: 6 }]]); // max sortOrder
+    queryMock.mockResolvedValueOnce([{ insertId: 7 }]);
+
+    const res = await createHomepageVideo({
+      title: "停用影片",
+      youtubeUrl: "https://youtu.be/uZujgOcOICs",
+      isActive: false,
+    });
+
+    expect(res).toEqual({ ok: true, id: 7 });
+  });
+
+  it("rejects a videoId already used by an inactive video", async () => {
+    queryMock.mockResolvedValueOnce([[{ id: 2 }]]);
+
+    const res = await createHomepageVideo({
+      title: "重複影片",
+      youtubeUrl: "https://youtu.be/vy4lQXW-TLM",
+    });
+
+    expect(res).toEqual({ ok: false, error: "這部 YouTube 影片已存在，請勿重複指定" });
+    expect(queryMock).toHaveBeenCalledTimes(1);
+  });
+
   it("creates item successfully, extracting 11-char videoId and defaulting sortOrder", async () => {
-    queryMock.mockResolvedValueOnce([[{ cnt: 2 }]]); // count check
+    queryMock.mockResolvedValueOnce([[]]); // duplicate check
+    queryMock.mockResolvedValueOnce([[{ cnt: 2 }]]); // active count check
     queryMock.mockResolvedValueOnce([[{ nextOrder: 2 }]]); // max sortOrder
     queryMock.mockResolvedValueOnce([{ insertId: 3 }]); // insert
 
@@ -134,7 +166,7 @@ describe("createHomepageVideo", () => {
     });
 
     expect(res).toEqual({ ok: true, id: 3 });
-    const insertCall = queryMock.mock.calls[2];
+    const insertCall = queryMock.mock.calls[3];
     expect(insertCall[0]).toContain("INSERT INTO homepage_videos");
     expect(insertCall[1]).toEqual([
       "第二部影片",
@@ -143,11 +175,13 @@ describe("createHomepageVideo", () => {
       2,
       1,
     ]);
+    expect(invalidateCacheMock).toHaveBeenCalledWith("socialMedia:youtubeFeed");
   });
 });
 
 describe("updateHomepageVideo", () => {
   it("updates title, videoId and sortOrder successfully", async () => {
+    queryMock.mockResolvedValueOnce([[]]); // duplicate check
     queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
 
     const res = await updateHomepageVideo(1, {
@@ -158,7 +192,7 @@ describe("updateHomepageVideo", () => {
     });
 
     expect(res).toEqual({ ok: true });
-    expect(queryMock.mock.calls[0][1]).toEqual([
+    expect(queryMock.mock.calls[1][1]).toEqual([
       "更新標題",
       "https://www.youtube.com/shorts/kJ0_gK3zCsM",
       "kJ0_gK3zCsM",
@@ -166,9 +200,12 @@ describe("updateHomepageVideo", () => {
       0,
       1,
     ]);
+    expect(invalidateCacheMock).toHaveBeenCalledWith("socialMedia:youtubeFeed");
   });
 
   it("returns error when record does not exist", async () => {
+    queryMock.mockResolvedValueOnce([[]]); // duplicate check
+    queryMock.mockResolvedValueOnce([[{ cnt: 0 }]]); // active count excluding current
     queryMock.mockResolvedValueOnce([{ affectedRows: 0 }]);
 
     const res = await updateHomepageVideo(999, {
@@ -179,6 +216,23 @@ describe("updateHomepageVideo", () => {
     });
 
     expect(res).toEqual({ ok: false, error: "找不到該影音項目" });
+  });
+
+  it("rejects activation when it would exceed the active limit", async () => {
+    queryMock.mockResolvedValueOnce([[]]); // duplicate check
+    queryMock.mockResolvedValueOnce([[{ cnt: HOMEPAGE_VIDEOS_MAX }]]); // active count excluding current
+
+    const res = await updateHomepageVideo(1, {
+      title: "啟用影片",
+      youtubeUrl: "https://youtu.be/kJ0_gK3zCsM",
+      sortOrder: 0,
+      isActive: true,
+    });
+
+    expect(res).toEqual({
+      ok: false,
+      error: `最多只能設定 ${HOMEPAGE_VIDEOS_MAX} 則啟用中的指定影音，請先停用其他影音`,
+    });
   });
 });
 

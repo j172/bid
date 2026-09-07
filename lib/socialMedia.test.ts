@@ -49,10 +49,11 @@ describe("socialMedia", () => {
   });
 
   it("falls back to fallback items if fetch fails", async () => {
-    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Network offline"));
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Network offline"));
     const items = await fetchYouTubeFeed();
     expect(items.length).toBeGreaterThan(0);
     expect(items.every((i) => i.platform === "youtube")).toBe(true);
+    expect(fetchSpy.mock.calls[0][1]).toEqual(expect.objectContaining({ signal: expect.any(AbortSignal) }));
   });
 
   it("getSocialMediaFeed returns combined items including YouTube, Facebook, and TikTok", async () => {
@@ -70,7 +71,10 @@ describe("socialMedia", () => {
   });
 
   it("getSocialMediaFeed prioritizes custom homepage_videos over RSS", async () => {
-    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      text: async () => SAMPLE_RSS,
+    } as Response);
     const { listHomepageVideos } = await import("./homepageVideos");
     vi.mocked(listHomepageVideos).mockResolvedValueOnce([
       {
@@ -90,8 +94,22 @@ describe("socialMedia", () => {
     expect(ytItem?.id).toBe("yt-customVid123");
     expect(ytItem?.title).toBe("後台指定的第一部影片");
     expect(ytItem?.thumbnailUrl).toBe("https://i.ytimg.com/vi/customVid123/hqdefault.jpg");
-    // Should not call external RSS fetch
-    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(feed.find((i) => i.id === "yt-sample12345")?.platform).toBe("youtube");
+    expect(feed.findIndex((i) => i.id === "yt-customVid123")).toBeLessThan(
+      feed.findIndex((i) => i.id === "yt-sample12345"),
+    );
+  });
+
+  it("does not use fallback videos to pad a successful but short RSS response", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      text: async () => SAMPLE_RSS,
+    } as Response);
+
+    const feed = await getSocialMediaFeed();
+    const youtubeIds = feed.filter((item) => item.platform === "youtube").map((item) => item.id);
+    expect(youtubeIds).toEqual(["yt-sample12345"]);
   });
 });
 

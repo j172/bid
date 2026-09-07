@@ -1,7 +1,6 @@
 import { cachedQuery } from "./cache";
 import { listHomepageVideos } from "./homepageVideos";
 
-
 export const SOCIAL_LINKS = {
   facebook: "https://www.facebook.com/xiang.shui.ge.she/",
   youtube: "https://www.youtube.com/@tara-789-l5z",
@@ -114,6 +113,7 @@ export function parseYouTubeRss(xml: string): SocialItem[] {
 export async function fetchYouTubeFeed(): Promise<SocialItem[]> {
   try {
     const res = await fetch(YOUTUBE_RSS_URL, {
+      signal: AbortSignal.timeout(5000),
       next: { revalidate: 600 },
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -137,8 +137,7 @@ export async function getSocialMediaFeed(): Promise<SocialItem[]> {
     const youtubeItems = await cachedQuery("socialMedia:youtubeFeed", 600, async () => {
       try {
         const specifiedVideos = await listHomepageVideos({ activeOnly: true });
-        if (specifiedVideos.length > 0) {
-          return specifiedVideos.slice(0, 6).map((v) => ({
+        const specifiedItems = specifiedVideos.slice(0, 6).map((v) => ({
             id: `yt-${v.videoId}`,
             platform: "youtube" as const,
             title: v.title,
@@ -147,14 +146,23 @@ export async function getSocialMediaFeed(): Promise<SocialItem[]> {
             embedUrl: `https://www.youtube-nocookie.com/embed/${v.videoId}`,
             authorName: "翔水賽鴿網",
           }));
-        }
+        const specifiedIds = new Set(specifiedItems.map((item) => item.id));
+        const rssItems = await fetchYouTubeFeed();
+        const supplementalItems = rssItems.filter((item) => !specifiedIds.has(item.id));
+        return [...specifiedItems, ...supplementalItems].slice(0, 6);
       } catch (err) {
         console.warn("[socialMedia] Failed to load homepage_videos, falling back to RSS:", err);
       }
       return fetchYouTubeFeed();
     });
     const nonYoutube = FALLBACK_SOCIAL_ITEMS.filter((item) => item.platform !== "youtube");
-    return [...youtubeItems.slice(0, 6), ...nonYoutube];
+    const seen = new Set<string>();
+    const uniqueYoutube = youtubeItems.filter((item) => {
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
+    return [...uniqueYoutube.slice(0, 6), ...nonYoutube];
   } catch {
     return FALLBACK_SOCIAL_ITEMS;
   }

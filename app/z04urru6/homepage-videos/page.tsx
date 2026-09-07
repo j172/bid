@@ -8,7 +8,8 @@ export const dynamic = "force-dynamic";
 
 export default async function HomepageVideosAdminPage() {
   const videos = await listHomepageVideos();
-  const isFull = videos.length >= HOMEPAGE_VIDEOS_MAX;
+  const activeVideoCount = videos.filter((video) => video.isActive).length;
+  const isFull = activeVideoCount >= HOMEPAGE_VIDEOS_MAX;
 
   return (
     <main>
@@ -24,7 +25,7 @@ export default async function HomepageVideosAdminPage() {
                 : "bg-surface-muted text-ink-light"
             }`}
           >
-            已設定 {videos.length} / {HOMEPAGE_VIDEOS_MAX} 則{isFull ? "（已達上限）" : ""}
+            已啟用 {activeVideoCount} / {HOMEPAGE_VIDEOS_MAX} 則{isFull ? "（已達上限）" : ""}
           </span>
           <HomepageVideoFormModal
             mode="create"

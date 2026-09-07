@@ -44,7 +44,11 @@ export async function POST(request: Request) {
     }
   }
 
-  const parsedIsActive = isActive !== undefined ? Boolean(isActive) : undefined;
+  if (isActive !== undefined && typeof isActive !== "boolean") {
+    return NextResponse.json({ ok: false, error: "啟用狀態格式錯誤" }, { status: 400 });
+  }
+
+  const parsedIsActive = isActive;
 
   const result = await createHomepageVideo({
     title,

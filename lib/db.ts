@@ -349,6 +349,7 @@ CREATE TABLE IF NOT EXISTS homepage_videos (
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
   PRIMARY KEY (id),
+  UNIQUE KEY uq_homepage_videos_video_id (video_id),
   KEY idx_homepage_videos_active_sort (is_active, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
@@ -631,6 +632,12 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensureNewsBroadcastColumn(db);
   await ensureEmailVerificationColumns(db);
   await ensurePigeonShowcaseCategories(db);
+  await ensureIndex(
+    db,
+    "homepage_videos",
+    "uq_homepage_videos_video_id",
+    "UNIQUE INDEX uq_homepage_videos_video_id (video_id)",
+  );
 }
 
 export async function getDb(): Promise<mysql.Pool> {

@@ -511,6 +511,7 @@ CREATE TABLE IF NOT EXISTS homepage_videos (
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
   PRIMARY KEY (id),
+  UNIQUE KEY uq_homepage_videos_video_id (video_id),
   KEY idx_homepage_videos_active_sort (is_active, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

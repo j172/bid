@@ -97,8 +97,9 @@ describe("schemaStatements", () => {
 
   it("still covers the tables the rest of this module reads and writes", () => {
     const joined = statements.join("\n");
-    for (const table of ["users", "sessions", "listings", "bids", "purchases", "login_attempts"]) {
+    for (const table of ["users", "sessions", "listings", "bids", "purchases", "login_attempts", "homepage_videos"]) {
       expect(joined).toContain(`CREATE TABLE IF NOT EXISTS ${table} (`);
     }
+    expect(joined).toContain("UNIQUE KEY uq_homepage_videos_video_id (video_id)");
   });
 });
