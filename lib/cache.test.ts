@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { cachedQuery, clearMemoryCache } from "./cache";
+import { cachedQuery, clearMemoryCache, invalidateCache } from "./cache";
+
 
 describe("cachedQuery", () => {
   beforeEach(() => {
@@ -82,4 +83,22 @@ describe("cachedQuery", () => {
     expect(res).toBe("val2");
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
+
+  it("invalidates specific key when invalidateCache is called", async () => {
+    const fetcher1 = vi.fn().mockResolvedValueOnce("val1").mockResolvedValueOnce("val2");
+    const fetcher2 = vi.fn().mockResolvedValueOnce("other1");
+    await cachedQuery("key-1", 20, fetcher1);
+    await cachedQuery("key-2", 20, fetcher2);
+
+    invalidateCache("key-1");
+
+    const res1 = await cachedQuery("key-1", 20, fetcher1);
+    const res2 = await cachedQuery("key-2", 20, fetcher2);
+
+    expect(res1).toBe("val2");
+    expect(fetcher1).toHaveBeenCalledTimes(2);
+    expect(res2).toBe("other1");
+    expect(fetcher2).toHaveBeenCalledTimes(1);
+  });
 });
+

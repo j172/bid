@@ -3,7 +3,8 @@ import { Link } from "@/i18n/navigation";
 import ExchangeRateStrip from "./ExchangeRateStrip";
 import HideOnHomepage from "./HideOnHomepage";
 import NewsletterForm from "./NewsletterForm";
-import { SOCIAL_LINKS } from "@/lib/socialMedia";
+import { SOCIAL_LINKS } from "@/lib/socialMediaConstants";
+
 
 export default async function SiteFooter() {
   const t = await getTranslations("footer");

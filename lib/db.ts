@@ -336,6 +336,21 @@ CREATE TABLE IF NOT EXISTS login_attempts (
   KEY idx_login_attempts_email_created (email, created_at),
   KEY idx_login_attempts_ip_created (request_ip, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 官方社群影音動態指定影片 (homepage_videos) — see db/init.sql for the
+-- fuller header comment. Brand-new table, whole final schema from day one.
+CREATE TABLE IF NOT EXISTS homepage_videos (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  title VARCHAR(255) NOT NULL,
+  youtube_url VARCHAR(500) NOT NULL,
+  video_id VARCHAR(50) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_homepage_videos_active_sort (is_active, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
 
 // Columns added after their table's initial CREATE TABLE IF NOT EXISTS;

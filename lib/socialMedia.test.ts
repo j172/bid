@@ -7,6 +7,11 @@ import {
 } from "./socialMedia";
 import { clearMemoryCache } from "./cache";
 
+vi.mock("./homepageVideos", () => ({
+  listHomepageVideos: vi.fn().mockResolvedValue([]),
+}));
+
+
 const SAMPLE_RSS = `<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/" xmlns="http://www.w3.org/2005/Atom">
   <entry>
@@ -63,4 +68,30 @@ describe("socialMedia", () => {
     expect(platforms.has("facebook")).toBe(true);
     expect(platforms.has("tiktok")).toBe(true);
   });
+
+  it("getSocialMediaFeed prioritizes custom homepage_videos over RSS", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const { listHomepageVideos } = await import("./homepageVideos");
+    vi.mocked(listHomepageVideos).mockResolvedValueOnce([
+      {
+        id: 10,
+        title: "後台指定的第一部影片",
+        youtubeUrl: "https://www.youtube.com/watch?v=customVid123",
+        videoId: "customVid123",
+        sortOrder: 0,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ]);
+
+    const feed = await getSocialMediaFeed();
+    const ytItem = feed.find((i) => i.platform === "youtube");
+    expect(ytItem?.id).toBe("yt-customVid123");
+    expect(ytItem?.title).toBe("後台指定的第一部影片");
+    expect(ytItem?.thumbnailUrl).toBe("https://i.ytimg.com/vi/customVid123/hqdefault.jpg");
+    // Should not call external RSS fetch
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
 });
+

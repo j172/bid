@@ -1,4 +1,6 @@
 import { cachedQuery } from "./cache";
+import { listHomepageVideos } from "./homepageVideos";
+
 
 export const SOCIAL_LINKS = {
   facebook: "https://www.facebook.com/xiang.shui.ge.she/",
@@ -132,10 +134,29 @@ export async function fetchYouTubeFeed(): Promise<SocialItem[]> {
 
 export async function getSocialMediaFeed(): Promise<SocialItem[]> {
   try {
-    const youtubeItems = await cachedQuery("socialMedia:youtubeFeed", 600, () => fetchYouTubeFeed());
+    const youtubeItems = await cachedQuery("socialMedia:youtubeFeed", 600, async () => {
+      try {
+        const specifiedVideos = await listHomepageVideos({ activeOnly: true });
+        if (specifiedVideos.length > 0) {
+          return specifiedVideos.slice(0, 6).map((v) => ({
+            id: `yt-${v.videoId}`,
+            platform: "youtube" as const,
+            title: v.title,
+            url: `https://www.youtube.com/watch?v=${v.videoId}`,
+            thumbnailUrl: `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`,
+            embedUrl: `https://www.youtube-nocookie.com/embed/${v.videoId}`,
+            authorName: "翔水賽鴿網",
+          }));
+        }
+      } catch (err) {
+        console.warn("[socialMedia] Failed to load homepage_videos, falling back to RSS:", err);
+      }
+      return fetchYouTubeFeed();
+    });
     const nonYoutube = FALLBACK_SOCIAL_ITEMS.filter((item) => item.platform !== "youtube");
     return [...youtubeItems.slice(0, 6), ...nonYoutube];
   } catch {
     return FALLBACK_SOCIAL_ITEMS;
   }
 }
+

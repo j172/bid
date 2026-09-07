@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import type { SocialItem, SocialPlatform } from "@/lib/socialMedia";
-import { SOCIAL_LINKS } from "@/lib/socialMedia";
+import type { SocialItem, SocialPlatform } from "@/lib/socialMediaConstants";
+import { SOCIAL_LINKS } from "@/lib/socialMediaConstants";
+
 
 function PlatformIcon({ platform, className = "h-4 w-4" }: { platform: SocialPlatform; className?: string }) {
   if (platform === "youtube") {
