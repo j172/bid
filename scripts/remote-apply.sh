@@ -72,8 +72,8 @@ fi
 
 date +%s > "$LOCK_FILE"
 
-# Two notes on the chain below, since a backslash-continued command can't carry
-# an inline comment.
+# Three notes on the chain below, since a backslash-continued command can't
+# carry an inline comment.
 #
 # First, the `mkdir -p public` step exists because the swap below needs that
 # directory to already be there. A host that has deployed before always has it,
@@ -91,22 +91,32 @@ date +%s > "$LOCK_FILE"
 # public_stage makes the deployed tree exactly the archive's contents, and the
 # two mv's keep it a swap rather than a gap: `rm -rf public && tar -x` would
 # 404 every static asset (public/tinymce, the whole TinyMCE editor included)
-# for the seconds the extraction takes. public_stage/public_previous are
-# cleared at the top of the chain, not just before the swap, so a failure
-# before the swap leaves no public_previous for the rollback block to restore —
-# public was never touched, so there is nothing to roll back to.
+# for the seconds the extraction takes.
+#
+# Third, BOTH .next_previous and public_previous are cleared on the chain's
+# first line, not just before their respective swaps. The rollback block below
+# decides what to restore purely by asking whether those directories exist, so
+# their existence has to mean "this run already swapped" and nothing else.
+# Clearing .next_previous late — as this script did until issue #210 — left the
+# *previous* deploy's copy of .next on disk for the whole chain, one version
+# older than the .next actually serving traffic. A failure before the swap (a
+# corrupt .prebuilt-next.tgz, a missing BUILD_ID) therefore made the rollback
+# below move the perfectly healthy live .next aside and restore that stale
+# copy, turning "the new version did not ship" into "the site got downgraded"
+# — strictly worse than doing nothing. Clearing first makes an early failure
+# roll back nothing, which is correct: neither .next nor public was touched,
+# so there is nothing to roll back to (issue #210).
 #
 # Kept in lockstep with .remote-index.php's $buildApplyCommand.
 {
   echo "[START] $(date)" > "$LOG_FILE"
-  rm -rf .next_stage public_stage public_previous >>"$LOG_FILE" 2>&1 \
+  rm -rf .next_stage .next_previous public_stage public_previous >>"$LOG_FILE" 2>&1 \
     && mkdir -p .next_stage >>"$LOG_FILE" 2>&1 \
     && tar --no-same-owner --no-same-permissions -xzf .prebuilt-next.tgz -C .next_stage >>"$LOG_FILE" 2>&1 \
     && test -s .next_stage/.next/BUILD_ID \
     && test -d .next_stage/.next/server \
     && mkdir -p public >>"$LOG_FILE" 2>&1 \
     && { if [ -s .prebuilt-public.tgz ]; then mkdir -p public_stage >>"$LOG_FILE" 2>&1 && tar --no-same-owner --no-same-permissions -xzf .prebuilt-public.tgz -C public_stage >>"$LOG_FILE" 2>&1 && mv public public_previous >>"$LOG_FILE" 2>&1 && mv public_stage public >>"$LOG_FILE" 2>&1 && rm -f .prebuilt-public.tgz; fi; } \
-    && rm -rf .next_previous >>"$LOG_FILE" 2>&1 \
     && { if [ -d .next ]; then mv .next .next_previous; fi; } \
     && mv .next_stage/.next .next >>"$LOG_FILE" 2>&1 \
     && rmdir .next_stage >>"$LOG_FILE" 2>&1 \
