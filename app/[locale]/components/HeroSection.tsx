@@ -8,7 +8,7 @@ import CarouselControls from "./CarouselControls";
 import CountdownTiles from "./CountdownTiles";
 import ZoomableProductImage from "./ZoomableProductImage";
 import { useHeroCountdown } from "@/lib/useHeroCountdown";
-import { formatDualPrice, type DisplayCurrency } from "@/lib/currency";
+import { formatDualPrice, type CurrencyRate } from "@/lib/currency";
 
 interface HeroCardItem {
   id: number;
@@ -28,12 +28,12 @@ interface HeroSectionProps {
   topPriceCards: HeroCardItem[];
   renderedAt: string;
   // Reference-only currency conversion (issue #45, wired into the hero
-  // section for issue #103) — computed server-side (see HomePage) from the
-  // visitor's locale + the latest synced rate, then passed down here since
-  // this is a client component. NTD stays the authoritative price either
-  // way; formatDualPrice only ever appends a secondary "≈" amount.
-  displayCurrency: DisplayCurrency;
-  rateValue: number | null;
+  // section for issue #103; multi-currency per issue #154) — computed
+  // server-side (see HomePage) from the visitor's locale + the latest synced
+  // rates, then passed down here since this is a client component. NTD stays
+  // the authoritative price either way; formatDualPrice only ever appends
+  // secondary "≈" amounts.
+  currencyRates: CurrencyRate[];
 }
 
 type FormatTranslator = (key: string, values?: Record<string, string | number>) => string;
@@ -112,8 +112,7 @@ export default function HeroSection({
   cards,
   topPriceCards,
   renderedAt,
-  displayCurrency,
-  rateValue,
+  currencyRates,
 }: HeroSectionProps) {
   const tHome = useTranslations("home");
   const tListings = useTranslations("listings");
@@ -204,7 +203,7 @@ export default function HeroSection({
                   <div className="rounded-xl border border-white/10 bg-white/12 px-4 py-3 backdrop-blur-sm">
                     <p className="text-[11px] uppercase tracking-[0.16em] text-steel-azure-200">{tDetail("specCurrentPrice")}</p>
                     <p className="mt-1 text-base font-bold text-white">
-                      {formatDualPrice(activeCard.currentPrice, displayCurrency, rateValue)}
+                      {formatDualPrice(activeCard.currentPrice, currencyRates)}
                     </p>
                   </div>
                   <div className="rounded-xl border border-white/10 bg-white/12 px-4 py-3 backdrop-blur-sm">
@@ -212,7 +211,7 @@ export default function HeroSection({
                     <p className="mt-1 text-base font-bold text-white">
                       {activeCard.buyItNowPrice === null
                         ? tDetail("specNotAvailable")
-                        : formatDualPrice(activeCard.buyItNowPrice, displayCurrency, rateValue)}
+                        : formatDualPrice(activeCard.buyItNowPrice, currencyRates)}
                     </p>
                   </div>
                   <div className="rounded-xl border border-white/10 bg-white/12 px-4 py-3 backdrop-blur-sm">
@@ -274,7 +273,7 @@ export default function HeroSection({
                     <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-700 drop-shadow-[0_1px_0_rgba(255,255,255,0.78)]">{tDetail("specCurrentPrice")}</p>
                     <div className="mt-1 flex flex-wrap items-end gap-2">
                       <span className="text-3xl font-black leading-none text-amber-900 sm:text-[2rem]">
-                        {formatDualPrice(item.currentPrice, displayCurrency, rateValue)}
+                        {formatDualPrice(item.currentPrice, currencyRates)}
                       </span>
                     </div>
                   </div>

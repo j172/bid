@@ -20,13 +20,18 @@ export default async function MyBidsPage() {
   const bids = await getBidHistoryForUser(user.id);
   const t = await getTranslations("myBids");
 
-  // Reference-only currency conversion (issue #45) — see the listing detail
-  // page's equivalent comment; this page is public-facing (though
-  // login-gated), unlike the admin backend which stays pure NTD.
+  // Reference-only currency conversion (issue #45; multi-currency per issue
+  // #154) — see the listing detail page's equivalent comment; this page is
+  // public-facing (though login-gated), unlike the admin backend which stays
+  // pure NTD.
   const locale = await getLocale();
-  const displayCurrency = currencyForLocale(locale);
-  const displayRate = displayCurrency === "TWD" ? null : await getLatestStoredRate(displayCurrency);
-  const rateValue = displayRate?.rate ?? null;
+  const displayCurrencies = currencyForLocale(locale);
+  const currencyRates = await Promise.all(
+    displayCurrencies.map(async (currency) => ({
+      currency,
+      rate: currency === "TWD" ? null : ((await getLatestStoredRate(currency))?.rate ?? null),
+    })),
+  );
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
@@ -56,9 +61,9 @@ export default async function MyBidsPage() {
                       {bid.listingTitle}
                     </Link>
                   </td>
-                  <td className={td}>{formatDualPrice(bid.bidAmount, displayCurrency, rateValue)}</td>
+                  <td className={td}>{formatDualPrice(bid.bidAmount, currencyRates)}</td>
                   <td className={`${td} font-semibold`}>
-                    {formatDualPrice(bid.listingCurrentPrice, displayCurrency, rateValue)}
+                    {formatDualPrice(bid.listingCurrentPrice, currencyRates)}
                   </td>
                   <td className={td}>
                     <StatusBadge status={bid.listingStatus} isLeading={bid.isLeading} />
