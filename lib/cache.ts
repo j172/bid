@@ -44,8 +44,16 @@ export async function cachedQuery<T>(
 }
 
 /**
+ * Invalidates a single key from the in-memory cache.
+ */
+export function invalidateCache(key: string): void {
+  memoryCache.delete(key);
+}
+
+/**
  * Clears the in-memory cache (primarily for testing).
  */
 export function clearMemoryCache(): void {
   memoryCache.clear();
 }
+

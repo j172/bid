@@ -7,7 +7,12 @@
 // like the rest of this project's DB-touching tests do — there is no
 // module to mock here, this *is* the module under test.
 import { describe, expect, it, vi } from "vitest";
-import { ensureEmailVerificationColumns, schemaStatements, splitSqlStatements } from "./db";
+import {
+  ensureEmailVerificationColumns,
+  ensureHomepageVideosVideoIdIndex,
+  schemaStatements,
+  splitSqlStatements,
+} from "./db";
 
 function fakePool(queryImpl: (sql: string, params?: unknown[]) => unknown) {
   return { query: vi.fn(queryImpl) } as unknown as Parameters<typeof ensureEmailVerificationColumns>[0];
@@ -47,6 +52,32 @@ describe("ensureEmailVerificationColumns", () => {
 
     expect(calls).toHaveLength(1);
     expect(calls[0][0]).toContain("information_schema.COLUMNS");
+  });
+});
+
+describe("ensureHomepageVideosVideoIdIndex", () => {
+  it("is a no-op when the unique index already exists", async () => {
+    const query = vi.fn().mockResolvedValueOnce([[{ cnt: 1 }]]);
+    const db = fakePool(query);
+
+    await ensureHomepageVideosVideoIdIndex(db);
+
+    expect(query).toHaveBeenCalledTimes(1);
+    expect(query.mock.calls[0][0]).toContain("information_schema.STATISTICS");
+  });
+
+  it("reports duplicate data without deleting anything when index creation fails", async () => {
+    const query = vi
+      .fn()
+      .mockResolvedValueOnce([[{ cnt: 0 }]])
+      .mockRejectedValueOnce(Object.assign(new Error("Duplicate entry"), { code: "ER_DUP_ENTRY" }));
+    const db = fakePool(query);
+
+    await expect(ensureHomepageVideosVideoIdIndex(db)).rejects.toThrow(
+      /homepage_videos[\s\S]*uq_homepage_videos_video_id[\s\S]*duplicate data[\s\S]*手動清理/i,
+    );
+    expect(query).toHaveBeenCalledTimes(2);
+    expect(query.mock.calls.some(([sql]) => String(sql).match(/DELETE|UPDATE/i))).toBe(false);
   });
 });
 
@@ -97,8 +128,9 @@ describe("schemaStatements", () => {
 
   it("still covers the tables the rest of this module reads and writes", () => {
     const joined = statements.join("\n");
-    for (const table of ["users", "sessions", "listings", "bids", "purchases", "login_attempts"]) {
+    for (const table of ["users", "sessions", "listings", "bids", "purchases", "login_attempts", "homepage_videos"]) {
       expect(joined).toContain(`CREATE TABLE IF NOT EXISTS ${table} (`);
     }
+    expect(joined).toContain("UNIQUE KEY uq_homepage_videos_video_id (video_id)");
   });
 });

@@ -1,4 +1,5 @@
 import { cachedQuery } from "./cache";
+import { listHomepageVideos } from "./homepageVideos";
 
 export const SOCIAL_LINKS = {
   facebook: "https://www.facebook.com/xiang.shui.ge.she/",
@@ -109,9 +110,25 @@ export function parseYouTubeRss(xml: string): SocialItem[] {
   return items;
 }
 
+function uniqueYouTubeItems(items: SocialItem[]): SocialItem[] {
+  const seen = new Set<string>();
+  return items
+    .filter((item) => {
+      if (item.platform !== "youtube" || seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    })
+    .slice(0, 6);
+}
+
+function fallbackYouTubeItems(): SocialItem[] {
+  return uniqueYouTubeItems(FALLBACK_SOCIAL_ITEMS);
+}
+
 export async function fetchYouTubeFeed(): Promise<SocialItem[]> {
   try {
     const res = await fetch(YOUTUBE_RSS_URL, {
+      signal: AbortSignal.timeout(5000),
       next: { revalidate: 600 },
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -119,23 +136,44 @@ export async function fetchYouTubeFeed(): Promise<SocialItem[]> {
     });
     if (!res.ok) {
       console.warn(`[socialMedia] YouTube RSS returned status ${res.status}`);
-      return FALLBACK_SOCIAL_ITEMS.filter((item) => item.platform === "youtube");
+      return fallbackYouTubeItems();
     }
     const xml = await res.text();
     const items = parseYouTubeRss(xml);
-    return items.length > 0 ? items : FALLBACK_SOCIAL_ITEMS.filter((item) => item.platform === "youtube");
+    return items.length > 0 ? uniqueYouTubeItems(items) : fallbackYouTubeItems();
   } catch (err) {
     console.warn("[socialMedia] Failed to fetch YouTube RSS, using fallback:", err);
-    return FALLBACK_SOCIAL_ITEMS.filter((item) => item.platform === "youtube");
+    return fallbackYouTubeItems();
   }
 }
 
 export async function getSocialMediaFeed(): Promise<SocialItem[]> {
   try {
-    const youtubeItems = await cachedQuery("socialMedia:youtubeFeed", 600, () => fetchYouTubeFeed());
+    const youtubeItems = await cachedQuery("socialMedia:youtubeFeed", 600, async () => {
+      try {
+        const specifiedVideos = await listHomepageVideos({ activeOnly: true });
+        const specifiedItems = specifiedVideos.slice(0, 6).map((v) => ({
+            id: `yt-${v.videoId}`,
+            platform: "youtube" as const,
+            title: v.title,
+            url: `https://www.youtube.com/watch?v=${v.videoId}`,
+            thumbnailUrl: `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`,
+            embedUrl: `https://www.youtube-nocookie.com/embed/${v.videoId}`,
+            authorName: "翔水賽鴿網",
+          }));
+        const specifiedIds = new Set(specifiedItems.map((item) => item.id));
+        const rssItems = await fetchYouTubeFeed();
+        const supplementalItems = rssItems.filter((item) => !specifiedIds.has(item.id));
+        return uniqueYouTubeItems([...specifiedItems, ...supplementalItems]);
+      } catch (err) {
+        console.warn("[socialMedia] Failed to load homepage_videos, falling back to RSS:", err);
+      }
+      return fetchYouTubeFeed();
+    });
     const nonYoutube = FALLBACK_SOCIAL_ITEMS.filter((item) => item.platform !== "youtube");
-    return [...youtubeItems.slice(0, 6), ...nonYoutube];
+    return [...uniqueYouTubeItems(youtubeItems), ...nonYoutube];
   } catch {
     return FALLBACK_SOCIAL_ITEMS;
   }
 }
+

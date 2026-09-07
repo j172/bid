@@ -336,6 +336,22 @@ CREATE TABLE IF NOT EXISTS login_attempts (
   KEY idx_login_attempts_email_created (email, created_at),
   KEY idx_login_attempts_ip_created (request_ip, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 官方社群影音動態指定影片 (homepage_videos) — see db/init.sql for the
+-- fuller header comment. Brand-new table, whole final schema from day one.
+CREATE TABLE IF NOT EXISTS homepage_videos (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  title VARCHAR(255) NOT NULL,
+  youtube_url VARCHAR(500) NOT NULL,
+  video_id VARCHAR(50) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_homepage_videos_video_id (video_id),
+  KEY idx_homepage_videos_active_sort (is_active, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
 
 // Columns added after their table's initial CREATE TABLE IF NOT EXISTS;
@@ -391,6 +407,22 @@ async function ensureIndex(
     return true;
   }
   return false;
+}
+
+export async function ensureHomepageVideosVideoIdIndex(db: mysql.Pool): Promise<void> {
+  try {
+    await ensureIndex(
+      db,
+      "homepage_videos",
+      "uq_homepage_videos_video_id",
+      "UNIQUE INDEX uq_homepage_videos_video_id (video_id)",
+    );
+  } catch (cause) {
+    throw new Error(
+      "無法建立 homepage_videos.uq_homepage_videos_video_id：duplicate data（重複的 video_id）。請先手動清理，再重新啟動；系統不會自動刪除資料。",
+      { cause },
+    );
+  }
 }
 
 async function ensureBiddingColumns(db: mysql.Pool): Promise<void> {
@@ -616,6 +648,7 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensureNewsBroadcastColumn(db);
   await ensureEmailVerificationColumns(db);
   await ensurePigeonShowcaseCategories(db);
+  await ensureHomepageVideosVideoIdIndex(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {

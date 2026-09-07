@@ -28,4 +28,6 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   // standalone "電子報" (Newsletter) nav item into this one: sending a
   // newsletter is now an option on this form, not a separate admin section.
   { label: "最新訊息管理", href: "/z04urru6/news", section: "content" },
+  // 官方影音管理 — 管理首頁「官方社群影音動態」專區指定播放之 YouTube 影片（最多 6 則）。
+  { label: "官方影音管理", href: "/z04urru6/homepage-videos", section: "content" },
 ];

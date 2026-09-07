@@ -7,6 +7,11 @@ import {
 } from "./socialMedia";
 import { clearMemoryCache } from "./cache";
 
+vi.mock("./homepageVideos", () => ({
+  listHomepageVideos: vi.fn().mockResolvedValue([]),
+}));
+
+
 const SAMPLE_RSS = `<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/" xmlns="http://www.w3.org/2005/Atom">
   <entry>
@@ -43,11 +48,32 @@ describe("socialMedia", () => {
     expect(items[0].thumbnailUrl).toBe("https://i.ytimg.com/vi/sample12345/hqdefault.jpg");
   });
 
+  it("deduplicates repeated RSS video IDs and caps the result at six", async () => {
+    const entries = Array.from({ length: 7 }, (_, index) => `
+      <entry><yt:videoId>video${index}12345</yt:videoId><title>影片 ${index}</title></entry>
+    `).join("");
+    const duplicate = `<entry><yt:videoId>video012345</yt:videoId><title>重複</title></entry>`;
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      text: async () => `<feed>${entries}${duplicate}</feed>`,
+    } as Response);
+
+    const items = await fetchYouTubeFeed();
+
+    expect(items).toHaveLength(6);
+    expect(new Set(items.map((item) => item.id)).size).toBe(6);
+  });
+
   it("falls back to fallback items if fetch fails", async () => {
-    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Network offline"));
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Network offline"));
     const items = await fetchYouTubeFeed();
     expect(items.length).toBeGreaterThan(0);
     expect(items.every((i) => i.platform === "youtube")).toBe(true);
+    expect(fetchSpy.mock.calls[0][1]).toEqual(expect.objectContaining({ signal: expect.any(AbortSignal) }));
+    const timeoutSpy = vi.spyOn(AbortSignal, "timeout");
+    fetchSpy.mockRejectedValueOnce(new Error("Network offline"));
+    await fetchYouTubeFeed();
+    expect(timeoutSpy).toHaveBeenCalledWith(5000);
   });
 
   it("getSocialMediaFeed returns combined items including YouTube, Facebook, and TikTok", async () => {
@@ -63,4 +89,47 @@ describe("socialMedia", () => {
     expect(platforms.has("facebook")).toBe(true);
     expect(platforms.has("tiktok")).toBe(true);
   });
+
+  it("getSocialMediaFeed prioritizes custom homepage_videos over RSS", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      text: async () => SAMPLE_RSS,
+    } as Response);
+    const { listHomepageVideos } = await import("./homepageVideos");
+    vi.mocked(listHomepageVideos).mockResolvedValueOnce([
+      {
+        id: 10,
+        title: "後台指定的第一部影片",
+        youtubeUrl: "https://www.youtube.com/watch?v=customVid123",
+        videoId: "customVid123",
+        sortOrder: 0,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ]);
+
+    const feed = await getSocialMediaFeed();
+    const ytItem = feed.find((i) => i.platform === "youtube");
+    expect(ytItem?.id).toBe("yt-customVid123");
+    expect(ytItem?.title).toBe("後台指定的第一部影片");
+    expect(ytItem?.thumbnailUrl).toBe("https://i.ytimg.com/vi/customVid123/hqdefault.jpg");
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(feed.find((i) => i.id === "yt-sample12345")?.platform).toBe("youtube");
+    expect(feed.findIndex((i) => i.id === "yt-customVid123")).toBeLessThan(
+      feed.findIndex((i) => i.id === "yt-sample12345"),
+    );
+  });
+
+  it("does not use fallback videos to pad a successful but short RSS response", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      text: async () => SAMPLE_RSS,
+    } as Response);
+
+    const feed = await getSocialMediaFeed();
+    const youtubeIds = feed.filter((item) => item.platform === "youtube").map((item) => item.id);
+    expect(youtubeIds).toEqual(["yt-sample12345"]);
+  });
 });
+

@@ -498,3 +498,20 @@ CREATE TABLE IF NOT EXISTS login_attempts (
   KEY idx_login_attempts_email_created (email, created_at),
   KEY idx_login_attempts_ip_created (request_ip, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 官方社群影音動態指定影片 (homepage_videos) — 管理員在後台指定播放之 YouTube 影片（最多 6 則）。
+-- 若本表有啟用中的記錄，首頁「官方社群影音動態」優先播放指定影片；若無記錄則自動 fallback 頻道 RSS。
+CREATE TABLE IF NOT EXISTS homepage_videos (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  title VARCHAR(255) NOT NULL,
+  youtube_url VARCHAR(500) NOT NULL,
+  video_id VARCHAR(50) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_homepage_videos_video_id (video_id),
+  KEY idx_homepage_videos_active_sort (is_active, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
