@@ -224,7 +224,14 @@ export function buildListingProductJsonLd(listing: ListingJsonLdInput, pathname:
   };
 }
 
-// Builds schema.org WebSite JSON-LD with Sitelinks Searchbox potentialAction
+// Builds schema.org WebSite JSON-LD.
+//
+// No potentialAction/SearchAction here (issue #204's audit): Google retired
+// the Sitelinks Searchbox in November 2024 — it's absent from the current
+// structured-data feature gallery, and the changelog entry for its removal
+// says the feature "is no longer available in Google Search results". The
+// rest of WebSite (name/alternateName/url) still carries general entity
+// value and stays.
 export function buildWebSiteJsonLd(): Record<string, unknown> {
   return {
     "@context": "https://schema.org",
@@ -232,14 +239,6 @@ export function buildWebSiteJsonLd(): Record<string, unknown> {
     name: "翔水賽鴿網",
     alternateName: ["Xiangshui Racing Pigeon Network", "翔水賽鴿"],
     url: SITE_URL,
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: `${SITE_URL}/listings?q={search_term_string}`,
-      },
-      "query-input": "required name=search_term_string",
-    },
   };
 }
 
@@ -273,24 +272,6 @@ export function buildBreadcrumbListJsonLd(
       position: index + 1,
       name: item.name,
       item: absoluteUrl(item.pathname),
-    })),
-  };
-}
-
-// Builds schema.org FAQPage JSON-LD
-export function buildFaqPageJsonLd(
-  faqs: { question: string; answer: string }[],
-): Record<string, unknown> {
-  return {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: faqs.map((f) => ({
-      "@type": "Question",
-      name: f.question,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: f.answer,
-      },
     })),
   };
 }

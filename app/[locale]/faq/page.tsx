@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { buildFaqPageJsonLd, canonicalUrl, hreflangAlternates } from "@/lib/seo";
-import { safeJsonLdString } from "@/lib/jsonLdScript";
+import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
 import LegalPageShell from "../components/LegalPageShell";
 
 // Q&A pairs read straight out of messages/*.json (see LegalSections.tsx for
@@ -27,15 +26,14 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function FaqPage() {
   const t = await getTranslations("faqPage");
   const items = t.raw("items") as FaqItem[];
-  const faqJsonLd = buildFaqPageJsonLd(items);
 
   return (
     <LegalPageShell title={t("title")} intro={t("intro")} lastUpdated={t("lastUpdated")} notice={t("notice")}>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLdString(faqJsonLd) }}
-      />
-      {/* Native <details>/<summary> accordion — collapsible without any
+      {/* No FAQPage JSON-LD here (issue #204's audit): Google retired the
+          FAQ rich result on 2026-05-07, confirmed via two independent fetches
+          of the changelog dated 2026-05-08 and 2026-06-15 — the feature no
+          longer appears in Search results for anyone, not just this site.
+          Native <details>/<summary> accordion — collapsible without any
           client-side JavaScript (and therefore without turning this static
           page into a client component), and each answer stays in the DOM so
           it's still found by in-page search and by crawlers. */}
