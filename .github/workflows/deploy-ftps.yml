@@ -1,7 +1,14 @@
 name: Deploy prebuilt via FTPS
 
 on:
+  push:
+    branches:
+      - master
   workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
 
 env:
   # Document root is ~/public_html on sng105 (xiangshuicn.cc).
@@ -22,6 +29,15 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
 
       - name: Build app
         run: npm run build
