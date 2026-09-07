@@ -1,14 +1,15 @@
-# 502 Origin Recovery Runbook（bid.j172.tw）
+# 502 Origin Recovery Runbook（xiangshuicn.cc）
 
 適用症狀：Cloudflare 顯示 `Error 502` / `origin_bad_gateway`，且站點間歇性 `502/503`。
 
 ## 30 秒判斷
 
 1. 公網檢查（首頁與健康端點）
-   - `https://bid.j172.tw/`
-   - `https://bid.j172.tw/api/health`
-2. 若持續 5xx，直接檢查 origin（帶 Host）
-   - `https://103.21.221.12/api/health` + `Host: bid.j172.tw`
+   - `https://xiangshuicn.cc/`
+   - `https://xiangshuicn.cc/api/health`
+2. 若持續 5xx，直接檢查 origin（SSH 本機 loopback 或向 Origin IP 帶 Host header）
+   - SSH 本機：`curl -s http://127.0.0.1:3001/api/health`
+   - 直連 origin：`https://<ORIGIN_IP>/api/health` + `Host: xiangshuicn.cc`
 3. 若看到下列字樣，根因即為 Node/Next 程序不在線：
    - `Proxy error: Failed to connect to 127.0.0.1:3001`
 
@@ -29,8 +30,8 @@
 
 ## 驗證完成條件
 
-- `https://bid.j172.tw/api/health` 回 `200` 且含 `"ok":true`
-- `https://bid.j172.tw/` 回 `200`
+- `https://xiangshuicn.cc/api/health` 回 `200` 且含 `"ok":true`
+- `https://xiangshuicn.cc/` 回 `200`
 - 不再出現 Cloudflare 502/503 錯誤頁
 
 ## 已知背景（本 repo）

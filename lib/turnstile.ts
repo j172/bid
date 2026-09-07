@@ -2,8 +2,8 @@ import { httpsRequest } from "@/lib/httpsRequest";
 
 // Cloudflare Turnstile anti-abuse check for the public /contact form (issue
 // #104). CLOUDFLARE_TURNSTILE_SITE_KEY (not secret — safe in the client
-// form) and CLOUDFLARE_TURNSTILE_SECRET_KEY belong to the site's existing
-// "j172tw" Turnstile widget; both live in .env only, never committed.
+// form) and CLOUDFLARE_TURNSTILE_SECRET_KEY belong to the site's Turnstile
+// widget; both live in .env only, never committed.
 
 // Deliberately node:https instead of the global fetch() underneath (and why
 // it isn't fetch()) — see lib/httpsRequest.ts, the shared transport this now
