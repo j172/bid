@@ -3,7 +3,7 @@ name: Spec / implementation ticket
 about: Turn a product or engineering spec into an executable ticket
 title: ""
 labels: needs-triage
-assignees: ""
+assignees: []
 ---
 
 ## Outcome
