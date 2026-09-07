@@ -409,6 +409,22 @@ async function ensureIndex(
   return false;
 }
 
+export async function ensureHomepageVideosVideoIdIndex(db: mysql.Pool): Promise<void> {
+  try {
+    await ensureIndex(
+      db,
+      "homepage_videos",
+      "uq_homepage_videos_video_id",
+      "UNIQUE INDEX uq_homepage_videos_video_id (video_id)",
+    );
+  } catch (cause) {
+    throw new Error(
+      "無法建立 homepage_videos.uq_homepage_videos_video_id：duplicate data（重複的 video_id）。請先手動清理，再重新啟動；系統不會自動刪除資料。",
+      { cause },
+    );
+  }
+}
+
 async function ensureBiddingColumns(db: mysql.Pool): Promise<void> {
   const currentPriceAdded = await ensureColumn(db, "listings", "current_price", "BIGINT NOT NULL DEFAULT 0");
   if (currentPriceAdded) {
@@ -632,12 +648,7 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensureNewsBroadcastColumn(db);
   await ensureEmailVerificationColumns(db);
   await ensurePigeonShowcaseCategories(db);
-  await ensureIndex(
-    db,
-    "homepage_videos",
-    "uq_homepage_videos_video_id",
-    "UNIQUE INDEX uq_homepage_videos_video_id (video_id)",
-  );
+  await ensureHomepageVideosVideoIdIndex(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {

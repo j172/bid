@@ -101,6 +101,36 @@ describe("/api/admin/homepage-videos/[id]", () => {
       const json = await res.json();
       expect(json.error).toBe("請輸入影片標題");
     });
+
+    it("validates id, JSON, field types and maps service errors", async () => {
+      vi.mocked(requireAdmin).mockResolvedValue({
+        user: { id: 1, email: "admin@example.com", role: "admin" },
+      });
+      const invalidId = await PUT(new Request("http://localhost", { method: "PUT", body: "{}" }), {
+        params: Promise.resolve({ id: "nope" }),
+      });
+      expect(invalidId.status).toBe(404);
+
+      const malformed = await PUT(new Request("http://localhost", { method: "PUT", body: "{" }), {
+        params: Promise.resolve({ id: "1" }),
+      });
+      expect(malformed.status).toBe(400);
+
+      const invalid = await PUT(new Request("http://localhost", {
+        method: "PUT",
+        body: JSON.stringify({ title: "測試", youtubeUrl: "https://youtu.be/abc", sortOrder: 0, isActive: "yes" }),
+      }), { params: Promise.resolve({ id: "1" }) });
+      expect(invalid.status).toBe(400);
+      expect((await invalid.json()).error).toBe("啟用狀態格式錯誤");
+
+      vi.mocked(updateHomepageVideo).mockResolvedValueOnce({ ok: false, error: "影片已存在" });
+      const mapped = await PUT(new Request("http://localhost", {
+        method: "PUT",
+        body: JSON.stringify({ title: "測試", youtubeUrl: "https://youtu.be/abc", sortOrder: 0, isActive: false }),
+      }), { params: Promise.resolve({ id: "1" }) });
+      expect(mapped.status).toBe(400);
+      expect((await mapped.json()).error).toBe("影片已存在");
+    });
   });
 
   describe("DELETE", () => {

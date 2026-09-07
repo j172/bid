@@ -9,13 +9,24 @@ import {
   updateHomepageVideo,
 } from "./homepageVideos";
 
-const { queryMock, invalidateCacheMock } = vi.hoisted(() => ({
+const { queryMock, connectionQueryMock, connectionMock, invalidateCacheMock } = vi.hoisted(() => ({
   queryMock: vi.fn(),
+  connectionQueryMock: vi.fn(),
+  connectionMock: {
+    query: vi.fn(),
+    beginTransaction: vi.fn(),
+    commit: vi.fn(),
+    rollback: vi.fn(),
+    release: vi.fn(),
+  },
   invalidateCacheMock: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
-  getDb: async () => ({ query: queryMock }),
+  getDb: async () => ({
+    query: queryMock,
+    getConnection: async () => connectionMock,
+  }),
 }));
 
 vi.mock("@/lib/cache", () => ({
@@ -24,6 +35,18 @@ vi.mock("@/lib/cache", () => ({
 
 beforeEach(() => {
   queryMock.mockReset();
+  connectionQueryMock.mockReset();
+  connectionMock.query = connectionQueryMock;
+  connectionMock.beginTransaction.mockReset().mockResolvedValue(undefined);
+  connectionMock.commit.mockReset().mockResolvedValue(undefined);
+  connectionMock.rollback.mockReset().mockResolvedValue(undefined);
+  connectionMock.release.mockReset();
+  connectionQueryMock.mockImplementation((sql: string, params?: unknown[]) => {
+    if (sql.startsWith("SELECT GET_LOCK")) return Promise.resolve([[{ acquired: 1 }]]);
+    if (sql.startsWith("SELECT RELEASE_LOCK")) return Promise.resolve([[{ released: 1 }]]);
+    return queryMock(sql, params);
+  });
+  invalidateCacheMock.mockReset();
 });
 
 const ROW = {
@@ -181,8 +204,9 @@ describe("createHomepageVideo", () => {
 
 describe("updateHomepageVideo", () => {
   it("updates title, videoId and sortOrder successfully", async () => {
+    queryMock.mockResolvedValueOnce([[{ id: 1 }]]); // existing row
     queryMock.mockResolvedValueOnce([[]]); // duplicate check
-    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]); // update
 
     const res = await updateHomepageVideo(1, {
       title: "更新標題",
@@ -192,7 +216,7 @@ describe("updateHomepageVideo", () => {
     });
 
     expect(res).toEqual({ ok: true });
-    expect(queryMock.mock.calls[1][1]).toEqual([
+    expect(queryMock.mock.calls[2][1]).toEqual([
       "更新標題",
       "https://www.youtube.com/shorts/kJ0_gK3zCsM",
       "kJ0_gK3zCsM",
@@ -204,9 +228,7 @@ describe("updateHomepageVideo", () => {
   });
 
   it("returns error when record does not exist", async () => {
-    queryMock.mockResolvedValueOnce([[]]); // duplicate check
-    queryMock.mockResolvedValueOnce([[{ cnt: 0 }]]); // active count excluding current
-    queryMock.mockResolvedValueOnce([{ affectedRows: 0 }]);
+    queryMock.mockResolvedValueOnce([[]]); // existing row
 
     const res = await updateHomepageVideo(999, {
       title: "更新標題",
@@ -219,6 +241,7 @@ describe("updateHomepageVideo", () => {
   });
 
   it("rejects activation when it would exceed the active limit", async () => {
+    queryMock.mockResolvedValueOnce([[{ id: 1 }]]); // existing row
     queryMock.mockResolvedValueOnce([[]]); // duplicate check
     queryMock.mockResolvedValueOnce([[{ cnt: HOMEPAGE_VIDEOS_MAX }]]); // active count excluding current
 
@@ -233,6 +256,24 @@ describe("updateHomepageVideo", () => {
       ok: false,
       error: `最多只能設定 ${HOMEPAGE_VIDEOS_MAX} 則啟用中的指定影音，請先停用其他影音`,
     });
+    expect(connectionMock.rollback).toHaveBeenCalledOnce();
+    expect(connectionMock.commit).not.toHaveBeenCalled();
+    expect(connectionMock.release).toHaveBeenCalledOnce();
+  });
+
+  it("rolls back and releases the connection when the write fails", async () => {
+    queryMock.mockResolvedValueOnce([[]]); // duplicate check
+    queryMock.mockResolvedValueOnce([[{ cnt: 0 }]]); // active count
+    queryMock.mockResolvedValueOnce([[{ nextOrder: 0 }]]); // sort order
+    queryMock.mockRejectedValueOnce(new Error("write failed"));
+
+    await expect(createHomepageVideo({
+      title: "寫入失敗",
+      youtubeUrl: "https://youtu.be/vy4lQXW-TLM",
+    })).rejects.toThrow("write failed");
+    expect(connectionMock.rollback).toHaveBeenCalledOnce();
+    expect(connectionMock.release).toHaveBeenCalledOnce();
+    expect(invalidateCacheMock).not.toHaveBeenCalled();
   });
 });
 

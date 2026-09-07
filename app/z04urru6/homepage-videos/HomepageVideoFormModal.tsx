@@ -20,7 +20,7 @@ export type EditHomepageVideo = {
 };
 
 type Props =
-  | { mode: "create"; disabled?: boolean; disabledReason?: string }
+  | { mode: "create"; activeLimitReached?: boolean }
   | { mode: "edit"; video: EditHomepageVideo };
 
 export default function HomepageVideoFormModal(props: Props) {
@@ -35,7 +35,7 @@ export default function HomepageVideoFormModal(props: Props) {
   const [title, setTitle] = useState(isEdit ? props.video.title : "");
   const [youtubeUrl, setYoutubeUrl] = useState(isEdit ? props.video.youtubeUrl : "");
   const [sortOrder, setSortOrder] = useState(isEdit ? String(props.video.sortOrder) : "");
-  const [isActive, setIsActive] = useState(isEdit ? props.video.isActive : true);
+  const [isActive, setIsActive] = useState(isEdit ? props.video.isActive : !props.activeLimitReached);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -48,7 +48,7 @@ export default function HomepageVideoFormModal(props: Props) {
     setTitle(isEdit ? props.video.title : "");
     setYoutubeUrl(isEdit ? props.video.youtubeUrl : "");
     setSortOrder(isEdit ? String(props.video.sortOrder) : "");
-    setIsActive(isEdit ? props.video.isActive : true);
+    setIsActive(isEdit ? props.video.isActive : !props.activeLimitReached);
     setError(null);
   }
 
@@ -123,12 +123,10 @@ export default function HomepageVideoFormModal(props: Props) {
       ) : (
         <button
           type="button"
-          disabled={props.disabled}
           onClick={() => {
             resetForm();
             setOpen(true);
           }}
-          title={props.disabled ? props.disabledReason : undefined}
           className="inline-flex items-center gap-1.5 rounded-md bg-interactive-primary px-3.5 py-2 text-sm font-medium text-white shadow-sm hover:opacity-95 disabled:cursor-not-allowed disabled:bg-slate-400"
         >
           ＋ 新增指定影音
@@ -237,6 +235,12 @@ export default function HomepageVideoFormModal(props: Props) {
                 </label>
               </div>
             </div>
+
+            {!isEdit && props.activeLimitReached && (
+              <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                目前已達 6 則啟用上限；此新增項目預設為停用草稿，名額空出後即可啟用。
+              </p>
+            )}
 
             {error && <p className="text-sm text-ended">{error}</p>}
 

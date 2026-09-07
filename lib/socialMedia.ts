@@ -110,6 +110,21 @@ export function parseYouTubeRss(xml: string): SocialItem[] {
   return items;
 }
 
+function uniqueYouTubeItems(items: SocialItem[]): SocialItem[] {
+  const seen = new Set<string>();
+  return items
+    .filter((item) => {
+      if (item.platform !== "youtube" || seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    })
+    .slice(0, 6);
+}
+
+function fallbackYouTubeItems(): SocialItem[] {
+  return uniqueYouTubeItems(FALLBACK_SOCIAL_ITEMS);
+}
+
 export async function fetchYouTubeFeed(): Promise<SocialItem[]> {
   try {
     const res = await fetch(YOUTUBE_RSS_URL, {
@@ -121,14 +136,14 @@ export async function fetchYouTubeFeed(): Promise<SocialItem[]> {
     });
     if (!res.ok) {
       console.warn(`[socialMedia] YouTube RSS returned status ${res.status}`);
-      return FALLBACK_SOCIAL_ITEMS.filter((item) => item.platform === "youtube");
+      return fallbackYouTubeItems();
     }
     const xml = await res.text();
     const items = parseYouTubeRss(xml);
-    return items.length > 0 ? items : FALLBACK_SOCIAL_ITEMS.filter((item) => item.platform === "youtube");
+    return items.length > 0 ? uniqueYouTubeItems(items) : fallbackYouTubeItems();
   } catch (err) {
     console.warn("[socialMedia] Failed to fetch YouTube RSS, using fallback:", err);
-    return FALLBACK_SOCIAL_ITEMS.filter((item) => item.platform === "youtube");
+    return fallbackYouTubeItems();
   }
 }
 
@@ -149,20 +164,14 @@ export async function getSocialMediaFeed(): Promise<SocialItem[]> {
         const specifiedIds = new Set(specifiedItems.map((item) => item.id));
         const rssItems = await fetchYouTubeFeed();
         const supplementalItems = rssItems.filter((item) => !specifiedIds.has(item.id));
-        return [...specifiedItems, ...supplementalItems].slice(0, 6);
+        return uniqueYouTubeItems([...specifiedItems, ...supplementalItems]);
       } catch (err) {
         console.warn("[socialMedia] Failed to load homepage_videos, falling back to RSS:", err);
       }
       return fetchYouTubeFeed();
     });
     const nonYoutube = FALLBACK_SOCIAL_ITEMS.filter((item) => item.platform !== "youtube");
-    const seen = new Set<string>();
-    const uniqueYoutube = youtubeItems.filter((item) => {
-      if (seen.has(item.id)) return false;
-      seen.add(item.id);
-      return true;
-    });
-    return [...uniqueYoutube.slice(0, 6), ...nonYoutube];
+    return [...uniqueYouTubeItems(youtubeItems), ...nonYoutube];
   } catch {
     return FALLBACK_SOCIAL_ITEMS;
   }

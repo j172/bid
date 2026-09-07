@@ -29,8 +29,7 @@ export default async function HomepageVideosAdminPage() {
           </span>
           <HomepageVideoFormModal
             mode="create"
-            disabled={isFull}
-            disabledReason={`最多只能設定 ${HOMEPAGE_VIDEOS_MAX} 則指定影音，如需新增請先刪除或編輯現有影音`}
+            activeLimitReached={isFull}
           />
         </div>
       </AdminPageIntro>

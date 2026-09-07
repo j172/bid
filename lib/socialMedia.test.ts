@@ -48,12 +48,32 @@ describe("socialMedia", () => {
     expect(items[0].thumbnailUrl).toBe("https://i.ytimg.com/vi/sample12345/hqdefault.jpg");
   });
 
+  it("deduplicates repeated RSS video IDs and caps the result at six", async () => {
+    const entries = Array.from({ length: 7 }, (_, index) => `
+      <entry><yt:videoId>video${index}12345</yt:videoId><title>影片 ${index}</title></entry>
+    `).join("");
+    const duplicate = `<entry><yt:videoId>video012345</yt:videoId><title>重複</title></entry>`;
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      text: async () => `<feed>${entries}${duplicate}</feed>`,
+    } as Response);
+
+    const items = await fetchYouTubeFeed();
+
+    expect(items).toHaveLength(6);
+    expect(new Set(items.map((item) => item.id)).size).toBe(6);
+  });
+
   it("falls back to fallback items if fetch fails", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Network offline"));
     const items = await fetchYouTubeFeed();
     expect(items.length).toBeGreaterThan(0);
     expect(items.every((i) => i.platform === "youtube")).toBe(true);
     expect(fetchSpy.mock.calls[0][1]).toEqual(expect.objectContaining({ signal: expect.any(AbortSignal) }));
+    const timeoutSpy = vi.spyOn(AbortSignal, "timeout");
+    fetchSpy.mockRejectedValueOnce(new Error("Network offline"));
+    await fetchYouTubeFeed();
+    expect(timeoutSpy).toHaveBeenCalledWith(5000);
   });
 
   it("getSocialMediaFeed returns combined items including YouTube, Facebook, and TikTok", async () => {

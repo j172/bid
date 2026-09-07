@@ -97,6 +97,22 @@ describe("/api/admin/homepage-videos", () => {
       expect(json.error).toBe("請輸入 YouTube 影片網址");
     });
 
+    it("rejects malformed JSON and invalid field types", async () => {
+      vi.mocked(requireAdmin).mockResolvedValue({
+        user: { id: 1, email: "admin@example.com", role: "admin" },
+      });
+      const malformed = await POST(new Request("http://localhost", { method: "POST", body: "{" }));
+      expect(malformed.status).toBe(400);
+
+      const invalid = await POST(new Request("http://localhost", {
+        method: "POST",
+        body: JSON.stringify({ title: "測試", youtubeUrl: "https://youtu.be/123", sortOrder: 1.5, isActive: "yes" }),
+      }));
+      expect(invalid.status).toBe(400);
+      expect((await invalid.json()).error).toBe("排序必須是不小於 0 的整數");
+      expect(createHomepageVideo).not.toHaveBeenCalled();
+    });
+
     it("creates video and returns 200 on success", async () => {
       vi.mocked(requireAdmin).mockResolvedValueOnce({
         user: { id: 1, email: "admin@example.com", role: "admin" },
@@ -117,6 +133,12 @@ describe("/api/admin/homepage-videos", () => {
       const json = await res.json();
       expect(json.ok).toBe(true);
       expect(json.id).toBe(5);
+      expect(createHomepageVideo).toHaveBeenCalledWith({
+        title: "精選影片",
+        youtubeUrl: "https://www.youtube.com/watch?v=vy4lQXW-TLM",
+        sortOrder: 1,
+        isActive: true,
+      });
     });
 
     it("returns 400 when createHomepageVideo returns error", async () => {
