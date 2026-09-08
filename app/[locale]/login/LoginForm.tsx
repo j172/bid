@@ -7,6 +7,7 @@ import TurnstileWidget, { type TurnstileWidgetHandle } from "@/app/components/Tu
 import { inputClass } from "@/lib/formStyles";
 import { usePostJson } from "@/lib/usePostJson";
 import AuthFormShell from "../components/AuthFormShell";
+import GoogleSignInButton from "../components/GoogleSignInButton";
 import EmailOtpStep from "./EmailOtpStep";
 import PasskeyLoginButton from "./PasskeyLoginButton";
 import TotpStep from "./TotpStep";
@@ -145,8 +146,12 @@ export default function LoginForm({ turnstileSiteKey }: LoginFormProps) {
       <TotpStep
         email={email}
         password={password}
+        challengeToken={challengeToken}
         turnstileSiteKey={turnstileSiteKey}
-        onBack={() => setTotpRequired(false)}
+        onBack={() => {
+          setTotpRequired(false);
+          setChallengeToken(null);
+        }}
       />
     );
   }
@@ -193,7 +198,20 @@ export default function LoginForm({ turnstileSiteKey }: LoginFormProps) {
               )}
             </div>
           )}
-          <PasskeyLoginButton />
+          <div className="flex flex-col gap-3">
+            <GoogleSignInButton
+              onTwoFactorRequired={(data) => {
+                if (data.twoFactorMethod === "email_otp") {
+                  setChallengeToken(data.challengeToken);
+                } else if (data.twoFactorMethod === "totp") {
+                  setEmail(data.email);
+                  setChallengeToken(data.challengeToken);
+                  setTotpRequired(true);
+                }
+              }}
+            />
+            <PasskeyLoginButton />
+          </div>
           <p className="text-sm text-ink-light">
             {t("noAccount")}{" "}
             <Link href="/register" className="font-medium text-interactive-primary hover:underline">

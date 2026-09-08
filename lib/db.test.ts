@@ -9,6 +9,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   ensureEmailVerificationColumns,
+  ensureGoogleAuthColumns,
   ensureHomepageVideosVideoIdIndex,
   schemaStatements,
   splitSqlStatements,
@@ -78,6 +79,33 @@ describe("ensureHomepageVideosVideoIdIndex", () => {
     );
     expect(query).toHaveBeenCalledTimes(2);
     expect(query.mock.calls.some(([sql]) => String(sql).match(/DELETE|UPDATE/i))).toBe(false);
+  });
+});
+
+describe("ensureGoogleAuthColumns", () => {
+  it("adds google_id, creates unique index, and relaxes password nullability", async () => {
+    const calls: [string, unknown[] | undefined][] = [];
+    const db = fakePool((sql, params) => {
+      calls.push([sql, params]);
+      if (sql.includes("information_schema.COLUMNS")) {
+        return [[{ cnt: 0 }]];
+      }
+      if (sql.includes("information_schema.STATISTICS")) {
+        return [[{ cnt: 0 }]];
+      }
+      return [{}];
+    });
+
+    await ensureGoogleAuthColumns(db);
+
+    expect(calls[0][0]).toContain("information_schema.COLUMNS");
+    expect(calls[0][1]).toEqual(["users", "google_id"]);
+    expect(calls[1][0]).toBe("ALTER TABLE users ADD COLUMN google_id VARCHAR(255) NULL");
+    expect(calls[2][0]).toContain("information_schema.STATISTICS");
+    expect(calls[2][1]).toEqual(["users", "uq_users_google_id"]);
+    expect(calls[3][0]).toBe("ALTER TABLE users ADD UNIQUE KEY uq_users_google_id (google_id)");
+    expect(calls[4][0]).toBe("ALTER TABLE users MODIFY COLUMN password_hash VARCHAR(255) NULL");
+    expect(calls[5][0]).toBe("ALTER TABLE users MODIFY COLUMN password_salt VARCHAR(255) NULL");
   });
 });
 

@@ -8,8 +8,10 @@ import { routing } from "@/i18n/routing";
 import { SITE_URL } from "@/lib/siteUrl";
 import { absoluteUrl, buildOrganizationJsonLd, buildWebSiteJsonLd } from "@/lib/seo";
 import { safeJsonLdString } from "@/lib/jsonLdScript";
+import { getCurrentUser } from "@/lib/auth";
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import GoogleAnalytics from "./components/GoogleAnalytics";
+import GoogleOneTap from "./components/GoogleOneTap";
 import MicrosoftClarity from "./components/MicrosoftClarity";
 import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
@@ -113,6 +115,7 @@ export default async function LocaleLayout({
 
   const websiteJsonLd = buildWebSiteJsonLd();
   const organizationJsonLd = buildOrganizationJsonLd();
+  const user = await getCurrentUser();
 
   return (
     <html lang={locale}>
@@ -128,6 +131,12 @@ export default async function LocaleLayout({
       </head>
       <body className="min-h-screen font-sans text-ink">
         <NextIntlClientProvider>
+          {!user && (
+            <GoogleOneTap
+              clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+              locale={locale}
+            />
+          )}
           <GoogleAnalytics />
           <MicrosoftClarity />
           <Suspense fallback={null}>

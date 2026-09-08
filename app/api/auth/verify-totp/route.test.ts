@@ -75,6 +75,14 @@ const baseUser = {
   two_factor_method: "totp" as const,
 };
 
+const { verifyGoogle2faChallengeMock } = vi.hoisted(() => ({
+  verifyGoogle2faChallengeMock: vi.fn(),
+}));
+
+vi.mock("@/lib/googleAuth", () => ({
+  verifyGoogle2faChallenge: verifyGoogle2faChallengeMock,
+}));
+
 beforeEach(() => {
   findUserByEmailMock.mockReset();
   findUserByEmailMock.mockResolvedValue(baseUser);
@@ -89,6 +97,8 @@ beforeEach(() => {
   verifyTotpLoginMock.mockResolvedValue({ ok: true, usedBackupCode: false, remainingBackupCodes: 8 });
   verifyTurnstileTokenMock.mockReset();
   verifyTurnstileTokenMock.mockResolvedValue(true);
+  verifyGoogle2faChallengeMock.mockReset();
+  verifyGoogle2faChallengeMock.mockReturnValue(null);
 });
 
 describe("POST /api/auth/verify-totp — Turnstile (issue #140 H-1)", () => {
@@ -170,6 +180,39 @@ describe("POST /api/auth/verify-totp — Turnstile (issue #140 H-1)", () => {
     expect(response.status).toBe(401);
     expect(data).toEqual({ ok: false, errorCode: "EMAIL_OR_PASSWORD_INCORRECT" });
     expect(recordLoginFailureMock).toHaveBeenCalledWith(baseUser.email, "203.0.113.7");
+    expect(verifyTotpLoginMock).not.toHaveBeenCalled();
+  });
+
+  it("supports challengeToken from Google 2FA challenge without requiring password", async () => {
+    verifyGoogle2faChallengeMock.mockReturnValue({ userId: baseUser.id, email: baseUser.email });
+
+    const response = await POST(
+      verifyTotpRequest({ challengeToken: "valid-challenge-token", code: "123456" }),
+    );
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data).toEqual({
+      ok: true,
+      user: { id: baseUser.id, email: baseUser.email, role: baseUser.role },
+      usedBackupCode: false,
+      remainingBackupCodes: 8,
+    });
+    expect(verifyPasswordMock).not.toHaveBeenCalled();
+    expect(verifyTotpLoginMock).toHaveBeenCalledWith(baseUser.id, "123456");
+    expect(createSessionMock).toHaveBeenCalledWith(baseUser.id);
+  });
+
+  it("rejects invalid challengeToken", async () => {
+    verifyGoogle2faChallengeMock.mockReturnValue(null);
+
+    const response = await POST(
+      verifyTotpRequest({ challengeToken: "invalid-token", code: "123456" }),
+    );
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data).toEqual({ ok: false, errorCode: "TOTP_CODE_INVALID" });
     expect(verifyTotpLoginMock).not.toHaveBeenCalled();
   });
 });

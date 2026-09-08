@@ -36,9 +36,9 @@ export default async function AccountPage() {
       </section>
 
       <section className="mt-6 rounded-lg border border-border bg-surface p-6 shadow-sm">
-        <h2 className="text-lg font-semibold">{t("passwordTitle")}</h2>
+        <h2 className="text-lg font-semibold">{profile?.hasPassword ? t("passwordTitle") : t("setPasswordTitle")}</h2>
         <div className="mt-4">
-          <ChangePasswordForm />
+          <ChangePasswordForm initialHasPassword={profile?.hasPassword ?? true} />
         </div>
       </section>
 

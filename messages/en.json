@@ -265,9 +265,10 @@
     "defaultError": "Failed to place bid",
     "closedViaBinLeading": "Your bid reached the buy-it-now price — you won it outright!",
     "closedViaBinNotLeading": "The bid reached the buy-it-now price and the item has already been won by someone else.",
-    "leading": "You're currently the highest bidder!",
-    "notLeading": "Bid submitted, but someone else is currently bidding higher — you're not leading.",
-    "ntdHint": "Enter the amount in New Taiwan Dollars (NTD)"
+    "leading": "You are currently the highest bidder!",
+    "notLeading": "Bid placed, but someone has already bid higher. You are not currently leading.",
+    "completeProfileLink": "Go to Account Settings to complete profile →",
+    "ntdHint": "Please enter amount in NTD"
   },
   "autoBiddingInfo": {
     "title": "How Auto Bidding Works",
@@ -277,10 +278,11 @@
     "step3": "This continues until the other bidder gives up, or your bid reaches your maximum"
   },
   "buyNowButton": {
-    "confirm": "Buy it now for {price}? This cannot be undone.",
+    "confirm": "Are you sure you want to buy this listing outright for {price}? This action cannot be undone.",
     "button": "Buy It Now ({price})",
+    "completeProfileLink": "Go to Account Settings to complete profile →",
     "submitting": "Processing...",
-    "defaultError": "Failed to buy now"
+    "defaultError": "Buy-out failed"
   },
   "purchaseForm": {
     "soldOut": "Sold out",
@@ -322,9 +324,11 @@
     "totpSubmit": "Verify and log in",
     "totpSubmitting": "Verifying...",
     "totpContinue": "Continue",
-    "totpBackupCodeUsedNotice": "Logged in with a backup code. You have {count} backup codes left.",
+    "totpBackupCodeUsedNotice": "Signed in with a backup code. You have {count} backup codes remaining.",
     "passkeyDivider": "or",
-    "passkeyLoginButton": "Log in with a passkey",
+    "passkeyLoginButton": "Sign in with a passkey",
+    "googleSignIn": "Sign in with Google",
+    "orDivider": "OR",
     "passkeySubmitting": "Verifying...",
     "passkeyBrowserError": "Couldn't log in with a passkey — check that your device supports it and try again",
     "resendVerificationPrompt": "Your email address hasn't been verified yet.",
@@ -382,6 +386,7 @@
     "title": "Account Settings",
     "profileTitle": "Profile",
     "passwordTitle": "Change Password",
+    "setPasswordTitle": "Set Login Password",
     "twoFactorTitle": "Email Two-Factor Authentication",
     "twoFactorDescription": "When enabled, logging in requires a 6-digit code sent to your email in addition to your password.",
     "totpTitle": "Authenticator App (TOTP)",
@@ -401,12 +406,14 @@
     "defaultError": "Update failed"
   },
   "changePasswordForm": {
-    "oldPassword": "Current Password",
-    "newPassword": "New Password (at least 8 characters)",
-    "submit": "Change Password",
+    "oldPassword": "Current password",
+    "newPassword": "New password (at least 8 characters)",
+    "submit": "Update Password",
+    "setSubmit": "Set Password",
     "submitting": "Updating...",
     "saved": "Password updated",
-    "defaultError": "Failed to change password"
+    "setSaved": "Password set successfully",
+    "defaultError": "Failed to update password"
   },
   "deleteAccountButton": {
     "confirm": "Delete your account? This cannot be undone.",
@@ -610,8 +617,11 @@
     "CONTACT_SUBJECT_TOO_LONG": "Subject can't be longer than 200 characters",
     "CONTACT_MESSAGE_REQUIRED": "Please enter a message",
     "CONTACT_MESSAGE_TOO_LONG": "Message can't be longer than 2000 characters",
-    "TURNSTILE_VERIFICATION_FAILED": "Verification failed, please complete the challenge again and resubmit",
-    "CONTACT_SUBMIT_FAILED": "Failed to send, please try again later"
+    "TURNSTILE_VERIFICATION_FAILED": "Verification failed. Please complete the verification and try again.",
+    "CONTACT_SUBMIT_FAILED": "Failed to send message. Please try again later.",
+    "PROFILE_INCOMPLETE": "Please complete your phone number and shipping address in account settings before bidding or purchasing",
+    "GOOGLE_AUTH_FAILED": "Google authentication failed. Please try again later",
+    "PASSWORD_ALREADY_SET": "A password has already been set for this account. Please use the change password function"
   },
   "pigeonShowcase": {
     "title": "Pigeon Showcase",

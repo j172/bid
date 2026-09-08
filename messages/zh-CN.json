@@ -267,6 +267,7 @@
     "closedViaBinNotLeading": "出价已达买断价，商品已由他人得标。",
     "leading": "你目前是最高出价者！",
     "notLeading": "已送出，但目前有人出价更高，你并未领先。",
+    "completeProfileLink": "前往填写个人资料 →",
     "ntdHint": "请输入新台币金额"
   },
   "autoBiddingInfo": {
@@ -279,6 +280,7 @@
   "buyNowButton": {
     "confirm": "确定要以买断价 {price} 直接得标吗？此动作无法撤销。",
     "button": "一键买断（{price}）",
+    "completeProfileLink": "前往填写个人资料 →",
     "submitting": "处理中...",
     "defaultError": "买断失败"
   },
@@ -324,7 +326,9 @@
     "totpContinue": "继续",
     "totpBackupCodeUsedNotice": "已使用备用码登录，你还剩 {count} 组备用码可用。",
     "passkeyDivider": "或",
-    "passkeyLoginButton": "使用通行密钥登录",
+    "passkeyLoginButton": "使用通行密匙登录",
+    "googleSignIn": "使用 Google 账号登录",
+    "orDivider": "或",
     "passkeySubmitting": "验证中...",
     "passkeyBrowserError": "无法使用通行密钥登录，请确认设备支持并再试一次",
     "resendVerificationPrompt": "你的邮箱尚未完成验证。",
@@ -382,6 +386,7 @@
     "title": "账户设置",
     "profileTitle": "个人资料",
     "passwordTitle": "修改密码",
+    "setPasswordTitle": "设置登录密码",
     "twoFactorTitle": "Email 两阶段验证",
     "twoFactorDescription": "开启后，每次登录除了密码外，还需要输入发送到你 email 的 6 位数验证码。",
     "totpTitle": "App 验证码（TOTP）",
@@ -404,8 +409,10 @@
     "oldPassword": "旧密码",
     "newPassword": "新密码（至少 8 个字符）",
     "submit": "修改密码",
+    "setSubmit": "设置密码",
     "submitting": "更新中...",
     "saved": "密码已更新",
+    "setSaved": "密码已设置成功",
     "defaultError": "修改密码失败"
   },
   "deleteAccountButton": {
@@ -610,8 +617,11 @@
     "CONTACT_SUBJECT_TOO_LONG": "主题不能超过 200 个字",
     "CONTACT_MESSAGE_REQUIRED": "请输入留言内容",
     "CONTACT_MESSAGE_TOO_LONG": "留言内容不能超过 2000 个字",
-    "TURNSTILE_VERIFICATION_FAILED": "验证失败，请重新完成验证后再送出",
-    "CONTACT_SUBMIT_FAILED": "发送失败，请稍后再试"
+    "TURNSTILE_VERIFICATION_FAILED": "验证失败，请重新勾选验证后再送出",
+    "CONTACT_SUBMIT_FAILED": "送出失败，请稍后再试",
+    "PROFILE_INCOMPLETE": "出价或购买前，请先至账户设置填写联络电话与收件地址",
+    "GOOGLE_AUTH_FAILED": "Google 登录验证失败，请稍后再试",
+    "PASSWORD_ALREADY_SET": "该账户已设置过密码，请使用修改密码功能"
   },
   "pigeonShowcase": {
     "title": "舍内名鸽名鉴",

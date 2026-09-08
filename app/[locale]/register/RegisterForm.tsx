@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import { inputClass } from "@/lib/formStyles";
 import { usePostJson } from "@/lib/usePostJson";
 import AuthFormShell from "../components/AuthFormShell";
+import GoogleSignInButton from "../components/GoogleSignInButton";
 import PasswordStrengthMeter from "@/app/components/PasswordStrengthMeter";
 
 export default function RegisterForm() {
@@ -57,12 +58,15 @@ export default function RegisterForm() {
       submittingLabel={t("submitting")}
       error={error}
       footer={
-        <p className="mt-4 text-sm text-ink-light">
-          {t("haveAccount")}{" "}
-          <Link href="/login" className="font-medium text-interactive-primary hover:underline">
-            {t("loginLink")}
-          </Link>
-        </p>
+        <div className="flex flex-col gap-3">
+          <GoogleSignInButton />
+          <p className="text-sm text-ink-light">
+            {t("haveAccount")}{" "}
+            <Link href="/login" className="font-medium text-interactive-primary hover:underline">
+              {t("loginLink")}
+            </Link>
+          </p>
+        </div>
       }
     >
       <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">

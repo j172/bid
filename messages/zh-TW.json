@@ -267,6 +267,7 @@
     "closedViaBinNotLeading": "出價已達買斷價，商品已由他人得標。",
     "leading": "你目前是最高出價者！",
     "notLeading": "已送出，但目前有人出價更高，你並未領先。",
+    "completeProfileLink": "前往填寫個人資料 →",
     "ntdHint": "請輸入新台幣金額"
   },
   "autoBiddingInfo": {
@@ -279,6 +280,7 @@
   "buyNowButton": {
     "confirm": "確定要以買斷價 {price} 直接得標嗎？此動作無法撤銷。",
     "button": "一鍵買斷（{price}）",
+    "completeProfileLink": "前往填寫個人資料 →",
     "submitting": "處理中...",
     "defaultError": "買斷失敗"
   },
@@ -325,6 +327,8 @@
     "totpBackupCodeUsedNotice": "已使用備用碼登入，你還剩 {count} 組備用碼可用。",
     "passkeyDivider": "或",
     "passkeyLoginButton": "使用通行密鑰登入",
+    "googleSignIn": "使用 Google 帳號登入",
+    "orDivider": "或",
     "passkeySubmitting": "驗證中...",
     "passkeyBrowserError": "無法使用通行密鑰登入，請確認裝置支援並再試一次",
     "resendVerificationPrompt": "你的信箱尚未完成驗證。",
@@ -382,6 +386,7 @@
     "title": "帳戶設定",
     "profileTitle": "個人資料",
     "passwordTitle": "修改密碼",
+    "setPasswordTitle": "設定登入密碼",
     "twoFactorTitle": "Email 兩階段驗證",
     "twoFactorDescription": "開啟後，每次登入除了密碼外，還需要輸入寄到你 email 的 6 位數驗證碼。",
     "totpTitle": "App 驗證碼（TOTP）",
@@ -404,8 +409,10 @@
     "oldPassword": "舊密碼",
     "newPassword": "新密碼（至少 8 個字元）",
     "submit": "修改密碼",
+    "setSubmit": "設定密碼",
     "submitting": "更新中...",
     "saved": "密碼已更新",
+    "setSaved": "密碼已設定成功",
     "defaultError": "修改密碼失敗"
   },
   "deleteAccountButton": {
@@ -611,7 +618,10 @@
     "CONTACT_MESSAGE_REQUIRED": "請輸入訊息內容",
     "CONTACT_MESSAGE_TOO_LONG": "訊息內容不能超過 2000 個字",
     "TURNSTILE_VERIFICATION_FAILED": "驗證失敗，請重新勾選驗證後再送出",
-    "CONTACT_SUBMIT_FAILED": "送出失敗，請稍後再試"
+    "CONTACT_SUBMIT_FAILED": "送出失敗，請稍後再試",
+    "PROFILE_INCOMPLETE": "出價或購買前，請先至帳戶設定填寫聯絡電話與收件地址",
+    "GOOGLE_AUTH_FAILED": "Google 登入驗證失敗，請稍後再試",
+    "PASSWORD_ALREADY_SET": "該帳戶已設定過密碼，請使用修改密碼功能"
   },
   "pigeonShowcase": {
     "title": "舍內名鴿名鑑",
