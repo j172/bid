@@ -1,4 +1,4 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { getCurrentUser } from "@/lib/auth";
 import { Link } from "@/i18n/navigation";
 import NextLink from "next/link";
@@ -9,8 +9,10 @@ import CategoryDropdown, { type PartnerLoftSummary } from "./CategoryDropdown";
 import { listHomepageSections } from "@/lib/homepageSections";
 
 export default async function SiteHeader() {
+  const locale = await getLocale();
   const user = await getCurrentUser();
   const t = await getTranslations("nav");
+  const searchAction = locale === "zh-TW" ? "/listings" : `/${locale}/listings`;
   let partnerLofts: PartnerLoftSummary[] = [];
   try {
     const rawLofts = await listHomepageSections("partner_loft");
@@ -61,9 +63,10 @@ export default async function SiteHeader() {
             {t("menu")}
           </summary>
           <div className="absolute right-0 top-10 z-30 w-60 rounded-lg border border-border bg-white p-2 shadow-xl">
-            <form action="/listings" className="mb-2 flex items-center gap-2 rounded-md bg-slate-50 p-2">
+            <form action={searchAction} className="mb-2 flex items-center gap-2 rounded-md bg-slate-50 p-2">
               <select
                 name="type"
+                aria-label={t("searchAll")}
                 defaultValue=""
                 className="w-20 shrink-0 rounded-md border border-border bg-white px-1.5 py-1.5 text-xs text-ink focus:border-interactive-primary focus:outline-none"
               >
@@ -144,10 +147,11 @@ export default async function SiteHeader() {
         <div className="hidden min-w-0 flex-1 items-center gap-3 lg:flex">
           <CategoryDropdown partnerLofts={partnerLofts} />
 
-          <form action="/listings" className="relative min-w-0 flex-1">
+          <form action={searchAction} className="relative min-w-0 flex-1">
             <div className="flex h-12 w-full overflow-hidden rounded-full border border-slate-200 bg-white shadow-sm">
               <select
                 name="type"
+                aria-label={t("searchAll")}
                 defaultValue=""
                 className="h-full w-32 shrink-0 border-r border-slate-200 bg-slate-50 px-3 text-xs font-medium text-ink focus:outline-none"
               >

@@ -13,7 +13,7 @@ export default function LanguageSwitcher() {
   const router = useRouter();
 
   return (
-    <label className="flex items-center gap-1.5 text-xs text-ink-light">
+    <label className="flex items-center gap-1.5 text-xs text-slate-200">
       <span className="hidden sm:inline">{t("label")}</span>
       <select
         aria-label={t("label")}
