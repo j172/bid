@@ -51,6 +51,7 @@ export default function NewsletterForm() {
             setError(null);
           }}
           placeholder={t("newsletterPlaceholder")}
+          aria-label={t("newsletterPlaceholder")}
           required
           className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-interactive-primary focus:outline-none"
         />
