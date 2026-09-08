@@ -614,6 +614,8 @@
     "CONTACT_SUBMIT_FAILED": "发送失败，请稍后再试"
   },
   "pigeonShowcase": {
+    "title": "舍内名鸽名鉴",
+    "subtitle": "掌握最新入赏鸽／进口鸽／代表种鸽信息，点选卡片查看完整介绍。",
     "awardTitle": "入赏鸽",
     "importedTitle": "进口鸽",
     "representativeTitle": "代表种鸽",
