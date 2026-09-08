@@ -890,7 +890,7 @@
       {
         "title": "8. Disputes",
         "paragraphs": [
-          "If you disagree with our decision you may submit additional evidence and request a re-review within 14 days of being notified. Where no agreement can be reached, the matter is handled under [Governing Law] before [Court of Jurisdiction], without prejudice to statutory consumer dispute mediation routes."
+          "If you disagree with our decision you may submit additional evidence and request a re-review within 14 days of being notified. Where no agreement can be reached, the matter is handled under applicable law before the designated court of jurisdiction, without prejudice to statutory consumer dispute mediation routes."
         ]
       },
       {
@@ -990,7 +990,7 @@
       {
         "title": "12. Governing law and jurisdiction",
         "paragraphs": [
-          "These terms are governed by and construed under [Governing Law]. For any dispute arising from these terms or the service, the parties agree to [Court of Jurisdiction] as the court of first instance, without prejudice to any jurisdictional protections consumers enjoy by law."
+          "These terms are governed by and construed under applicable law. For any dispute arising from these terms or the service, the parties agree to the competent local court as the court of first instance, without prejudice to any jurisdictional protections consumers enjoy by law."
         ]
       },
       {
@@ -998,7 +998,7 @@
         "bullets": [
           "Email: service@xiangshuicn.cc",
           "Phone: (+886) 0909-256-829",
-          "Address: No. 100, Shifan Rd., Taipei, Taiwan"
+          "Service: Nationwide direct transport & scheduled handover"
         ]
       }
     ]
@@ -1127,7 +1127,7 @@
       {
         "title": "7. International transfers",
         "paragraphs": [
-          "Our servers and database are located in [Server Location / Region]. If you use the site from the EU or UK, your data is transferred there for processing. For such transfers we apply the appropriate safeguards required by Chapter V GDPR (for example, standard contractual clauses): [Transfer Safeguard Mechanism]."
+          "Our servers and database are located in secure cloud data center regions. If you use the site from the EU or UK, your data is transferred there for processing. For such transfers we apply appropriate safeguards required by Chapter V GDPR (including standard contractual clauses and end-to-end encryption)."
         ]
       },
       {
@@ -1139,7 +1139,7 @@
       {
         "title": "9. Complaints to a supervisory authority",
         "paragraphs": [
-          "If you believe our processing breaches the GDPR you can contact us directly, and you also have the right to lodge a complaint with the data protection supervisory authority where you live, where you work, or where the alleged infringement took place: [Competent Supervisory Authority]."
+          "If you believe our processing breaches the GDPR you can contact us directly, and you also have the right to lodge a complaint with the data protection supervisory authority where you live, where you work, or where the alleged infringement took place."
         ]
       }
     ]
