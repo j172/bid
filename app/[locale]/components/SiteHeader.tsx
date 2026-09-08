@@ -5,10 +5,21 @@ import NextLink from "next/link";
 import Image from "next/image";
 import LanguageSwitcher from "./LanguageSwitcher";
 import LogoutButton from "./LogoutButton";
+import CategoryDropdown, { type PartnerLoftSummary } from "./CategoryDropdown";
+import { listHomepageSections } from "@/lib/homepageSections";
 
 export default async function SiteHeader() {
   const user = await getCurrentUser();
   const t = await getTranslations("nav");
+  let partnerLofts: PartnerLoftSummary[] = [];
+  try {
+    const rawLofts = await listHomepageSections("partner_loft");
+    partnerLofts = rawLofts
+      .filter((loft) => loft.isActive)
+      .map((loft) => ({ id: loft.id, title: loft.title }));
+  } catch {
+    partnerLofts = [];
+  }
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 text-ink shadow-[0_10px_30px_rgba(15,23,42,0.06)] backdrop-blur">
@@ -78,6 +89,31 @@ export default async function SiteHeader() {
               <Link href="/listings" className="rounded-md px-3 py-2 hover:bg-slate-100">
                 {t("browse")}
               </Link>
+
+              <details className="group rounded-md px-3 py-1 text-ink">
+                <summary className="flex cursor-pointer list-none items-center justify-between py-1 text-sm font-semibold hover:text-interactive-primary">
+                  <span>{t("allCategories")}</span>
+                  <span className="text-xs transition-transform group-open:rotate-180" aria-hidden="true">▾</span>
+                </summary>
+                <div className="mt-1 space-y-1 border-l-2 border-slate-200 pl-3 text-xs">
+                  <Link href="/listings?type=auction" className="block py-1 hover:text-interactive-primary">
+                    ⚡ {t("catAuction")}
+                  </Link>
+                  <Link href="/listings?type=fixed_price" className="block py-1 hover:text-interactive-primary">
+                    🏷️ {t("catFixedPrice")}
+                  </Link>
+                  <Link href="/listings?type=auction&sort=ends_soon&withinHours=6" className="block py-1 hover:text-interactive-primary">
+                    ⏳ {t("catEndingSoon")}
+                  </Link>
+                  <Link href="/pigeon-showcase" className="block py-1 hover:text-interactive-primary">
+                    🏆 {t("catShowcaseTitle")}
+                  </Link>
+                  <Link href="/listings" className="block py-1 text-interactive-primary font-medium hover:underline">
+                    {t("catViewAllListings")}
+                  </Link>
+                </div>
+              </details>
+
               <Link href="/contact" className="rounded-md px-3 py-2 hover:bg-slate-100">
                 {t("contact")}
               </Link>
@@ -106,10 +142,7 @@ export default async function SiteHeader() {
         </details>
 
         <div className="hidden min-w-0 flex-1 items-center gap-3 lg:flex">
-          <button type="button" className="inline-flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-steel-azure-500 to-steel-azure-700 px-4 py-2.5 text-xs font-semibold text-white shadow-sm">
-            {t("allCategories")}
-            <span aria-hidden>▾</span>
-          </button>
+          <CategoryDropdown partnerLofts={partnerLofts} />
 
           <form action="/listings" className="relative min-w-0 flex-1">
             <div className="flex h-12 w-full overflow-hidden rounded-full border border-slate-200 bg-white shadow-sm">
