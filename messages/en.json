@@ -614,6 +614,8 @@
     "CONTACT_SUBMIT_FAILED": "Failed to send, please try again later"
   },
   "pigeonShowcase": {
+    "title": "Pigeon Showcase",
+    "subtitle": "Explore our award-winning, imported, and representative racing pigeons.",
     "awardTitle": "Award Pigeons",
     "importedTitle": "Imported Pigeons",
     "representativeTitle": "Representative Pigeons",
