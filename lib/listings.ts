@@ -427,6 +427,14 @@ export interface ListingCardExtras {
   loftName: string | null;
 }
 
+export const LISTINGS_PAGE_SIZES = [30, 50, 100] as const;
+export type ListingsPageSize = (typeof LISTINGS_PAGE_SIZES)[number];
+export const DEFAULT_LISTINGS_PAGE_SIZE: ListingsPageSize = 30;
+
+export function isListingsPageSize(value: number): value is ListingsPageSize {
+  return (LISTINGS_PAGE_SIZES as readonly number[]).includes(value);
+}
+
 export interface ListOpenListingsOptions {
   /** Filters to listings belonging to this homepage_sections.id (合作鴿舍) — powers /listings?loft=<id> (issue #45). */
   loftId?: number;
@@ -437,6 +445,91 @@ export interface ListOpenListingsOptions {
    * - "all": 'open', 'scheduled', 'closed'
    */
   statusScope?: "open" | "closed" | "all";
+}
+
+export interface ListOpenListingsPaginatedOptions extends ListOpenListingsOptions {
+  page?: number;
+  pageSize?: number;
+  /**
+   * "ending_soon" (default for general /listings): open listings ending soonest first.
+   * "loft_newest": active listings placed first (newest created_at DESC), followed by closed listings (newest created_at DESC).
+   */
+  orderByMode?: "ending_soon" | "loft_newest";
+}
+
+export interface PaginatedListingsResult {
+  items: (ListingWithPhotos & ListingCardExtras)[];
+  total: number;
+}
+
+export async function listOpenListingsPaginated(
+  type?: ListingType,
+  options: ListOpenListingsPaginatedOptions = {},
+): Promise<PaginatedListingsResult> {
+  await syncListingLifecycle();
+  const db = await getDb();
+
+  const conditions: string[] = [];
+  const statusScope = options.statusScope ?? "open";
+  if (statusScope === "closed") {
+    conditions.push("l.status = 'closed'");
+  } else if (statusScope === "all") {
+    conditions.push("l.status IN ('open', 'scheduled', 'closed')");
+  } else {
+    // Scheduled (not-yet-started) auctions are included too
+    conditions.push("l.status IN ('open', 'scheduled')");
+  }
+
+  const params: (string | number)[] = [];
+  if (type) {
+    conditions.push("l.listing_type = ?");
+    params.push(type);
+  }
+  if (options.loftId !== undefined) {
+    conditions.push("l.loft_id = ?");
+    params.push(options.loftId);
+  }
+
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  const [countRows] = await db.query(`SELECT COUNT(*) AS cnt FROM listings l ${where}`, params);
+  const total = (countRows as { cnt?: number }[] | undefined)?.[0]?.cnt ?? 0;
+
+  const { offset, limit } = paginate(options.page, options.pageSize ?? DEFAULT_LISTINGS_PAGE_SIZE);
+
+  let orderBy: string;
+  if (options.orderByMode === "loft_newest") {
+    orderBy =
+      "CASE WHEN l.status IN ('open', 'scheduled') THEN 0 ELSE 1 END ASC, l.created_at DESC, l.id DESC";
+  } else if (statusScope === "closed") {
+    orderBy = "l.ends_at DESC, l.id DESC";
+  } else if (statusScope === "all") {
+    orderBy =
+      "CASE WHEN l.status IN ('open', 'scheduled') THEN 0 ELSE 1 END ASC, l.ends_at IS NULL, l.ends_at ASC, l.id DESC";
+  } else {
+    orderBy = "l.ends_at IS NULL, l.ends_at ASC";
+  }
+
+  const [rows] = await db.query(
+    `SELECT
+       l.*, u.display_name AS leaderDisplayName, loft.title AS loftName,
+       (SELECT COUNT(*) FROM bids WHERE listing_id = l.id) AS bidCount,
+       (SELECT COUNT(*) FROM purchases WHERE listing_id = l.id) AS purchaseCount
+     FROM listings l
+     LEFT JOIN users u ON u.id = l.leader_user_id
+     LEFT JOIN homepage_sections loft ON loft.id = l.loft_id
+     ${where}
+     ORDER BY ${orderBy}
+     LIMIT ${limit} OFFSET ${offset}`,
+    params,
+  );
+  const listings = (rows as (Listing & ListingCardExtras)[] | undefined) ?? [];
+
+  const items: (ListingWithPhotos & ListingCardExtras)[] = [];
+  for (const listing of listings) {
+    items.push({ ...listing, photos: await getPhotoFileNames(listing.id) });
+  }
+  return { items, total };
 }
 
 // Powers the public listings grid's cards (see app/listings/page.tsx) —

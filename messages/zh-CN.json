@@ -667,7 +667,14 @@
     "publishedLine": "发布时间：{date}",
     "sidebarLatest": "名家专区",
     "backToList": "查看更多",
-    "viewListingsCta": "查看商品"
+    "viewListingsCta": "查看商品",
+    "browseLoftPigeons": "浏览本舍鸽子",
+    "openInStore": "在商城开启 ↗",
+    "loftPigeonsTitle": "{loft} 的所有鸽子",
+    "tabListings": "拍卖鸽",
+    "tabShowcase": "名鸽展示",
+    "noListingsInLoft": "目前尚无拍卖鸽。",
+    "noShowcaseInLoft": "目前尚无名鸽展示。"
   },
   "errorPage": {
     "labels": {
