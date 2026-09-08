@@ -196,4 +196,12 @@ describe("listingsHref", () => {
       "/listings?loft=1&tab=showcase&showcaseCategory=award",
     );
   });
+
+  // Issue #228: Featured lofts bottom placement and pager
+  it("preserves featuredPage and featuredPageSize alongside listing filters", () => {
+    expect(listingsHref({ loft: "2", type: "auction", featuredPage: "2", featuredPageSize: "50" })).toBe(
+      "/listings?loft=2&type=auction&featuredPage=2&featuredPageSize=50",
+    );
+  });
 });
+
