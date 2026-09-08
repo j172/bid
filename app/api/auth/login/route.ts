@@ -39,7 +39,12 @@ export async function POST(request: Request) {
   }
 
   const user = await findUserByEmail(email);
-  if (!user || !(await verifyPassword(password, user.password_hash, user.password_salt))) {
+  if (
+    !user ||
+    !user.password_hash ||
+    !user.password_salt ||
+    !(await verifyPassword(password, user.password_hash, user.password_salt))
+  ) {
     await recordLoginFailure(email, ip);
     return NextResponse.json({ ok: false, errorCode: "EMAIL_OR_PASSWORD_INCORRECT" }, { status: 401 });
   }

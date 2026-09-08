@@ -17,14 +17,32 @@ import {
   LISTINGS_PAGE_SIZES,
   listOpenListings,
   listOpenListingsPaginated,
+  placeBid,
+  buyNow,
 } from "./listings";
 import { getGmvSplitByType } from "./dashboard";
 import { AUCTION_GMV_SUBQUERY, FIXED_PRICE_GMV_SUBQUERY } from "./sqlFragments";
 
-const { queryMock } = vi.hoisted(() => ({ queryMock: vi.fn() }));
+const { queryMock, connectionQueryMock, beginTransactionMock, commitMock, rollbackMock } = vi.hoisted(() => {
+  const queryMock = vi.fn();
+  const connectionQueryMock = vi.fn();
+  const beginTransactionMock = vi.fn();
+  const commitMock = vi.fn();
+  const rollbackMock = vi.fn();
+  return { queryMock, connectionQueryMock, beginTransactionMock, commitMock, rollbackMock };
+});
 
 vi.mock("@/lib/db", () => ({
-  getDb: async () => ({ query: queryMock }),
+  getDb: async () => ({
+    query: queryMock,
+    getConnection: async () => ({
+      query: connectionQueryMock,
+      beginTransaction: beginTransactionMock,
+      commit: commitMock,
+      rollback: rollbackMock,
+      release: vi.fn(),
+    }),
+  }),
 }));
 
 // syncListingLifecycle fires notifyWinner for anything it closes; the sweeps
@@ -173,4 +191,47 @@ describe("listOpenListingsPaginated", () => {
     expect(String(selectCall?.[0])).toContain("CASE WHEN l.status IN ('open', 'scheduled') THEN 0 ELSE 1 END ASC, l.created_at DESC, l.id DESC");
   });
 });
+
+describe("bidding profile guard", () => {
+  it("rejects placeBid with PROFILE_INCOMPLETE when bidder has no phone or address", async () => {
+    connectionQueryMock
+      .mockResolvedValueOnce([
+        [
+          {
+            current_price: 1000,
+            status: "open",
+            leader_max_amount: null,
+            leader_user_id: null,
+            ends_at: new Date(Date.now() + 60000),
+            buy_it_now_price: null,
+            created_by: 99,
+          },
+        ],
+      ])
+      .mockResolvedValueOnce([[{ phone: null, address: null }]]);
+
+    const result = await placeBid(1, 10, 1500);
+    expect(result).toEqual({ ok: false, errorCode: "PROFILE_INCOMPLETE" });
+    expect(rollbackMock).toHaveBeenCalled();
+  });
+
+  it("rejects buyNow with PROFILE_INCOMPLETE when buyer has empty phone or address", async () => {
+    connectionQueryMock
+      .mockResolvedValueOnce([
+        [
+          {
+            status: "open",
+            buy_it_now_price: 5000,
+            created_by: 99,
+          },
+        ],
+      ])
+      .mockResolvedValueOnce([[{ phone: "0912345678", address: "   " }]]);
+
+    const result = await buyNow(1, 10);
+    expect(result).toEqual({ ok: false, errorCode: "PROFILE_INCOMPLETE" });
+    expect(rollbackMock).toHaveBeenCalled();
+  });
+});
+
 

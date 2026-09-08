@@ -1,8 +1,11 @@
 CREATE TABLE IF NOT EXISTS users (
   id BIGINT NOT NULL AUTO_INCREMENT,
   email VARCHAR(255) NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
-  password_salt VARCHAR(255) NOT NULL,
+  password_hash VARCHAR(255) NULL,
+  password_salt VARCHAR(255) NULL,
+  -- Google OAuth / Identity Services unique identifier (sub claim, issue #237)
+  -- NULL for accounts registered via traditional email + password.
+  google_id VARCHAR(255) NULL,
   role VARCHAR(20) NOT NULL DEFAULT 'user',
   display_name VARCHAR(50) NULL,
   phone VARCHAR(20) NULL,
@@ -51,7 +54,8 @@ CREATE TABLE IF NOT EXISTS users (
   totp_locked_until DATETIME NULL,
   created_at DATETIME NOT NULL,
   PRIMARY KEY (id),
-  UNIQUE KEY uq_users_email (email)
+  UNIQUE KEY uq_users_email (email),
+  UNIQUE KEY uq_users_google_id (google_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS sessions (

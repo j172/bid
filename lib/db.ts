@@ -10,8 +10,9 @@ const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS users (
   id BIGINT NOT NULL AUTO_INCREMENT,
   email VARCHAR(255) NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
-  password_salt VARCHAR(255) NOT NULL,
+  password_hash VARCHAR(255) NULL,
+  password_salt VARCHAR(255) NULL,
+  google_id VARCHAR(255) NULL,
   role VARCHAR(20) NOT NULL DEFAULT 'user',
   display_name VARCHAR(50) NULL,
   phone VARCHAR(20) NULL,
@@ -19,7 +20,8 @@ CREATE TABLE IF NOT EXISTS users (
   deleted_at DATETIME NULL,
   created_at DATETIME NOT NULL,
   PRIMARY KEY (id),
-  UNIQUE KEY uq_users_email (email)
+  UNIQUE KEY uq_users_email (email),
+  UNIQUE KEY uq_users_google_id (google_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS sessions (
@@ -593,6 +595,21 @@ async function ensurePigeonShowcaseCategories(db: mysql.Pool): Promise<void> {
   await db.query("ALTER TABLE pigeon_showcase MODIFY COLUMN category ENUM('award','imported','representative') NOT NULL");
 }
 
+// Issue #237: Google One Tap / Google Sign-In support. Adds google_id column
+// (Google sub identifier) and relaxes password_hash/password_salt to NULL so
+// accounts registered purely via Google don't require synthetic passwords.
+export async function ensureGoogleAuthColumns(db: mysql.Pool): Promise<void> {
+  await ensureColumn(db, "users", "google_id", "VARCHAR(255) NULL");
+  await ensureIndex(
+    db,
+    "users",
+    "uq_users_google_id",
+    "UNIQUE KEY uq_users_google_id (google_id)",
+  );
+  await db.query("ALTER TABLE users MODIFY COLUMN password_hash VARCHAR(255) NULL");
+  await db.query("ALTER TABLE users MODIFY COLUMN password_salt VARCHAR(255) NULL");
+}
+
 function createPool(): mysql.Pool {
   return mysql.createPool({
     host: process.env.MYSQL_HOST,
@@ -649,6 +666,7 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensureEmailVerificationColumns(db);
   await ensurePigeonShowcaseCategories(db);
   await ensureHomepageVideosVideoIdIndex(db);
+  await ensureGoogleAuthColumns(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {

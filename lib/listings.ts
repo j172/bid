@@ -994,6 +994,18 @@ export async function placeBid(listingId: number, userId: number, maxAmount: num
       return { ok: false, errorCode: "CANNOT_ACT_ON_OWN_LISTING" };
     }
 
+    // Issue #237: Bidding guard — users without phone or address (e.g. registered
+    // via Google One Tap) must complete their profile before bidding.
+    const [userRows] = await connection.query(
+      "SELECT phone, address FROM users WHERE id = ? LIMIT 1",
+      [userId],
+    );
+    const bidder = (userRows as { phone: string | null; address: string | null }[])[0];
+    if (!bidder || !bidder.phone?.trim() || !bidder.address?.trim()) {
+      await connection.rollback();
+      return { ok: false, errorCode: "PROFILE_INCOMPLETE" };
+    }
+
     const result = resolveProxyBid(
       {
         status: listing.status,
@@ -1070,6 +1082,17 @@ export async function buyNow(listingId: number, userId: number): Promise<BuyNowO
     if (listing.created_by === userId) {
       await connection.rollback();
       return { ok: false, errorCode: "CANNOT_ACT_ON_OWN_LISTING" };
+    }
+
+    // Issue #237: Bidding guard — users without phone or address must complete their profile first.
+    const [userRows] = await connection.query(
+      "SELECT phone, address FROM users WHERE id = ? LIMIT 1",
+      [userId],
+    );
+    const buyer = (userRows as { phone: string | null; address: string | null }[])[0];
+    if (!buyer || !buyer.phone?.trim() || !buyer.address?.trim()) {
+      await connection.rollback();
+      return { ok: false, errorCode: "PROFILE_INCOMPLETE" };
     }
 
     const result = resolveBuyNow({ status: listing.status, buyItNowPrice: listing.buy_it_now_price });
@@ -1243,6 +1266,17 @@ export async function purchaseListing(listingId: number, buyerId: number, quanti
     if (listing.created_by === buyerId) {
       await connection.rollback();
       return { ok: false, errorCode: "CANNOT_ACT_ON_OWN_LISTING" };
+    }
+
+    // Issue #237: Purchase guard — users without phone or address must complete their profile first.
+    const [userRows] = await connection.query(
+      "SELECT phone, address FROM users WHERE id = ? LIMIT 1",
+      [buyerId],
+    );
+    const buyer = (userRows as { phone: string | null; address: string | null }[])[0];
+    if (!buyer || !buyer.phone?.trim() || !buyer.address?.trim()) {
+      await connection.rollback();
+      return { ok: false, errorCode: "PROFILE_INCOMPLETE" };
     }
 
     const result = resolvePurchase(

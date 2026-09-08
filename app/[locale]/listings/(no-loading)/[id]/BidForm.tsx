@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { useState } from "react";
 import Button from "@/app/components/Button";
 import { usePostJson } from "@/lib/usePostJson";
@@ -20,16 +20,25 @@ export default function BidForm({ listingId, minimumNextBid }: { listingId: numb
   const t = useTranslations("bidForm");
   const [maxAmount, setMaxAmount] = useState(minimumNextBid);
   const [notice, setNotice] = useState<string | null>(null);
+  const [profileIncomplete, setProfileIncomplete] = useState(false);
   const { post, submitting, error } = usePostJson(t("defaultError"));
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setNotice(null);
+    setProfileIncomplete(false);
 
     const data = await post<BidResponse>(
       `/api/listings/${listingId}/bids`,
       { maxAmount },
-      { errorValues: (failure) => ({ minimum: failure.minimumNextBid ?? "" }) },
+      {
+        errorValues: (failure) => ({ minimum: failure.minimumNextBid ?? "" }),
+        onFailure: (failure) => {
+          if (failure.errorCode === "PROFILE_INCOMPLETE") {
+            setProfileIncomplete(true);
+          }
+        },
+      },
     );
     if (!data) return;
 
@@ -62,7 +71,16 @@ export default function BidForm({ listingId, minimumNextBid }: { listingId: numb
         <Button type="submit" disabled={submitting} className="w-full rounded-xl py-3 text-base font-bold">
           {submitting ? t("submitting") : t("submit")}
         </Button>
-        {error && <span className="rounded-lg bg-ended-bg px-3 py-2 text-sm text-ended">{error}</span>}
+        {error && (
+          <div className="rounded-lg bg-ended-bg px-3 py-2 text-sm text-ended">
+            <p>{error}</p>
+            {profileIncomplete && (
+              <Link href="/account" className="mt-1 inline-block font-semibold text-interactive-primary hover:underline">
+                {t("completeProfileLink")}
+              </Link>
+            )}
+          </div>
+        )}
         {notice && <span className="rounded-lg bg-interactive-primary-subtle px-3 py-2 text-sm text-interactive-primary">{notice}</span>}
       </div>
     </form>

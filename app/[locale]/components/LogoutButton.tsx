@@ -8,6 +8,11 @@ export default function LogoutButton() {
   const t = useTranslations("nav");
 
   async function handleLogout() {
+    try {
+      window.google?.accounts?.id?.disableAutoSelect();
+    } catch {
+      // Ignore if GSI is not loaded
+    }
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/");
     router.refresh();

@@ -11,8 +11,9 @@ import AuthFormShell from "../components/AuthFormShell";
 
 interface TotpStepProps {
   /** The credentials the password step already collected — POST /api/auth/verify-totp re-verifies them itself. */
-  email: string;
-  password: string;
+  email?: string;
+  password?: string;
+  challengeToken?: string | null;
   /**
    * Turnstile *site* key, forwarded from LoginForm (ultimately
    * app/[locale]/login/page.tsx's server-side read of
@@ -48,7 +49,7 @@ interface VerifyTotpResponse {
 // than reusing the password step's: a token is single-use, and
 // /api/auth/verify-totp re-checks the password on every attempt, so it is a
 // password-guessing surface in its own right and verifies its own token.
-export default function TotpStep({ email, password, turnstileSiteKey, onBack }: TotpStepProps) {
+export default function TotpStep({ email = "", password = "", challengeToken, turnstileSiteKey, onBack }: TotpStepProps) {
   const router = useRouter();
   const t = useTranslations("login");
   const [code, setCode] = useState("");
@@ -60,7 +61,7 @@ export default function TotpStep({ email, password, turnstileSiteKey, onBack }: 
   // Configured but no token yet (still loading, or the challenge isn't
   // passed): submitting would only earn a TURNSTILE_VERIFICATION_FAILED from
   // the server, so stop it here and say so instead.
-  const turnstilePending = Boolean(turnstileSiteKey) && !turnstileToken;
+  const turnstilePending = !challengeToken && Boolean(turnstileSiteKey) && !turnstileToken;
 
   function goHome() {
     router.push("/");
@@ -74,12 +75,11 @@ export default function TotpStep({ email, password, turnstileSiteKey, onBack }: 
       return;
     }
 
-    const data = await post<VerifyTotpResponse>("/api/auth/verify-totp", {
-      email,
-      password,
-      code,
-      turnstileToken,
-    });
+    const payload = challengeToken
+      ? { challengeToken, code }
+      : { email, password, code, turnstileToken };
+
+    const data = await post<VerifyTotpResponse>("/api/auth/verify-totp", payload);
     if (!data) {
       // The token just spent can't be reused, so hand the visitor a fresh
       // challenge before they retry.

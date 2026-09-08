@@ -93,12 +93,16 @@ export async function createUser(
   return { id: insertId, email: normalizedEmail, role };
 }
 
-interface UserRow {
+export interface UserRow {
   id: number;
   email: string;
-  password_hash: string;
-  password_salt: string;
+  password_hash: string | null;
+  password_salt: string | null;
+  google_id: string | null;
   role: Role;
+  display_name: string | null;
+  phone: string | null;
+  address: string | null;
   suspended_at: Date | null;
   locale: string;
   two_factor_method: TwoFactorMethod;
@@ -114,6 +118,39 @@ export async function findUserByEmail(email: string): Promise<UserRow | null> {
   const [rows] = await db.query("SELECT * FROM users WHERE email = ? LIMIT 1", [normalizedEmail]);
   const list = rows as UserRow[];
   return list[0] ?? null;
+}
+
+export async function findUserByGoogleId(googleId: string): Promise<UserRow | null> {
+  const db = await getDb();
+  const [rows] = await db.query("SELECT * FROM users WHERE google_id = ? LIMIT 1", [googleId]);
+  const list = rows as UserRow[];
+  return list[0] ?? null;
+}
+
+export async function linkGoogleId(userId: number, googleId: string): Promise<void> {
+  const db = await getDb();
+  await db.query("UPDATE users SET google_id = ? WHERE id = ?", [googleId, userId]);
+}
+
+export async function createGoogleUser(options: {
+  email: string;
+  googleId: string;
+  displayName?: string | null;
+  locale: string;
+}): Promise<CurrentUser> {
+  const db = await getDb();
+  const normalizedEmail = options.email.trim().toLowerCase();
+  const role = roleForEmail(normalizedEmail);
+  const fallbackDigits = Math.floor(Math.random() * 90000 + 10000);
+  const displayName = options.displayName?.trim() || `user${fallbackDigits}`;
+
+  const [result] = await db.query(
+    `INSERT INTO users (email, google_id, role, display_name, email_verified, locale, created_at)
+     VALUES (?, ?, ?, ?, 1, ?, NOW())`,
+    [normalizedEmail, options.googleId, role, displayName, options.locale],
+  );
+  const insertId = (result as { insertId: number }).insertId;
+  return { id: insertId, email: normalizedEmail, role };
 }
 
 export async function createSession(userId: number): Promise<string> {
@@ -376,16 +413,30 @@ export interface AccountProfile {
   // Feeds app/[locale]/account/page.tsx's TwoFactorSection (issue #93) so it
   // can render the toggle's current on/off state on load.
   twoFactorMethod: TwoFactorMethod;
+  hasPassword: boolean;
+  googleLinked: boolean;
 }
 
 export async function getAccountProfile(userId: number): Promise<AccountProfile | null> {
   const db = await getDb();
   const [rows] = await db.query(
-    "SELECT email, display_name AS displayName, phone, address, two_factor_method AS twoFactorMethod FROM users WHERE id = ? LIMIT 1",
+    `SELECT email, display_name AS displayName, phone, address, two_factor_method AS twoFactorMethod,
+            (password_hash IS NOT NULL) AS hasPassword,
+            (google_id IS NOT NULL) AS googleLinked
+     FROM users WHERE id = ? LIMIT 1`,
     [userId],
   );
-  const list = rows as AccountProfile[];
-  return list[0] ?? null;
+  const list = rows as (Omit<AccountProfile, "hasPassword" | "googleLinked"> & {
+    hasPassword: number | boolean;
+    googleLinked: number | boolean;
+  })[];
+  const row = list[0];
+  if (!row) return null;
+  return {
+    ...row,
+    hasPassword: Boolean(row.hasPassword),
+    googleLinked: Boolean(row.googleLinked),
+  };
 }
 
 export async function updateProfile(
@@ -434,6 +485,31 @@ export async function changePassword(
     await db.query("DELETE FROM sessions WHERE user_id = ?", [userId]);
   }
 
+  return { ok: true };
+}
+
+// Issue #237: Allows passwordless users (registered via Google) to establish
+// their initial password directly from the account page without having to provide
+// an old password (which they don't have).
+export async function setPassword(
+  userId: number,
+  newPassword: string,
+): Promise<{ ok: true } | { ok: false; errorCode: ErrorCode }> {
+  if (newPassword.length < 8) {
+    return { ok: false, errorCode: "NEW_PASSWORD_TOO_SHORT" };
+  }
+  const db = await getDb();
+  const [rows] = await db.query("SELECT password_hash FROM users WHERE id = ? LIMIT 1", [userId]);
+  const user = (rows as { password_hash: string | null }[])[0];
+  if (!user) {
+    return { ok: false, errorCode: "NOT_FOUND" };
+  }
+  if (user.password_hash !== null) {
+    return { ok: false, errorCode: "PASSWORD_ALREADY_SET" };
+  }
+
+  const { hash, salt } = await hashPassword(newPassword);
+  await db.query("UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?", [hash, salt, userId]);
   return { ok: true };
 }
 
