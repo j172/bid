@@ -667,7 +667,14 @@
     "publishedLine": "發布時間：{date}",
     "sidebarLatest": "名家專區",
     "backToList": "查看更多",
-    "viewListingsCta": "查看商品"
+    "viewListingsCta": "查看商品",
+    "browseLoftPigeons": "瀏覽本舍鴿子",
+    "openInStore": "在商城開啟 ↗",
+    "loftPigeonsTitle": "{loft} 的所有鴿子",
+    "tabListings": "拍賣鴿",
+    "tabShowcase": "名鴿展示",
+    "noListingsInLoft": "目前尚無拍賣鴿。",
+    "noShowcaseInLoft": "目前尚無名鴿展示。"
   },
   "errorPage": {
     "labels": {

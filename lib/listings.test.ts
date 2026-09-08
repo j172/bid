@@ -11,7 +11,13 @@
 // dashboard, which had always filtered them out.
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getOverviewStats, listOpenListings } from "./listings";
+import {
+  getOverviewStats,
+  isListingsPageSize,
+  LISTINGS_PAGE_SIZES,
+  listOpenListings,
+  listOpenListingsPaginated,
+} from "./listings";
 import { getGmvSplitByType } from "./dashboard";
 import { AUCTION_GMV_SUBQUERY, FIXED_PRICE_GMV_SUBQUERY } from "./sqlFragments";
 
@@ -131,3 +137,40 @@ describe("listOpenListings statusScope and loftId", () => {
     expect(call?.[1]).toContain(42);
   });
 });
+
+describe("listOpenListingsPaginated", () => {
+  it("validates page size constants and type guard", () => {
+    expect(LISTINGS_PAGE_SIZES).toEqual([30, 50, 100]);
+    expect(isListingsPageSize(30)).toBe(true);
+    expect(isListingsPageSize(50)).toBe(true);
+    expect(isListingsPageSize(100)).toBe(true);
+    expect(isListingsPageSize(20)).toBe(false);
+  });
+
+  it("queries count and paginated rows with limit and offset", async () => {
+    queryMock.mockImplementation(async (sql: string) => {
+      if (String(sql).includes("COUNT(*)")) {
+        return [[{ cnt: 45 }]];
+      }
+      return [[]];
+    });
+
+    const result = await listOpenListingsPaginated(undefined, {
+      loftId: 7,
+      statusScope: "all",
+      page: 2,
+      pageSize: 30,
+      orderByMode: "loft_newest",
+    });
+
+    expect(result.total).toBe(45);
+    const countCall = queryMock.mock.calls.find((c) => String(c[0]).includes("SELECT COUNT(*) AS cnt FROM listings l"));
+    expect(String(countCall?.[0])).toContain("l.loft_id = ?");
+    expect(countCall?.[1]).toContain(7);
+
+    const selectCall = queryMock.mock.calls.find((c) => String(c[0]).includes("FROM listings l") && String(c[0]).includes("LIMIT"));
+    expect(String(selectCall?.[0])).toContain("LIMIT 30 OFFSET 30");
+    expect(String(selectCall?.[0])).toContain("CASE WHEN l.status IN ('open', 'scheduled') THEN 0 ELSE 1 END ASC, l.created_at DESC, l.id DESC");
+  });
+});
+

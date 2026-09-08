@@ -667,7 +667,14 @@
     "publishedLine": "Published: {date}",
     "sidebarLatest": "Featured Lofts",
     "backToList": "View More",
-    "viewListingsCta": "View listings"
+    "viewListingsCta": "View listings",
+    "browseLoftPigeons": "Browse pigeons from this loft",
+    "openInStore": "Open in storefront ↗",
+    "loftPigeonsTitle": "All pigeons from {loft}",
+    "tabListings": "Auction Listings",
+    "tabShowcase": "Pigeon Showcase",
+    "noListingsInLoft": "No listings available for this loft.",
+    "noShowcaseInLoft": "No showcase pigeons available for this loft."
   },
   "errorPage": {
     "labels": {
