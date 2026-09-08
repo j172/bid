@@ -1,4 +1,23 @@
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
 import LoginForm from "./LoginForm";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "login" });
+  return {
+    title: t("title"),
+    alternates: {
+      canonical: canonicalUrl(locale, "/login"),
+      languages: hreflangAlternates("/login"),
+    },
+  };
+}
 
 // Server component wrapper around the (client) login form — the whole page
 // used to be one "use client" component, and was split for issue #140 H-1 so

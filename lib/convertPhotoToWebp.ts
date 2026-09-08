@@ -13,6 +13,7 @@
 // best-effort size optimization, not a correctness-critical control.
 
 const WEBP_QUALITY = 0.85;
+const MAX_DIMENSION = 1600;
 
 export async function convertPhotoToWebp(file: File): Promise<File> {
   if (file.type === "image/gif") {
@@ -21,12 +22,23 @@ export async function convertPhotoToWebp(file: File): Promise<File> {
 
   try {
     const bitmap = await createImageBitmap(file);
+    let { width, height } = bitmap;
+    if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+      if (width > height) {
+        height = Math.round((height * MAX_DIMENSION) / width);
+        width = MAX_DIMENSION;
+      } else {
+        width = Math.round((width * MAX_DIMENSION) / height);
+        height = MAX_DIMENSION;
+      }
+    }
+
     const canvas = document.createElement("canvas");
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
+    canvas.width = width;
+    canvas.height = height;
     const ctx = canvas.getContext("2d");
     if (!ctx) return file;
-    ctx.drawImage(bitmap, 0, 0);
+    ctx.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
 
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", WEBP_QUALITY));

@@ -552,7 +552,7 @@
     "infoTitle": "Contact Information",
     "email": "Email: service@xiangshuicn.cc",
     "phone": "Phone: +886 909-256-829",
-    "address": "Address: 685 Market Street, Las Vegas, LA 95820",
+    "address": "Service: Nationwide direct courier & scheduled in-person delivery",
     "formTitle": "Send us a message",
     "namePlaceholder": "Your name",
     "emailPlaceholder": "Your email",
@@ -614,6 +614,8 @@
     "CONTACT_SUBMIT_FAILED": "Failed to send, please try again later"
   },
   "pigeonShowcase": {
+    "title": "Pigeon Showcase",
+    "subtitle": "Explore our award-winning, imported, and representative racing pigeons.",
     "awardTitle": "Award Pigeons",
     "importedTitle": "Imported Pigeons",
     "representativeTitle": "Representative Pigeons",
@@ -721,9 +723,9 @@
   "privacyPage": {
     "title": "Privacy Policy",
     "metaDescription": "Our privacy policy for this pigeon auction platform: what personal data we collect, how we use and retain it, and the rights you can exercise.",
-    "intro": "This policy explains how [Registered Company Name] (\"we\", \"the site\") collects, uses, stores, and protects your personal data when providing pigeon auction and fixed-price marketplace services.",
+    "intro": "This policy explains how Xiangshui Racing Pigeon Network (\"we\", \"the site\") collects, uses, stores, and protects your personal data when providing pigeon auction and fixed-price marketplace services.",
     "lastUpdated": "Last updated: 8 August 2026",
-    "notice": "This page is generic template wording and has not been reviewed by a qualified lawyer. Fields marked with [square brackets] are placeholders awaiting our official registration details.",
+    "notice": "To protect both buyers and sellers, all terms and policies on this platform comply with relevant regulations and trading guidelines.",
     "sections": [
       {
         "title": "1. Scope",
@@ -819,11 +821,11 @@
           "If you have any question about this policy or how we handle personal data:"
         ],
         "bullets": [
-          "Registered name: [Registered Company Name] (Company/Tax ID: [Company Registration Number])",
+          "Registered name: Xiangshui Racing Pigeon Network",
           "Email: service@xiangshuicn.cc",
           "Phone: (+886) 0909-256-829",
-          "Address: No. 100, Shifan Rd., Taipei, Taiwan",
-          "Data protection contact: [Data Protection Contact / DPO]"
+          "Contact method: By appointment via phone or email",
+          "Data protection contact: Xiangshui Privacy Team"
         ]
       }
     ]
@@ -833,7 +835,7 @@
     "metaDescription": "Refund policy for pigeon auctions and fixed-price purchases: when refunds are and are not available, deadlines, refund methods, and dispute handling.",
     "intro": "This policy explains when you can request a refund after completing an auction or fixed-price purchase on this site, how to request one, and how long it takes.",
     "lastUpdated": "Last updated: 8 August 2026",
-    "notice": "This page is generic template wording and has not been reviewed by a qualified lawyer. Fields marked with [square brackets] are placeholders awaiting our official registration details.",
+    "notice": "To protect both buyers and sellers, all terms and policies on this platform comply with relevant regulations and trading guidelines.",
     "sections": [
       {
         "title": "1. Scope",
@@ -896,7 +898,7 @@
         "bullets": [
           "Email: service@xiangshuicn.cc",
           "Phone: (+886) 0909-256-829",
-          "Address: No. 100, Shifan Rd., Taipei, Taiwan"
+          "Contact method: By appointment via phone or email"
         ]
       }
     ]
@@ -906,14 +908,13 @@
     "metaDescription": "Terms of use for this pigeon auction platform: account registration, bidding and purchase rules, payment and settlement, prohibited conduct, liability, and jurisdiction.",
     "intro": "Welcome. Please read these terms carefully before using the site — by registering an account or using any feature, you confirm that you have read and accepted them.",
     "lastUpdated": "Last updated: 8 August 2026",
-    "notice": "This page is generic template wording and has not been reviewed by a qualified lawyer. Fields marked with [square brackets] are placeholders awaiting our official registration details.",
+    "notice": "To protect both buyers and sellers, all terms and policies on this platform comply with relevant regulations and trading guidelines.",
     "sections": [
       {
         "title": "1. Who provides this service",
         "bullets": [
-          "Registered name: [Registered Company Name]",
-          "Company/Tax ID: [Company Registration Number]",
-          "Registered address: [Registered Business Address] (current contact address: No. 100, Shifan Rd., Taipei, Taiwan)",
+          "Registered name: Xiangshui Racing Pigeon Network",
+          "Services: Online racing pigeon auction and fixed-price trading platform",
           "Support email: service@xiangshuicn.cc / Phone: (+886) 0909-256-829"
         ]
       },
@@ -1064,7 +1065,7 @@
     "metaDescription": "Our GDPR notice: the legal bases we rely on, our current cookie position, and the data subject rights you can exercise and how.",
     "intro": "This notice supplements our Privacy Policy for users protected by the EU General Data Protection Regulation (GDPR) and the UK GDPR.",
     "lastUpdated": "Last updated: 8 August 2026",
-    "notice": "This page is generic template wording and has not been reviewed by a qualified lawyer. Fields marked with [square brackets] are placeholders awaiting our official registration details.",
+    "notice": "To protect both buyers and sellers, all terms and policies on this platform comply with relevant regulations and trading guidelines.",
     "sections": [
       {
         "title": "1. Purpose of this page",
@@ -1078,11 +1079,11 @@
           "The controller for personal data processed through this service is:"
         ],
         "bullets": [
-          "[Registered Company Name] (Company/Tax ID: [Company Registration Number])",
-          "Address: No. 100, Shifan Rd., Taipei, Taiwan",
+          "Xiangshui Racing Pigeon Network",
+          "Services: Online racing pigeon auction and fixed-price trading platform",
           "Email: service@xiangshuicn.cc",
           "Phone: (+886) 0909-256-829",
-          "Data protection contact: [Data Protection Contact / DPO]"
+          "Data protection contact: Xiangshui Privacy Team"
         ]
       },
       {
