@@ -149,6 +149,8 @@ describe("buildListingProductJsonLd", () => {
     current_price: 5000,
     stock_remaining: null,
     ends_at: new Date("2026-12-31T12:00:00Z"),
+    starts_at: null,
+    created_at: new Date("2026-01-15T09:00:00Z"),
     photos: ["a.jpg", "b.jpg"],
   };
 
@@ -170,6 +172,25 @@ describe("buildListingProductJsonLd", () => {
     expect(offers.price).toBe(5000);
     expect(offers.availability).toBe("https://schema.org/InStock");
     expect(offers.priceValidUntil).toBe("2026-12-31");
+    expect(offers.validFrom).toBe("2026-01-15");
+  });
+
+  it("uses starts_at for validFrom when the auction has a scheduled future open", () => {
+    const jsonLd = buildListingProductJsonLd(
+      { ...baseListing, status: "scheduled", starts_at: new Date("2026-02-01T00:00:00Z") },
+      "/listings/42",
+    );
+    const offers = jsonLd.offers as Record<string, unknown>;
+    expect(offers.validFrom).toBe("2026-02-01");
+  });
+
+  it("falls back to created_at for validFrom when starts_at is null (opens immediately / fixed_price)", () => {
+    const jsonLd = buildListingProductJsonLd(
+      { ...baseListing, listing_type: "fixed_price", price: 1200, ends_at: null, starts_at: null },
+      "/listings/42",
+    );
+    const offers = jsonLd.offers as Record<string, unknown>;
+    expect(offers.validFrom).toBe("2026-01-15");
   });
 
   it("falls back to the placeholder image when the listing has no photos", () => {
