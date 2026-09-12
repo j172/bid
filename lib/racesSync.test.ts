@@ -61,6 +61,14 @@ vi.mock("@/lib/uploads", () => ({
   saveRaceImageFromBuffer: saveRaceImageFromBufferMock,
 }));
 
+// issue #261: syncRaces() records a sync_runs timestamp on every normal
+// return — mocked here for the same reason as the other mocks above
+// (lib/syncRuns.ts has its own tests).
+const { recordRunNowMock } = vi.hoisted(() => ({ recordRunNowMock: vi.fn() }));
+vi.mock("@/lib/syncRuns", () => ({
+  recordRunNow: recordRunNowMock,
+}));
+
 import { syncRaces } from "./racesSync";
 
 function loingTopic(id: number, overrides: Partial<Record<string, unknown>> = {}) {
@@ -104,6 +112,35 @@ beforeEach(() => {
   // override what they actually care about.
   fetchPageMock.mockResolvedValue([]);
   fetchSummariesMock.mockResolvedValue([]);
+  recordRunNowMock.mockResolvedValue(undefined);
+});
+
+describe("syncRaces — sync_runs tracking (issue #261)", () => {
+  it("records a completed run even when nothing new was imported from either source", async () => {
+    await syncRaces();
+
+    expect(recordRunNowMock).toHaveBeenCalledWith("races");
+  });
+
+  it("still records a completed run when loing-ma.com is skipped (e.g. still 403ing)", async () => {
+    fetchPageMock.mockRejectedValueOnce(new Error("loing-ma.com forum request failed: HTTP 403"));
+
+    const result = await syncRaces();
+
+    expect(result.loingMa.skipped).toBe(true);
+    expect(recordRunNowMock).toHaveBeenCalledWith("races");
+  });
+
+  it("does not throw or corrupt the result when recording the sync_runs timestamp fails", async () => {
+    fetchPageMock.mockResolvedValueOnce([loingTopic(1)]);
+    recordRunNowMock.mockRejectedValueOnce(new Error("DB unreachable"));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await syncRaces();
+
+    expect(result.loingMa.imported).toBe(1);
+    errorSpy.mockRestore();
+  });
 });
 
 describe("syncRaces — loing-ma.com half", () => {

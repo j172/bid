@@ -436,6 +436,16 @@ CREATE TABLE IF NOT EXISTS races (
   KEY idx_races_status_date (status, race_date),
   KEY idx_races_source (source)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 新聞/賽事同步「最近一次執行時間」追蹤 (issue #261) — see db/init.sql for the
+-- fuller header comment. Brand-new table, whole final schema from day one,
+-- same as races/pigeon_shops above. Read/written via lib/syncRuns.ts, used by
+-- lib/scheduler.ts's post-boot staleness-based catch-up sync.
+CREATE TABLE IF NOT EXISTS sync_runs (
+  job_name VARCHAR(50) NOT NULL,  -- 'news' | 'races'
+  last_run_at DATETIME NOT NULL,
+  PRIMARY KEY (job_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
 
 // Columns added after their table's initial CREATE TABLE IF NOT EXISTS;

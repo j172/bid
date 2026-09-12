@@ -58,6 +58,15 @@ vi.mock("@/lib/uploads", () => ({
   saveNewsImageFromBuffer: saveNewsImageFromBufferMock,
 }));
 
+// issue #261: syncHerbotsNews() records a sync_runs timestamp on every normal
+// return — mocked here for the same "this module's job is orchestration, not
+// the recording itself" reason as the other mocks above (lib/syncRuns.ts has
+// its own tests).
+const { recordRunNowMock } = vi.hoisted(() => ({ recordRunNowMock: vi.fn() }));
+vi.mock("@/lib/syncRuns", () => ({
+  recordRunNow: recordRunNowMock,
+}));
+
 import { syncHerbotsNews } from "./newsSync";
 
 function summary(id: number, overrides: Partial<Record<string, unknown>> = {}) {
@@ -81,6 +90,7 @@ beforeEach(() => {
   recordImportedSourceUrlMock.mockResolvedValue(undefined);
   hasImportedSourceUrlMock.mockResolvedValue(false);
   fetchImageBufferMock.mockResolvedValue(null);
+  recordRunNowMock.mockResolvedValue(undefined);
 });
 
 describe("syncHerbotsNews", () => {
@@ -107,6 +117,10 @@ describe("syncHerbotsNews", () => {
     expect(recordImportedSourceUrlMock).toHaveBeenCalledWith("herbots", "https://www.herbots.be/en/article/a1", 99);
     expect(openMock).toHaveBeenCalledTimes(1);
     expect(closeMock).toHaveBeenCalledTimes(1);
+    // issue #261: a completed run — even one that imported nothing new —
+    // records its completion time so lib/scheduler.ts's post-boot staleness
+    // check can see this job has run recently.
+    expect(recordRunNowMock).toHaveBeenCalledWith("news");
   });
 
   it("skips an already-imported source_url without fetching its content", async () => {
@@ -202,6 +216,9 @@ describe("syncHerbotsNews", () => {
     expect(result.errors[0]).toContain("herbots.be");
     expect(fetchSummariesMock).not.toHaveBeenCalled();
     expect(closeMock).toHaveBeenCalledTimes(1);
+    // issue #261: even this early-abort path is a normal (non-throwing)
+    // return, so it still counts as "the job ran" for staleness purposes.
+    expect(recordRunNowMock).toHaveBeenCalledWith("news");
   });
 
   it("records one article's insert failure without aborting the rest of the run", async () => {
@@ -213,5 +230,21 @@ describe("syncHerbotsNews", () => {
 
     expect(result.imported).toBe(1);
     expect(result.errors).toHaveLength(1);
+  });
+
+  // issue #261: recordRunNow() failing (e.g. sync_runs write hits a DB
+  // hiccup) must never surface as an unhandled rejection out of
+  // syncHerbotsNews() itself — the sync's own result still comes back intact.
+  it("does not throw or corrupt the result when recording the sync_runs timestamp fails", async () => {
+    fetchSummariesMock.mockResolvedValueOnce([summary(1)]).mockResolvedValueOnce([]);
+    fetchContentHtmlMock.mockResolvedValueOnce("<p>Hello world</p>");
+    recordRunNowMock.mockRejectedValueOnce(new Error("DB unreachable"));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await syncHerbotsNews();
+
+    expect(result.imported).toBe(1);
+    expect(result.errors).toEqual([]);
+    errorSpy.mockRestore();
   });
 });
