@@ -7,6 +7,7 @@
 import cron from "node-cron";
 import { syncExchangeRates } from "@/lib/exchangeRates";
 import { syncHerbotsNews } from "@/lib/newsSync";
+import { syncRaces } from "@/lib/racesSync";
 
 let started = false;
 
@@ -82,6 +83,36 @@ export function startScheduler(): void {
         })
         .catch((error) => {
           console.error("[newsSync] scheduled sync failed", error);
+        });
+    },
+    { timezone: "Asia/Taipei" },
+  );
+
+  // Also 08:40 Asia/Taipei daily (issue #241) — "與新聞同步同一批排程" per the
+  // issue: same time as the herbots.be news sync above, registered as its
+  // own cron.schedule entry (rather than folded into the same callback) so a
+  // truly unexpected bug in one sync's own bug-backstop .catch() can never
+  // prevent the other from being scheduled at all. syncRaces() itself never
+  // throws for an ordinary per-source/per-page/per-race failure (see
+  // lib/racesSync.ts) — this .catch() is only a backstop against a truly
+  // unexpected bug, same convention as syncHerbotsNews() above.
+  cron.schedule(
+    "40 8 * * *",
+    () => {
+      syncRaces()
+        .then((result) => {
+          console.log(
+            `[racesSync] daily sync done: loingMa(imported=${result.loingMa.imported} updated=${result.loingMa.updated} ` +
+              `skipped=${result.loingMa.skipped} errors=${result.loingMa.errors.length}) ` +
+              `herbots(imported=${result.herbots.imported} updated=${result.herbots.updated} ` +
+              `translationFailures=${result.herbots.translationFailures} errors=${result.herbots.errors.length})`,
+          );
+          for (const message of [...result.loingMa.errors, ...result.herbots.errors]) {
+            console.error(`[racesSync] ${message}`);
+          }
+        })
+        .catch((error) => {
+          console.error("[racesSync] scheduled sync failed", error);
         });
     },
     { timezone: "Asia/Taipei" },

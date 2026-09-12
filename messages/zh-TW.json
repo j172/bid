@@ -131,6 +131,10 @@
     "newsCarouselBadge": "最新消息",
     "newsCarouselCta": "閱讀更多",
     "newsCarouselEmptyDesc": "目前尚無最新消息，請稍後再回來查看。",
+    "racesEyebrow": "賽事資訊",
+    "racesTitle": "最新賽事",
+    "racesCta": "查看全部賽事",
+    "racesEmptyDesc": "目前尚無賽事資訊，請稍後再回來查看。",
     "featuredLoftsCarouselBadge": "名家專區",
     "featuredLoftsCarouselCta": "閱讀更多",
     "featuredLoftsCarouselViewMore": "查看全部文章",
@@ -674,6 +678,28 @@
     "backToList": "查看更多",
     "originalHeading": "原文"
   },
+  "races": {
+    "title": "賽事資訊",
+    "subtitle": "彙整龍馬賽鴿網（台灣/亞洲）與 herbots.be（歐洲）賽事，依開賽日期排序。",
+    "filterAll": "全部",
+    "filterCurrent": "正在進行",
+    "filterFuture": "即將開賽",
+    "filterFinished": "過往賽事",
+    "statusCurrent": "正在進行",
+    "statusFuture": "即將開賽",
+    "statusFinished": "過往賽事",
+    "sourceLoingMa": "台灣/亞洲（龍馬賽鴿網）",
+    "sourceHerbots": "歐洲（herbots.be）",
+    "raceDateLabel": "開賽日期：{date}",
+    "noItems": "目前沒有相關賽事。",
+    "originalHeading": "原文",
+    "sourceLinkLabel": "查看原文",
+    "pageSizeLabel": "每頁顯示：",
+    "prevPage": "上一頁",
+    "nextPage": "下一頁",
+    "pageInfo": "第 {page} / {totalPages} 頁（共 {total} 筆）",
+    "breadcrumbHome": "首頁"
+  },
   "featuredLofts": {
     "title": "名家專區",
     "subtitle": "精選業界知名的優秀名家，點選卡片閱讀完整專文。",
@@ -1195,4 +1221,3 @@
     "closePlayer": "關閉播放器"
   }
 }
-

@@ -207,6 +207,31 @@ export async function saveNewsImageFromBuffer(buffer: Buffer, contentType: strin
   return fileName;
 }
 
+// races (issue #241) — the herbots.be sync's winner-photo cover image comes
+// back as raw bytes + a Content-Type header (fetched via lib/herbotsRaces.ts's
+// Playwright request context), same shape as saveNewsImageFromBuffer above,
+// just its own subdirectory. loing-ma.com rows never populate this (the
+// forum has no photos), so image_file_name is NULL for every 'loing_ma' row.
+export async function saveRaceImageFromBuffer(buffer: Buffer, contentType: string): Promise<string | null> {
+  const extension = ALLOWED_EXTENSIONS[contentType];
+  if (!extension || buffer.byteLength === 0 || buffer.byteLength > MAX_PHOTO_BYTES) {
+    return null;
+  }
+  const dir = join(UPLOADS_ROOT, "races");
+  await mkdir(dir, { recursive: true });
+  const fileName = `${randomBytes(16).toString("hex")}.${extension}`;
+  await writeFile(join(dir, fileName), buffer);
+  return fileName;
+}
+
+export function raceImageUrl(fileName: string): string {
+  return `/uploads/races/${fileName}`;
+}
+
+export async function deleteRaceImageFile(fileName: string): Promise<void> {
+  await unlink(join(UPLOADS_ROOT, "races", fileName)).catch(() => {});
+}
+
 // featured_loft_posts (issue #176's 名家專區 article rewrite, replacing #168's
 // homepage_sections-based cards) — same flat single-image storage scheme as
 // saveNewsImage above, just its own subdirectory.

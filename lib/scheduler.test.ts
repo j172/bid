@@ -13,10 +13,11 @@
 // fresh module instance via vi.resetModules() + a fresh dynamic import.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { scheduleMock, syncExchangeRatesMock, syncHerbotsNewsMock } = vi.hoisted(() => ({
+const { scheduleMock, syncExchangeRatesMock, syncHerbotsNewsMock, syncRacesMock } = vi.hoisted(() => ({
   scheduleMock: vi.fn(),
   syncExchangeRatesMock: vi.fn(),
   syncHerbotsNewsMock: vi.fn(),
+  syncRacesMock: vi.fn(),
 }));
 
 vi.mock("node-cron", () => ({ default: { schedule: scheduleMock } }));
@@ -25,12 +26,17 @@ vi.mock("@/lib/exchangeRates", () => ({ syncExchangeRates: syncExchangeRatesMock
 // mocked for the same "this module's job is wiring, not the sync itself"
 // reason as @/lib/exchangeRates above (lib/newsSync.ts has its own tests).
 vi.mock("@/lib/newsSync", () => ({ syncHerbotsNews: syncHerbotsNewsMock }));
+// issue #241: scheduler.ts also wires up the daily races sync — same
+// mocking reason as @/lib/newsSync above (lib/racesSync.ts has its own
+// tests).
+vi.mock("@/lib/racesSync", () => ({ syncRaces: syncRacesMock }));
 
 beforeEach(() => {
   vi.resetModules();
   scheduleMock.mockReset();
   syncExchangeRatesMock.mockReset();
   syncHerbotsNewsMock.mockReset();
+  syncRacesMock.mockReset();
   vi.useFakeTimers();
 });
 
@@ -88,10 +94,10 @@ describe("startScheduler", () => {
     startScheduler();
     await vi.advanceTimersByTimeAsync(10_000);
 
-    // Two distinct cron jobs are registered per call (exchange rates + news,
-    // see below) — asserting 2 here (not 1) is what actually proves a second
-    // startScheduler() call registered nothing further.
-    expect(scheduleMock).toHaveBeenCalledTimes(2);
+    // Three distinct cron jobs are registered per call (exchange rates +
+    // news + races, see below) — asserting 3 here (not 1) is what actually
+    // proves a second startScheduler() call registered nothing further.
+    expect(scheduleMock).toHaveBeenCalledTimes(3);
     expect(syncExchangeRatesMock).toHaveBeenCalledTimes(1);
   });
 });
@@ -144,6 +150,58 @@ describe("startScheduler — herbots.be news sync", () => {
     const callback = newsCall?.[1] as () => void;
     callback();
     await vi.waitFor(() => expect(errorSpy).toHaveBeenCalledWith("[newsSync] scheduled sync failed", syncError));
+
+    errorSpy.mockRestore();
+  });
+});
+
+// issue #241
+describe("startScheduler — races sync", () => {
+  it("registers a second 08:40 Asia/Taipei cron job (same batch as the news sync)", async () => {
+    const { startScheduler } = await import("./scheduler");
+
+    startScheduler();
+
+    const racesCalls = scheduleMock.mock.calls.filter(([pattern]) => pattern === "40 8 * * *");
+    expect(racesCalls).toHaveLength(2);
+    expect(racesCalls[1][2]).toEqual({ timezone: "Asia/Taipei" });
+  });
+
+  it("does not sync on boot", async () => {
+    const { startScheduler } = await import("./scheduler");
+    syncExchangeRatesMock.mockResolvedValue(undefined);
+
+    startScheduler();
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    expect(syncRacesMock).not.toHaveBeenCalled();
+  });
+
+  it("runs syncRaces when the registered cron callback fires", async () => {
+    const { startScheduler } = await import("./scheduler");
+    syncRacesMock.mockResolvedValue({
+      loingMa: { imported: 1, updated: 0, errors: [], skipped: false },
+      herbots: { imported: 2, updated: 0, errors: [], translationFailures: 0 },
+    });
+
+    startScheduler();
+    const racesCalls = scheduleMock.mock.calls.filter(([pattern]) => pattern === "40 8 * * *");
+    const callback = racesCalls[1][1] as () => void;
+    callback();
+    await vi.waitFor(() => expect(syncRacesMock).toHaveBeenCalledTimes(1));
+  });
+
+  it("logs rather than throws when the sync rejects", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { startScheduler } = await import("./scheduler");
+    const syncError = new Error("boom");
+    syncRacesMock.mockRejectedValue(syncError);
+
+    startScheduler();
+    const racesCalls = scheduleMock.mock.calls.filter(([pattern]) => pattern === "40 8 * * *");
+    const callback = racesCalls[1][1] as () => void;
+    callback();
+    await vi.waitFor(() => expect(errorSpy).toHaveBeenCalledWith("[racesSync] scheduled sync failed", syncError));
 
     errorSpy.mockRestore();
   });

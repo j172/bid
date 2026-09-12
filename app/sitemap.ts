@@ -50,6 +50,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...localeEntries("/faq", { changeFrequency: "yearly", priority: 0.3 }),
     ...localeEntries("/gdpr", { changeFrequency: "yearly", priority: 0.3 }),
     ...localeEntries("/news", { changeFrequency: "daily", priority: 0.5 }),
+    // issue #241 — no per-race detail page exists (see /races's own page
+    // comment), so unlike /news this list page is the only URL to index.
+    ...localeEntries("/races", { changeFrequency: "daily", priority: 0.5 }),
     ...localeEntries("/pigeon-showcase", { changeFrequency: "weekly", priority: 0.4 }),
     ...localeEntries("/featured-lofts", { changeFrequency: "weekly", priority: 0.4 }),
   ];
