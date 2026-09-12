@@ -621,3 +621,52 @@ CREATE TABLE IF NOT EXISTS pigeon_shops (
   KEY idx_pigeon_shops_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 賽事資訊 (issue #241, part of Epic #239) — daily sync of two independent,
+-- never-merged regional race sources into one table (lib/racesSync.ts):
+-- loing-ma.com (台灣/亞洲, phpBB forum, already Traditional Chinese) and
+-- herbots.be (歐洲, JSON API behind a JS-rendered page, translated via
+-- lib/translate.ts same as news_posts). Modeled directly on news_posts
+-- above: `title`/`content` always hold the Traditional Chinese version
+-- (verbatim for loing_ma rows, Cloudflare-Workers-AI-translated for herbots
+-- rows); original_title/original_content hold the pre-translation text and
+-- are NULL on loing_ma rows, which were never translated (same NULL
+-- convention as news_posts' 'manual' rows having no original_*).
+-- source distinguishes the two independent regional feeds ('loing_ma' |
+-- 'herbots') — the two are never matched/merged as the same physical race,
+-- only sorted together by race_date at render time (see lib/races.ts).
+-- status ('current' | 'future' | 'finished') is copied straight from
+-- herbots.be's own current/future/finished collection for herbots rows;
+-- loing-ma.com's forum has no such classification, so it's derived at sync
+-- time by comparing the parsed race_date against "today" (Asia/Taipei).
+-- race_date is the race's actual start/release date — herbots.be's
+-- release_time for herbots rows, the date parsed out of the forum topic's
+-- title (falling back to the topic's own post date when the title has no
+-- parseable date) for loing_ma rows; nullable in case neither is available.
+-- Unlike news_posts/news_import_log, a race's status/content legitimately
+-- changes over time (current -> finished as herbots.be's own bucket moves
+-- it, or a same-day forum post ages from "current" to "finished" overnight)
+-- so this sync UPSERTs by source_url (UNIQUE below) every run instead of
+-- import-once-and-skip — there is deliberately no races_import_log
+-- counterpart to news_import_log, and no locked_by_admin/admin-edit concept
+-- either, since issue #241 has no admin CRUD surface for this table.
+-- image_file_name (封面圖) is only ever populated for herbots rows with a
+-- winner photo (loing-ma.com's forum posts have no photos); NULL otherwise.
+CREATE TABLE IF NOT EXISTS races (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  source VARCHAR(20) NOT NULL,          -- 'loing_ma' | 'herbots'
+  status VARCHAR(20) NOT NULL,          -- 'current' | 'future' | 'finished'
+  title VARCHAR(255) NOT NULL,          -- Traditional Chinese (translated, or verbatim for loing_ma)
+  original_title VARCHAR(255) NULL,     -- pre-translation title; NULL on loing_ma rows
+  content TEXT NOT NULL,                -- sanitizeDescriptionHtml'd Traditional Chinese content
+  original_content TEXT NULL,           -- sanitizeDescriptionHtml'd pre-translation content; NULL on loing_ma rows
+  race_date DATETIME NULL,              -- 開賽日期 (race start / release date)
+  image_file_name VARCHAR(255) NULL,    -- 封面圖 (herbots winner photo only)
+  source_url VARCHAR(500) NOT NULL,     -- original article/thread URL; de-dup + upsert key
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_races_source_url (source_url),
+  KEY idx_races_status_date (status, race_date),
+  KEY idx_races_source (source)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
