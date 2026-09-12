@@ -130,6 +130,11 @@ export default async function SiteFooter() {
                 {t("contact")}
               </Link>
             </li>
+            <li>
+              <Link href="/pigeon-shops" className="hover:text-interactive-primary">
+                {t("pigeonShops")}
+              </Link>
+            </li>
           </ul>
         </section>
 

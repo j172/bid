@@ -528,6 +528,7 @@
     "faq": "常見問題",
     "gdpr": "GDPR",
     "contact": "聯絡我們",
+    "pigeonShops": "鴿店地圖目錄",
     "assuranceTitle": "交易保障",
     "assuranceItem1": "血統與競標資料嚴格驗證",
     "assuranceItem2": "結標後由專人協助交易與出貨",
@@ -552,6 +553,14 @@
     "title": "購物車",
     "empty": "你的購物車目前是空的。",
     "cta": "繼續購物"
+  },
+  "pigeonShopsPage": {
+    "title": "鴿店地圖目錄",
+    "subtitle": "全台鴿店聯絡資訊地圖，資料來源為好鴿網公開文章，點選下方列表可定位地圖上的鴿店。",
+    "empty": "目前尚無鴿店資料。",
+    "noPhone": "無電話資料",
+    "noAddress": "無地址資料",
+    "noCoordinates": "無法定位，未顯示於地圖上"
   },
   "contactPage": {
     "title": "聯絡我們",
