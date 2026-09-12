@@ -178,18 +178,18 @@ export async function syncHerbotsNews(): Promise<NewsSyncResult> {
     );
   }
 
-  // Everything below (including open() itself) is wrapped in one
-  // try/finally so a launch failure mid-open() (e.g. chromium.launch()
-  // succeeds but newContext() then throws) still closes whatever got
-  // started, rather than leaking a headless Chromium process — close() is
-  // safe to call even on a client that never fully opened.
+  // client.open()/close() are no-ops today (see lib/herbotsNews.ts's header
+  // comment — this is a plain fetch() client now, no browser to launch), but
+  // this module's contract is "never throw for a normal failure" (see file
+  // header), so open() still gets its own try/catch — belt-and-suspenders
+  // against a future HerbotsNewsClient reintroducing real I/O there.
   const client = new HerbotsNewsClient();
   try {
     try {
       await client.open();
     } catch (error) {
-      result.errors.push("無法啟動 Playwright headless browser，本次同步已中止");
-      console.error("[newsSync] chromium launch failed", error);
+      result.errors.push("無法初始化 herbots.be 用戶端，本次同步已中止");
+      console.error("[newsSync] client open failed", error);
       return result;
     }
 

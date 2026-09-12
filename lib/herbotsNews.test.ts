@@ -1,6 +1,6 @@
 // Only toSummary is pure logic worth a focused test — everything else in
-// lib/herbotsNews.ts is thin Playwright I/O wiring (no test, same precedent
-// as lib/httpsRequest.ts having none).
+// lib/herbotsNews.ts is thin fetch() I/O wiring (no test, same precedent as
+// lib/httpsRequest.ts having none).
 import { describe, expect, it } from "vitest";
 import { toSummary, type RawNewsListItem } from "./herbotsNews";
 

@@ -43,7 +43,7 @@ export interface SourceSyncResult {
 }
 
 export interface LoingMaSyncResult extends SourceSyncResult {
-  /** true when the source was unavailable this run (e.g. still 403ing after the Playwright attempt) — not a crash, see lib/loingMaRaces.ts's header comment. */
+  /** true when the source was unavailable this run (e.g. still 403ing) — not a crash, see lib/loingMaRaces.ts's header comment. */
   skipped: boolean;
   skipReason?: string;
 }
@@ -70,12 +70,16 @@ async function syncLoingMaRaces(): Promise<LoingMaSyncResult> {
   const client = new LoingMaRacesClient();
 
   try {
+    // open()/close() are no-ops today (see lib/loingMaRaces.ts's header
+    // comment), but kept in their own try/catch — this module's contract is
+    // "never throw for a normal failure" (see file header) — as
+    // belt-and-suspenders against a future client reintroducing real I/O.
     try {
       await client.open();
     } catch (error) {
       result.skipped = true;
-      result.skipReason = "無法啟動 Playwright headless browser";
-      console.error("[racesSync] loing-ma.com chromium launch failed", error);
+      result.skipReason = "無法初始化 loing-ma.com 用戶端";
+      console.error("[racesSync] loing-ma.com client open failed", error);
       return result;
     }
 
@@ -87,9 +91,9 @@ async function syncLoingMaRaces(): Promise<LoingMaSyncResult> {
         const message = error instanceof Error ? error.message : String(error);
         if (page === 1) {
           // issue #241's explicit requirement: a fetch failure (still 403ing
-          // even via Playwright with realistic browser headers) skips this
-          // source for the run with a logged warning — it must not crash or
-          // block the herbots.be half of the sync.
+          // despite the realistic browser User-Agent) skips this source for
+          // the run with a logged warning — it must not crash or block the
+          // herbots.be half of the sync.
           result.skipped = true;
           result.skipReason = message;
           console.error(`[racesSync] loing-ma.com forum request failed, skipping this source for this run: ${message}`);
@@ -236,11 +240,13 @@ async function syncHerbotsRaces(): Promise<HerbotsSyncResult> {
 
   const client = new HerbotsRacesClient();
   try {
+    // open()/close() are no-ops today (see lib/herbotsRaces.ts's header
+    // comment), same belt-and-suspenders try/catch as syncLoingMaRaces above.
     try {
       await client.open();
     } catch (error) {
-      result.errors.push("無法啟動 Playwright headless browser，herbots.be 賽事同步已中止");
-      console.error("[racesSync] herbots.be chromium launch failed", error);
+      result.errors.push("無法初始化 herbots.be 用戶端，herbots.be 賽事同步已中止");
+      console.error("[racesSync] herbots.be client open failed", error);
       return result;
     }
 

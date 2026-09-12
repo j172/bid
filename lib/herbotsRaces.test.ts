@@ -1,5 +1,5 @@
 // Only toRaceSummary is pure logic worth a focused test — everything else in
-// lib/herbotsRaces.ts is thin Playwright I/O wiring (no test), same
+// lib/herbotsRaces.ts is thin fetch() I/O wiring (no test), same
 // precedent as lib/herbotsNews.test.ts covering only toSummary.
 import { describe, expect, it } from "vitest";
 import { toRaceSummary } from "./herbotsRaces";

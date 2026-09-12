@@ -1,6 +1,6 @@
 // Only extractRaceDate/deriveLoingMaStatus/parseLoingMaForumPage are pure
 // logic worth a focused test — everything else in lib/loingMaRaces.ts is
-// thin Playwright I/O wiring (no test), same precedent as
+// thin fetch() I/O wiring (no test), same precedent as
 // lib/herbotsNews.test.ts covering only toSummary.
 import { describe, expect, it } from "vitest";
 import { deriveLoingMaStatus, extractRaceDate, parseLoingMaForumPage } from "./loingMaRaces";

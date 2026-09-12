@@ -3,7 +3,7 @@
 // mocked here, same "assert on the calls/results, not real I/O" style as
 // lib/newsSync.test.ts. extractRaceDate/deriveLoingMaStatus are kept real
 // (pure, no I/O, already covered by lib/loingMaRaces.test.ts) via
-// importActual, so only the Playwright-backed client is mocked out.
+// importActual, so only the fetch()-backed client is mocked out.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { loingOpenMock, loingCloseMock, fetchPageMock } = vi.hoisted(() => ({
@@ -142,8 +142,8 @@ describe("syncRaces — loing-ma.com half", () => {
     expect(herbotsOpenMock).toHaveBeenCalledTimes(1);
   });
 
-  it("marks the source skipped when the browser itself fails to launch", async () => {
-    loingOpenMock.mockRejectedValueOnce(new Error("chromium not installed"));
+  it("marks the source skipped when the client itself fails to open", async () => {
+    loingOpenMock.mockRejectedValueOnce(new Error("network unreachable"));
 
     const result = await syncRaces();
 
@@ -217,13 +217,13 @@ describe("syncRaces — herbots.be half", () => {
     expect(upsertRaceMock).toHaveBeenCalledWith(expect.objectContaining({ imageFileName: "saved-race.jpg" }));
   });
 
-  it("aborts just the herbots.be half when its browser fails to launch, without affecting loing-ma.com", async () => {
-    herbotsOpenMock.mockRejectedValueOnce(new Error("chromium not installed"));
+  it("aborts just the herbots.be half when its client fails to open, without affecting loing-ma.com", async () => {
+    herbotsOpenMock.mockRejectedValueOnce(new Error("network unreachable"));
     fetchPageMock.mockResolvedValueOnce([loingTopic(1)]).mockResolvedValueOnce([]);
 
     const result = await syncRaces();
 
-    expect(result.herbots.errors[0]).toContain("Playwright");
+    expect(result.herbots.errors[0]).toContain("herbots.be");
     expect(fetchSummariesMock).not.toHaveBeenCalled();
     expect(result.loingMa.imported).toBe(1);
   });

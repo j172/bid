@@ -58,8 +58,8 @@ export function startScheduler(): void {
   // 08:40 Asia/Taipei daily (issue #240) — offset 30 minutes after the
   // exchange-rate tick above so both scheduled jobs don't launch at exactly
   // the same instant. Unlike exchange rates, this deliberately has no
-  // startup-sync counterpart: launching a headless Chromium + translating a
-  // batch of articles is much heavier than an HTTP CSV fetch, and this
+  // startup-sync counterpart: fetching, translating, and importing a batch
+  // of articles is much heavier than an HTTP CSV fetch, and this
   // host's frequent restarts (see the exchange-rate STARTUP_SYNC_DELAY_MS
   // comment above) would otherwise turn "run once after every restart" into
   // a real per-restart cost. News has no "footer must show something
