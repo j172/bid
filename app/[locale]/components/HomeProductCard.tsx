@@ -1,5 +1,5 @@
 import { Link } from "@/i18n/navigation";
-import ZoomableProductImage from "./ZoomableProductImage";
+import ProductImage from "./ProductImage";
 
 // The homepage's grid product card, used by both "最新上架" and "買家最愛"
 // (issue #139 item 3) — those two sections had the identical ~45 lines of
@@ -48,13 +48,12 @@ export default function HomeProductCard({
           </span>
         </div>
         <div className={`relative aspect-[4/3] overflow-hidden rounded-xl ${hasPhoto ? "bg-slate-100" : "bg-white/90"}`}>
-          <ZoomableProductImage
+          <ProductImage
             src={imageSrc}
             alt={title}
             eager={eager}
             fetchPriority={eager ? "high" : "auto"}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            zoomPreset="medium"
           />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition group-hover:opacity-100" />
         </div>
