@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useMapGeolocation } from "@/lib/useMapGeolocation";
 
 // Leaflet's default marker icon references image paths relative to the
 // package itself, which breaks once bundled by webpack/Turbopack (a common,
@@ -19,9 +20,6 @@ const shopIcon = L.icon({
   shadowSize: [41, 41],
 });
 
-// Roughly centers Taiwan when no shop is selected / as the initial view.
-const TAIWAN_CENTER: L.LatLngTuple = [23.7, 121];
-const DEFAULT_ZOOM = 8;
 const SELECTED_ZOOM = 15;
 
 export interface PigeonShopMapPoint {
@@ -43,14 +41,20 @@ export interface PigeonShopsMapProps {
 // with props via useEffect, since Leaflet owns the DOM node it's mounted
 // into directly.
 export default function PigeonShopsMap({ shops, selectedId }: PigeonShopsMapProps) {
+  // Issue #256: the initial center/zoom comes from the browser's geolocation
+  // (city-level zoom on the user, falling back to Chiayi City Government) —
+  // see lib/useMapGeolocation.ts. Null while that request is still pending;
+  // the map isn't mounted until it resolves (below), so it never has to jump
+  // from one center to another.
+  const geolocation = useMapGeolocation();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Map<number, L.Marker>>(new Map());
 
-  // Mount/unmount the map exactly once.
+  // Mount/unmount the map exactly once, as soon as geolocation resolves.
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
-    const map = L.map(containerRef.current).setView(TAIWAN_CENTER, DEFAULT_ZOOM);
+    if (!geolocation || !containerRef.current || mapRef.current) return;
+    const map = L.map(containerRef.current).setView(geolocation.center, geolocation.zoom);
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 19,
@@ -63,9 +67,13 @@ export default function PigeonShopsMap({ shops, selectedId }: PigeonShopsMapProp
       mapRef.current = null;
       markers.clear();
     };
-  }, []);
+  }, [geolocation]);
 
-  // Keep markers in sync with the shops list.
+  // Keep markers in sync with the (already-filtered, per issue #256's search
+  // + county filter) shops list — a shop hidden by the filter simply isn't
+  // in `shops`, so it's removed here like any other no-longer-present id.
+  // Also re-runs once `geolocation` resolves and the map above actually
+  // mounts, in case `shops` itself hasn't changed since the initial render.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -88,7 +96,7 @@ export default function PigeonShopsMap({ shops, selectedId }: PigeonShopsMapProp
       marker.bindPopup(`<strong>${shop.name}</strong>${phoneLine}${addressLine}`);
       markers.set(shop.id, marker);
     }
-  }, [shops]);
+  }, [shops, geolocation]);
 
   // Fly to + open the popup for whichever shop the list selected.
   useEffect(() => {
@@ -99,6 +107,14 @@ export default function PigeonShopsMap({ shops, selectedId }: PigeonShopsMapProp
     map.flyTo(marker.getLatLng(), SELECTED_ZOOM, { duration: 0.75 });
     marker.openPopup();
   }, [selectedId]);
+
+  // While geolocation is still pending, don't mount the container div at all
+  // — the mount effect above only creates the Leaflet map once `geolocation`
+  // is non-null, so rendering the same placeholder next/dynamic's own
+  // loading state uses keeps the two loading windows visually seamless.
+  if (!geolocation) {
+    return <div className="h-[420px] w-full animate-pulse rounded-xl border border-border bg-surface-subtle sm:h-[480px]" />;
+  }
 
   return <div ref={containerRef} className="h-[420px] w-full rounded-xl border border-border sm:h-[480px]" />;
 }

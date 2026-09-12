@@ -565,7 +565,12 @@
     "empty": "目前尚無鴿店資料。",
     "noPhone": "無電話資料",
     "noAddress": "無地址資料",
-    "noCoordinates": "無法定位，未顯示於地圖上"
+    "noCoordinates": "無法定位，未顯示於地圖上",
+    "searchLabel": "搜尋店名或地址",
+    "searchPlaceholder": "搜尋店名或地址...",
+    "countyFilterLabel": "縣市",
+    "countyFilterAll": "全部縣市",
+    "noResults": "沒有符合條件的鴿店"
   },
   "contactPage": {
     "title": "聯絡我們",
@@ -734,7 +739,12 @@
     "viewOnMap": "在地圖上查看",
     "callLabel": "撥打 {phone}",
     "sourceNote": "資料來源：",
-    "unmappedNote": "＊部分站點地址較為簡略，暫無法精確標示於地圖，僅列於下方清單供參考。"
+    "unmappedNote": "＊部分站點地址較為簡略，暫無法精確標示於地圖，僅列於下方清單供參考。",
+    "searchLabel": "搜尋站名或地址",
+    "searchPlaceholder": "搜尋站名或地址...",
+    "countyFilterLabel": "縣市",
+    "countyFilterAll": "全部縣市",
+    "noResults": "沒有符合條件的取鴿站"
   },
   "errorPage": {
     "labels": {

@@ -13,6 +13,8 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useTranslations } from "next-intl";
+import { useMapGeolocation } from "@/lib/useMapGeolocation";
 // Leaflet's default marker icon references image URLs that assume being
 // served from leaflet's own dist/ directory — broken once bundled by
 // webpack/Turbopack. Re-pointing at the bundled copies of the same PNGs
@@ -44,10 +46,6 @@ export interface PigeonStationMapPoint {
   lng: number;
 }
 
-// Rough center of Taiwan — shown only until fitBounds() below runs (or as a
-// fallback if there are zero geocoded stations to bound to).
-const TAIWAN_CENTER: [number, number] = [23.6, 121];
-const DEFAULT_ZOOM = 7;
 const FOCUS_ZOOM = 15;
 
 function escapeHtml(text: string): string {
@@ -66,49 +64,69 @@ export default function PigeonStationsMap({
   /** Station id to fly the map to and open its popup for — set by clicking a list item. */
   selectedId: number | null;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const t = useTranslations("pigeonStations");
+  // Issue #256: the initial center/zoom comes from the browser's geolocation
+  // (city-level zoom on the user, falling back to Chiayi City Government) —
+  // see lib/useMapGeolocation.ts. Null while that request is still pending;
+  // the map isn't mounted until it resolves (below). This replaces the
+  // previous behavior of fitBounds()-ing to every station on mount, which
+  // would otherwise immediately zoom back out past whatever geolocation set.
+  const geolocation = useMapGeolocation();
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Map<number, L.Marker>>(new Map());
 
-  // Mount/rebuild the map whenever the station set changes. Stations come
-  // from a server-rendered list that doesn't change after mount in normal
-  // use, but rebuilding on change keeps this correct if that ever stops
-  // being true (e.g. a future client-side filter).
+  // Mount/unmount the map exactly once, as soon as geolocation resolves.
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!geolocation || !containerRef.current || mapRef.current) return;
     configureDefaultIcon();
 
-    const map = L.map(containerRef.current).setView(TAIWAN_CENTER, DEFAULT_ZOOM);
+    const map = L.map(containerRef.current).setView(geolocation.center, geolocation.zoom);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 19,
     }).addTo(map);
 
-    const markers = new Map<number, L.Marker>();
-    const bounds: [number, number][] = [];
+    mapRef.current = map;
+    const markers = markersRef.current;
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      markers.clear();
+    };
+  }, [geolocation]);
+
+  // Keep markers in sync with the (already-filtered, per issue #256's search
+  // + county filter) stations list — a station hidden by the filter simply
+  // isn't in `stations`, so it's removed here like any other
+  // no-longer-present id. Also re-runs once `geolocation` resolves and the
+  // map above actually mounts, in case `stations` itself hasn't changed
+  // since the initial render.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const markers = markersRef.current;
+    const nextIds = new Set(stations.map((station) => station.id));
+
+    for (const [id, marker] of markers) {
+      if (!nextIds.has(id)) {
+        marker.remove();
+        markers.delete(id);
+      }
+    }
+
     for (const station of stations) {
+      if (markers.has(station.id)) continue;
       const marker = L.marker([station.lat, station.lng])
         .addTo(map)
         .bindPopup(
           `<strong>${escapeHtml(station.name)}</strong><br/>${escapeHtml(station.phone)}<br/>${escapeHtml(station.address)}`,
         );
       markers.set(station.id, marker);
-      bounds.push([station.lat, station.lng]);
     }
-
-    if (bounds.length > 0) {
-      map.fitBounds(bounds, { padding: [32, 32], maxZoom: 13 });
-    }
-
-    mapRef.current = map;
-    markersRef.current = markers;
-
-    return () => {
-      map.remove();
-      mapRef.current = null;
-      markersRef.current = new Map();
-    };
-  }, [stations]);
+  }, [stations, geolocation]);
 
   // Fly to + open the popup of whichever station was just clicked in the list.
   useEffect(() => {
@@ -119,6 +137,17 @@ export default function PigeonStationsMap({
     map.flyTo(marker.getLatLng(), Math.max(map.getZoom(), FOCUS_ZOOM), { duration: 0.75 });
     marker.openPopup();
   }, [selectedId]);
+
+  // While geolocation is still pending, don't mount the container div at all
+  // — the mount effect above only creates the Leaflet map once `geolocation`
+  // is non-null.
+  if (!geolocation) {
+    return (
+      <div className="flex h-[420px] w-full items-center justify-center rounded-2xl border border-border bg-surface-muted text-sm text-ink-light sm:h-[480px]">
+        {t("mapLoading")}
+      </div>
+    );
+  }
 
   return <div ref={containerRef} className="h-[420px] w-full rounded-2xl border border-border sm:h-[480px]" />;
 }
