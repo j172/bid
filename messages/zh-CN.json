@@ -565,7 +565,12 @@
     "empty": "目前尚无鸽店数据。",
     "noPhone": "无电话信息",
     "noAddress": "无地址信息",
-    "noCoordinates": "无法定位，未显示于地图上"
+    "noCoordinates": "无法定位，未显示于地图上",
+    "searchLabel": "搜索店名或地址",
+    "searchPlaceholder": "搜索店名或地址...",
+    "countyFilterLabel": "县市",
+    "countyFilterAll": "全部县市",
+    "noResults": "没有符合条件的鸽店"
   },
   "contactPage": {
     "title": "联系我们",
@@ -734,7 +739,12 @@
     "viewOnMap": "在地图上查看",
     "callLabel": "拨打 {phone}",
     "sourceNote": "数据来源：",
-    "unmappedNote": "＊部分站点地址较为简略，暂无法精确标示于地图，仅列于下方清单供参考。"
+    "unmappedNote": "＊部分站点地址较为简略，暂无法精确标示于地图，仅列于下方清单供参考。",
+    "searchLabel": "搜索站名或地址",
+    "searchPlaceholder": "搜索站名或地址...",
+    "countyFilterLabel": "县市",
+    "countyFilterAll": "全部县市",
+    "noResults": "没有符合条件的取鸽站"
   },
   "errorPage": {
     "labels": {

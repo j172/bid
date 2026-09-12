@@ -565,7 +565,12 @@
     "empty": "No pigeon shops available yet.",
     "noPhone": "No phone on file",
     "noAddress": "No address on file",
-    "noCoordinates": "Couldn't be located — not shown on the map"
+    "noCoordinates": "Couldn't be located — not shown on the map",
+    "searchLabel": "Search by name or address",
+    "searchPlaceholder": "Search by name or address...",
+    "countyFilterLabel": "County/City",
+    "countyFilterAll": "All counties/cities",
+    "noResults": "No pigeon shops match your filters"
   },
   "contactPage": {
     "title": "Contact",
@@ -734,7 +739,12 @@
     "viewOnMap": "View on map",
     "callLabel": "Call {phone}",
     "sourceNote": "Source: ",
-    "unmappedNote": "*Some station addresses are too vague to pin precisely on the map and are listed below for reference only."
+    "unmappedNote": "*Some station addresses are too vague to pin precisely on the map and are listed below for reference only.",
+    "searchLabel": "Search by name or address",
+    "searchPlaceholder": "Search by name or address...",
+    "countyFilterLabel": "County/City",
+    "countyFilterAll": "All counties/cities",
+    "noResults": "No pigeon stations match your filters"
   },
   "errorPage": {
     "labels": {
