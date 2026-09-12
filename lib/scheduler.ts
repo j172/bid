@@ -8,6 +8,7 @@ import cron from "node-cron";
 import { syncExchangeRates } from "@/lib/exchangeRates";
 import { syncHerbotsNews } from "@/lib/newsSync";
 import { syncRaces } from "@/lib/racesSync";
+import { getLastRunAt, isSyncStale, type SyncJobName } from "@/lib/syncRuns";
 
 let started = false;
 
@@ -26,6 +27,73 @@ let started = false;
 // chance at a successful fetch (see TAIFEX_FETCH_MAX_ATTEMPTS's comment in
 // lib/exchangeRates.ts for the other half of this mitigation).
 const STARTUP_SYNC_DELAY_MS = 8000;
+
+// issue #261: news/races each track their own "last completed run" timestamp
+// in the sync_runs table (see lib/syncRuns.ts / db/init.sql's sync_runs
+// comment). After the same STARTUP_SYNC_DELAY_MS boot delay used above, this
+// module checks that timestamp for each job and fires a one-off catch-up
+// sync if it's missing or older than this many hours — so a deploy that
+// happens to land after today's 08:40 Asia/Taipei tick has already passed
+// doesn't leave the site without fresh news/races until tomorrow's tick.
+//
+// This deliberately does NOT sync unconditionally on every boot the way
+// exchange rates' startup sync above does: issue #81's production evidence
+// shows this host gets killed and restarted roughly every 4.4 hours, and
+// news/races are comparatively heavy (many external requests, plus a
+// Cloudflare Workers AI translation call per paragraph for herbots.be
+// content) — an unconditional per-restart re-run would multiply that cost by
+// however many times the process happens to restart in a day, for zero
+// benefit once a run has already landed today.
+//
+// 20 hours is comfortably longer than the ~24h gap between two consecutive
+// scheduled 08:40 ticks (so an ordinary day, where the cron tick already ran,
+// never re-triggers a catch-up here) while still being short enough to catch
+// both "deployed after today's 08:40 window already passed" and "the process
+// was down across an entire scheduled tick".
+const SYNC_STALENESS_THRESHOLD_HOURS = 20;
+
+// Checks jobName's last recorded run and, if stale (see
+// SYNC_STALENESS_THRESHOLD_HOURS above), fires syncFn() once — logging the
+// outcome with jobName's own prefix, same "describe the result, .catch() only
+// as a backstop against a truly unexpected bug" convention used by the
+// cron.schedule callbacks below. Every failure here (a getLastRunAt() error,
+// or syncFn() itself somehow throwing) is caught and logged rather than
+// propagated: this runs from a bare setTimeout with no caller to hand a
+// rejection to, and — per news/races' independent-evaluation requirement — a
+// problem with one job's check must never prevent the other job's own
+// setTimeout callback (registered separately below) from running at all.
+async function maybeRunCatchUpSync<T>(
+  jobName: SyncJobName,
+  syncFn: () => Promise<T>,
+  describeResult: (result: T) => string,
+): Promise<void> {
+  const logPrefix = `[${jobName}Sync]`;
+
+  let lastRunAt: Date | null;
+  try {
+    lastRunAt = await getLastRunAt(jobName);
+  } catch (error) {
+    console.error(`${logPrefix} failed to read last sync run time, skipping catch-up check`, error);
+    return;
+  }
+
+  if (!isSyncStale(lastRunAt, new Date(), SYNC_STALENESS_THRESHOLD_HOURS)) {
+    console.log(
+      `${logPrefix} last run at ${lastRunAt?.toISOString()} is within ${SYNC_STALENESS_THRESHOLD_HOURS}h, skipping catch-up sync`,
+    );
+    return;
+  }
+
+  console.log(
+    `${logPrefix} last run ${lastRunAt ? lastRunAt.toISOString() : "never"} is stale (>${SYNC_STALENESS_THRESHOLD_HOURS}h), firing catch-up sync`,
+  );
+  try {
+    const result = await syncFn();
+    console.log(`${logPrefix} catch-up sync done: ${describeResult(result)}`);
+  } catch (error) {
+    console.error(`${logPrefix} catch-up sync failed`, error);
+  }
+}
 
 // Idempotent: Next.js dev mode can re-invoke instrumentation's register()
 // across fast-refresh module reloads, so a module-level guard keeps this
@@ -117,4 +185,38 @@ export function startScheduler(): void {
     },
     { timezone: "Asia/Taipei" },
   );
+
+  // issue #261 post-boot catch-up checks (see SYNC_STALENESS_THRESHOLD_HOURS'
+  // comment above for the full reasoning) — same STARTUP_SYNC_DELAY_MS boot
+  // delay as exchange rates' startup sync, so this doesn't land in the same
+  // cold-start instability window either. news and races each get their own
+  // setTimeout/maybeRunCatchUpSync call, evaluated and (if stale) fired fully
+  // independently of one another, matching the "separate cron.schedule
+  // entries so one job's problem can't couple with the other's" principle
+  // the two 08:40 registrations above already follow.
+  setTimeout(() => {
+    // maybeRunCatchUpSync never rejects (every failure inside it is caught
+    // and logged) — `void` just marks this fire-and-forget call as
+    // intentional, same convention as lib/notifications.ts/
+    // lib/homepageVideos.ts.
+    void maybeRunCatchUpSync(
+      "news",
+      syncHerbotsNews,
+      (result) =>
+        `imported=${result.imported} skippedExisting=${result.skippedExisting} ` +
+        `skippedNoContent=${result.skippedNoContent} translationFailures=${result.translationFailures} errors=${result.errors.length}`,
+    );
+  }, STARTUP_SYNC_DELAY_MS);
+
+  setTimeout(() => {
+    void maybeRunCatchUpSync(
+      "races",
+      syncRaces,
+      (result) =>
+        `loingMa(imported=${result.loingMa.imported} updated=${result.loingMa.updated} ` +
+        `skipped=${result.loingMa.skipped} errors=${result.loingMa.errors.length}) ` +
+        `herbots(imported=${result.herbots.imported} updated=${result.herbots.updated} ` +
+        `translationFailures=${result.herbots.translationFailures} errors=${result.herbots.errors.length})`,
+    );
+  }, STARTUP_SYNC_DELAY_MS);
 }

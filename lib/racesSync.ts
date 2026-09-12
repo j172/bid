@@ -29,6 +29,7 @@ import {
 import { upsertRace, type RaceStatus } from "@/lib/races";
 import { isTranslationConfigured, translateToTraditionalChinese } from "@/lib/translate";
 import { saveRaceImageFromBuffer } from "@/lib/uploads";
+import { recordRunNow } from "@/lib/syncRuns";
 
 // Same reasoning as lib/newsSync.ts's MAX_PAGES: bounds one sync run's worst
 // case while the ordinary case (a handful of new races since yesterday)
@@ -294,8 +295,25 @@ async function syncHerbotsRaces(): Promise<HerbotsSyncResult> {
 // is easy to read in server logs; there is no shared resource forcing
 // sequential execution, but the two sources' total network cost is modest
 // enough that the simplicity is worth it.
+//
+// issue #261: records this run's completion time in sync_runs (regardless of
+// whether either source imported anything new, or whether loing-ma.com was
+// skipped entirely — see LoingMaSyncResult.skipped) so lib/scheduler.ts's
+// post-boot catch-up check can tell how long it's been since races last
+// actually ran. syncLoingMaRaces()/syncHerbotsRaces() never throw for a
+// normal failure (see this file's header comment), so this is the function's
+// one normal return point; recordRunNow's own failure is swallowed and
+// logged rather than allowed to turn an otherwise-successful (or
+// already-degraded) sync run into a thrown error.
 export async function syncRaces(): Promise<RacesSyncResult> {
   const loingMa = await syncLoingMaRaces();
   const herbots = await syncHerbotsRaces();
+
+  try {
+    await recordRunNow("races");
+  } catch (error) {
+    console.error("[racesSync] failed to record sync_runs timestamp", error);
+  }
+
   return { loingMa, herbots };
 }

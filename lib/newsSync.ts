@@ -18,6 +18,7 @@ import { saveNewsImageFromBuffer } from "@/lib/uploads";
 import { escapeHtml, htmlToPlainText } from "@/lib/htmlText";
 import { plainTextLength } from "@/lib/richTextValidation";
 import { CONTENT_MAX, TITLE_MAX } from "@/lib/newsValidation";
+import { recordRunNow } from "@/lib/syncRuns";
 
 // Bounds one sync run's worst case (a fresh install with an empty
 // news_import_log, or herbots.be publishing an unusually large batch in one
@@ -113,6 +114,21 @@ function truncateTitle(title: string): string {
   return title.length > TITLE_MAX ? `${title.slice(0, TITLE_MAX - 1)}…` : title;
 }
 
+// issue #261: records this run's completion time in sync_runs so
+// lib/scheduler.ts's post-boot catch-up check can tell how long it's been
+// since news last actually synced. Called at every normal return point of
+// syncHerbotsNews() below — success or partial-failure alike, never on an
+// unexpected throw (see that function's own comment) — and swallows its own
+// failure so a sync_runs write hiccup can never turn an otherwise-successful
+// (or already-degraded) sync run into a thrown error.
+async function recordNewsSyncRun(): Promise<void> {
+  try {
+    await recordRunNow("news");
+  } catch (error) {
+    console.error("[newsSync] failed to record sync_runs timestamp", error);
+  }
+}
+
 async function importOneArticle(
   client: HerbotsNewsClient,
   summary: HerbotsArticleSummary,
@@ -190,6 +206,7 @@ export async function syncHerbotsNews(): Promise<NewsSyncResult> {
     } catch (error) {
       result.errors.push("無法初始化 herbots.be 用戶端，本次同步已中止");
       console.error("[newsSync] client open failed", error);
+      await recordNewsSyncRun();
       return result;
     }
 
@@ -231,5 +248,6 @@ export async function syncHerbotsNews(): Promise<NewsSyncResult> {
     await client.close();
   }
 
+  await recordNewsSyncRun();
   return result;
 }

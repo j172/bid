@@ -8,6 +8,7 @@
 // instead of news' single flat result, so the message composes both halves.
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { parseSyncApiResponse } from "../components/parseSyncApiResponse";
 
 interface SourceSyncResult {
   imported: number;
@@ -61,8 +62,15 @@ export default function RacesSyncButton() {
 
     try {
       const response = await fetch("/api/admin/races/sync", { method: "POST" });
-      const data: SyncResponse = await response.json();
+      const parsed = await parseSyncApiResponse<SyncResponse>(response);
 
+      if (!parsed.ok || !parsed.data) {
+        setStatus("error");
+        setMessage(parsed.message ?? "同步失敗，原因不明");
+        return;
+      }
+
+      const data = parsed.data;
       if (!data.ok || !data.result) {
         setStatus("error");
         setMessage(data.error ?? "同步失敗，原因不明");

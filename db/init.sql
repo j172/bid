@@ -670,3 +670,22 @@ CREATE TABLE IF NOT EXISTS races (
   KEY idx_races_source (source)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 新聞/賽事每日同步「最近一次執行時間」追蹤 (issue #261) — 部署/重啟後智能
+-- 補跑用。這台主機重啟頻繁 (issue #81，約每 4.4 小時一次)，而新聞
+-- (lib/newsSync.ts) 與賽事 (lib/racesSync.ts) 這兩個每日 cron 同步都是相對
+-- 重的操作（多次外部請求 + herbots.be 內容的 Cloudflare Workers AI 翻譯
+-- 呼叫），所以 lib/scheduler.ts 開機時的補跑邏輯不能像 lib/exchangeRates.ts
+-- 的 STARTUP_SYNC_DELAY_MS 那樣無條件每次重啟都跑一次，而是查這張表判斷
+-- 「距離上次真的跑完是否已經超過門檻」才補跑一次（見 lib/scheduler.ts 的
+-- SYNC_STALENESS_THRESHOLD_HOURS 與其補跑邏輯的完整說明）。job_name 直接當
+-- PK 用（'news' | 'races'）；每次 syncHerbotsNews()/syncRaces() 執行到正常
+-- 回傳（不論本次是否有新資料匯入、是否夾雜 partial failure，只要不是被未預期
+-- 例外中斷）就會呼叫 lib/syncRuns.ts 的 recordRunNow() 覆寫這裡的
+-- last_run_at。這張表只保留「最新一次」的時間戳，不是流水帳，所以沒有
+-- id/created_at 這種歷史紀錄欄位的必要。
+CREATE TABLE IF NOT EXISTS sync_runs (
+  job_name VARCHAR(50) NOT NULL,  -- 'news' | 'races'
+  last_run_at DATETIME NOT NULL,
+  PRIMARY KEY (job_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
