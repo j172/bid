@@ -528,6 +528,7 @@
     "faq": "FAQs",
     "gdpr": "GDPR",
     "contact": "Contact",
+    "pigeonStations": "Pigeon Stations Map",
     "pigeonShops": "Pigeon Shop Directory",
     "assuranceTitle": "Trading Assurance",
     "assuranceItem1": "Pedigree & bidding data verified",
@@ -696,6 +697,17 @@
     "tabShowcase": "Pigeon Showcase",
     "noListingsInLoft": "No listings available for this loft.",
     "noShowcaseInLoft": "No showcase pigeons available for this loft."
+  },
+  "pigeonStations": {
+    "title": "Pigeon Pickup Station Directory",
+    "subtitle": "Contact details and map locations for pigeon pickup stations (取鴿站) across Taiwan, for arranging pickups and handoffs.",
+    "mapLoading": "Loading map…",
+    "listTitle": "Station List",
+    "noItems": "No pigeon stations available yet.",
+    "viewOnMap": "View on map",
+    "callLabel": "Call {phone}",
+    "sourceNote": "Source: ",
+    "unmappedNote": "*Some station addresses are too vague to pin precisely on the map and are listed below for reference only."
   },
   "errorPage": {
     "labels": {

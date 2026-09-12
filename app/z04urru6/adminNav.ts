@@ -30,6 +30,9 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { label: "最新訊息管理", href: "/z04urru6/news", section: "content" },
   // 官方影音管理 — 管理首頁「官方社群影音動態」專區指定播放之 YouTube 影片（最多 6 則）。
   { label: "官方影音管理", href: "/z04urru6/homepage-videos", section: "content" },
+  // 取鴿站管理 (issue #242) — 手動維護 pigeon_stations，資料最初由
+  // scripts/import-pigeon-stations.mjs 一次性匯入 nicepigeon.com 名錄。
+  { label: "取鴿站管理", href: "/z04urru6/pigeon-stations", section: "content" },
   // 鴿店地圖目錄管理 (issue #243) — 手動維護一次性匯入腳本
   // (scripts/import-pigeon-shops.mjs) 匯入的鴿店聯絡資訊。
   { label: "鴿店地圖目錄管理", href: "/z04urru6/pigeon-shops", section: "content" },

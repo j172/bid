@@ -528,6 +528,7 @@
     "faq": "常見問題",
     "gdpr": "GDPR",
     "contact": "聯絡我們",
+    "pigeonStations": "取鴿站地圖",
     "pigeonShops": "鴿店地圖目錄",
     "assuranceTitle": "交易保障",
     "assuranceItem1": "血統與競標資料嚴格驗證",
@@ -696,6 +697,17 @@
     "tabShowcase": "名鴿展示",
     "noListingsInLoft": "目前尚無拍賣鴿。",
     "noShowcaseInLoft": "目前尚無名鴿展示。"
+  },
+  "pigeonStations": {
+    "title": "取鴿站地圖目錄",
+    "subtitle": "全台各地取鴿站聯絡資訊與地圖位置，方便安排取鴿與交鴿。",
+    "mapLoading": "地圖載入中…",
+    "listTitle": "取鴿站列表",
+    "noItems": "目前尚無取鴿站資料。",
+    "viewOnMap": "在地圖上查看",
+    "callLabel": "撥打 {phone}",
+    "sourceNote": "資料來源：",
+    "unmappedNote": "＊部分站點地址較為簡略，暫無法精確標示於地圖，僅列於下方清單供參考。"
   },
   "errorPage": {
     "labels": {

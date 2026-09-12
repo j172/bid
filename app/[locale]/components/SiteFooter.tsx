@@ -131,6 +131,11 @@ export default async function SiteFooter() {
               </Link>
             </li>
             <li>
+              <Link href="/pigeon-stations" className="hover:text-interactive-primary">
+                {t("pigeonStations")}
+              </Link>
+            </li>
+            <li>
               <Link href="/pigeon-shops" className="hover:text-interactive-primary">
                 {t("pigeonShops")}
               </Link>

@@ -355,6 +355,24 @@ CREATE TABLE IF NOT EXISTS homepage_videos (
   KEY idx_homepage_videos_active_sort (is_active, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 取鴿站地圖目錄 (issue #242) — see db/init.sql for the fuller header
+-- comment. Brand-new table, whole final schema from day one, populated by a
+-- one-time scripts/import-pigeon-stations.mjs run rather than automatic
+-- schema-plus-data seeding.
+CREATE TABLE IF NOT EXISTS pigeon_stations (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  name VARCHAR(100) NOT NULL,
+  phone VARCHAR(50) NOT NULL,
+  address VARCHAR(255) NOT NULL,
+  lat DECIMAL(10,7) NULL,
+  lng DECIMAL(10,7) NULL,
+  source_url VARCHAR(500) NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_pigeon_stations_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- 鴿店地圖目錄 (issue #243) — see db/init.sql for the fuller header comment.
 -- Brand-new table, whole final schema from day one, same as
 -- homepage_videos/contact_messages above.

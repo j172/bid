@@ -519,6 +519,27 @@ CREATE TABLE IF NOT EXISTS homepage_videos (
   KEY idx_homepage_videos_active_sort (is_active, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 取鴿站地圖目錄 (issue #242 / Epic #239) — 一次性匯入自 nicepigeon.com 的全台
+-- 取鴿站名錄（scripts/import-pigeon-stations.mjs，跑過一次後不排入每日
+-- cron，後續由後台 CRUD 手動維護增修）。lat/lng 是匯入當下用 OpenStreetMap
+-- Nominatim 對 address 做地理編碼的結果；允許 NULL 是因為原始地址偶有過於
+-- 模糊（例如僅寫「OO交流道邊」）導致地理編碼失敗，此時前台地圖略過該筆、僅
+-- 列表顯示，而不是讓整支匯入腳本中斷。source_url 記錄原始資料來源網址，供
+-- 之後回頭核對或重新匯入時參考。
+CREATE TABLE IF NOT EXISTS pigeon_stations (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  name VARCHAR(100) NOT NULL,
+  phone VARCHAR(50) NOT NULL,
+  address VARCHAR(255) NOT NULL,
+  lat DECIMAL(10,7) NULL,
+  lng DECIMAL(10,7) NULL,
+  source_url VARCHAR(500) NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_pigeon_stations_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- 鴿店地圖目錄 (issue #243, part of Epic #239) — one-time crawl of
 -- nicepigeon.com's 鴿店資訊 article listing (news.php?classid=8), imported
 -- by scripts/import-pigeon-shops.mjs and NOT wired into the daily cron
