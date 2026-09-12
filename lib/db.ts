@@ -413,6 +413,28 @@ CREATE TABLE IF NOT EXISTS pigeon_shops (
   KEY idx_pigeon_shops_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 鴿會查詢 (issue #260, part of Epic #239) — see db/init.sql for the fuller
+-- header comment. Brand-new table, whole final schema from day one, same as
+-- pigeon_shops/pigeon_stations above.
+CREATE TABLE IF NOT EXISTS pigeon_groups (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  name VARCHAR(200) NOT NULL,
+  address VARCHAR(255) NULL,
+  lat DECIMAL(10,7) NULL,
+  lng DECIMAL(10,7) NULL,
+  chairman_name VARCHAR(100) NULL,
+  chairman_phone VARCHAR(100) NULL,
+  secretary_name VARCHAR(100) NULL,
+  secretary_phone VARCHAR(100) NULL,
+  website_url VARCHAR(500) NULL,
+  pigeon_tracking_url VARCHAR(500) NULL,
+  source_url VARCHAR(500) NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_pigeon_groups_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- 賽事資訊 (issue #241) — see db/init.sql for the fuller header comment.
 -- Brand-new table, whole final schema from day one, same as
 -- pigeon_shops/pigeon_stations above. Upserted (not import-log-guarded) by

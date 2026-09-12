@@ -621,6 +621,44 @@ CREATE TABLE IF NOT EXISTS pigeon_shops (
   KEY idx_pigeon_shops_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 鴿會查詢 (issue #260, part of Epic #239) — one-time crawl of
+-- cb-pigeon.com's（凱克博賽鴿資訊網）三個區域鴿會查詢清單頁
+-- (/group/{n,w,s}，各自直接列出鴿會卡片，無分頁) 逐一走訪每個
+-- /group/view/{id} 明細頁，由 scripts/import-cb-pigeon-groups.mjs 匯入，
+-- 同樣不掛進每日 cron（同 pigeon_shops/pigeon_stations 的「跑一次後由後台
+-- CRUD 維護」慣例）。與 pigeon_shops/pigeon_stations 一樣是全新、與任何
+-- 合作鴿舍/homepage_sections 無關的第三方位址簿清單，因此獨立成表，並依
+-- pigeon_shops/pigeon_stations 既有「不合併成同一個地圖目錄頁」的決定，
+-- 維持獨立頁面。
+-- 明細頁排版極不一致（有的把會長/秘書/地址放在左欄結構化的
+-- <i class="fa fa-user/fa-phone/fa-map-marker/fa-globe"> 列，有的只寫在右
+-- 欄一段自由格式文字裡，兩種都要嘗試解析——見該匯入腳本 extractGroupFromHtml
+-- 的實作與測試），故 chairman_name/chairman_phone/secretary_name/
+-- secretary_phone/website_url/pigeon_tracking_url/address 全部允許 NULL，
+-- 解析不到就留空，不中斷整支匯入。lat/lng 優先解析明細頁內嵌 Google Maps
+-- embed iframe 的 `!2d<經度>!3d<緯度>!` 座標（多數明細頁其實是舊版
+-- maps.google.com.tw 搜尋連結而非新版 embed，此時退回用 address 呼叫
+-- OpenStreetMap Nominatim 地理編碼，仍解析不到才留 NULL）。source_url 記錄
+-- cb-pigeon.com 該鴿會明細頁網址，供之後回頭核對或重新匯入時參考。
+CREATE TABLE IF NOT EXISTS pigeon_groups (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  name VARCHAR(200) NOT NULL,
+  address VARCHAR(255) NULL,
+  lat DECIMAL(10,7) NULL,
+  lng DECIMAL(10,7) NULL,
+  chairman_name VARCHAR(100) NULL,
+  chairman_phone VARCHAR(100) NULL,
+  secretary_name VARCHAR(100) NULL,
+  secretary_phone VARCHAR(100) NULL,
+  website_url VARCHAR(500) NULL,
+  pigeon_tracking_url VARCHAR(500) NULL,
+  source_url VARCHAR(500) NOT NULL,   -- the cb-pigeon.com /group/view/{id} detail page this row was scraped from
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_pigeon_groups_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- 賽事資訊 (issue #241, part of Epic #239) — daily sync of two independent,
 -- never-merged regional race sources into one table (lib/racesSync.ts):
 -- loing-ma.com (台灣/亞洲, phpBB forum, already Traditional Chinese) and

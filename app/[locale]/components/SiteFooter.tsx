@@ -140,6 +140,11 @@ export default async function SiteFooter() {
                 {t("pigeonShops")}
               </Link>
             </li>
+            <li>
+              <Link href="/pigeon-groups" className="hover:text-interactive-primary">
+                {t("pigeonGroups")}
+              </Link>
+            </li>
           </ul>
         </section>
 
