@@ -75,14 +75,23 @@ export default function FeaturedLoftCarouselCard({
           {viewMoreLabel}
         </Link>
       </div>
-      <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-slate-100">
+      {/* Issue #252 — the image itself is now a Link to the same detail page
+          as the title/CTA below, not just decorative. `block` keeps the
+          anchor a block-level box (anchors are inline by default) so the
+          aspect-ratio sizing behaves exactly like the plain <div> it
+          replaces; `cursor-pointer` makes the affordance explicit even
+          though anchors already default to it. */}
+      <Link
+        href={href}
+        className="relative block aspect-[16/9] w-full cursor-pointer overflow-hidden rounded-xl bg-slate-100"
+      >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={current.imageUrl}
           alt={current.title}
           className="absolute inset-0 h-full w-full object-contain transition-transform duration-700 ease-out group-hover:scale-105"
         />
-      </div>
+      </Link>
       {/* Manual dot/arrow controls — same shared component/behaviour as
           NewsCarouselCard's own (a white card, so the dark "solid" variant
           stays legible): clicking either just calls the shared rotating
