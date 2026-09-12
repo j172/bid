@@ -143,6 +143,9 @@ export interface ListingJsonLdInput {
   current_price: number;
   stock_remaining: number | null;
   ends_at: Date | null;
+  /** Auction listings only — null means "opens immediately" (see lib/listings.ts's Listing.starts_at). Used for Offer.validFrom below. */
+  starts_at: Date | null;
+  created_at: Date;
   photos: string[];
 }
 
@@ -220,6 +223,17 @@ export function buildListingProductJsonLd(listing: ListingJsonLdInput, pathname:
       // null, since JSON-LD consumers generally treat a present-but-null
       // field as "unknown" rather than "not applicable".
       ...(listing.ends_at ? { priceValidUntil: listing.ends_at.toISOString().slice(0, 10) } : {}),
+      // Offer.validFrom: when this offer became (or will become) purchasable.
+      // Every listing has one of these two — starts_at is only ever set for
+      // an auction with a scheduled future open (status 'scheduled', see
+      // listingAvailability's PreOrder case above); everything else
+      // (starts_at null, i.e. "opens immediately", and all fixed_price
+      // listings, which never have a starts_at) falls back to created_at,
+      // the moment the offer actually went live. Unlike priceValidUntil,
+      // this is never omitted — schema.org/Google's structured-data
+      // validators flag Offer.validFrom as missing when absent, and a value
+      // is always available here either way.
+      validFrom: (listing.starts_at ?? listing.created_at).toISOString().slice(0, 10),
     },
   };
 }
