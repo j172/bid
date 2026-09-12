@@ -519,3 +519,37 @@ CREATE TABLE IF NOT EXISTS homepage_videos (
   KEY idx_homepage_videos_active_sort (is_active, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 鴿店地圖目錄 (issue #243, part of Epic #239) — one-time crawl of
+-- nicepigeon.com's 鴿店資訊 article listing (news.php?classid=8), imported
+-- by scripts/import-pigeon-shops.mjs and NOT wired into the daily cron
+-- scheduler (see that script's header comment — same "run once by hand"
+-- shape as migrate-description-html.mjs). Content is already Traditional
+-- Chinese, so unlike news_posts/featured_loft_posts there is no
+-- translation step and therefore no per-locale columns. Deliberately its
+-- own table rather than reusing homepage_sections/pigeon_showcase: those
+-- both model curated/admin-authored content tied to a 合作鴿舍
+-- (homepage_sections row), while this is a flat, address-book-shaped list
+-- scraped from a third party with no loft relationship at all. Kept
+-- separate from the sibling 取鴿站 directory added by issue #242 per that
+-- issue's explicit "不合併成同一個地圖目錄頁" decision, even though both
+-- pages share the same Leaflet/OpenStreetMap map component shape.
+-- phone/address are nullable — nicepigeon's source articles are hand-typed
+-- and some shop entries are genuinely missing one or the other (see the
+-- import script's parser, which handles both gracefully); lat/lng are
+-- nullable for the same reason (Nominatim geocoding may fail to resolve
+-- an address, or a row may have no address to geocode at all) — such rows
+-- still appear in the public page's list, just without a map marker.
+CREATE TABLE IF NOT EXISTS pigeon_shops (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  name VARCHAR(200) NOT NULL,
+  phone VARCHAR(50) NULL,
+  address VARCHAR(255) NULL,
+  lat DECIMAL(10,7) NULL,
+  lng DECIMAL(10,7) NULL,
+  source_url VARCHAR(500) NOT NULL,   -- the nicepigeon.com news_detail.php article this row was scraped from
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_pigeon_shops_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

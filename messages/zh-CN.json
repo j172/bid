@@ -528,6 +528,7 @@
     "faq": "常见问题",
     "gdpr": "GDPR",
     "contact": "联系我们",
+    "pigeonShops": "鸽店地图目录",
     "assuranceTitle": "交易保障",
     "assuranceItem1": "血统与竞标资料严格验证",
     "assuranceItem2": "结标后由专人协助交易与发货",
@@ -552,6 +553,14 @@
     "title": "购物车",
     "empty": "你的购物车目前是空的。",
     "cta": "继续购物"
+  },
+  "pigeonShopsPage": {
+    "title": "鸽店地图目录",
+    "subtitle": "全台鸽店联系信息地图，数据来源为好鸽网公开文章，点选下方列表可定位地图上的鸽店。",
+    "empty": "目前尚无鸽店数据。",
+    "noPhone": "无电话信息",
+    "noAddress": "无地址信息",
+    "noCoordinates": "无法定位，未显示于地图上"
   },
   "contactPage": {
     "title": "联系我们",

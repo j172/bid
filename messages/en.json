@@ -528,6 +528,7 @@
     "faq": "FAQs",
     "gdpr": "GDPR",
     "contact": "Contact",
+    "pigeonShops": "Pigeon Shop Directory",
     "assuranceTitle": "Trading Assurance",
     "assuranceItem1": "Pedigree & bidding data verified",
     "assuranceItem2": "Staff-assisted settlement & delivery",
@@ -552,6 +553,14 @@
     "title": "Cart",
     "empty": "Your cart is currently empty.",
     "cta": "Continue Shopping"
+  },
+  "pigeonShopsPage": {
+    "title": "Pigeon Shop Directory",
+    "subtitle": "A map of pigeon-shop contact info nationwide, sourced from Nice Pigeon's public articles — select an item below to locate it on the map.",
+    "empty": "No pigeon shops available yet.",
+    "noPhone": "No phone on file",
+    "noAddress": "No address on file",
+    "noCoordinates": "Couldn't be located — not shown on the map"
   },
   "contactPage": {
     "title": "Contact",
