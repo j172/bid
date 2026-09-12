@@ -661,7 +661,8 @@
     "breadcrumbHome": "首页",
     "publishedLine": "发布时间：{date}",
     "sidebarLatest": "最新消息",
-    "backToList": "查看更多"
+    "backToList": "查看更多",
+    "originalHeading": "原文"
   },
   "featuredLofts": {
     "title": "名家专区",

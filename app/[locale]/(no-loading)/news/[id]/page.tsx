@@ -119,7 +119,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
         id: sidebarItem.id,
         href: `/news/${sidebarItem.id}`,
         primary: sidebarItem.title,
-        secondary: sidebarItem.createdAt.toLocaleDateString(),
+        secondary: (sidebarItem.publishedAt ?? sidebarItem.createdAt).toLocaleDateString(),
       }))}
       sidebarEmptyLabel={t("noItems")}
       backHref="/news"
@@ -144,11 +144,22 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
       <h1 className="mt-6 text-3xl font-black text-ink">{item.title}</h1>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm font-semibold text-ink-light">
-          {t("publishedLine", { date: item.createdAt.toLocaleString() })}
+          {t("publishedLine", { date: (item.publishedAt ?? item.createdAt).toLocaleString() })}
         </p>
         <GooglePreferenceButton />
       </div>
       <RichTextContent html={item.content} className="mt-6 border-t border-border pt-6 leading-7 text-ink-light" />
+      {/* herbots.be imports (issue #240) show the pre-translation original
+          underneath the Traditional Chinese translation above — 'manual'
+          rows have no original_title/original_content and this section is
+          simply omitted for them. */}
+      {item.source === "herbots" && item.originalTitle && item.originalContent && (
+        <section className="mt-8 border-t border-dashed border-border pt-6">
+          <h2 className="text-lg font-bold text-ink-light">{t("originalHeading")}</h2>
+          <h3 className="mt-2 text-xl font-bold text-ink">{item.originalTitle}</h3>
+          <RichTextContent html={item.originalContent} className="mt-4 leading-7 text-ink-light" />
+        </section>
+      )}
     </DetailWithSidebar>
   );
 }

@@ -276,10 +276,33 @@ CREATE TABLE IF NOT EXISTS news_posts (
   image_file_name VARCHAR(255) NULL,  -- 主圖 (issue #70); NULL only on pre-#70 rows
   content TEXT NOT NULL,           -- sanitizeDescriptionHtml'd TinyMCE HTML, 2000-char plain-text cap
   broadcast_id VARCHAR(255) NULL,  -- Resend broadcast id (issue #80); NULL until a newsletter is sent/scheduled for this post
+  source VARCHAR(20) NOT NULL DEFAULT 'manual', -- 'manual' | 'herbots' (issue #240)
+  source_url VARCHAR(500) NULL,     -- herbots.be article URL; de-dup key; NULL on manual rows
+  original_title VARCHAR(255) NULL, -- pre-translation title (herbots rows only)
+  original_content TEXT NULL,       -- sanitizeDescriptionHtml'd pre-translation content (herbots rows only)
+  published_at DATETIME NULL,       -- original herbots.be publish date; NULL on manual rows
+  locked_by_admin TINYINT(1) NOT NULL DEFAULT 0, -- set once an admin edits this row; sync then skips it
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
   PRIMARY KEY (id),
-  KEY idx_news_posts_created (created_at)
+  KEY idx_news_posts_created (created_at),
+  KEY idx_news_posts_source_published (source, published_at),
+  UNIQUE KEY uq_news_posts_source_url (source_url)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- De-dup ledger for the herbots.be news sync (issue #240) — see db/init.sql's
+-- fuller header comment. Brand-new table, whole final schema from day one,
+-- same as homepage_videos above. Never deleted/edited (see lib/newsImportLog.ts),
+-- unlike news_posts itself, so it keeps blocking re-import of an article an
+-- admin later deleted from news_posts.
+CREATE TABLE IF NOT EXISTS news_import_log (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  source VARCHAR(20) NOT NULL,
+  source_url VARCHAR(500) NOT NULL,
+  news_post_id BIGINT NULL,
+  imported_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_news_import_log_source_url (source_url)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 名家專區 articles (issue #176) — replaces issue #168's lightweight
@@ -598,6 +621,26 @@ async function ensurePigeonShowcaseCategories(db: mysql.Pool): Promise<void> {
 // Issue #237: Google One Tap / Google Sign-In support. Adds google_id column
 // (Google sub identifier) and relaxes password_hash/password_salt to NULL so
 // accounts registered purely via Google don't require synthetic passwords.
+// Issue #240: herbots.be news sync. Adds the source-tracking columns to an
+// already-deployed news_posts table (brand-new installs get them straight
+// from SCHEMA_SQL above); news_import_log is a brand-new table so it needs
+// no ensureColumn calls, just the CREATE TABLE IF NOT EXISTS above.
+async function ensureNewsSourceColumns(db: mysql.Pool): Promise<void> {
+  await ensureColumn(db, "news_posts", "source", "VARCHAR(20) NOT NULL DEFAULT 'manual'");
+  await ensureColumn(db, "news_posts", "source_url", "VARCHAR(500) NULL");
+  await ensureColumn(db, "news_posts", "original_title", "VARCHAR(255) NULL");
+  await ensureColumn(db, "news_posts", "original_content", "TEXT NULL");
+  await ensureColumn(db, "news_posts", "published_at", "DATETIME NULL");
+  await ensureColumn(db, "news_posts", "locked_by_admin", "TINYINT(1) NOT NULL DEFAULT 0");
+  await ensureIndex(db, "news_posts", "uq_news_posts_source_url", "UNIQUE KEY uq_news_posts_source_url (source_url)");
+  await ensureIndex(
+    db,
+    "news_posts",
+    "idx_news_posts_source_published",
+    "KEY idx_news_posts_source_published (source, published_at)",
+  );
+}
+
 export async function ensureGoogleAuthColumns(db: mysql.Pool): Promise<void> {
   await ensureColumn(db, "users", "google_id", "VARCHAR(255) NULL");
   await ensureIndex(
@@ -667,6 +710,7 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensurePigeonShowcaseCategories(db);
   await ensureHomepageVideosVideoIdIndex(db);
   await ensureGoogleAuthColumns(db);
+  await ensureNewsSourceColumns(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {

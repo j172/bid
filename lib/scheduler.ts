@@ -6,6 +6,7 @@
 // comment for why that's the right place).
 import cron from "node-cron";
 import { syncExchangeRates } from "@/lib/exchangeRates";
+import { syncHerbotsNews } from "@/lib/newsSync";
 
 let started = false;
 
@@ -52,4 +53,37 @@ export function startScheduler(): void {
       console.error("[exchangeRates] startup sync failed", error);
     });
   }, STARTUP_SYNC_DELAY_MS);
+
+  // 08:40 Asia/Taipei daily (issue #240) — offset 30 minutes after the
+  // exchange-rate tick above so both scheduled jobs don't launch at exactly
+  // the same instant. Unlike exchange rates, this deliberately has no
+  // startup-sync counterpart: launching a headless Chromium + translating a
+  // batch of articles is much heavier than an HTTP CSV fetch, and this
+  // host's frequent restarts (see the exchange-rate STARTUP_SYNC_DELAY_MS
+  // comment above) would otherwise turn "run once after every restart" into
+  // a real per-restart cost. News has no "footer must show something
+  // immediately" requirement the way exchange rates do, so missing a boot
+  // window and simply waiting for the next scheduled tick is an acceptable
+  // trade-off here. syncHerbotsNews() itself never throws for an ordinary
+  // per-article/per-page failure (see lib/newsSync.ts) — this .catch() is
+  // only a backstop against a truly unexpected bug.
+  cron.schedule(
+    "40 8 * * *",
+    () => {
+      syncHerbotsNews()
+        .then((result) => {
+          console.log(
+            `[newsSync] daily sync done: imported=${result.imported} skippedExisting=${result.skippedExisting} ` +
+              `skippedNoContent=${result.skippedNoContent} translationFailures=${result.translationFailures} errors=${result.errors.length}`,
+          );
+          for (const message of result.errors) {
+            console.error(`[newsSync] ${message}`);
+          }
+        })
+        .catch((error) => {
+          console.error("[newsSync] scheduled sync failed", error);
+        });
+    },
+    { timezone: "Asia/Taipei" },
+  );
 }

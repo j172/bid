@@ -661,7 +661,8 @@
     "breadcrumbHome": "首頁",
     "publishedLine": "發布時間：{date}",
     "sidebarLatest": "最新訊息",
-    "backToList": "查看更多"
+    "backToList": "查看更多",
+    "originalHeading": "原文"
   },
   "featuredLofts": {
     "title": "名家專區",
