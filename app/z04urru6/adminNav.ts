@@ -33,4 +33,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   // 取鴿站管理 (issue #242) — 手動維護 pigeon_stations，資料最初由
   // scripts/import-pigeon-stations.mjs 一次性匯入 nicepigeon.com 名錄。
   { label: "取鴿站管理", href: "/z04urru6/pigeon-stations", section: "content" },
+  // 鴿店地圖目錄管理 (issue #243) — 手動維護一次性匯入腳本
+  // (scripts/import-pigeon-shops.mjs) 匯入的鴿店聯絡資訊。
+  { label: "鴿店地圖目錄管理", href: "/z04urru6/pigeon-shops", section: "content" },
 ];

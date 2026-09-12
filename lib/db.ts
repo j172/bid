@@ -372,6 +372,23 @@ CREATE TABLE IF NOT EXISTS pigeon_stations (
   PRIMARY KEY (id),
   KEY idx_pigeon_stations_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 鴿店地圖目錄 (issue #243) — see db/init.sql for the fuller header comment.
+-- Brand-new table, whole final schema from day one, same as
+-- homepage_videos/contact_messages above.
+CREATE TABLE IF NOT EXISTS pigeon_shops (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  name VARCHAR(200) NOT NULL,
+  phone VARCHAR(50) NULL,
+  address VARCHAR(255) NULL,
+  lat DECIMAL(10,7) NULL,
+  lng DECIMAL(10,7) NULL,
+  source_url VARCHAR(500) NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_pigeon_shops_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
 
 // Columns added after their table's initial CREATE TABLE IF NOT EXISTS;
