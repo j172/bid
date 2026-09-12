@@ -570,7 +570,12 @@
     "searchPlaceholder": "搜索店名或地址...",
     "countyFilterLabel": "县市",
     "countyFilterAll": "全部县市",
-    "noResults": "没有符合条件的鸽店"
+    "noResults": "没有符合条件的鸽店",
+    "useMyLocationButton": "使用当前位置",
+    "locatingLabel": "定位中...",
+    "geolocationUnsupported": "您的浏览器不支持定位功能",
+    "geolocationDenied": "无法取得您的位置，请确认已允许浏览器访问位置权限",
+    "distanceLabel": "{km} 公里"
   },
   "contactPage": {
     "title": "联系我们",

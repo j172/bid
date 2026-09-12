@@ -28,7 +28,7 @@ export default async function PigeonShopsAdminPage() {
         </div>
       ) : (
         <div className="mt-6">
-          <AdminTable headers={["店名", "電話", "地址", "座標", ""]}>
+          <AdminTable headers={["店名", "分類", "電話", "地址", "座標", ""]}>
             {shops.map((shop) => (
               <AdminTableRow key={shop.id}>
                 <AdminTableCell className="font-medium">
@@ -44,6 +44,7 @@ export default async function PigeonShopsAdminPage() {
                     </a>
                   )}
                 </AdminTableCell>
+                <AdminTableCell>{shop.category ?? <span className="text-ink-light">未分類</span>}</AdminTableCell>
                 <AdminTableCell>{shop.phone ?? <span className="text-ink-light">未知</span>}</AdminTableCell>
                 <AdminTableCell className="max-w-xs">
                   {shop.address ?? <span className="text-ink-light">未知</span>}
