@@ -24,6 +24,7 @@
     "next-intl": "^4.13.5",
     "node-cron": "^4.6.0",
     "otpauth": "^9.5.1",
+    "playwright": "^1.63.0",
     "qrcode": "^1.5.4",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",

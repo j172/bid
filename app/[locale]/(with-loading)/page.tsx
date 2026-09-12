@@ -4,7 +4,7 @@ import { listOpenListings } from "@/lib/listings";
 import { listingPhotoUrl, homepageSectionImageUrl, pigeonShowcaseImageUrl, newsImageUrl, featuredLoftPostImageUrl } from "@/lib/uploads";
 import { listHomepageSections } from "@/lib/homepageSections";
 import { listLatestPigeonShowcase } from "@/lib/pigeonShowcase";
-import { listLatestNews } from "@/lib/news";
+import { listHomepageNewsCarousel } from "@/lib/news";
 import { listLatestFeaturedLoftPosts } from "@/lib/featuredLoftPosts";
 import { excerptHtml } from "@/lib/htmlText";
 import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
@@ -160,13 +160,15 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     imageUrl: pigeon.imageFileName ? pigeonShowcaseImageUrl(pigeon.imageFileName) : "/images/logo.png",
   }));
 
-  // 最新訊息首頁輪播 (issue #56) — latest 10 posts, replacing the large
+  // 最新訊息首頁輪播 (issue #56, capped list logic extended by #240) — latest
+  // 10 posts, manual announcements prioritized ahead of herbots.be imports
+  // (see lib/news.ts's listHomepageNewsCarousel) — replacing the large
   // "現正競標／熱門競標正在進行" promo card below with a rotating
   // title+excerpt showcase (falls back to that card's original marketing
   // copy when there are currently zero news_posts rows; see
   // NewsCarouselCard's own fallback branch).
   const NEWS_CAROUSEL_EXCERPT_LENGTH = 30;
-  const latestNews = await cachedQuery("home:latestNews", 20, () => listLatestNews(10));
+  const latestNews = await cachedQuery("home:latestNews", 20, () => listHomepageNewsCarousel(10));
   const newsCarouselItems = latestNews.map((post) => ({
     id: post.id,
     title: post.title,
@@ -175,8 +177,10 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     // Same date convention as the news list and the news detail sidebar
     // (app/[locale]/news/page.tsx, app/[locale]/(no-loading)/news/[id]/page.tsx):
     // formatted here on the server so the client carousel card can't drift
-    // from the server rendering during hydration (issue #146).
-    createdAt: post.createdAt.toLocaleDateString(),
+    // from the server rendering during hydration (issue #146). Prefers the
+    // article's original herbots.be publish date over this row's import
+    // date, same as those other two callers (issue #240).
+    createdAt: (post.publishedAt ?? post.createdAt).toLocaleDateString(),
   }));
 
   const socialItems = await getSocialMediaFeed();

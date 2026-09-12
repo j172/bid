@@ -414,16 +414,63 @@ CREATE TABLE IF NOT EXISTS pigeon_showcase (
 -- associated with the post. Status/schedule/subject are never cached here —
 -- always read live from Resend via lib/newsletter.ts's listBroadcasts/
 -- getBroadcast so there's a single source of truth.
+-- source/source_url/original_title/original_content/published_at/
+-- locked_by_admin (issue #240) let this same table also hold herbots.be
+-- articles synced daily by lib/newsSync.ts, instead of a parallel content
+-- table: `title`/`content` always hold the Traditional Chinese version
+-- (hand-typed for 'manual' rows, Cloudflare-Workers-AI-translated for
+-- 'herbots' rows) so every existing reader of this table keeps working
+-- unchanged; original_title/original_content hold the untouched source-
+-- language text, rendered underneath the translation on the detail page.
+-- source_url is the herbots.be article URL used as the de-dup key (NULL on
+-- manual rows — MySQL allows multiple NULLs under a UNIQUE key). published_at
+-- is the article's original herbots.be publish date, used instead of
+-- created_at (which is this row's *import* time) for the herbots.be
+-- newest-first sort so re-running the sync doesn't reorder old articles;
+-- NULL on manual rows, which fall back to created_at (see lib/news.ts's
+-- ORDER BY COALESCE(published_at, created_at)). locked_by_admin flips to 1
+-- the moment an admin saves an edit via app/z04urru6/news/ (any row, manual
+-- or imported) — lib/newsSync.ts skips locked herbots rows on every future
+-- sync so it never clobbers a manual correction. There is deliberately no
+-- "hidden" column: deleting a row via the existing admin delete button
+-- already removes it from every public listing, and news_import_log below
+-- (not this table) is what stops a deleted/edited-away article from being
+-- re-imported.
 CREATE TABLE IF NOT EXISTS news_posts (
   id BIGINT NOT NULL AUTO_INCREMENT,
   title VARCHAR(100) NOT NULL,
   image_file_name VARCHAR(255) NULL,  -- 主圖 (issue #70); NULL only on pre-#70 rows
   content TEXT NOT NULL,           -- sanitizeDescriptionHtml'd TinyMCE HTML, 2000-char plain-text cap
   broadcast_id VARCHAR(255) NULL,  -- Resend broadcast id (issue #80); NULL until a newsletter is sent/scheduled for this post
+  source VARCHAR(20) NOT NULL DEFAULT 'manual', -- 'manual' | 'herbots' (issue #240)
+  source_url VARCHAR(500) NULL,     -- herbots.be article URL; de-dup key; NULL on manual rows
+  original_title VARCHAR(255) NULL, -- pre-translation title (herbots rows only)
+  original_content TEXT NULL,       -- sanitizeDescriptionHtml'd pre-translation content (herbots rows only)
+  published_at DATETIME NULL,       -- original herbots.be publish date; NULL on manual rows
+  locked_by_admin TINYINT(1) NOT NULL DEFAULT 0, -- set once an admin edits this row; sync then skips it
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
   PRIMARY KEY (id),
-  KEY idx_news_posts_created (created_at)
+  KEY idx_news_posts_created (created_at),
+  KEY idx_news_posts_source_published (source, published_at),
+  UNIQUE KEY uq_news_posts_source_url (source_url)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- De-dup ledger for the herbots.be news sync (issue #240) — deliberately its
+-- own tiny table rather than a parallel content table: it records every
+-- source_url this site has ever imported, and unlike news_posts it is never
+-- deleted or edited, so it keeps blocking re-import of an article an admin
+-- later deleted or hid from news_posts (the requirement a UNIQUE key on
+-- news_posts.source_url alone can't satisfy once that row is gone). See
+-- lib/newsImportLog.ts.
+CREATE TABLE IF NOT EXISTS news_import_log (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  source VARCHAR(20) NOT NULL,
+  source_url VARCHAR(500) NOT NULL,
+  news_post_id BIGINT NULL,   -- points at news_posts.id while that row still exists; NULL once deleted
+  imported_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_news_import_log_source_url (source_url)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 名家專區 articles (issue #176) — replaces issue #168's lightweight

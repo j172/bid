@@ -4,7 +4,17 @@
 // rows/results back into the module's public shapes.
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createNews, deleteNews, getNewsById, listLatestNews, listNews, setNewsBroadcastId, updateNews } from "./news";
+import {
+  createImportedNews,
+  createNews,
+  deleteNews,
+  getNewsById,
+  listHomepageNewsCarousel,
+  listLatestNews,
+  listNews,
+  setNewsBroadcastId,
+  updateNews,
+} from "./news";
 
 const { queryMock } = vi.hoisted(() => ({ queryMock: vi.fn() }));
 
@@ -22,6 +32,12 @@ const ROW = {
   content: "<p>本週競標時間調整為晚上八點</p>",
   image_file_name: "news123.jpg",
   broadcast_id: "bcast_1",
+  source: "manual" as const,
+  source_url: null,
+  original_title: null,
+  original_content: null,
+  published_at: null,
+  locked_by_admin: 0,
   created_at: new Date("2026-01-01T00:00:00Z"),
   updated_at: new Date("2026-01-02T00:00:00Z"),
 };
@@ -44,19 +60,27 @@ describe("listNews", () => {
         content: "<p>本週競標時間調整為晚上八點</p>",
         imageFileName: "news123.jpg",
         broadcastId: "bcast_1",
+        source: "manual",
+        sourceUrl: null,
+        originalTitle: null,
+        originalContent: null,
+        publishedAt: null,
+        lockedByAdmin: false,
         createdAt: ROW.created_at,
         updatedAt: ROW.updated_at,
       },
     ]);
   });
 
-  it("orders newest-first and paginates using the requested page size", async () => {
+  it("orders newest-first (by original publish date, falling back to import date) and paginates using the requested page size", async () => {
     queryMock.mockResolvedValueOnce([[{ cnt: 0 }]]);
     queryMock.mockResolvedValueOnce([[]]);
 
     await listNews({ page: 2, pageSize: 50 });
 
-    expect(queryMock.mock.calls[1][0]).toContain("ORDER BY created_at DESC, id DESC LIMIT 50 OFFSET 50");
+    expect(queryMock.mock.calls[1][0]).toContain(
+      "ORDER BY COALESCE(published_at, created_at) DESC, id DESC LIMIT 50 OFFSET 50",
+    );
   });
 
   it("omits filter conditions entirely with no options", async () => {
@@ -85,7 +109,10 @@ describe("listLatestNews", () => {
 
     const items = await listLatestNews(10);
 
-    expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("ORDER BY created_at DESC, id DESC LIMIT ?"), [10]);
+    expect(queryMock).toHaveBeenCalledWith(
+      expect.stringContaining("ORDER BY COALESCE(published_at, created_at) DESC, id DESC LIMIT ?"),
+      [10],
+    );
     expect(items).toHaveLength(1);
     expect(items[0].title).toBe("本週競標時間異動");
   });
@@ -126,6 +153,72 @@ describe("updateNews", () => {
     queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
     const result = await updateNews(1, { title: "t", content: "c", imageFileName: "img.jpg" });
     expect(result).toEqual({ ok: true });
+  });
+
+  // issue #240: every admin edit locks the row so lib/newsSync.ts never
+  // overwrites it again — this is the only place that flag gets set, so it
+  // has to happen on every call here, not just herbots-imported rows.
+  it("always sets locked_by_admin = 1, regardless of the row's source", async () => {
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+    await updateNews(1, { title: "t", content: "c", imageFileName: "img.jpg" });
+    expect(queryMock.mock.calls[0][0]).toContain("locked_by_admin = 1");
+  });
+});
+
+describe("createImportedNews", () => {
+  it("inserts a herbots-sourced row with the original-language + publish-date columns", async () => {
+    queryMock.mockResolvedValueOnce([{ insertId: 7 }]);
+
+    const publishedAt = new Date("2026-09-01T12:00:00Z");
+    const result = await createImportedNews({
+      title: "翻譯後標題",
+      content: "<p>翻譯後內容</p>",
+      imageFileName: "abc.jpg",
+      sourceUrl: "https://www.herbots.be/en/article/a",
+      originalTitle: "Original Title",
+      originalContent: "<p>Original content</p>",
+      publishedAt,
+    });
+
+    expect(result).toEqual({ ok: true, id: 7 });
+    expect(queryMock.mock.calls[0][0]).toContain("source, source_url, original_title, original_content, published_at");
+    expect(queryMock.mock.calls[0][0]).toContain("'herbots'");
+    expect(queryMock.mock.calls[0][1]).toEqual([
+      "翻譯後標題",
+      "abc.jpg",
+      "<p>翻譯後內容</p>",
+      "https://www.herbots.be/en/article/a",
+      "Original Title",
+      "<p>Original content</p>",
+      publishedAt,
+    ]);
+  });
+});
+
+describe("listHomepageNewsCarousel", () => {
+  it("returns manual posts first, filling remaining slots with herbots imports", async () => {
+    const manualRow = { ...ROW, id: 1, source: "manual" as const };
+    const herbotsRow = { ...ROW, id: 2, source: "herbots" as const, source_url: "https://www.herbots.be/en/article/a" };
+    queryMock.mockResolvedValueOnce([[manualRow]]); // manual query
+    queryMock.mockResolvedValueOnce([[herbotsRow]]); // herbots fill query
+
+    const items = await listHomepageNewsCarousel(10);
+
+    expect(items.map((i) => i.id)).toEqual([1, 2]);
+    expect(queryMock.mock.calls[0][0]).toContain("WHERE source = 'manual'");
+    expect(queryMock.mock.calls[0][1]).toEqual([10]);
+    expect(queryMock.mock.calls[1][0]).toContain("WHERE source = 'herbots'");
+    expect(queryMock.mock.calls[1][1]).toEqual([9]); // 10 - 1 manual already found
+  });
+
+  it("skips the herbots fill query entirely once manual posts already fill the limit", async () => {
+    const manualRows = Array.from({ length: 10 }, (_, i) => ({ ...ROW, id: i + 1, source: "manual" as const }));
+    queryMock.mockResolvedValueOnce([manualRows]);
+
+    const items = await listHomepageNewsCarousel(10);
+
+    expect(items).toHaveLength(10);
+    expect(queryMock).toHaveBeenCalledTimes(1);
   });
 });
 

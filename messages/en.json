@@ -671,7 +671,8 @@
     "breadcrumbHome": "Home",
     "publishedLine": "Published: {date}",
     "sidebarLatest": "Latest News",
-    "backToList": "View More"
+    "backToList": "View More",
+    "originalHeading": "Original"
   },
   "featuredLofts": {
     "title": "Featured Lofts",

@@ -10,6 +10,7 @@ import { filterControlClass, filterFormClass, filterLabelClass, filterSubmitClas
 import NewsFormModal from "./NewsFormModal";
 import DeleteConfirmButton from "../components/DeleteConfirmButton";
 import CancelBroadcastButton from "./CancelBroadcastButton";
+import HerbotsNewsSyncButton from "./HerbotsNewsSyncButton";
 
 export const dynamic = "force-dynamic";
 
@@ -42,8 +43,11 @@ export default async function NewsAdminPage({ searchParams }: { searchParams: Pr
 
   return (
     <main>
-      <AdminPageIntro title="最新訊息管理" description="管理首頁輪播與 /news 清單頁使用的最新訊息公告。">
-        <NewsFormModal mode="create" />
+      <AdminPageIntro title="最新訊息管理" description="管理首頁輪播與 /news 清單頁使用的最新訊息公告；herbots.be 匯入的文章與手動撰寫的公告在此列表一併管理。">
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <HerbotsNewsSyncButton />
+          <NewsFormModal mode="create" />
+        </div>
       </AdminPageIntro>
 
       <form className={filterFormClass} method="GET">
@@ -69,7 +73,7 @@ export default async function NewsAdminPage({ searchParams }: { searchParams: Pr
       {items.length === 0 ? (
         <p className="mt-6 text-ink-light">找不到符合條件的訊息。</p>
       ) : (
-        <AdminTable headers={["主圖", "標題", "內容", "發布時間", "電子報狀態", ""]}>
+        <AdminTable headers={["主圖", "標題", "來源", "內容", "發布時間", "電子報狀態", ""]}>
           {items.map((item) => {
             const imageUrl = item.imageFileName ? newsImageUrl(item.imageFileName) : "/images/logo.png";
             const broadcast = item.broadcastId ? broadcastsById.get(item.broadcastId) : undefined;
@@ -80,6 +84,12 @@ export default async function NewsAdminPage({ searchParams }: { searchParams: Pr
                   <img src={imageUrl} alt={item.title} className="h-14 w-14 rounded-lg border border-border object-cover" />
                 </AdminTableCell>
                 <AdminTableCell className="font-medium">{item.title}</AdminTableCell>
+                <AdminTableCell className="whitespace-nowrap text-xs text-ink-light">
+                  {item.source === "herbots" ? "herbots.be" : "手動撰寫"}
+                  {item.lockedByAdmin && item.source === "herbots" && (
+                    <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">已鎖定</span>
+                  )}
+                </AdminTableCell>
                 <AdminTableCell className="max-w-xs truncate text-ink-light">
                   {item.content.replace(/<[^>]*>/g, " ").trim()}
                 </AdminTableCell>

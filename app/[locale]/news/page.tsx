@@ -74,7 +74,7 @@ export default async function NewsListPage({ searchParams }: { searchParams: Pro
           href: `/news/${item.id}`,
           imageUrl: item.imageFileName ? newsImageUrl(item.imageFileName) : IMAGE_FALLBACK_SRC,
           title: item.title,
-          dateLabel: item.createdAt.toLocaleDateString(),
+          dateLabel: (item.publishedAt ?? item.createdAt).toLocaleDateString(),
           excerpt: excerptHtml(item.content, LIST_EXCERPT_LENGTH),
         }))}
         emptyLabel={t("noItems")}
