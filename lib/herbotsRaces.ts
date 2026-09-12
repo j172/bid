@@ -27,10 +27,13 @@
 // `type` value, this starts returning it automatically with no code change,
 // since the same endpoint is already called daily.
 //
-// Every request below goes through Playwright's own browser request context
-// (not a bare fetch/https call) for the same reason lib/herbotsNews.ts does —
-// see that file's header comment.
-import { chromium, type Browser, type BrowserContext } from "playwright";
+// Every request below is a plain fetch() call — same reasoning as
+// lib/herbotsNews.ts's header comment: this is an unauthenticated public
+// JSON API with no bot-detection/JS-challenge layer to evade, so a real
+// headless browser (originally required by issue #241, dropped once VPS
+// deploy planning made Chromium-on-the-server a real cost — see #239) was
+// pure overhead. Verified live with a bare fetch + the same realistic
+// desktop-Chrome User-Agent below.
 import type { RaceStatus } from "@/lib/races";
 
 const RACES_API_BASE = "https://herbots.deltablue.io/api/pigeon-races";
@@ -80,7 +83,7 @@ interface RawPigeonRacesResponse {
 }
 
 // Exported for lib/herbotsRaces.test.ts only — the rest of this file is thin
-// Playwright I/O wiring (no test), same precedent as lib/herbotsNews.ts's
+// fetch() I/O wiring (no test), same precedent as lib/herbotsNews.ts's
 // toSummary.
 export function toRaceSummary(item: RawPigeonRace, status: RaceStatus): HerbotsRaceSummary | null {
   if (!item.title) return null;
@@ -101,31 +104,17 @@ export function toRaceSummary(item: RawPigeonRace, status: RaceStatus): HerbotsR
   };
 }
 
-// Thin wrapper around one headless Chromium instance, same shape as
+// Plain fetch() client, same open()/close()-as-no-ops shape as
 // lib/herbotsNews.ts's HerbotsNewsClient (and lib/loingMaRaces.ts's
-// LoingMaRacesClient) — one browser launch pays for every request a sync run
-// needs, across however many status buckets/pages it fetches.
+// LoingMaRacesClient) — kept purely so lib/racesSync.ts's existing call
+// sites didn't need to change.
 export class HerbotsRacesClient {
-  private browser: Browser | null = null;
-  private context: BrowserContext | null = null;
-
   async open(): Promise<void> {
-    this.browser = await chromium.launch({ headless: true });
-    this.context = await this.browser.newContext({ userAgent: USER_AGENT });
+    // no-op — plain fetch has no persistent browser/session to start.
   }
 
   async close(): Promise<void> {
-    await this.context?.close().catch(() => {});
-    await this.browser?.close().catch(() => {});
-    this.context = null;
-    this.browser = null;
-  }
-
-  private requireContext(): BrowserContext {
-    if (!this.context) {
-      throw new Error("HerbotsRacesClient: call open() before making requests");
-    }
-    return this.context;
+    // no-op
   }
 
   // Throws on a non-2xx response (including the known type=future 404 — see
@@ -137,28 +126,26 @@ export class HerbotsRacesClient {
     page: number,
     perPage: number = HERBOTS_RACES_PER_PAGE,
   ): Promise<HerbotsRaceSummary[]> {
-    const context = this.requireContext();
     const url = `${RACES_API_BASE}?type=${status}&language=${LANGUAGE}&per_page=${perPage}&page=${page}`;
-    const response = await context.request.get(url);
-    if (!response.ok()) {
-      throw new Error(`herbots.be races list request failed (type=${status}): HTTP ${response.status()}`);
+    const response = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
+    if (!response.ok) {
+      throw new Error(`herbots.be races list request failed (type=${status}): HTTP ${response.status}`);
     }
     const body: RawPigeonRacesResponse = await response.json();
     return body.data.map((item) => toRaceSummary(item, status)).filter((item): item is HerbotsRaceSummary => item !== null);
   }
 
-  // Downloads the winner's loft photo through the same browser network
-  // context as every other request in this class. Returns null (never
-  // throws) on a non-2xx response or a missing content-type — lib/racesSync.ts
-  // treats that the same as "no cover image" rather than aborting the import.
+  // Downloads the winner's loft photo. Returns null (never throws) on a
+  // non-2xx response or a missing content-type — lib/racesSync.ts treats
+  // that the same as "no cover image" rather than aborting the import.
   async fetchImageBuffer(url: string): Promise<{ buffer: Buffer; contentType: string } | null> {
-    const context = this.requireContext();
     try {
-      const response = await context.request.get(url);
-      if (!response.ok()) return null;
-      const contentType = response.headers()["content-type"]?.split(";")[0]?.trim();
+      const response = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
+      if (!response.ok) return null;
+      const contentType = response.headers.get("content-type")?.split(";")[0]?.trim();
       if (!contentType) return null;
-      return { buffer: await response.body(), contentType };
+      const buffer = Buffer.from(await response.arrayBuffer());
+      return { buffer, contentType };
     } catch (error) {
       console.error(`[herbotsRaces] cover image download failed (${url})`, error);
       return null;

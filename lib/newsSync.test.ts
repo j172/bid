@@ -194,12 +194,12 @@ describe("syncHerbotsNews", () => {
     expect(closeMock).toHaveBeenCalledTimes(1);
   });
 
-  it("records a launch failure and still closes the client, without throwing", async () => {
-    openMock.mockRejectedValueOnce(new Error("chromium not installed"));
+  it("records a client-open failure and still closes the client, without throwing", async () => {
+    openMock.mockRejectedValueOnce(new Error("network unreachable"));
 
     const result = await syncHerbotsNews();
 
-    expect(result.errors[0]).toContain("Playwright");
+    expect(result.errors[0]).toContain("herbots.be");
     expect(fetchSummariesMock).not.toHaveBeenCalled();
     expect(closeMock).toHaveBeenCalledTimes(1);
   });

@@ -186,7 +186,7 @@ export async function deleteNewsImageFile(fileName: string): Promise<void> {
 
 // herbots.be news sync (issue #240) — the source article's cover photo comes
 // back as raw bytes + a Content-Type header (fetched via lib/herbotsNews.ts's
-// Playwright request context), not a browser-submitted File, so it can't go
+// fetch() client), not a browser-submitted File, so it can't go
 // through saveSingleImage's File-shaped API above. Re-hosts the image under
 // the same uploads/news/ directory news_posts.image_file_name always points
 // at, rather than storing the remote s3.herbots.be URL directly, so every
@@ -209,7 +209,7 @@ export async function saveNewsImageFromBuffer(buffer: Buffer, contentType: strin
 
 // races (issue #241) — the herbots.be sync's winner-photo cover image comes
 // back as raw bytes + a Content-Type header (fetched via lib/herbotsRaces.ts's
-// Playwright request context), same shape as saveNewsImageFromBuffer above,
+// fetch() client), same shape as saveNewsImageFromBuffer above,
 // just its own subdirectory. loing-ma.com rows never populate this (the
 // forum has no photos), so image_file_name is NULL for every 'loing_ma' row.
 export async function saveRaceImageFromBuffer(buffer: Buffer, contentType: string): Promise<string | null> {

@@ -1,25 +1,23 @@
 // loing-ma.com (龍馬賽鴿網) 時事快訊 forum scraper (issue #241) — Taiwan/Asia
-// races. A plain unauthenticated request to this forum returns HTTP 403
-// (bot detection), so — per the issue's explicit instruction — every request
-// here goes through a real headless Chromium instance (Playwright), same
-// "browser-launch, then use its own request context for every HTTP call"
-// shape as lib/herbotsNews.ts. Confirmed working during development: driving
-// a real headless browser's request context against
-// https://www.loing-ma.com/viewforum.php?f=80 with a realistic desktop
-// Chrome User-Agent returns 200 with real content (not a bot-block page) —
-// see lib/racesSync.ts for what happens on the day this stops working
-// (logged warning, source skipped for that run, the herbots.be half of the
-// sync still proceeds).
+// races. A request to this forum with no headers at all (e.g. this
+// project's earlier bare WebFetch probe) returns HTTP 403 — but that turned
+// out to be plain User-Agent sniffing, not real bot-fingerprinting/JS-
+// challenge protection: a bare `fetch()` carrying the realistic desktop
+// Chrome User-Agent below was verified live to return 200 with real forum
+// content (not a bot-block page), identical to what the headless-Chromium
+// version originally required by this issue got. Switched away from
+// Playwright once VPS deploy planning made Chromium-on-the-server a real
+// cost (see #239) — see lib/racesSync.ts for what happens on the day plain
+// fetch *does* start getting blocked again (logged warning, source skipped
+// for that run, the herbots.be half of the sync still proceeds).
 //
 // The forum is plain server-rendered phpBB-style HTML (no JS rendering
-// needed for content, unlike herbots.be) — inspected directly before writing
-// this parser. Each topic's own listing-page teaser
-// (`p.topic_text.gen`) already contains the full post body (verified: no
-// truncation marker on any topic across a full page, lengths vary
-// naturally), so no second per-topic detail-page request is needed the way
-// lib/herbotsNews.ts needs one for full article bodies — one list-page fetch
-// is enough per page of results.
-import { chromium, type Browser, type BrowserContext } from "playwright";
+// needed for content) — inspected directly before writing this parser. Each
+// topic's own listing-page teaser (`p.topic_text.gen`) already contains the
+// full post body (verified: no truncation marker on any topic across a full
+// page, lengths vary naturally), so no second per-topic detail-page request
+// is needed the way lib/herbotsNews.ts needs one for full article bodies —
+// one list-page fetch is enough per page of results.
 import * as cheerio from "cheerio";
 import type { RaceStatus } from "@/lib/races";
 
@@ -47,7 +45,7 @@ export interface LoingMaTopicSummary {
 // this source's status (issue #241: "loing-ma.com 論壇需依開賽日期自行判斷所
 // 屬狀態") without a structured date field, which this forum simply doesn't
 // have. Exported for lib/loingMaRaces.test.ts only — the rest of this file is
-// thin Playwright I/O wiring (no test, same precedent as lib/herbotsNews.ts).
+// thin fetch() I/O wiring (no test, same precedent as lib/herbotsNews.ts).
 export function extractRaceDate(title: string, postedAt: Date): Date {
   const withYear = title.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
   if (withYear) {
@@ -123,40 +121,26 @@ export function parseLoingMaForumPage(html: string): LoingMaTopicSummary[] {
   return topics;
 }
 
-// Thin wrapper around one headless Chromium instance, same shape as
-// lib/herbotsNews.ts's HerbotsNewsClient. fetchPage throws on a non-2xx
+// Plain fetch() client, same open()/close()-as-no-ops shape as
+// lib/herbotsNews.ts's HerbotsNewsClient — kept purely so lib/racesSync.ts's
+// existing call sites didn't need to change. fetchPage throws on a non-2xx
 // response or a network error — lib/racesSync.ts decides what that means
 // (abort just this source, with a logged warning, never the whole sync run).
 export class LoingMaRacesClient {
-  private browser: Browser | null = null;
-  private context: BrowserContext | null = null;
-
   async open(): Promise<void> {
-    this.browser = await chromium.launch({ headless: true });
-    this.context = await this.browser.newContext({ userAgent: USER_AGENT });
+    // no-op — plain fetch has no persistent browser/session to start.
   }
 
   async close(): Promise<void> {
-    await this.context?.close().catch(() => {});
-    await this.browser?.close().catch(() => {});
-    this.context = null;
-    this.browser = null;
-  }
-
-  private requireContext(): BrowserContext {
-    if (!this.context) {
-      throw new Error("LoingMaRacesClient: call open() before making requests");
-    }
-    return this.context;
+    // no-op
   }
 
   async fetchPage(page: number): Promise<LoingMaTopicSummary[]> {
-    const context = this.requireContext();
     const start = (page - 1) * LOING_MA_TOPICS_PER_PAGE;
     const url = `${FORUM_ORIGIN}/viewforum.php?f=${FORUM_ID}&start=${start}`;
-    const response = await context.request.get(url);
-    if (!response.ok()) {
-      throw new Error(`loing-ma.com forum request failed: HTTP ${response.status()}`);
+    const response = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
+    if (!response.ok) {
+      throw new Error(`loing-ma.com forum request failed: HTTP ${response.status}`);
     }
     const html = await response.text();
     return parseLoingMaForumPage(html);
