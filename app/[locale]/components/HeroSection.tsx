@@ -6,7 +6,7 @@ import { Link } from "@/i18n/navigation";
 import ProgressiveImage from "@/app/components/ProgressiveImage";
 import CarouselControls from "./CarouselControls";
 import CountdownTiles from "./CountdownTiles";
-import ZoomableProductImage from "./ZoomableProductImage";
+import ProductImage from "./ProductImage";
 import { useHeroCountdown } from "@/lib/useHeroCountdown";
 import { formatDualPrice, type CurrencyRate } from "@/lib/currency";
 
@@ -293,7 +293,7 @@ export default function HeroSection({
                         item.hasPhoto ? "bg-slate-100" : "bg-white/90"
                       }`}
                     >
-                      <ZoomableProductImage
+                      <ProductImage
                         src={item.photoUrl}
                         alt={item.title}
                         eager={false}
