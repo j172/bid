@@ -417,10 +417,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                   ? t("bidCountShort", { count: item.bidCount })
                   : t("purchaseCountShort", { count: item.purchaseCount })
               }
-              priceText={formatDualPrice(
-                item.listing_type === "auction" ? item.current_price : item.price!,
-                currencyRates,
-              )}
+              priceText={
+                item.listing_type === "fixed_price" && item.price === null
+                  ? tListings("callForPrice")
+                  : formatDualPrice(item.listing_type === "auction" ? item.current_price : item.price!, currencyRates)
+              }
               ctaLabel={item.listing_type === "fixed_price" ? t("promoFixedCta") : t("promoAuctionCta")}
               eager={index < homeEagerCount}
             />
@@ -485,10 +486,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                   ? t("bidCountShort", { count: item.bidCount })
                   : t("purchaseCountShort", { count: item.purchaseCount })
               }
-              priceText={formatDualPrice(
-                item.listing_type === "auction" ? item.current_price : item.price!,
-                currencyRates,
-              )}
+              priceText={
+                item.listing_type === "fixed_price" && item.price === null
+                  ? tListings("callForPrice")
+                  : formatDualPrice(item.listing_type === "auction" ? item.current_price : item.price!, currencyRates)
+              }
               ctaLabel={item.listing_type === "fixed_price" ? t("promoFixedCta") : t("promoAuctionCta")}
               eager={index < 1}
             />
@@ -520,7 +522,9 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                     <p className="truncate text-sm font-semibold">{item.title}</p>
                     <p className="text-xs text-ink-light">{t("purchaseCountShort", { count: item.purchaseCount })}</p>
                   </div>
-                  <p className="ml-3 shrink-0 text-sm font-bold text-interactive-primary">{formatDualPrice(item.price!, currencyRates)}</p>
+                  <p className="ml-3 shrink-0 text-sm font-bold text-interactive-primary">
+                    {item.price === null ? tListings("callForPrice") : formatDualPrice(item.price, currencyRates)}
+                  </p>
                 </Link>
               ))}
             </div>
@@ -559,10 +563,12 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                 <p className="mt-1 text-xs text-ink-light">{item.listing_type === "auction" ? t("statusBidding") : t("statusFixedDeal")}</p>
                 <div className="mt-2 flex items-end gap-2">
                   <p className="text-base font-black text-ink">
-                    {formatDualPrice(
-                      item.listing_type === "auction" ? item.current_price : item.price!,
-                      currencyRates,
-                    )}
+                    {item.listing_type === "fixed_price" && item.price === null
+                      ? tListings("callForPrice")
+                      : formatDualPrice(
+                          item.listing_type === "auction" ? item.current_price : item.price!,
+                          currencyRates,
+                        )}
                   </p>
                   {/* M-15 (issue #139): this struck-through "original price" is
                       computed as current_price × 1.15, not read from any real
@@ -611,7 +617,9 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                       : t("fixedPriceSectionItemLabel")}
                   </p>
                   <div className="mt-2 flex items-end gap-2">
-                    <p className="text-base font-black text-ink">{formatDualPrice(item.price!, currencyRates)}</p>
+                    <p className="text-base font-black text-ink">
+                      {item.price === null ? tListings("callForPrice") : formatDualPrice(item.price, currencyRates)}
+                    </p>
                   </div>
                 </HomeListingRow>
               ))}

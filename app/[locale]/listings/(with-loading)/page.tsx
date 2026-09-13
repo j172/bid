@@ -638,10 +638,12 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
                     priceText={
                       isClosed && listing.listing_type === "auction"
                         ? t("finalPrice", { price: formatNtd(listing.current_price) })
-                        : formatDualPrice(
-                            listing.listing_type === "fixed_price" ? listing.price! : listing.current_price,
-                            currencyRates,
-                          )
+                        : listing.listing_type === "fixed_price" && listing.price === null
+                          ? t("callForPrice")
+                          : formatDualPrice(
+                              listing.listing_type === "fixed_price" ? listing.price! : listing.current_price,
+                              currencyRates,
+                            )
                     }
                     detailLines={
                       isClosed

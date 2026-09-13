@@ -93,7 +93,8 @@ export type NewListingInput = (
       listingType: "fixed_price";
       title: string;
       description: string;
-      price: number;
+      /** Null means "電洽" (call for price, issue #266) — insertListing then writes price=NULL with starting_price/current_price=0 sentinels instead of this value. */
+      price: number | null;
       stockQuantity: number;
       createdBy: number;
     }
@@ -110,6 +111,12 @@ export async function insertListing(input: NewListingInput): Promise<number> {
   const loftId = input.loftId ?? null;
 
   if (input.listingType === "fixed_price") {
+    // 電洽 (call for price, issue #266): price stays NULL — the seller never
+    // set one — while starting_price/current_price use 0 as a sentinel so
+    // those two NOT NULL columns (deliberately not migrated) stay populated.
+    // Every other 一般商品 keeps writing the same value into all three
+    // columns, unchanged from before this feature existed.
+    const sentinelPrice = input.price ?? 0;
     const [result] = await db.query(
       `INSERT INTO listings
          (title, description, listing_type, starting_price, current_price, price, stock_quantity, stock_remaining,
@@ -118,8 +125,8 @@ export async function insertListing(input: NewListingInput): Promise<number> {
       [
         input.title,
         input.description,
-        input.price,
-        input.price,
+        sentinelPrice,
+        sentinelPrice,
         input.price,
         input.stockQuantity,
         input.stockQuantity,
@@ -288,6 +295,8 @@ export interface OpenListingForAdmin {
   /** 'open' or 'scheduled' — this view includes not-yet-started auctions too. */
   status: string;
   currentPrice: number;
+  /** fixed_price only — null means 電洽 (call for price, issue #266), in which case currentPrice is just the 0 sentinel and should not be displayed as a real price. Always null for 'auction' listings. */
+  price: number | null;
   /** Null for fixed_price listings (no time limit). */
   endsAt: Date | null;
   /** Auction listings only — set while status is 'scheduled'. */
@@ -370,7 +379,7 @@ export async function getOpenListingsForAdmin(
 
   const [rows] = await db.query(
     `SELECT
-       id, title, listing_type AS listingType, status, current_price AS currentPrice, ends_at AS endsAt, starts_at AS startsAt,
+       id, title, listing_type AS listingType, status, current_price AS currentPrice, price, ends_at AS endsAt, starts_at AS startsAt,
        (leader_max_amount IS NOT NULL) AS hasBids,
        stock_quantity AS stockQuantity, stock_remaining AS stockRemaining
      FROM listings
@@ -1141,7 +1150,8 @@ export async function updateFixedPriceListing(
   input: {
     title: string;
     description: string;
-    price: number;
+    /** Null means "電洽" (call for price, issue #266) — see insertListing's equivalent comment for the price=NULL / starting_price=current_price=0 sentinel this writes instead. */
+    price: number | null;
     stockRemaining: number;
     /** Optional loft selection (issue #45) — like every other field here, this is a full replace: omit/null clears loft_id. */
     loftId?: number | null;
@@ -1176,6 +1186,11 @@ export async function updateFixedPriceListing(
     );
     const sold = (soldRows as { sold: number }[])[0].sold;
 
+    // See insertListing's equivalent comment: 電洽 (issue #266) writes
+    // price=NULL with a 0 sentinel in the two NOT NULL columns instead of
+    // the same value in all three.
+    const sentinelPrice = input.price ?? 0;
+
     await connection.query(
       `UPDATE listings
        SET title = ?, description = ?, price = ?, current_price = ?, starting_price = ?,
@@ -1185,8 +1200,8 @@ export async function updateFixedPriceListing(
         input.title,
         input.description,
         input.price,
-        input.price,
-        input.price,
+        sentinelPrice,
+        sentinelPrice,
         sold + input.stockRemaining,
         input.stockRemaining,
         input.loftId ?? null,

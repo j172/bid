@@ -9,6 +9,7 @@ import {
   validateEndsAt,
   validateLoftId,
   validatePrice,
+  validatePriceOrCallForPrice,
   validateStockQuantity,
   validateStockRemaining,
   validateTitle,
@@ -82,6 +83,20 @@ describe("validatePrice", () => {
 
   it("accepts a price at exactly the max", () => {
     expect(validatePrice(PRICE_MAX, "價格")).toEqual({ ok: true });
+  });
+});
+
+describe("validatePriceOrCallForPrice", () => {
+  it("skips validation entirely when callForPrice is true, regardless of value", () => {
+    expect(validatePriceOrCallForPrice(true, NaN, "價格")).toEqual({ ok: true });
+    expect(validatePriceOrCallForPrice(true, 0, "價格")).toEqual({ ok: true });
+    expect(validatePriceOrCallForPrice(true, -1, "價格")).toEqual({ ok: true });
+  });
+
+  it("falls back to validatePrice's normal rules when callForPrice is false", () => {
+    expect(validatePriceOrCallForPrice(false, 1000, "價格")).toEqual({ ok: true });
+    expect(validatePriceOrCallForPrice(false, 0, "價格").ok).toBe(false);
+    expect(validatePriceOrCallForPrice(false, PRICE_MAX + 1, "價格").ok).toBe(false);
   });
 });
 

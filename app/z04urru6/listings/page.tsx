@@ -74,7 +74,9 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
                 </Link>
               </AdminTableCell>
               <AdminTableCell>{LISTING_TYPE_LABEL[listing.listingType]}</AdminTableCell>
-              <AdminTableCell className="font-semibold">{listing.currentPrice}</AdminTableCell>
+              <AdminTableCell className="font-semibold">
+                {listing.listingType === "fixed_price" && listing.price === null ? "電洽" : listing.currentPrice}
+              </AdminTableCell>
               <AdminTableCell>
                 {listing.listingType === "fixed_price" ? (
                   listing.stockRemaining === 0 ? (

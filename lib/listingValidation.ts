@@ -54,6 +54,20 @@ export function validatePrice(value: number, label: string): FieldValidationResu
   return { ok: true };
 }
 
+// A fixed_price listing can go "電洽" (call for price) instead of carrying a
+// fixed unit price (issue #266) — the seller checks a box and the price
+// field is skipped entirely rather than collected, so validation must be
+// skipped to match: callForPrice=true always passes regardless of `value`,
+// and callForPrice=false falls straight through to the normal validatePrice
+// rules (byte-for-byte the pre-existing behavior for every already-priced
+// listing). Shared by the create and edit fixed_price API routes.
+export function validatePriceOrCallForPrice(callForPrice: boolean, value: number, label: string): FieldValidationResult {
+  if (callForPrice) {
+    return { ok: true };
+  }
+  return validatePrice(value, label);
+}
+
 export function validateEndsAt(endsAt: Date): FieldValidationResult {
   if (Number.isNaN(endsAt.getTime()) || endsAt.getTime() <= Date.now()) {
     return { ok: false, error: "結標時間必須是有效且在未來的時間" };

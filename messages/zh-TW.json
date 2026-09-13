@@ -207,7 +207,8 @@
     "showcaseSubRepresentative": "代表種鴿",
     "loftShowcaseEmpty": "此鴿舍目前尚無舍內名鴿資料。",
     "loftShowcaseMetaTitle": "{name} - 舍內名鴿名鑑",
-    "viewShowcasePigeon": "查看鴿況"
+    "viewShowcasePigeon": "查看鴿況",
+    "callForPrice": "電洽"
   },
   "listingDetail": {
     "partnerLoft": "合作鴿舍",
@@ -253,6 +254,8 @@
     "loginPrompt": "登入",
     "loginToBuy": "後才能購買",
     "loginToBidOrBuy": "後才能出價或買斷",
+    "callForPrice": "電洽",
+    "callForPriceNotice": "此商品採電洽方式，請自行洽詢賣家取得價格與購買方式。",
     "galleryZoomLabel": "放大檢視 {title}",
     "galleryImageLabel": "{title} 圖片 {index}",
     "galleryKeyboardHint": "使用 ← / → 切換照片",

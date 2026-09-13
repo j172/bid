@@ -24,6 +24,7 @@ export default function EditListingModal({ listingId }: { listingId: number }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [callForPrice, setCallForPrice] = useState(false);
   const [stockRemaining, setStockRemaining] = useState("");
   const [loftId, setLoftId] = useState("");
   const [photoItems, setPhotoItems] = useState<PhotoItem[]>([]);
@@ -46,7 +47,11 @@ export default function EditListingModal({ listingId }: { listingId: number }) {
     }
     setTitle(data.listing.title);
     setDescription(data.listing.description);
-    setPrice(String(data.listing.price));
+    // 電洽 (call for price, issue #266): a null price pre-checks the box and
+    // leaves the price input blank, same as freshly checking it in the form.
+    const isCallForPrice = data.listing.price === null;
+    setCallForPrice(isCallForPrice);
+    setPrice(isCallForPrice ? "" : String(data.listing.price));
     setStockRemaining(String(data.listing.stockRemaining));
     setLoftId(data.listing.loftId ? String(data.listing.loftId) : "");
     setPhotoItems(
@@ -68,6 +73,7 @@ export default function EditListingModal({ listingId }: { listingId: number }) {
     setTitle("");
     setDescription("");
     setPrice("");
+    setCallForPrice(false);
     setStockRemaining("");
     setLoftId("");
     setPhotoItems([]);
@@ -89,6 +95,7 @@ export default function EditListingModal({ listingId }: { listingId: number }) {
     formData.set("title", title);
     formData.set("description", descriptionHtml);
     formData.set("price", price);
+    formData.set("callForPrice", String(callForPrice));
     formData.set("stockRemaining", stockRemaining);
     formData.set("loftId", loftId);
     formData.set("order", JSON.stringify(order));
@@ -158,9 +165,21 @@ export default function EditListingModal({ listingId }: { listingId: number }) {
                   min={1}
                   max={PRICE_MAX}
                   step={1}
-                  required
-                  className={inputClass}
+                  required={!callForPrice}
+                  disabled={callForPrice}
+                  className={`${inputClass} disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-ink-light`}
                 />
+                <label className="flex items-center gap-2 font-normal text-ink">
+                  <input
+                    type="checkbox"
+                    checked={callForPrice}
+                    onChange={(e) => {
+                      setCallForPrice(e.target.checked);
+                      setPrice("");
+                    }}
+                  />
+                  電洽（不提供固定價格，買家需自行洽詢賣家）
+                </label>
               </label>
 
               <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">

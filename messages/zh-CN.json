@@ -207,7 +207,8 @@
     "showcaseSubRepresentative": "代表种鸽",
     "loftShowcaseEmpty": "此鸽舍目前尚无舍内名鸽资料。",
     "loftShowcaseMetaTitle": "{name} - 舍内名鸽名鉴",
-    "viewShowcasePigeon": "查看鸽况"
+    "viewShowcasePigeon": "查看鸽况",
+    "callForPrice": "电洽"
   },
   "listingDetail": {
     "partnerLoft": "合作鸽舍",
@@ -253,6 +254,8 @@
     "loginPrompt": "登录",
     "loginToBuy": "后才能购买",
     "loginToBidOrBuy": "后才能出价或买断",
+    "callForPrice": "电洽",
+    "callForPriceNotice": "此商品采用电洽方式，请自行联系卖家获取价格与购买方式。",
     "galleryZoomLabel": "放大查看 {title}",
     "galleryImageLabel": "{title} 图片 {index}",
     "galleryKeyboardHint": "使用 ← / → 切换照片",
