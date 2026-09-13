@@ -3,8 +3,8 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { useMapGeolocation } from "@/lib/useMapGeolocation";
 import { GEOLOCATION_ZOOM } from "@/lib/useMapGeolocation";
+import type { MapGeolocationResult } from "@/lib/useMapGeolocation";
 
 // Leaflet's default marker icon references image paths relative to the
 // package itself, which breaks once bundled by webpack/Turbopack (a common,
@@ -35,12 +35,18 @@ export interface PigeonGroupMapPoint {
 export interface PigeonGroupsMapProps {
   groups: PigeonGroupMapPoint[];
   selectedId: number | null;
+  /** The browser's resolved position, owned by the parent explorer (issue
+   * #275 — one lib/useMapGeolocation.ts call shared by both the map center
+   * and the list's distance sort). Null while that request is still
+   * pending. */
+  geolocation: MapGeolocationResult | null;
   /**
-   * Set once the "使用目前位置" button (issue #260) resolves a real position
-   * — distinct from lib/useMapGeolocation.ts's own mount-time auto-center
-   * (issue #256), which only ever runs once on load. When this changes, the
-   * map flies to it and drops a "you are here" marker, independent of
-   * whichever group is currently selected.
+   * The user's real position (never the Chiayi fallback) — automatically set
+   * once geolocation resolves, or refreshed by the explorer's "重新定位"
+   * button (issue #275; previously only ever set by a one-shot "使用目前位置"
+   * click, issue #260). When this changes, the map flies to it and drops a
+   * "you are here" marker, independent of whichever group is currently
+   * selected.
    */
   userLocation: { lat: number; lng: number } | null;
 }
@@ -50,13 +56,7 @@ export interface PigeonGroupsMapProps {
 // imperatively kept in sync with props via useEffect, since Leaflet owns the
 // DOM node it's mounted into directly. Modeled directly on
 // app/[locale]/pigeon-shops/PigeonShopsMap.tsx.
-export default function PigeonGroupsMap({ groups, selectedId, userLocation }: PigeonGroupsMapProps) {
-  // Issue #256: the initial center/zoom comes from the browser's geolocation
-  // (city-level zoom on the user, falling back to Chiayi City Government) —
-  // see lib/useMapGeolocation.ts. Null while that request is still pending;
-  // the map isn't mounted until it resolves (below), so it never has to jump
-  // from one center to another.
-  const geolocation = useMapGeolocation();
+export default function PigeonGroupsMap({ groups, selectedId, geolocation, userLocation }: PigeonGroupsMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Map<number, L.Marker>>(new Map());
@@ -120,10 +120,11 @@ export default function PigeonGroupsMap({ groups, selectedId, userLocation }: Pi
     marker.openPopup();
   }, [selectedId]);
 
-  // Issue #260's "使用目前位置" button: once the user's real position
-  // resolves, fly the map there (independent of the mount-time
-  // auto-center/any selected group) and drop a small "you are here" dot so
-  // it's visually distinguishable from a group marker.
+  // Once the user's real position resolves (automatically on load, or via
+  // the explorer's "重新定位" button — issue #275; previously only a one-shot
+  // "使用目前位置" click, issue #260), fly the map there (independent of the
+  // mount-time auto-center/any selected group) and drop a small "you are
+  // here" dot so it's visually distinguishable from a group marker.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !userLocation) return;

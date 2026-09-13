@@ -1,11 +1,15 @@
-// Distance-from-the-user sorting shared by the pigeon-shops (and, in future,
-// pigeon-stations) directory explorer's "使用目前位置" button (issue #259).
-// Deliberately separate from lib/useMapGeolocation.ts (issue #256), which
-// auto-requests the browser's position on mount purely to choose the map's
-// initial center/zoom and silently falls back to a fixed point on failure —
-// this module instead supports an explicitly user-clicked action whose
-// result reorders the shop list by real distance and must surface failure to
-// the user as visible text, never a silent fallback.
+// Distance-from-the-user sorting shared by the pigeon-shops,
+// pigeon-stations, and pigeon-groups directory explorers (issue #259,
+// extended to all three and made automatic by issue #275).
+//
+// Issue #275: the sort origin now comes straight from
+// lib/useMapGeolocation.ts's own automatic on-mount result — the same one
+// used to center the map — rather than a separately-clicked "使用目前位置"
+// action, so the list sorts nearest-first as soon as the page loads (no
+// button press required). selectDistanceSortOrigin below is the pure
+// translation from that hook's result to "is there a real point to sort by".
+
+import type { MapGeolocationResult } from "@/lib/useMapGeolocation";
 
 export interface GeoPoint {
   lat: number;
@@ -62,4 +66,21 @@ export function sortByDistanceFromOrigin<T extends HasCoordinates>(
   positioned.sort((a, b) => a.distanceKm - b.distanceKm);
 
   return [...positioned, ...unpositioned];
+}
+
+/**
+ * The point that should drive automatic distance sorting, derived from
+ * lib/useMapGeolocation.ts's result: the user's real position when
+ * geolocation actually succeeded, or `null` (meaning "no distance sort, fall
+ * back to the existing name-order list") while it's still pending, denied,
+ * unsupported, or failed — i.e. whenever `center` is only the Chiayi City
+ * Government fallback rather than a genuine position. Sorting against that
+ * fixed fallback point would look like a real "nearest first" result to
+ * users who aren't anywhere near Chiayi, so it deliberately never becomes a
+ * sort origin.
+ */
+export function selectDistanceSortOrigin(geolocation: MapGeolocationResult | null): GeoPoint | null {
+  if (!geolocation || !geolocation.isUserLocation) return null;
+  const [lat, lng] = geolocation.center;
+  return { lat, lng };
 }
