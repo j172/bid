@@ -1,7 +1,5 @@
-// Cloudflare Workers AI translation client (issue #240) — shared by the
-// herbots.be news sync (lib/newsSync.ts) and, per the parent Epic (#239),
-// meant to be reused as-is by the future loing-ma.com/herbots.be race sync
-// (#241) once #240's infrastructure lands. Deliberately generic ("translate
+// Cloudflare Workers AI translation client (issue #240) — used by the
+// herbots.be news sync (lib/newsSync.ts). Deliberately generic ("translate
 // this plain text to Traditional Chinese") rather than news-specific.
 //
 // Requires CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_AI_API_TOKEN (see

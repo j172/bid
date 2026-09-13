@@ -660,70 +660,19 @@ CREATE TABLE IF NOT EXISTS pigeon_groups (
   KEY idx_pigeon_groups_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 賽事資訊 (issue #241, part of Epic #239) — daily sync of two independent,
--- never-merged regional race sources into one table (lib/racesSync.ts):
--- loing-ma.com (台灣/亞洲, phpBB forum, already Traditional Chinese) and
--- herbots.be (歐洲, JSON API behind a JS-rendered page, translated via
--- lib/translate.ts same as news_posts). Modeled directly on news_posts
--- above: `title`/`content` always hold the Traditional Chinese version
--- (verbatim for loing_ma rows, Cloudflare-Workers-AI-translated for herbots
--- rows); original_title/original_content hold the pre-translation text and
--- are NULL on loing_ma rows, which were never translated (same NULL
--- convention as news_posts' 'manual' rows having no original_*).
--- source distinguishes the two independent regional feeds ('loing_ma' |
--- 'herbots') — the two are never matched/merged as the same physical race,
--- only sorted together by race_date at render time (see lib/races.ts).
--- status ('current' | 'future' | 'finished') is copied straight from
--- herbots.be's own current/future/finished collection for herbots rows;
--- loing-ma.com's forum has no such classification, so it's derived at sync
--- time by comparing the parsed race_date against "today" (Asia/Taipei).
--- race_date is the race's actual start/release date — herbots.be's
--- release_time for herbots rows, the date parsed out of the forum topic's
--- title (falling back to the topic's own post date when the title has no
--- parseable date) for loing_ma rows; nullable in case neither is available.
--- Unlike news_posts/news_import_log, a race's status/content legitimately
--- changes over time (current -> finished as herbots.be's own bucket moves
--- it, or a same-day forum post ages from "current" to "finished" overnight)
--- so this sync UPSERTs by source_url (UNIQUE below) every run instead of
--- import-once-and-skip — there is deliberately no races_import_log
--- counterpart to news_import_log, and no locked_by_admin/admin-edit concept
--- either, since issue #241 has no admin CRUD surface for this table.
--- image_file_name (封面圖) is only ever populated for herbots rows with a
--- winner photo (loing-ma.com's forum posts have no photos); NULL otherwise.
-CREATE TABLE IF NOT EXISTS races (
-  id BIGINT NOT NULL AUTO_INCREMENT,
-  source VARCHAR(20) NOT NULL,          -- 'loing_ma' | 'herbots'
-  status VARCHAR(20) NOT NULL,          -- 'current' | 'future' | 'finished'
-  title VARCHAR(255) NOT NULL,          -- Traditional Chinese (translated, or verbatim for loing_ma)
-  original_title VARCHAR(255) NULL,     -- pre-translation title; NULL on loing_ma rows
-  content TEXT NOT NULL,                -- sanitizeDescriptionHtml'd Traditional Chinese content
-  original_content TEXT NULL,           -- sanitizeDescriptionHtml'd pre-translation content; NULL on loing_ma rows
-  race_date DATETIME NULL,              -- 開賽日期 (race start / release date)
-  image_file_name VARCHAR(255) NULL,    -- 封面圖 (herbots winner photo only)
-  source_url VARCHAR(500) NOT NULL,     -- original article/thread URL; de-dup + upsert key
-  created_at DATETIME NOT NULL,
-  updated_at DATETIME NOT NULL,
-  PRIMARY KEY (id),
-  UNIQUE KEY uq_races_source_url (source_url),
-  KEY idx_races_status_date (status, race_date),
-  KEY idx_races_source (source)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- 新聞/賽事每日同步「最近一次執行時間」追蹤 (issue #261) — 部署/重啟後智能
+-- 新聞每日同步「最近一次執行時間」追蹤 (issue #261) — 部署/重啟後智能
 -- 補跑用。這台主機重啟頻繁 (issue #81，約每 4.4 小時一次)，而新聞
--- (lib/newsSync.ts) 與賽事 (lib/racesSync.ts) 這兩個每日 cron 同步都是相對
--- 重的操作（多次外部請求 + herbots.be 內容的 Cloudflare Workers AI 翻譯
--- 呼叫），所以 lib/scheduler.ts 開機時的補跑邏輯不能像 lib/exchangeRates.ts
--- 的 STARTUP_SYNC_DELAY_MS 那樣無條件每次重啟都跑一次，而是查這張表判斷
--- 「距離上次真的跑完是否已經超過門檻」才補跑一次（見 lib/scheduler.ts 的
+-- (lib/newsSync.ts) 每日 cron 同步是相對重的操作（多次外部請求 + herbots.be 內容的
+-- Cloudflare Workers AI 翻譯呼叫），所以 lib/scheduler.ts 開機時的補跑邏輯不能像
+-- lib/exchangeRates.ts 的 STARTUP_SYNC_DELAY_MS 那樣無條件每次重啟都跑一次，
+-- 而是查這張表判斷「距離上次真的跑完是否已經超過門檻」才補跑一次（見 lib/scheduler.ts 的
 -- SYNC_STALENESS_THRESHOLD_HOURS 與其補跑邏輯的完整說明）。job_name 直接當
--- PK 用（'news' | 'races'）；每次 syncHerbotsNews()/syncRaces() 執行到正常
--- 回傳（不論本次是否有新資料匯入、是否夾雜 partial failure，只要不是被未預期
--- 例外中斷）就會呼叫 lib/syncRuns.ts 的 recordRunNow() 覆寫這裡的
--- last_run_at。這張表只保留「最新一次」的時間戳，不是流水帳，所以沒有
--- id/created_at 這種歷史紀錄欄位的必要。
+-- PK 用（'news'）；每次 syncHerbotsNews() 執行到正常回傳（不論本次是否有新資料匯入、
+-- 是否夾雜 partial failure，只要不是被未預期例外中斷）就會呼叫 lib/syncRuns.ts 的
+-- recordRunNow() 覆寫這裡的 last_run_at。這張表只保留「最新一次」的時間戳，
+-- 不是流水帳，所以沒有 id/created_at 這種歷史紀錄欄位的必要。
 CREATE TABLE IF NOT EXISTS sync_runs (
-  job_name VARCHAR(50) NOT NULL,  -- 'news' | 'races'
+  job_name VARCHAR(50) NOT NULL,  -- 'news'
   last_run_at DATETIME NOT NULL,
   PRIMARY KEY (job_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
