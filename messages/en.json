@@ -570,7 +570,12 @@
     "searchPlaceholder": "Search by name or address...",
     "countyFilterLabel": "County/City",
     "countyFilterAll": "All counties/cities",
-    "noResults": "No pigeon shops match your filters"
+    "noResults": "No pigeon shops match your filters",
+    "useMyLocationButton": "Use My Location",
+    "locatingLabel": "Locating...",
+    "geolocationUnsupported": "Your browser doesn't support geolocation",
+    "geolocationDenied": "Couldn't get your location — please check your browser's location permission",
+    "distanceLabel": "{km} km"
   },
   "contactPage": {
     "title": "Contact",

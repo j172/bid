@@ -215,14 +215,21 @@ export function addressGeocodeCandidates(address) {
   return candidates;
 }
 
+// userAgent is overridable so other one-time import scripts (e.g.
+// scripts/import-cb-pigeon-shops.mjs, issue #259) can reuse this same
+// rate-limited Nominatim lookup — including sharing lastNominatimCallAt
+// below, so two scripts importing this module never exceed the combined 1
+// req/s policy limit even if run back-to-back — while still identifying
+// themselves with their own descriptive User-Agent rather than this
+// script's.
 let lastNominatimCallAt = 0;
-async function nominatimSearch(query) {
+export async function nominatimSearch(query, userAgent = NOMINATIM_USER_AGENT) {
   const wait = lastNominatimCallAt + NOMINATIM_MIN_INTERVAL_MS - Date.now();
   if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
   lastNominatimCallAt = Date.now();
 
   const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=tw&q=${encodeURIComponent(query)}`;
-  const response = await fetch(url, { headers: { "User-Agent": NOMINATIM_USER_AGENT } });
+  const response = await fetch(url, { headers: { "User-Agent": userAgent } });
   if (!response.ok) {
     console.warn(`  geocode failed (${response.status}): ${query}`);
     return null;

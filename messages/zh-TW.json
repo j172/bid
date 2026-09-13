@@ -570,7 +570,12 @@
     "searchPlaceholder": "搜尋店名或地址...",
     "countyFilterLabel": "縣市",
     "countyFilterAll": "全部縣市",
-    "noResults": "沒有符合條件的鴿店"
+    "noResults": "沒有符合條件的鴿店",
+    "useMyLocationButton": "使用目前位置",
+    "locatingLabel": "定位中...",
+    "geolocationUnsupported": "您的瀏覽器不支援定位功能",
+    "geolocationDenied": "無法取得您的位置，請確認已允許瀏覽器存取位置權限",
+    "distanceLabel": "{km} 公里"
   },
   "contactPage": {
     "title": "聯絡我們",

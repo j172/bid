@@ -8,6 +8,7 @@ import ModalFormActions from "../components/ModalFormActions";
 const inputClass =
   "w-full rounded-md border border-border px-3 py-2 text-sm focus:border-interactive-primary focus:outline-none";
 const NAME_MAX = 200;
+const CATEGORY_MAX = 100;
 
 export type EditPigeonShop = {
   id: number;
@@ -16,6 +17,7 @@ export type EditPigeonShop = {
   address: string | null;
   lat: number | null;
   lng: number | null;
+  category: string | null;
   sourceUrl: string;
 };
 
@@ -27,6 +29,9 @@ type Props = { mode: "create" } | { mode: "edit"; shop: EditPigeonShop };
 // number inputs (no live geocoding call from the admin UI — that only
 // happens in the import script) since this is meant for occasional manual
 // fixes (typo corrections, a shop that closed, one new entry), not bulk entry.
+// category (issue #259) is likewise a plain free-text field — populated by
+// scripts/import-cb-pigeon-shops.mjs for cb-pigeon.com-sourced rows, left
+// blank/NULL for nicepigeon.com-sourced rows and most hand-added ones.
 export default function PigeonShopFormModal(props: Props) {
   const router = useRouter();
   const isEdit = props.mode === "edit";
@@ -35,6 +40,7 @@ export default function PigeonShopFormModal(props: Props) {
   const addressInputId = useId();
   const latInputId = useId();
   const lngInputId = useId();
+  const categoryInputId = useId();
   const sourceUrlInputId = useId();
 
   const [open, setOpen] = useState(false);
@@ -43,6 +49,7 @@ export default function PigeonShopFormModal(props: Props) {
   const [address, setAddress] = useState(isEdit ? (props.shop.address ?? "") : "");
   const [lat, setLat] = useState(isEdit && props.shop.lat !== null ? String(props.shop.lat) : "");
   const [lng, setLng] = useState(isEdit && props.shop.lng !== null ? String(props.shop.lng) : "");
+  const [category, setCategory] = useState(isEdit ? (props.shop.category ?? "") : "");
   const [sourceUrl, setSourceUrl] = useState(isEdit ? props.shop.sourceUrl : "");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -53,6 +60,7 @@ export default function PigeonShopFormModal(props: Props) {
     setAddress(isEdit ? (props.shop.address ?? "") : "");
     setLat(isEdit && props.shop.lat !== null ? String(props.shop.lat) : "");
     setLng(isEdit && props.shop.lng !== null ? String(props.shop.lng) : "");
+    setCategory(isEdit ? (props.shop.category ?? "") : "");
     setSourceUrl(isEdit ? props.shop.sourceUrl : "");
     setError(null);
   }
@@ -80,6 +88,7 @@ export default function PigeonShopFormModal(props: Props) {
       address: address.trim() || null,
       lat: lat.trim() === "" ? null : Number(lat.trim()),
       lng: lng.trim() === "" ? null : Number(lng.trim()),
+      category: category.trim() || null,
       sourceUrl: sourceUrl.trim(),
     };
 
@@ -154,6 +163,21 @@ export default function PigeonShopFormModal(props: Props) {
                 onChange={(e) => setName(e.target.value)}
                 className={`mt-1 ${inputClass}`}
                 required
+              />
+            </div>
+
+            <div>
+              <label htmlFor={categoryInputId} className="block text-xs font-semibold text-ink-light">
+                分類
+              </label>
+              <input
+                id={categoryInputId}
+                type="text"
+                value={category}
+                maxLength={CATEGORY_MAX}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="例如：賽鴿飼料-台北地區（留空表示未分類）"
+                className={`mt-1 ${inputClass}`}
               />
             </div>
 

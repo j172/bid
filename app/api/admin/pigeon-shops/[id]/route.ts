@@ -37,12 +37,13 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ ok: false, error: "無效的請求格式" }, { status: 400 });
   }
 
-  const { name, phone, address, lat, lng, sourceUrl } = (body ?? {}) as {
+  const { name, phone, address, lat, lng, category, sourceUrl } = (body ?? {}) as {
     name?: unknown;
     phone?: unknown;
     address?: unknown;
     lat?: unknown;
     lng?: unknown;
+    category?: unknown;
     sourceUrl?: unknown;
   };
 
@@ -54,6 +55,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   }
   if (address !== undefined && address !== null && typeof address !== "string") {
     return NextResponse.json({ ok: false, error: "地址格式錯誤" }, { status: 400 });
+  }
+  if (category !== undefined && category !== null && typeof category !== "string") {
+    return NextResponse.json({ ok: false, error: "分類格式錯誤" }, { status: 400 });
   }
   if (sourceUrl !== undefined && sourceUrl !== null && typeof sourceUrl !== "string") {
     return NextResponse.json({ ok: false, error: "原文網址格式錯誤" }, { status: 400 });
@@ -81,6 +85,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     address: typeof address === "string" ? address : null,
     lat: parsedLat,
     lng: parsedLng,
+    category: typeof category === "string" ? category : null,
     sourceUrl: typeof sourceUrl === "string" ? sourceUrl : "",
   });
 

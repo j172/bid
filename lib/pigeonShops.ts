@@ -15,6 +15,10 @@ export interface PigeonShop {
   address: string | null;
   lat: number | null;
   lng: number | null;
+  // e.g. "賽鴿飼料-台北地區" (issue #259, cb-pigeon.com import). NULL on rows
+  // scraped by scripts/import-pigeon-shops.mjs (nicepigeon.com), which has no
+  // equivalent field, and on hand-added admin rows that leave it blank.
+  category: string | null;
   sourceUrl: string;
   createdAt: Date;
   updatedAt: Date;
@@ -26,6 +30,7 @@ export interface NewPigeonShopInput {
   address?: string | null;
   lat?: number | null;
   lng?: number | null;
+  category?: string | null;
   sourceUrl: string;
 }
 
@@ -35,6 +40,7 @@ export interface UpdatePigeonShopInput {
   address: string | null;
   lat: number | null;
   lng: number | null;
+  category: string | null;
   sourceUrl: string;
 }
 
@@ -45,6 +51,7 @@ interface PigeonShopRow {
   address: string | null;
   lat: string | number | null;
   lng: string | number | null;
+  category: string | null;
   source_url: string;
   created_at: Date;
   updated_at: Date;
@@ -53,6 +60,7 @@ interface PigeonShopRow {
 const NAME_MAX = 200;
 const PHONE_MAX = 50;
 const ADDRESS_MAX = 255;
+const CATEGORY_MAX = 100;
 const SOURCE_URL_MAX = 500;
 
 // mysql2 returns DECIMAL columns as strings by default — normalize to number
@@ -71,6 +79,7 @@ function mapRow(row: PigeonShopRow): PigeonShop {
     address: row.address,
     lat: toNumberOrNull(row.lat),
     lng: toNumberOrNull(row.lng),
+    category: row.category,
     sourceUrl: row.source_url,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -95,12 +104,14 @@ function validate(input: {
   name: string;
   phone?: string | null;
   address?: string | null;
+  category?: string | null;
   sourceUrl: string;
 }): string | null {
   if (!input.name.trim()) return "請輸入店名";
   if (input.name.length > NAME_MAX) return `店名上限 ${NAME_MAX} 字`;
   if (input.phone && input.phone.length > PHONE_MAX) return `電話上限 ${PHONE_MAX} 字`;
   if (input.address && input.address.length > ADDRESS_MAX) return `地址上限 ${ADDRESS_MAX} 字`;
+  if (input.category && input.category.length > CATEGORY_MAX) return `分類上限 ${CATEGORY_MAX} 字`;
   // sourceUrl is required for scraped rows (scripts/import-pigeon-shops.mjs
   // always sets it to the nicepigeon.com article it came from) but optional
   // here — a row added by hand through this admin CRUD has no such source.
@@ -114,16 +125,17 @@ export async function createPigeonShop(
   const name = input.name.trim();
   const phone = input.phone?.trim() || null;
   const address = input.address?.trim() || null;
+  const category = input.category?.trim() || null;
   const sourceUrl = input.sourceUrl.trim();
 
-  const error = validate({ name, phone, address, sourceUrl });
+  const error = validate({ name, phone, address, category, sourceUrl });
   if (error) return { ok: false, error };
 
   const db = await getDb();
   const [result] = await db.query(
-    `INSERT INTO pigeon_shops (name, phone, address, lat, lng, source_url, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-    [name, phone, address, input.lat ?? null, input.lng ?? null, sourceUrl],
+    `INSERT INTO pigeon_shops (name, phone, address, lat, lng, category, source_url, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+    [name, phone, address, input.lat ?? null, input.lng ?? null, category, sourceUrl],
   );
   return { ok: true, id: (result as { insertId: number }).insertId };
 }
@@ -135,17 +147,18 @@ export async function updatePigeonShop(
   const name = input.name.trim();
   const phone = input.phone?.trim() || null;
   const address = input.address?.trim() || null;
+  const category = input.category?.trim() || null;
   const sourceUrl = input.sourceUrl.trim();
 
-  const error = validate({ name, phone, address, sourceUrl });
+  const error = validate({ name, phone, address, category, sourceUrl });
   if (error) return { ok: false, error };
 
   const db = await getDb();
   const [result] = await db.query(
     `UPDATE pigeon_shops
-     SET name = ?, phone = ?, address = ?, lat = ?, lng = ?, source_url = ?, updated_at = NOW()
+     SET name = ?, phone = ?, address = ?, lat = ?, lng = ?, category = ?, source_url = ?, updated_at = NOW()
      WHERE id = ?`,
-    [name, phone, address, input.lat, input.lng, sourceUrl, id],
+    [name, phone, address, input.lat, input.lng, category, sourceUrl, id],
   );
   const affectedRows = (result as { affectedRows?: number }).affectedRows ?? 0;
   if (affectedRows === 0) return { ok: false, error: "找不到該鴿店資料" };

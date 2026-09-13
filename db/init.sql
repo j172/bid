@@ -614,7 +614,8 @@ CREATE TABLE IF NOT EXISTS pigeon_shops (
   address VARCHAR(255) NULL,
   lat DECIMAL(10,7) NULL,
   lng DECIMAL(10,7) NULL,
-  source_url VARCHAR(500) NOT NULL,   -- the nicepigeon.com news_detail.php article this row was scraped from
+  category VARCHAR(100) NULL,         -- e.g. "賽鴿飼料-台北地區" (issue #259, cb-pigeon.com import); NULL on nicepigeon-sourced rows, which have no equivalent
+  source_url VARCHAR(500) NOT NULL,   -- the nicepigeon.com news_detail.php article, or cb-pigeon.com store/view page (issue #259), this row was scraped from
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
   PRIMARY KEY (id),

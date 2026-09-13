@@ -21,6 +21,11 @@ const shopIcon = L.icon({
 });
 
 const SELECTED_ZOOM = 15;
+// Issue #259: the zoom "使用目前位置" flies to — close enough to distinguish
+// nearby shops without being as tight as a single selected shop's
+// SELECTED_ZOOM, since the user's own position isn't a specific shop to zero
+// in on.
+const USER_LOCATION_ZOOM = 14;
 
 export interface PigeonShopMapPoint {
   id: number;
@@ -34,13 +39,18 @@ export interface PigeonShopMapPoint {
 export interface PigeonShopsMapProps {
   shops: PigeonShopMapPoint[];
   selectedId: number | null;
+  /** Issue #259's "使用目前位置" result — null until the user opts in (or if
+   * geolocation was denied/unsupported/failed). Distinct from the
+   * auto-on-mount lib/useMapGeolocation.ts center below, which never shows
+   * its own marker. */
+  userLocation?: { lat: number; lng: number } | null;
 }
 
 // Plain Leaflet (not react-leaflet, per issue #243's spec) — the map
 // instance and its markers live in refs and are imperatively kept in sync
 // with props via useEffect, since Leaflet owns the DOM node it's mounted
 // into directly.
-export default function PigeonShopsMap({ shops, selectedId }: PigeonShopsMapProps) {
+export default function PigeonShopsMap({ shops, selectedId, userLocation = null }: PigeonShopsMapProps) {
   // Issue #256: the initial center/zoom comes from the browser's geolocation
   // (city-level zoom on the user, falling back to Chiayi City Government) —
   // see lib/useMapGeolocation.ts. Null while that request is still pending;
@@ -50,6 +60,7 @@ export default function PigeonShopsMap({ shops, selectedId }: PigeonShopsMapProp
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Map<number, L.Marker>>(new Map());
+  const userMarkerRef = useRef<L.CircleMarker | null>(null);
 
   // Mount/unmount the map exactly once, as soon as geolocation resolves.
   useEffect(() => {
@@ -66,6 +77,7 @@ export default function PigeonShopsMap({ shops, selectedId }: PigeonShopsMapProp
       map.remove();
       mapRef.current = null;
       markers.clear();
+      userMarkerRef.current = null;
     };
   }, [geolocation]);
 
@@ -107,6 +119,34 @@ export default function PigeonShopsMap({ shops, selectedId }: PigeonShopsMapProp
     map.flyTo(marker.getLatLng(), SELECTED_ZOOM, { duration: 0.75 });
     marker.openPopup();
   }, [selectedId]);
+
+  // Issue #259's "使用目前位置": draw a distinct marker (a plain circle, not
+  // the shop pin icon, so it reads as "you" rather than another shop) at the
+  // user's position and fly the map there. Removed again if userLocation
+  // goes back to null (e.g. a second click that's denied).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (!userLocation) {
+      userMarkerRef.current?.remove();
+      userMarkerRef.current = null;
+      return;
+    }
+
+    if (userMarkerRef.current) {
+      userMarkerRef.current.setLatLng([userLocation.lat, userLocation.lng]);
+    } else {
+      userMarkerRef.current = L.circleMarker([userLocation.lat, userLocation.lng], {
+        radius: 8,
+        color: "#ffffff",
+        weight: 2,
+        fillColor: "#2563eb",
+        fillOpacity: 1,
+      }).addTo(map);
+    }
+    map.flyTo([userLocation.lat, userLocation.lng], USER_LOCATION_ZOOM, { duration: 0.75 });
+  }, [userLocation, geolocation]);
 
   // While geolocation is still pending, don't mount the container div at all
   // — the mount effect above only creates the Leaflet map once `geolocation`

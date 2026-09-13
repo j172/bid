@@ -406,6 +406,7 @@ CREATE TABLE IF NOT EXISTS pigeon_shops (
   address VARCHAR(255) NULL,
   lat DECIMAL(10,7) NULL,
   lng DECIMAL(10,7) NULL,
+  category VARCHAR(100) NULL,
   source_url VARCHAR(500) NOT NULL,
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
@@ -722,6 +723,16 @@ export async function ensureGoogleAuthColumns(db: mysql.Pool): Promise<void> {
   await db.query("ALTER TABLE users MODIFY COLUMN password_salt VARCHAR(255) NULL");
 }
 
+// Issue #259: cb-pigeon.com import (scripts/import-cb-pigeon-shops.mjs) adds
+// a 分類 (e.g. "賽鴿飼料-台北地區") to every shop it scrapes, which the
+// original nicepigeon.com import (#243) had no equivalent field for.
+// Nullable — existing nicepigeon-sourced rows are left NULL rather than
+// backfilled (per that issue's decision), and a manually-added admin row can
+// leave it blank too.
+async function ensurePigeonShopCategoryColumn(db: mysql.Pool): Promise<void> {
+  await ensureColumn(db, "pigeon_shops", "category", "VARCHAR(100) NULL");
+}
+
 function createPool(): mysql.Pool {
   return mysql.createPool({
     host: process.env.MYSQL_HOST,
@@ -780,6 +791,7 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensureHomepageVideosVideoIdIndex(db);
   await ensureGoogleAuthColumns(db);
   await ensureNewsSourceColumns(db);
+  await ensurePigeonShopCategoryColumn(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {
