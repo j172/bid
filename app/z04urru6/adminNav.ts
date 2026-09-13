@@ -39,8 +39,4 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   // 鴿會查詢管理 (issue #260) — 手動維護一次性匯入腳本
   // (scripts/import-cb-pigeon-groups.mjs) 匯入的鴿會聯絡資訊。
   { label: "鴿會查詢管理", href: "/z04urru6/pigeon-groups", section: "content" },
-  // 賽事管理 (issue #255) — minimal admin page for issue #241's races
-  // feature: manual sync trigger + read-only list, no CRUD (see
-  // app/z04urru6/races/page.tsx's header comment for why).
-  { label: "賽事管理", href: "/z04urru6/races", section: "content" },
 ];

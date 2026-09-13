@@ -7,7 +7,6 @@
 import cron from "node-cron";
 import { syncExchangeRates } from "@/lib/exchangeRates";
 import { syncHerbotsNews } from "@/lib/newsSync";
-import { syncRaces } from "@/lib/racesSync";
 import { getLastRunAt, isSyncStale, type SyncJobName } from "@/lib/syncRuns";
 
 let started = false;
@@ -28,18 +27,18 @@ let started = false;
 // lib/exchangeRates.ts for the other half of this mitigation).
 const STARTUP_SYNC_DELAY_MS = 8000;
 
-// issue #261: news/races each track their own "last completed run" timestamp
+// issue #261: news tracks its "last completed run" timestamp
 // in the sync_runs table (see lib/syncRuns.ts / db/init.sql's sync_runs
 // comment). After the same STARTUP_SYNC_DELAY_MS boot delay used above, this
-// module checks that timestamp for each job and fires a one-off catch-up
+// module checks that timestamp and fires a one-off catch-up
 // sync if it's missing or older than this many hours — so a deploy that
 // happens to land after today's 08:40 Asia/Taipei tick has already passed
-// doesn't leave the site without fresh news/races until tomorrow's tick.
+// doesn't leave the site without fresh news until tomorrow's tick.
 //
 // This deliberately does NOT sync unconditionally on every boot the way
 // exchange rates' startup sync above does: issue #81's production evidence
 // shows this host gets killed and restarted roughly every 4.4 hours, and
-// news/races are comparatively heavy (many external requests, plus a
+// news is comparatively heavy (many external requests, plus a
 // Cloudflare Workers AI translation call per paragraph for herbots.be
 // content) — an unconditional per-restart re-run would multiply that cost by
 // however many times the process happens to restart in a day, for zero
@@ -59,9 +58,7 @@ const SYNC_STALENESS_THRESHOLD_HOURS = 20;
 // cron.schedule callbacks below. Every failure here (a getLastRunAt() error,
 // or syncFn() itself somehow throwing) is caught and logged rather than
 // propagated: this runs from a bare setTimeout with no caller to hand a
-// rejection to, and — per news/races' independent-evaluation requirement — a
-// problem with one job's check must never prevent the other job's own
-// setTimeout callback (registered separately below) from running at all.
+// rejection to.
 async function maybeRunCatchUpSync<T>(
   jobName: SyncJobName,
   syncFn: () => Promise<T>,
@@ -156,44 +153,10 @@ export function startScheduler(): void {
     { timezone: "Asia/Taipei" },
   );
 
-  // Also 08:40 Asia/Taipei daily (issue #241) — "與新聞同步同一批排程" per the
-  // issue: same time as the herbots.be news sync above, registered as its
-  // own cron.schedule entry (rather than folded into the same callback) so a
-  // truly unexpected bug in one sync's own bug-backstop .catch() can never
-  // prevent the other from being scheduled at all. syncRaces() itself never
-  // throws for an ordinary per-source/per-page/per-race failure (see
-  // lib/racesSync.ts) — this .catch() is only a backstop against a truly
-  // unexpected bug, same convention as syncHerbotsNews() above.
-  cron.schedule(
-    "40 8 * * *",
-    () => {
-      syncRaces()
-        .then((result) => {
-          console.log(
-            `[racesSync] daily sync done: loingMa(imported=${result.loingMa.imported} updated=${result.loingMa.updated} ` +
-              `skipped=${result.loingMa.skipped} errors=${result.loingMa.errors.length}) ` +
-              `herbots(imported=${result.herbots.imported} updated=${result.herbots.updated} ` +
-              `translationFailures=${result.herbots.translationFailures} errors=${result.herbots.errors.length})`,
-          );
-          for (const message of [...result.loingMa.errors, ...result.herbots.errors]) {
-            console.error(`[racesSync] ${message}`);
-          }
-        })
-        .catch((error) => {
-          console.error("[racesSync] scheduled sync failed", error);
-        });
-    },
-    { timezone: "Asia/Taipei" },
-  );
-
   // issue #261 post-boot catch-up checks (see SYNC_STALENESS_THRESHOLD_HOURS'
   // comment above for the full reasoning) — same STARTUP_SYNC_DELAY_MS boot
   // delay as exchange rates' startup sync, so this doesn't land in the same
-  // cold-start instability window either. news and races each get their own
-  // setTimeout/maybeRunCatchUpSync call, evaluated and (if stale) fired fully
-  // independently of one another, matching the "separate cron.schedule
-  // entries so one job's problem can't couple with the other's" principle
-  // the two 08:40 registrations above already follow.
+  // cold-start instability window either.
   setTimeout(() => {
     // maybeRunCatchUpSync never rejects (every failure inside it is caught
     // and logged) — `void` just marks this fire-and-forget call as
@@ -205,18 +168,6 @@ export function startScheduler(): void {
       (result) =>
         `imported=${result.imported} skippedExisting=${result.skippedExisting} ` +
         `skippedNoContent=${result.skippedNoContent} translationFailures=${result.translationFailures} errors=${result.errors.length}`,
-    );
-  }, STARTUP_SYNC_DELAY_MS);
-
-  setTimeout(() => {
-    void maybeRunCatchUpSync(
-      "races",
-      syncRaces,
-      (result) =>
-        `loingMa(imported=${result.loingMa.imported} updated=${result.loingMa.updated} ` +
-        `skipped=${result.loingMa.skipped} errors=${result.loingMa.errors.length}) ` +
-        `herbots(imported=${result.herbots.imported} updated=${result.herbots.updated} ` +
-        `translationFailures=${result.herbots.translationFailures} errors=${result.herbots.errors.length})`,
     );
   }, STARTUP_SYNC_DELAY_MS);
 }

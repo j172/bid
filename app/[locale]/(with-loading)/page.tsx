@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { listOpenListings } from "@/lib/listings";
-import { listingPhotoUrl, homepageSectionImageUrl, pigeonShowcaseImageUrl, newsImageUrl, featuredLoftPostImageUrl, raceImageUrl } from "@/lib/uploads";
+import { listingPhotoUrl, homepageSectionImageUrl, pigeonShowcaseImageUrl, newsImageUrl, featuredLoftPostImageUrl } from "@/lib/uploads";
 import { listHomepageSections } from "@/lib/homepageSections";
 import { listLatestPigeonShowcase } from "@/lib/pigeonShowcase";
 import { listHomepageNewsCarousel } from "@/lib/news";
-import { listHomepageRaces } from "@/lib/races";
 import { listLatestFeaturedLoftPosts } from "@/lib/featuredLoftPosts";
 import { excerptHtml } from "@/lib/htmlText";
 import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
@@ -32,7 +31,7 @@ import HomeProductCard from "../components/HomeProductCard";
 import PartnerLoftImage from "../components/PartnerLoftImage";
 import PigeonShowcaseCarouselCard from "../components/PigeonShowcaseCarouselCard";
 import NewsCarouselCard from "../components/NewsCarouselCard";
-import RaceCard, { type RaceCardItem } from "../components/RaceCard";
+
 import FeaturedLoftCarouselCard from "../components/FeaturedLoftCarouselCard";
 import ExchangeRateStrip from "../components/ExchangeRateStrip";
 import SocialMediaSection from "../components/SocialMediaSection";
@@ -88,7 +87,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const t = await getTranslations("home");
   const tListings = await getTranslations("listings");
   const tAutoBid = await getTranslations("autoBiddingInfo");
-  const tRaces = await getTranslations("races");
   // listOpenListings now also returns 'scheduled' (not-yet-started) auctions
   // for the /listings browse page's benefit — the homepage's curated
   // sections below (ending soon, quick deals, etc.) all assume "actively
@@ -186,29 +184,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     createdAt: (post.publishedAt ?? post.createdAt).toLocaleDateString(),
   }));
 
-  // 賽事資訊首頁區塊 (issue #241) — latest few races merged across both
-  // independent sources (loing-ma.com/herbots.be, never matched/merged as
-  // the same physical race — see lib/races.ts), prioritized current > future
-  // > finished (see listHomepageRaces) so an ongoing race never scrolls off
-  // a small homepage slot behind a backlog of finished ones. Rendered
-  // directly above the Weather Info section per the issue.
-  const RACES_HOME_LIMIT = 6;
-  const latestRaces = await cachedQuery("home:latestRaces", 20, () => listHomepageRaces(RACES_HOME_LIMIT));
-  const raceCardItems: RaceCardItem[] = latestRaces.map((race) => ({
-    id: race.id,
-    source: race.source,
-    status: race.status,
-    title: race.title,
-    originalTitle: race.originalTitle,
-    content: race.content,
-    originalContent: race.originalContent,
-    // Same "format once on the server" convention as newsCarouselItems above
-    // (issue #146) — no label prefix here (unlike the /races list page's
-    // own raceDateLabel), same plain-date style as newsCarouselItems.
-    raceDateLabel: race.raceDate ? race.raceDate.toLocaleDateString() : null,
-    imageUrl: race.imageFileName ? raceImageUrl(race.imageFileName) : null,
-    sourceUrl: race.sourceUrl,
-  }));
+
 
   const socialItems = await getSocialMediaFeed();
 
@@ -630,46 +606,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
       <SocialMediaSection items={socialItems} />
 
-      {/* 賽事資訊 (issue #241) — directly above the Weather Info section
-          below, per the issue. Always rendered (not gated on
-          `.length > 0`), same "keep the layout slot occupied, show a
-          neutral empty state instead of hiding the section" convention as
-          NewsCarouselCard/FeaturedLoftCarouselCard use. */}
-      <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-600">{t("racesEyebrow")}</p>
-            <h2 className="mt-1 text-2xl font-bold text-ink">{t("racesTitle")}</h2>
-          </div>
-          <Link href="/races" className="text-sm font-semibold text-interactive-primary hover:text-header">
-            {t("racesCta")} →
-          </Link>
-        </div>
 
-        {raceCardItems.length === 0 ? (
-          <p className="mt-5 text-ink-light">{t("racesEmptyDesc")}</p>
-        ) : (
-          <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {raceCardItems.map((item) => (
-              <RaceCard
-                key={item.id}
-                item={item}
-                compact
-                labels={{
-                  sourceLabel: item.source === "loing_ma" ? tRaces("sourceLoingMa") : tRaces("sourceHerbots"),
-                  statusLabel: {
-                    current: tRaces("statusCurrent"),
-                    future: tRaces("statusFuture"),
-                    finished: tRaces("statusFinished"),
-                  }[item.status],
-                  originalHeading: tRaces("originalHeading"),
-                  sourceLinkLabel: tRaces("sourceLinkLabel"),
-                }}
-              />
-            ))}
-          </div>
-        )}
-      </section>
 
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
         <h2 className="text-2xl font-bold">{t("weatherTitle")}</h2>
