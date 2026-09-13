@@ -13,16 +13,33 @@
 // missing/invalid credential must never crash the whole sync job (issue
 // #240's explicit requirement), it should just mean this run's articles get
 // no translation and that fact is visible in server logs.
+import { Converter } from "opencc-js";
 import { httpsRequest } from "@/lib/httpsRequest";
 
 // m2m100-1.2b is Workers AI's general-purpose translation model — small
-// enough for near-real-time per-paragraph calls, and (per Cloudflare's own
-// docs) one of the few translation models whose target_lang list includes
-// "chinese_traditional" as a distinct option from simplified "chinese",
-// which is exactly the distinction this project's zh-TW-only content needs.
+// enough for near-real-time per-paragraph calls. Its target_lang enum does
+// NOT include a distinct "chinese_traditional" option (an earlier version of
+// this file assumed it did, based on a misreading of Cloudflare's docs — the
+// model rejects "chinese_traditional" outright with a 400, so every
+// translation attempt against it silently degraded to the original-language
+// fallback below); confirmed live against the real API that the only
+// Chinese option is "chinese" (bare, i.e. Simplified script — "冠军" not
+// "冠軍"). Since every locale this project ships is zh-TW (see
+// i18n/routing.ts), the model's Simplified output is run through
+// opencc-js's cn→tw converter (toTraditional below) before ever being
+// stored — this project's content must never surface Simplified characters.
 const TRANSLATE_MODEL = "@cf/meta/m2m100-1.2b";
 const SOURCE_LANG = "english";
-const TARGET_LANG = "chinese_traditional";
+const TARGET_LANG = "chinese";
+
+// Built once (OpenCC's conversion tables are non-trivial to load) and reused
+// across every translateToTraditionalChinese() call — a fresh Converter()
+// per paragraph would repeat that cost needlessly for an article with many
+// paragraphs. 'tw' (not the plain 't' character-only variant) additionally
+// localizes Taiwan-specific vocabulary (e.g. idiomatic word choices), which
+// reads more naturally to this project's zh-TW audience than a bare
+// character-for-character conversion would.
+const toTraditional = Converter({ from: "cn", to: "tw" });
 
 export function isTranslationConfigured(): boolean {
   return Boolean(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_AI_API_TOKEN);
@@ -84,7 +101,10 @@ export async function translateToTraditionalChinese(text: string): Promise<Trans
       return { ok: false, error };
     }
 
-    return { ok: true, text: translated };
+    // Workers AI's response is Simplified Chinese (see TARGET_LANG's comment
+    // above) — convert before returning so no caller ever has to remember to
+    // do this itself.
+    return { ok: true, text: toTraditional(translated) };
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : String(cause);
     console.error(`[translate] Cloudflare Workers AI 呼叫失敗: ${message}`, cause);
