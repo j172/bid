@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/apiAuth";
 import { deleteHomepageSection, getHomepageSectionById, updateHomepageSection } from "@/lib/homepageSections";
+import { resolveBio, resolveLinkedLoftId } from "@/lib/homepageSectionApiValidation";
 import { deleteHomepageSectionImageFile, homepageSectionImageUrl, saveHomepageSectionImage } from "@/lib/uploads";
 import { parseIdParam } from "@/lib/routeParams";
 
 const TITLE_MAX = 255;
-const BIO_MAX = 2000;
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdmin();
@@ -46,7 +46,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const form = await request.formData();
   const title = String(form.get("title") ?? "").trim();
   const bioRaw = String(form.get("bio") ?? "").trim();
-  const bio = bioRaw === "" ? null : bioRaw;
+  const linkedLoftIdRaw = String(form.get("linkedLoftId") ?? "").trim();
   const sortOrder = Number(form.get("sortOrder"));
   const isActiveRaw = String(form.get("isActive") ?? "true");
   const isActive = isActiveRaw === "true" || isActiveRaw === "1";
@@ -55,8 +55,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!title || title.length > TITLE_MAX) {
     return NextResponse.json({ ok: false, error: `請輸入標題（上限 ${TITLE_MAX} 字）` }, { status: 400 });
   }
-  if (bio !== null && bio.length > BIO_MAX) {
-    return NextResponse.json({ ok: false, error: `簡介上限 ${BIO_MAX} 字` }, { status: 400 });
+  // Validated against `existing.sectionType` (the row's own, immutable type)
+  // rather than anything the client sends — editing never changes a
+  // section's type.
+  const bioResult = resolveBio(existing.sectionType, bioRaw);
+  if (!bioResult.ok) {
+    return NextResponse.json({ ok: false, error: bioResult.error }, { status: 400 });
+  }
+  const linkedLoftResult = await resolveLinkedLoftId(existing.sectionType, linkedLoftIdRaw);
+  if (!linkedLoftResult.ok) {
+    return NextResponse.json({ ok: false, error: linkedLoftResult.error }, { status: 400 });
   }
   if (!Number.isFinite(sortOrder) || !Number.isInteger(sortOrder) || sortOrder < 0) {
     return NextResponse.json({ ok: false, error: "排序必須是不小於 0 的整數" }, { status: 400 });
@@ -72,7 +80,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
   }
 
-  const result = await updateHomepageSection(sectionId, { title, bio, sortOrder, isActive, imageFileName });
+  const result = await updateHomepageSection(sectionId, {
+    title,
+    bio: bioResult.bio,
+    linkedLoftId: linkedLoftResult.linkedLoftId,
+    sortOrder,
+    isActive,
+    imageFileName,
+  });
   if (!result.ok) {
     if (imageFileName !== existing.imageFileName) {
       await deleteHomepageSectionImageFile(imageFileName);

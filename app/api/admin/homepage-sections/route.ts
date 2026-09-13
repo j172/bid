@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/apiAuth";
 import { createHomepageSection, listHomepageSections } from "@/lib/homepageSections";
+import { resolveBio, resolveLinkedLoftId } from "@/lib/homepageSectionApiValidation";
 import { homepageSectionImageUrl, saveHomepageSectionImage } from "@/lib/uploads";
 
 const TITLE_MAX = 255;
-const BIO_MAX = 2000;
 const SECTION_TYPE_MAX = 30;
 
 // Admin list view for a given section_type (e.g. 'partner_loft' / 合作鴿舍)
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   const sectionType = String(form.get("sectionType") ?? "").trim();
   const title = String(form.get("title") ?? "").trim();
   const bioRaw = String(form.get("bio") ?? "").trim();
-  const bio = bioRaw === "" ? null : bioRaw;
+  const linkedLoftIdRaw = String(form.get("linkedLoftId") ?? "").trim();
   const sortOrderRaw = String(form.get("sortOrder") ?? "").trim();
   const sortOrder = sortOrderRaw === "" ? undefined : Number(sortOrderRaw);
   const isActiveRaw = form.get("isActive");
@@ -49,8 +49,13 @@ export async function POST(request: Request) {
   if (!title || title.length > TITLE_MAX) {
     return NextResponse.json({ ok: false, error: `請輸入標題（上限 ${TITLE_MAX} 字）` }, { status: 400 });
   }
-  if (bio !== null && bio.length > BIO_MAX) {
-    return NextResponse.json({ ok: false, error: `簡介上限 ${BIO_MAX} 字` }, { status: 400 });
+  const bioResult = resolveBio(sectionType, bioRaw);
+  if (!bioResult.ok) {
+    return NextResponse.json({ ok: false, error: bioResult.error }, { status: 400 });
+  }
+  const linkedLoftResult = await resolveLinkedLoftId(sectionType, linkedLoftIdRaw);
+  if (!linkedLoftResult.ok) {
+    return NextResponse.json({ ok: false, error: linkedLoftResult.error }, { status: 400 });
   }
   if (sortOrder !== undefined && (!Number.isFinite(sortOrder) || !Number.isInteger(sortOrder) || sortOrder < 0)) {
     return NextResponse.json({ ok: false, error: "排序必須是不小於 0 的整數" }, { status: 400 });
@@ -67,6 +72,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: message }, { status: 400 });
   }
 
-  const id = await createHomepageSection({ sectionType, title, bio, imageFileName, sortOrder, isActive });
+  const id = await createHomepageSection({
+    sectionType,
+    title,
+    bio: bioResult.bio,
+    linkedLoftId: linkedLoftResult.linkedLoftId,
+    imageFileName,
+    sortOrder,
+    isActive,
+  });
   return NextResponse.json({ ok: true, id });
 }

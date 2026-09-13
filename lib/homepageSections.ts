@@ -1,7 +1,11 @@
 // CRUD for `homepage_sections` (see db/init.sql) — generic image+link+
-// sort_order homepage CMS blocks. Currently only section_type='partner_loft'
-// (合作鴿舍, see GitHub issue #32/#33) exists, but the table/API stay generic
-// so a future block can reuse the same machinery without a new table.
+// sort_order homepage CMS blocks. Two section types use it today:
+// 'partner_loft' (合作鴿舍, issue #32/#33) and 'featured_loft' (名家專區,
+// issue #270 — a lightweight curated card, replacing that ticket's removed
+// featured_loft_posts article table), but the table/API stay generic so a
+// future block can reuse the same machinery without a new table. Business
+// rules specific to one section_type (e.g. "featured_loft requires a
+// linkedLoftId") belong in the API route layer, not here.
 // Hand-written SQL via mysql2, same style as lib/listings.ts (this project
 // has no ORM).
 
@@ -13,8 +17,17 @@ export interface HomepageSection {
   sectionType: string;
   title: string;
   imageFileName: string;
-  /** Optional 簡介 shown in the admin form and the homepage card excerpt (issue #45; replaces the removed linkUrl). */
+  /** Optional 簡介／內容 shown in the admin form and the homepage card excerpt (issue #45; replaces the removed linkUrl). */
   bio: string | null;
+  /**
+   * Optional pointer at another homepage_sections row's id (issue #270) —
+   * only 'featured_loft' rows use this (required, must reference a
+   * 'partner_loft' row); 'partner_loft' rows leave it null. No DB-level FK
+   * (see db/init.sql's comment on the linked_loft_id column); validated at
+   * the API route layer, not here — this module stays section-type-agnostic
+   * (see this file's header comment).
+   */
+  linkedLoftId: number | null;
   sortOrder: number;
   isActive: boolean;
   createdAt: Date;
@@ -27,6 +40,8 @@ export interface NewHomepageSectionInput {
   imageFileName: string;
   /** Optional — null/omit for no bio. */
   bio?: string | null;
+  /** Optional — null/omit for no linked loft. See HomepageSection.linkedLoftId. */
+  linkedLoftId?: number | null;
   /** Omit to default to end-of-list (MAX(sort_order) + 1 within this sectionType) — see createHomepageSection. */
   sortOrder?: number;
   /** Defaults to true (visible). */
@@ -37,6 +52,7 @@ export interface UpdateHomepageSectionInput {
   title: string;
   imageFileName: string;
   bio: string | null;
+  linkedLoftId: number | null;
   sortOrder: number;
   isActive: boolean;
 }
@@ -49,6 +65,7 @@ interface HomepageSectionRow {
   title: string;
   image_file_name: string;
   bio: string | null;
+  linked_loft_id: number | null;
   sort_order: number;
   is_active: number;
   created_at: Date;
@@ -62,6 +79,7 @@ function mapRow(row: HomepageSectionRow): HomepageSection {
     title: row.title,
     imageFileName: row.image_file_name,
     bio: row.bio,
+    linkedLoftId: row.linked_loft_id,
     sortOrder: row.sort_order,
     isActive: Boolean(row.is_active),
     createdAt: row.created_at,
@@ -116,13 +134,14 @@ export async function createHomepageSection(input: NewHomepageSectionInput): Pro
 
   const [result] = await db.query(
     `INSERT INTO homepage_sections
-       (section_type, title, image_file_name, bio, sort_order, is_active, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+       (section_type, title, image_file_name, bio, linked_loft_id, sort_order, is_active, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
     [
       input.sectionType,
       input.title,
       input.imageFileName,
       input.bio ?? null,
+      input.linkedLoftId ?? null,
       sortOrder,
       input.isActive === false ? 0 : 1,
     ],
@@ -137,9 +156,9 @@ export async function updateHomepageSection(
   const db = await getDb();
   const [result] = await db.query(
     `UPDATE homepage_sections
-     SET title = ?, image_file_name = ?, bio = ?, sort_order = ?, is_active = ?, updated_at = NOW()
+     SET title = ?, image_file_name = ?, bio = ?, linked_loft_id = ?, sort_order = ?, is_active = ?, updated_at = NOW()
      WHERE id = ?`,
-    [input.title, input.imageFileName, input.bio, input.sortOrder, input.isActive ? 1 : 0, id],
+    [input.title, input.imageFileName, input.bio, input.linkedLoftId, input.sortOrder, input.isActive ? 1 : 0, id],
   );
   if ((result as { affectedRows: number }).affectedRows === 0) {
     return { ok: false, error: "找不到這個首頁區塊項目" };
@@ -149,6 +168,23 @@ export async function updateHomepageSection(
 
 export async function deleteHomepageSection(id: number): Promise<HomepageSectionOutcome> {
   const db = await getDb();
+
+  // linked_loft_id (issue #270) points at another row in this same table
+  // but is deliberately NOT a DB-level FK (see db/init.sql's comment on the
+  // column), so MySQL can't reject this delete on its own the way it does
+  // for pigeon_showcase.loft_id below — this app-level check is this
+  // module's own equivalent of that FK's ER_ROW_IS_REFERENCED_2 guard, kept
+  // generic (any section referencing `id` via linked_loft_id, not just
+  // 'featured_loft' by name) so this module stays section-type-agnostic —
+  // see its header comment.
+  const [referencing] = await db.query(
+    "SELECT 1 FROM homepage_sections WHERE linked_loft_id = ? LIMIT 1",
+    [id],
+  );
+  if ((referencing as unknown[]).length > 0) {
+    return { ok: false, error: "這個項目仍被其他首頁區塊卡片引用中，請先解除關聯後再刪除" };
+  }
+
   try {
     const [result] = await db.query("DELETE FROM homepage_sections WHERE id = ?", [id]);
     if ((result as { affectedRows: number }).affectedRows === 0) {

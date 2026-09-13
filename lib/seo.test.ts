@@ -338,7 +338,6 @@ describe("buildLlmsTxt", () => {
     expect(text).toContain("https://xiangshuicn.cc/contact");
     expect(text).toContain("https://xiangshuicn.cc/news");
     expect(text).toContain("https://xiangshuicn.cc/pigeon-showcase");
-    expect(text).toContain("https://xiangshuicn.cc/featured-lofts");
     expect(text).toContain("https://xiangshuicn.cc/faq");
   });
 

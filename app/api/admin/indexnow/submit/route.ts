@@ -17,7 +17,6 @@ export async function POST() {
     "/listings",
     "/news",
     "/contact",
-    "/featured-lofts",
     "/pigeon-showcase",
     "/faq",
   ];

@@ -45,6 +45,7 @@ describe("listHomepageSections", () => {
           title: "石君鴿舍",
           image_file_name: "a.webp",
           bio: "深耕鴿友信賴的合作鴿舍。",
+          linked_loft_id: null,
           sort_order: 0,
           is_active: 1,
           created_at: createdAt,
@@ -66,6 +67,7 @@ describe("listHomepageSections", () => {
         title: "石君鴿舍",
         imageFileName: "a.webp",
         bio: "深耕鴿友信賴的合作鴿舍。",
+        linkedLoftId: null,
         sortOrder: 0,
         isActive: true,
         createdAt,
@@ -85,6 +87,27 @@ describe("listHomepageSections", () => {
     await listHomepageSections("partner_loft");
     expect(queryMock.mock.calls[0][0]).not.toContain("is_active");
   });
+
+  it("maps a non-null linked_loft_id (a featured_loft row's linked 合作鴿舍)", async () => {
+    queryMock.mockResolvedValueOnce([
+      [
+        {
+          id: 2,
+          section_type: "featured_loft",
+          title: "石君鴿舍專訪",
+          image_file_name: "b.webp",
+          bio: "<p>深入石君鴿舍的育種理念</p>",
+          linked_loft_id: 5,
+          sort_order: 0,
+          is_active: 1,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      ],
+    ]);
+    const sections = await listHomepageSections("featured_loft");
+    expect(sections[0].linkedLoftId).toBe(5);
+  });
 });
 
 describe("getHomepageSectionById", () => {
@@ -102,6 +125,7 @@ describe("getHomepageSectionById", () => {
           title: "t",
           image_file_name: "f.webp",
           bio: null,
+          linked_loft_id: null,
           sort_order: 2,
           is_active: 0,
           created_at: new Date(),
@@ -128,7 +152,7 @@ describe("createHomepageSection", () => {
 
     expect(id).toBe(42);
     expect(queryMock).toHaveBeenCalledTimes(1);
-    expect(queryMock.mock.calls[0][1]).toEqual(["partner_loft", "t", "f.webp", "b", 3, 1]);
+    expect(queryMock.mock.calls[0][1]).toEqual(["partner_loft", "t", "f.webp", "b", null, 3, 1]);
   });
 
   it("defaults sortOrder to MAX(sort_order) + 1 within the section_type when omitted", async () => {
@@ -145,13 +169,13 @@ describe("createHomepageSection", () => {
     expect(id).toBe(8);
     expect(queryMock).toHaveBeenCalledTimes(2);
     expect(queryMock.mock.calls[0][1]).toEqual(["partner_loft"]);
-    expect(queryMock.mock.calls[1][1]).toEqual(["partner_loft", "t", "f.webp", "b", 7, 1]);
+    expect(queryMock.mock.calls[1][1]).toEqual(["partner_loft", "t", "f.webp", "b", null, 7, 1]);
   });
 
   it("defaults a missing bio to null", async () => {
     queryMock.mockResolvedValueOnce([{ insertId: 9 }]);
     await createHomepageSection({ sectionType: "partner_loft", title: "t", imageFileName: "f.webp", sortOrder: 0 });
-    expect(queryMock.mock.calls[0][1]).toEqual(["partner_loft", "t", "f.webp", null, 0, 1]);
+    expect(queryMock.mock.calls[0][1]).toEqual(["partner_loft", "t", "f.webp", null, null, 0, 1]);
   });
 
   it("stores isActive: false as 0", async () => {
@@ -164,7 +188,26 @@ describe("createHomepageSection", () => {
       sortOrder: 0,
       isActive: false,
     });
-    expect(queryMock.mock.calls[0][1][5]).toBe(0);
+    expect(queryMock.mock.calls[0][1][6]).toBe(0);
+  });
+
+  it("stores an explicit linkedLoftId (a featured_loft row's linked 合作鴿舍)", async () => {
+    queryMock.mockResolvedValueOnce([{ insertId: 10 }]);
+    await createHomepageSection({
+      sectionType: "featured_loft",
+      title: "t",
+      imageFileName: "f.webp",
+      bio: "<p>b</p>",
+      linkedLoftId: 5,
+      sortOrder: 0,
+    });
+    expect(queryMock.mock.calls[0][1]).toEqual(["featured_loft", "t", "f.webp", "<p>b</p>", 5, 0, 1]);
+  });
+
+  it("defaults a missing linkedLoftId to null", async () => {
+    queryMock.mockResolvedValueOnce([{ insertId: 11 }]);
+    await createHomepageSection({ sectionType: "partner_loft", title: "t", imageFileName: "f.webp", sortOrder: 0 });
+    expect(queryMock.mock.calls[0][1][4]).toBeNull();
   });
 });
 
@@ -175,6 +218,7 @@ describe("updateHomepageSection", () => {
       title: "t",
       imageFileName: "f",
       bio: "b",
+      linkedLoftId: null,
       sortOrder: 0,
       isActive: true,
     });
@@ -187,6 +231,7 @@ describe("updateHomepageSection", () => {
       title: "t",
       imageFileName: "f",
       bio: "b",
+      linkedLoftId: null,
       sortOrder: 0,
       isActive: true,
     });
@@ -195,18 +240,26 @@ describe("updateHomepageSection", () => {
 
   it("stores a null bio as-is (clearing it)", async () => {
     queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
-    await updateHomepageSection(1, { title: "t", imageFileName: "f", bio: null, sortOrder: 0, isActive: true });
-    expect(queryMock.mock.calls[0][1]).toEqual(["t", "f", null, 0, 1, 1]);
+    await updateHomepageSection(1, { title: "t", imageFileName: "f", bio: null, linkedLoftId: null, sortOrder: 0, isActive: true });
+    expect(queryMock.mock.calls[0][1]).toEqual(["t", "f", null, null, 0, 1, 1]);
+  });
+
+  it("stores an updated linkedLoftId", async () => {
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+    await updateHomepageSection(1, { title: "t", imageFileName: "f", bio: "b", linkedLoftId: 9, sortOrder: 0, isActive: true });
+    expect(queryMock.mock.calls[0][1]).toEqual(["t", "f", "b", 9, 0, 1, 1]);
   });
 });
 
 describe("deleteHomepageSection", () => {
   it("returns ok:false when no row matched", async () => {
+    queryMock.mockResolvedValueOnce([[]]); // linked_loft_id referencing check: none
     queryMock.mockResolvedValueOnce([{ affectedRows: 0 }]);
     expect(await deleteHomepageSection(1)).toEqual({ ok: false, error: "找不到這個首頁區塊項目" });
   });
 
   it("returns ok:true when a row is deleted", async () => {
+    queryMock.mockResolvedValueOnce([[]]); // linked_loft_id referencing check: none
     queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
     expect(await deleteHomepageSection(1)).toEqual({ ok: true });
   });
@@ -215,6 +268,7 @@ describe("deleteHomepageSection", () => {
   // RESTRICT) to this table — deleting a still-referenced 合作鴿舍 must
   // surface a real error instead of a 500 or a silent no-op.
   it("returns a friendly ok:false (not a throw) when a FK constraint blocks the delete", async () => {
+    queryMock.mockResolvedValueOnce([[]]); // linked_loft_id referencing check: none
     const fkError = Object.assign(new Error("Cannot delete or update a parent row"), {
       errno: 1451,
       code: "ER_ROW_IS_REFERENCED_2",
@@ -226,8 +280,20 @@ describe("deleteHomepageSection", () => {
   });
 
   it("re-throws non-FK errors instead of swallowing them", async () => {
+    queryMock.mockResolvedValueOnce([[]]); // linked_loft_id referencing check: none
     queryMock.mockRejectedValueOnce(new Error("connection lost"));
     await expect(deleteHomepageSection(1)).rejects.toThrow("connection lost");
+  });
+
+  // issue #270: linked_loft_id has no DB-level FK (see db/init.sql's
+  // comment), so a 'featured_loft' row still pointing at this id via
+  // linked_loft_id can't rely on MySQL to reject the delete — this app-level
+  // check is this module's own equivalent of the FK guard above.
+  it("returns a friendly ok:false when another section still references this id via linked_loft_id", async () => {
+    queryMock.mockResolvedValueOnce([[{ 1: 1 }]]); // referencing check finds a row
+    const result = await deleteHomepageSection(1);
+    expect(result).toEqual({ ok: false, error: expect.stringContaining("仍被其他首頁區塊卡片引用") });
+    expect(queryMock).toHaveBeenCalledTimes(1); // no DELETE fired
   });
 });
 
