@@ -13,12 +13,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   getOverviewStats,
+  insertListing,
   isListingsPageSize,
   LISTINGS_PAGE_SIZES,
   listOpenListings,
   listOpenListingsPaginated,
   placeBid,
   buyNow,
+  updateFixedPriceListing,
 } from "./listings";
 import { getGmvSplitByType } from "./dashboard";
 import { AUCTION_GMV_SUBQUERY, FIXED_PRICE_GMV_SUBQUERY } from "./sqlFragments";
@@ -189,6 +191,94 @@ describe("listOpenListingsPaginated", () => {
     const selectCall = queryMock.mock.calls.find((c) => String(c[0]).includes("FROM listings l") && String(c[0]).includes("LIMIT"));
     expect(String(selectCall?.[0])).toContain("LIMIT 30 OFFSET 30");
     expect(String(selectCall?.[0])).toContain("CASE WHEN l.status IN ('open', 'scheduled') THEN 0 ELSE 1 END ASC, l.created_at DESC, l.id DESC");
+  });
+});
+
+// 電洽 (call for price, issue #266): a fixed_price listing can be created/
+// edited with no fixed unit price. price stays NULL (the seller never set
+// one) while starting_price/current_price fall back to a 0 sentinel, since
+// those two columns are deliberately not migrated to allow NULL — see
+// insertListing/updateFixedPriceListing's own comments.
+describe("insertListing (fixed_price, call for price)", () => {
+  it("writes price=NULL with a 0 sentinel for starting_price/current_price when price is null", async () => {
+    queryMock.mockResolvedValueOnce([{ insertId: 42 }]);
+
+    const id = await insertListing({
+      listingType: "fixed_price",
+      title: "電洽商品",
+      description: "desc",
+      price: null,
+      stockQuantity: 5,
+      createdBy: 1,
+    });
+
+    expect(id).toBe(42);
+    const [, params] = queryMock.mock.calls[0];
+    expect(params).toEqual(["電洽商品", "desc", 0, 0, null, 5, 5, 1, null]);
+  });
+
+  it("still writes the same value into all three price columns for a normally-priced listing", async () => {
+    queryMock.mockResolvedValueOnce([{ insertId: 43 }]);
+
+    await insertListing({
+      listingType: "fixed_price",
+      title: "定價商品",
+      description: "desc",
+      price: 1000,
+      stockQuantity: 3,
+      createdBy: 1,
+    });
+
+    const [, params] = queryMock.mock.calls[0];
+    expect(params).toEqual(["定價商品", "desc", 1000, 1000, 1000, 3, 3, 1, null]);
+  });
+});
+
+describe("updateFixedPriceListing (call for price)", () => {
+  // connectionQueryMock (unlike queryMock) isn't reset in the top-level
+  // beforeEach — every other describe block using it only ever asserts on
+  // the *outcome*, never on a specific call index — so these two tests
+  // clear it themselves and read the *last* call rather than an absolute
+  // index, to stay independent of how many connection queries ran before.
+  beforeEach(() => {
+    connectionQueryMock.mockReset();
+  });
+
+  it("writes price=NULL with 0 sentinels when switching an existing listing to call-for-price", async () => {
+    connectionQueryMock
+      .mockResolvedValueOnce([[{ listing_type: "fixed_price", status: "open" }]])
+      .mockResolvedValueOnce([[{ sold: 2 }]])
+      .mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+    const result = await updateFixedPriceListing(7, {
+      title: "電洽商品",
+      description: "desc",
+      price: null,
+      stockRemaining: 10,
+    });
+
+    expect(result).toEqual({ ok: true });
+    const [, updateParams] = connectionQueryMock.mock.calls.at(-1)!;
+    expect(updateParams).toEqual(["電洽商品", "desc", null, 0, 0, 12, 10, null, 7]);
+    expect(commitMock).toHaveBeenCalled();
+  });
+
+  it("still writes the same value into all three price columns for a normal price update", async () => {
+    connectionQueryMock
+      .mockResolvedValueOnce([[{ listing_type: "fixed_price", status: "open" }]])
+      .mockResolvedValueOnce([[{ sold: 0 }]])
+      .mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+    const result = await updateFixedPriceListing(8, {
+      title: "定價商品",
+      description: "desc",
+      price: 2000,
+      stockRemaining: 4,
+    });
+
+    expect(result).toEqual({ ok: true });
+    const [, updateParams] = connectionQueryMock.mock.calls.at(-1)!;
+    expect(updateParams).toEqual(["定價商品", "desc", 2000, 2000, 2000, 4, 4, null, 8]);
   });
 });
 

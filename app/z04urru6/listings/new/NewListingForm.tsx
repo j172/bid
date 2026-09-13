@@ -24,6 +24,7 @@ export default function NewListingForm() {
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
   const [price, setPrice] = useState("");
+  const [callForPrice, setCallForPrice] = useState(false);
   const [stockQuantity, setStockQuantity] = useState("");
   const [loftId, setLoftId] = useState("");
   const [photoItems, setPhotoItems] = useState<PhotoItem[]>([]);
@@ -44,6 +45,7 @@ export default function NewListingForm() {
     formData.set("description", descriptionHtml);
     if (listingType === "fixed_price") {
       formData.set("price", price);
+      formData.set("callForPrice", String(callForPrice));
       formData.set("stockQuantity", stockQuantity);
     } else {
       formData.set("startingPrice", startingPrice);
@@ -140,9 +142,21 @@ export default function NewListingForm() {
               min={1}
               max={PRICE_MAX}
               step={1}
-              required
-              className={inputClass}
+              required={!callForPrice}
+              disabled={callForPrice}
+              className={`${inputClass} disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-ink-light`}
             />
+            <label className="flex items-center gap-2 font-normal text-ink">
+              <input
+                type="checkbox"
+                checked={callForPrice}
+                onChange={(e) => {
+                  setCallForPrice(e.target.checked);
+                  setPrice("");
+                }}
+              />
+              電洽（不提供固定價格，買家需自行洽詢賣家）
+            </label>
           </label>
           <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
             庫存數量

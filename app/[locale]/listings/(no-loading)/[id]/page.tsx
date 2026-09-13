@@ -163,7 +163,10 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
           },
         ]
       : []),
-    { label: t("specCurrentPrice"), value: formatNtd(listing.current_price) },
+    {
+      label: t("specCurrentPrice"),
+      value: isFixedPrice && listing.price === null ? t("callForPrice") : formatNtd(listing.current_price),
+    },
     {
       label: t("specBuyNow"),
       value: listing.buy_it_now_price !== null ? formatNtd(listing.buy_it_now_price) : t("specNotAvailable"),
@@ -321,15 +324,18 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
             {isFixedPrice ? (
               <div className="flex flex-col gap-1">
                 <div className="mt-2 flex items-baseline gap-3">
-                  <span className="text-4xl font-black text-interactive-primary">{formatNtd(listing.price!)}</span>
+                  <span className="text-4xl font-black text-interactive-primary">
+                    {listing.price !== null ? formatNtd(listing.price) : t("callForPrice")}
+                  </span>
                   <StatusBadge status={listing.status} isFixedPrice />
                 </div>
-                {formatConvertedApprox(listing.price!, currencyRates).map((approx) => (
-                  <p key={approx} className="text-sm font-semibold text-ink-light">
-                    {approx}{" "}
-                    <span className="text-xs font-normal italic">({t("currencyReferenceOnly")})</span>
-                  </p>
-                ))}
+                {listing.price !== null &&
+                  formatConvertedApprox(listing.price, currencyRates).map((approx) => (
+                    <p key={approx} className="text-sm font-semibold text-ink-light">
+                      {approx}{" "}
+                      <span className="text-xs font-normal italic">({t("currencyReferenceOnly")})</span>
+                    </p>
+                  ))}
                 <p className="text-sm text-ink-light">{stockLabel}</p>
               </div>
             ) : (
@@ -378,9 +384,15 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
               (user ? (
                 <div className="mt-6 flex flex-col gap-4 border-t border-border pt-6">
                   {isFixedPrice ? (
-                    <div className="rounded-xl border border-border bg-surface p-4">
-                      <PurchaseForm listingId={listing.id} stockRemaining={listing.stock_remaining ?? 0} />
-                    </div>
+                    listing.price !== null ? (
+                      <div className="rounded-xl border border-border bg-surface p-4">
+                        <PurchaseForm listingId={listing.id} stockRemaining={listing.stock_remaining ?? 0} />
+                      </div>
+                    ) : (
+                      <p className="rounded-xl border border-border bg-surface p-4 text-sm text-ink-light">
+                        {t("callForPriceNotice")}
+                      </p>
+                    )
                   ) : (
                     <>
                       <div className="rounded-xl border border-border bg-surface p-4">
@@ -461,7 +473,9 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
               <div className="p-4">
                 <h3 className="truncate font-semibold text-ink">{related.title}</h3>
                 <p className="mt-2 text-lg font-black text-interactive-primary">
-                  {formatNtd(related.listing_type === "fixed_price" ? related.price! : related.current_price)}
+                  {related.listing_type === "fixed_price" && related.price === null
+                    ? tListings("callForPrice")
+                    : formatNtd(related.listing_type === "fixed_price" ? related.price! : related.current_price)}
                 </p>
                 <p className="mt-2 inline-flex rounded-full bg-interactive-primary-subtle px-2 py-0.5 text-xs font-semibold text-interactive-primary">
                   {t("viewDetails")}

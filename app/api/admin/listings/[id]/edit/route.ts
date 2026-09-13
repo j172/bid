@@ -9,7 +9,13 @@ import {
   replaceListingPhotos,
   updateFixedPriceListing,
 } from "@/lib/listings";
-import { validateDescription, validateLoftId, validatePrice, validateStockRemaining, validateTitle } from "@/lib/listingValidation";
+import {
+  validateDescription,
+  validateLoftId,
+  validatePriceOrCallForPrice,
+  validateStockRemaining,
+  validateTitle,
+} from "@/lib/listingValidation";
 import { MAX_PHOTO_COUNT } from "@/lib/photoLimits";
 import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
 import { deleteListingPhotoFiles, descriptionImageUrl, saveDescriptionImages, saveListingPhotos } from "@/lib/uploads";
@@ -39,7 +45,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const form = await request.formData();
   const title = String(form.get("title") ?? "").trim();
   const description = String(form.get("description") ?? "").trim();
-  const price = Number(form.get("price"));
+  // 電洽 (call for price, issue #266) — see the create route's equivalent
+  // comment. EditListingModal disables and clears the price input and sends
+  // this flag when the seller checks the box.
+  const callForPrice = String(form.get("callForPrice") ?? "") === "true";
+  const priceRaw = Number(form.get("price"));
   const stockRemaining = Number(form.get("stockRemaining"));
   const loftIdRaw = String(form.get("loftId") ?? "").trim();
   const loftId = loftIdRaw === "" ? null : Number(loftIdRaw);
@@ -64,10 +74,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!descriptionResult.ok) {
     return NextResponse.json({ ok: false, error: descriptionResult.error }, { status: 400 });
   }
-  const priceResult = validatePrice(price, "價格");
+  const priceResult = validatePriceOrCallForPrice(callForPrice, priceRaw, "價格");
   if (!priceResult.ok) {
     return NextResponse.json({ ok: false, error: priceResult.error }, { status: 400 });
   }
+  const price = callForPrice ? null : priceRaw;
   const stockResult = validateStockRemaining(stockRemaining);
   if (!stockResult.ok) {
     return NextResponse.json({ ok: false, error: stockResult.error }, { status: 400 });

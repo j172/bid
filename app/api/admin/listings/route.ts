@@ -8,6 +8,7 @@ import {
   validateEndsAt,
   validateLoftId,
   validatePrice,
+  validatePriceOrCallForPrice,
   validateStartsAt,
   validateStockQuantity,
   validateTitle,
@@ -58,10 +59,16 @@ export async function POST(request: Request) {
   let input: NewListingInput;
 
   if (listingType === "fixed_price") {
-    const price = Number(form.get("price"));
+    // 電洽 (call for price, issue #266): the seller checks a box instead of
+    // filling in a price — see NewListingForm.tsx, which disables and clears
+    // the price input when this is set. Price validation is skipped
+    // entirely in that case (validatePriceOrCallForPrice) and insertListing
+    // writes price=NULL instead of the submitted (unused) form value.
+    const callForPrice = String(form.get("callForPrice") ?? "") === "true";
+    const priceRaw = Number(form.get("price"));
     const stockQuantity = Number(form.get("stockQuantity"));
 
-    const priceResult = validatePrice(price, "價格");
+    const priceResult = validatePriceOrCallForPrice(callForPrice, priceRaw, "價格");
     if (!priceResult.ok) {
       return NextResponse.json({ ok: false, error: priceResult.error }, { status: 400 });
     }
@@ -69,6 +76,8 @@ export async function POST(request: Request) {
     if (!stockResult.ok) {
       return NextResponse.json({ ok: false, error: stockResult.error }, { status: 400 });
     }
+
+    const price = callForPrice ? null : priceRaw;
 
     // description is filled in after insertListing, once its final HTML
     // (with description-image placeholders resolved and the whole thing
