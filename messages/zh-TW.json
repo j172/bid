@@ -571,11 +571,13 @@
     "countyFilterLabel": "縣市",
     "countyFilterAll": "全部縣市",
     "noResults": "沒有符合條件的鴿店",
-    "useMyLocationButton": "使用目前位置",
+    "relocateButton": "重新定位",
     "locatingLabel": "定位中...",
-    "geolocationUnsupported": "您的瀏覽器不支援定位功能",
-    "geolocationDenied": "無法取得您的位置，請確認已允許瀏覽器存取位置權限",
-    "distanceLabel": "{km} 公里"
+    "distanceLabel": "{km} 公里",
+    "pageSizeLabel": "每頁顯示：",
+    "prevPage": "上一頁",
+    "nextPage": "下一頁",
+    "pageInfo": "第 {page} / {totalPages} 頁（共 {total} 筆）"
   },
   "pigeonGroupsPage": {
     "title": "鴿會查詢",
@@ -588,15 +590,17 @@
     "countyFilterLabel": "縣市",
     "countyFilterAll": "全部縣市",
     "noResults": "沒有符合條件的鴿會",
-    "useLocationButton": "使用目前位置",
+    "relocateButton": "重新定位",
     "locatingLabel": "定位中...",
-    "locationDeniedMessage": "無法取得您的位置，請確認瀏覽器定位權限後再試一次。",
-    "locationUnsupportedMessage": "您的瀏覽器不支援定位功能。",
     "distanceLabel": "距離約 {distance} 公里",
     "chairmanPrefix": "會長：",
     "secretaryPrefix": "秘書：",
     "websiteLinkLabel": "官網",
-    "trackingLinkLabel": "即時返鴿查詢"
+    "trackingLinkLabel": "即時返鴿查詢",
+    "pageSizeLabel": "每頁顯示：",
+    "prevPage": "上一頁",
+    "nextPage": "下一頁",
+    "pageInfo": "第 {page} / {totalPages} 頁（共 {total} 筆）"
   },
   "contactPage": {
     "title": "聯絡我們",
@@ -748,7 +752,14 @@
     "searchPlaceholder": "搜尋站名或地址...",
     "countyFilterLabel": "縣市",
     "countyFilterAll": "全部縣市",
-    "noResults": "沒有符合條件的取鴿站"
+    "noResults": "沒有符合條件的取鴿站",
+    "relocateButton": "重新定位",
+    "locatingLabel": "定位中...",
+    "distanceLabel": "{km} 公里",
+    "pageSizeLabel": "每頁顯示：",
+    "prevPage": "上一頁",
+    "nextPage": "下一頁",
+    "pageInfo": "第 {page} / {totalPages} 頁（共 {total} 筆）"
   },
   "errorPage": {
     "labels": {

@@ -568,11 +568,13 @@
     "countyFilterLabel": "County/City",
     "countyFilterAll": "All counties/cities",
     "noResults": "No pigeon shops match your filters",
-    "useMyLocationButton": "Use My Location",
+    "relocateButton": "Re-locate",
     "locatingLabel": "Locating...",
-    "geolocationUnsupported": "Your browser doesn't support geolocation",
-    "geolocationDenied": "Couldn't get your location — please check your browser's location permission",
-    "distanceLabel": "{km} km"
+    "distanceLabel": "{km} km",
+    "pageSizeLabel": "Per page:",
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "pageInfo": "Page {page} of {totalPages} ({total} total)"
   },
   "pigeonGroupsPage": {
     "title": "Pigeon Association Directory",
@@ -585,15 +587,17 @@
     "countyFilterLabel": "County/City",
     "countyFilterAll": "All counties/cities",
     "noResults": "No pigeon associations match your filters",
-    "useLocationButton": "Use my location",
+    "relocateButton": "Re-locate",
     "locatingLabel": "Locating…",
-    "locationDeniedMessage": "Couldn't get your location — check your browser's location permission and try again.",
-    "locationUnsupportedMessage": "Your browser doesn't support location services.",
     "distanceLabel": "About {distance} km away",
     "chairmanPrefix": "Chairman: ",
     "secretaryPrefix": "Secretary: ",
     "websiteLinkLabel": "Website",
-    "trackingLinkLabel": "Live pigeon tracking"
+    "trackingLinkLabel": "Live pigeon tracking",
+    "pageSizeLabel": "Per page:",
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "pageInfo": "Page {page} of {totalPages} ({total} total)"
   },
   "contactPage": {
     "title": "Contact",
@@ -745,7 +749,14 @@
     "searchPlaceholder": "Search by name or address...",
     "countyFilterLabel": "County/City",
     "countyFilterAll": "All counties/cities",
-    "noResults": "No pigeon stations match your filters"
+    "noResults": "No pigeon stations match your filters",
+    "relocateButton": "Re-locate",
+    "locatingLabel": "Locating...",
+    "distanceLabel": "{km} km",
+    "pageSizeLabel": "Per page:",
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "pageInfo": "Page {page} of {totalPages} ({total} total)"
   },
   "errorPage": {
     "labels": {

@@ -1,14 +1,19 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { GEOLOCATION_FALLBACK_CENTER, GEOLOCATION_ZOOM, useMapGeolocation } from "./useMapGeolocation";
 
 function Probe() {
-  const result = useMapGeolocation();
-  if (!result) return <div data-testid="out">pending</div>;
+  const { geolocation, isLocating, relocate } = useMapGeolocation();
   return (
-    <div data-testid="out">
-      {result.center[0]},{result.center[1]},{result.zoom},{String(result.isUserLocation)}
+    <div>
+      <div data-testid="out">
+        {geolocation ? `${geolocation.center[0]},${geolocation.center[1]},${geolocation.zoom},${geolocation.isUserLocation}` : "pending"}
+      </div>
+      <div data-testid="locating">{String(isLocating)}</div>
+      <button type="button" onClick={relocate}>
+        relocate
+      </button>
     </div>
   );
 }
@@ -19,7 +24,7 @@ afterEach(() => {
 });
 
 describe("useMapGeolocation", () => {
-  it("renders pending (null) until the browser responds", () => {
+  it("renders pending (null) and isLocating=true until the browser responds", () => {
     let capturedSuccess: PositionCallback | undefined;
     vi.stubGlobal("navigator", {
       ...navigator,
@@ -32,6 +37,7 @@ describe("useMapGeolocation", () => {
 
     render(<Probe />);
     expect(screen.getByTestId("out").textContent).toBe("pending");
+    expect(screen.getByTestId("locating").textContent).toBe("true");
     expect(capturedSuccess).toBeDefined();
   });
 
@@ -49,6 +55,7 @@ describe("useMapGeolocation", () => {
 
     render(<Probe />);
     expect(screen.getByTestId("out").textContent).toBe(`25.033,121.5654,${GEOLOCATION_ZOOM},true`);
+    expect(screen.getByTestId("locating").textContent).toBe("false");
   });
 
   it("falls back to Chiayi City Government at the same zoom when geolocation is denied", async () => {
@@ -93,5 +100,68 @@ describe("useMapGeolocation", () => {
         capturedSuccess?.({ coords: { latitude: 1, longitude: 2 } } as GeolocationPosition);
       });
     }).not.toThrow();
+  });
+
+  it("relocate() re-requests the position and updates the result", () => {
+    let call = 0;
+    vi.stubGlobal("navigator", {
+      ...navigator,
+      geolocation: {
+        getCurrentPosition: (success: PositionCallback) => {
+          call += 1;
+          success({
+            coords: call === 1 ? { latitude: 1, longitude: 2 } : { latitude: 3, longitude: 4 },
+          } as GeolocationPosition);
+        },
+      },
+    });
+
+    render(<Probe />);
+    expect(screen.getByTestId("out").textContent).toBe(`1,2,${GEOLOCATION_ZOOM},true`);
+
+    fireEvent.click(screen.getByRole("button", { name: "relocate" }));
+    expect(screen.getByTestId("out").textContent).toBe(`3,4,${GEOLOCATION_ZOOM},true`);
+    expect(call).toBe(2);
+  });
+
+  it("relocate() never resets geolocation back to null (would tear down an already-mounted map)", () => {
+    vi.stubGlobal("navigator", {
+      ...navigator,
+      geolocation: {
+        getCurrentPosition: (success: PositionCallback) => {
+          success({ coords: { latitude: 1, longitude: 2 } } as GeolocationPosition);
+        },
+      },
+    });
+
+    render(<Probe />);
+    expect(screen.getByTestId("out").textContent).not.toBe("pending");
+
+    fireEvent.click(screen.getByRole("button", { name: "relocate" }));
+    expect(screen.getByTestId("out").textContent).not.toBe("pending");
+  });
+
+  it("relocate() falls back cleanly when a later attempt is denied after an earlier success", () => {
+    let call = 0;
+    vi.stubGlobal("navigator", {
+      ...navigator,
+      geolocation: {
+        getCurrentPosition: (success: PositionCallback, error: PositionErrorCallback) => {
+          call += 1;
+          if (call === 1) {
+            success({ coords: { latitude: 1, longitude: 2 } } as GeolocationPosition);
+          } else {
+            error({ code: 1, message: "denied" } as GeolocationPositionError);
+          }
+        },
+      },
+    });
+
+    render(<Probe />);
+    expect(screen.getByTestId("out").textContent).toBe(`1,2,${GEOLOCATION_ZOOM},true`);
+
+    fireEvent.click(screen.getByRole("button", { name: "relocate" }));
+    const [lat, lng] = GEOLOCATION_FALLBACK_CENTER;
+    expect(screen.getByTestId("out").textContent).toBe(`${lat},${lng},${GEOLOCATION_ZOOM},false`);
   });
 });

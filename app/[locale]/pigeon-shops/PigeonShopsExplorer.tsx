@@ -1,10 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useReducer, useState } from "react";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { ALL_COUNTIES_VALUE, filterPigeonDirectoryEntries, listPresentCounties } from "@/lib/pigeonDirectoryFilters";
-import { sortByDistanceFromOrigin } from "@/lib/pigeonDirectoryDistance";
+import { selectDistanceSortOrigin, sortByDistanceFromOrigin } from "@/lib/pigeonDirectoryDistance";
+import { useMapGeolocation } from "@/lib/useMapGeolocation";
+import { paginateClientList } from "@/lib/clientPagination";
+import {
+  INITIAL_DIRECTORY_LIST_STATE,
+  PIGEON_DIRECTORY_PAGE_SIZES,
+  directoryListReducer,
+  isPigeonDirectoryPageSize,
+} from "@/lib/pigeonDirectoryListState";
+import ClientPaginationFooter from "../components/ClientPaginationFooter";
 import type { PigeonShopMapPoint } from "./PigeonShopsMap";
 
 // Leaflet touches `window`/DOM APIs at module scope, so it can't render on
@@ -39,17 +48,13 @@ export default function PigeonShopsExplorer({
 }: PigeonShopsExplorerProps) {
   const t = useTranslations("pigeonShopsPage");
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [county, setCounty] = useState<string>(ALL_COUNTIES_VALUE);
+  const [state, dispatch] = useReducer(directoryListReducer, INITIAL_DIRECTORY_LIST_STATE);
 
-  // Issue #259: "使用目前位置" — an explicit, user-clicked one-shot
-  // geolocation request (never automatic, never repeated), distinct from
-  // lib/useMapGeolocation.ts's auto-on-mount center/zoom pick (issue #256).
-  // Denied/unsupported/failed states are surfaced as plain text below the
-  // button, never thrown — see handleUseMyLocation.
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [locating, setLocating] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
+  // Issue #275: one automatic, on-mount geolocation request shared by both
+  // the map's initial center and the list's distance sort — replacing the
+  // previous separate, manually-clicked "使用目前位置" state. `relocate` backs
+  // the "重新定位" button below, an explicit refresh of that same one result.
+  const { geolocation, isLocating, relocate } = useMapGeolocation();
 
   // Issue #256: county options only ever list counties that actually occur
   // in `shops` — computed from the full, unfiltered list so switching the
@@ -58,19 +63,28 @@ export default function PigeonShopsExplorer({
   const counties = useMemo(() => listPresentCounties(shops), [shops]);
 
   const filteredShops = useMemo(
-    () => filterPigeonDirectoryEntries(shops, { searchQuery, county }),
-    [shops, searchQuery, county],
+    () => filterPigeonDirectoryEntries(shops, { searchQuery: state.searchQuery, county: state.county }),
+    [shops, state.searchQuery, state.county],
   );
 
   // Distance sorting is layered on top of the search/county filter — it
   // never changes which shops are shown, only the order (and, for entries
-  // with coordinates, a distanceKm to display) once the user has opted in.
-  const displayedShops = useMemo(
+  // with coordinates, a distanceKm to display). Falls back to `shops`'
+  // existing name order whenever there's no real position yet (pending,
+  // denied, unsupported, or the Chiayi fallback) — the "現有 fallback 邏輯"
+  // issue #275 says not to change.
+  const sortOrigin = useMemo(() => selectDistanceSortOrigin(geolocation), [geolocation]);
+  const sortedShops = useMemo(
     () =>
-      userLocation
-        ? sortByDistanceFromOrigin(filteredShops, userLocation)
+      sortOrigin
+        ? sortByDistanceFromOrigin(filteredShops, sortOrigin)
         : filteredShops.map((shop) => ({ ...shop, distanceKm: null as number | null })),
-    [filteredShops, userLocation],
+    [filteredShops, sortOrigin],
+  );
+
+  const { page, totalPages, items: displayedShops } = useMemo(
+    () => paginateClientList(sortedShops, state.page, state.pageSize),
+    [sortedShops, state.page, state.pageSize],
   );
 
   const mapPoints = useMemo<PigeonShopMapPoint[]>(
@@ -81,45 +95,20 @@ export default function PigeonShopsExplorer({
     [filteredShops],
   );
 
-  function handleUseMyLocation() {
-    setLocationError(null);
-
-    if (typeof navigator === "undefined" || !navigator.geolocation) {
-      setLocationError(t("geolocationUnsupported"));
-      return;
-    }
-
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
-        setLocating(false);
-      },
-      () => {
-        // Denied, timed out, or position unavailable — none of Geolocation's
-        // error union is actionable here beyond telling the user, per issue
-        // #259's "顯示清楚的錯誤提示文字，不可讓頁面壞掉或整頁報錯" requirement.
-        setUserLocation(null);
-        setLocating(false);
-        setLocationError(t("geolocationDenied"));
-      },
-    );
-  }
-
   return (
     <div>
       <div className="mb-4 flex flex-col gap-3 sm:flex-row">
         <input
           type="search"
-          value={searchQuery}
-          onChange={(event) => setSearchQuery(event.target.value)}
+          value={state.searchQuery}
+          onChange={(event) => dispatch({ type: "search", value: event.target.value })}
           placeholder={t("searchPlaceholder")}
           aria-label={t("searchLabel")}
           className="w-full rounded-xl border border-border bg-white px-4 py-2 text-sm text-ink placeholder:text-ink-light focus:border-interactive-primary focus:outline-none sm:max-w-xs"
         />
         <select
-          value={county}
-          onChange={(event) => setCounty(event.target.value)}
+          value={state.county}
+          onChange={(event) => dispatch({ type: "county", value: event.target.value })}
           aria-label={t("countyFilterLabel")}
           className="w-full rounded-xl border border-border bg-white px-4 py-2 text-sm text-ink focus:border-interactive-primary focus:outline-none sm:w-48"
         >
@@ -132,22 +121,20 @@ export default function PigeonShopsExplorer({
         </select>
         <button
           type="button"
-          onClick={handleUseMyLocation}
-          disabled={locating}
+          onClick={relocate}
+          disabled={isLocating}
           className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-white px-4 py-2 text-sm font-medium text-ink transition hover:bg-surface-subtle disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto sm:shrink-0"
         >
-          {locating ? t("locatingLabel") : t("useMyLocationButton")}
+          {isLocating ? t("locatingLabel") : t("relocateButton")}
         </button>
       </div>
 
-      {locationError && <p className="mb-4 text-sm text-ended">{locationError}</p>}
-
-      <PigeonShopsMap shops={mapPoints} selectedId={selectedId} userLocation={userLocation} />
+      <PigeonShopsMap shops={mapPoints} selectedId={selectedId} geolocation={geolocation} userLocation={sortOrigin} />
 
       {filteredShops.length === 0 ? (
         <p className="mt-6 rounded-xl border border-border bg-white p-6 text-sm text-ink-light">{t("noResults")}</p>
       ) : (
-        <ul className="mt-6 max-h-[600px] divide-y divide-border overflow-y-auto rounded-xl border border-border bg-white">
+        <ul className="mt-6 divide-y divide-border rounded-xl border border-border bg-white">
           {displayedShops.map((shop) => {
             const hasCoordinates = shop.lat !== null && shop.lng !== null;
             return (
@@ -175,6 +162,23 @@ export default function PigeonShopsExplorer({
             );
           })}
         </ul>
+      )}
+
+      {filteredShops.length > 0 && (
+        <ClientPaginationFooter
+          pageSizes={PIGEON_DIRECTORY_PAGE_SIZES}
+          pageSize={state.pageSize}
+          page={page}
+          totalPages={totalPages}
+          onPageSizeChange={(size) => isPigeonDirectoryPageSize(size) && dispatch({ type: "pageSize", value: size })}
+          onPageChange={(target) => dispatch({ type: "page", value: target })}
+          labels={{
+            pageSizeLabel: t("pageSizeLabel"),
+            prevPage: t("prevPage"),
+            nextPage: t("nextPage"),
+            pageInfo: t("pageInfo", { page, totalPages, total: filteredShops.length }),
+          }}
+        />
       )}
     </div>
   );

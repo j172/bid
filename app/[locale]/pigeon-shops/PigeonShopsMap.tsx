@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { useMapGeolocation } from "@/lib/useMapGeolocation";
+import type { MapGeolocationResult } from "@/lib/useMapGeolocation";
 
 // Leaflet's default marker icon references image paths relative to the
 // package itself, which breaks once bundled by webpack/Turbopack (a common,
@@ -39,10 +39,15 @@ export interface PigeonShopMapPoint {
 export interface PigeonShopsMapProps {
   shops: PigeonShopMapPoint[];
   selectedId: number | null;
-  /** Issue #259's "使用目前位置" result — null until the user opts in (or if
-   * geolocation was denied/unsupported/failed). Distinct from the
-   * auto-on-mount lib/useMapGeolocation.ts center below, which never shows
-   * its own marker. */
+  /** The browser's resolved position, owned by the parent explorer (issue
+   * #275 — one lib/useMapGeolocation.ts call shared by both the map center
+   * and the list's distance sort, instead of this component requesting its
+   * own separately). Null while that request is still pending. */
+  geolocation: MapGeolocationResult | null;
+  /** The user's real position to draw a "you are here" marker for — null
+   * whenever geolocation hasn't resolved to a genuine position yet (pending,
+   * denied, unsupported, or the Chiayi fallback). Distinct from
+   * `geolocation` above only in that it's never the fallback center. */
   userLocation?: { lat: number; lng: number } | null;
 }
 
@@ -50,13 +55,7 @@ export interface PigeonShopsMapProps {
 // instance and its markers live in refs and are imperatively kept in sync
 // with props via useEffect, since Leaflet owns the DOM node it's mounted
 // into directly.
-export default function PigeonShopsMap({ shops, selectedId, userLocation = null }: PigeonShopsMapProps) {
-  // Issue #256: the initial center/zoom comes from the browser's geolocation
-  // (city-level zoom on the user, falling back to Chiayi City Government) —
-  // see lib/useMapGeolocation.ts. Null while that request is still pending;
-  // the map isn't mounted until it resolves (below), so it never has to jump
-  // from one center to another.
-  const geolocation = useMapGeolocation();
+export default function PigeonShopsMap({ shops, selectedId, geolocation, userLocation = null }: PigeonShopsMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Map<number, L.Marker>>(new Map());
@@ -120,10 +119,13 @@ export default function PigeonShopsMap({ shops, selectedId, userLocation = null 
     marker.openPopup();
   }, [selectedId]);
 
-  // Issue #259's "使用目前位置": draw a distinct marker (a plain circle, not
-  // the shop pin icon, so it reads as "you" rather than another shop) at the
-  // user's position and fly the map there. Removed again if userLocation
-  // goes back to null (e.g. a second click that's denied).
+  // Draws a distinct marker (a plain circle, not the shop pin icon, so it
+  // reads as "you" rather than another shop) at the user's position and
+  // flies the map there — set automatically once geolocation resolves to a
+  // real position, or refreshed by the explorer's "重新定位" button (issue
+  // #275; originally only a one-shot "使用目前位置" click, issue #259).
+  // Removed again if userLocation goes back to null (e.g. a relocate that's
+  // denied).
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;

@@ -14,7 +14,7 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useTranslations } from "next-intl";
-import { useMapGeolocation } from "@/lib/useMapGeolocation";
+import type { MapGeolocationResult } from "@/lib/useMapGeolocation";
 // Leaflet's default marker icon references image URLs that assume being
 // served from leaflet's own dist/ directory — broken once bundled by
 // webpack/Turbopack. Re-pointing at the bundled copies of the same PNGs
@@ -59,22 +59,31 @@ function escapeHtml(text: string): string {
 export default function PigeonStationsMap({
   stations,
   selectedId,
+  geolocation,
+  userLocation = null,
 }: {
   stations: PigeonStationMapPoint[];
   /** Station id to fly the map to and open its popup for — set by clicking a list item. */
   selectedId: number | null;
+  /** The browser's resolved position, owned by the parent explorer (issue
+   * #275 — one lib/useMapGeolocation.ts call shared by both the map center
+   * and the list's distance sort, instead of this component requesting its
+   * own separately). Null while that request is still pending; the map
+   * isn't mounted until it resolves (below). This replaces the previous
+   * behavior of fitBounds()-ing to every station on mount, which would
+   * otherwise immediately zoom back out past whatever geolocation set. */
+  geolocation: MapGeolocationResult | null;
+  /** The user's real position to draw a "you are here" marker for — null
+   * whenever geolocation hasn't resolved to a genuine position yet (pending,
+   * denied, unsupported, or the Chiayi fallback). Mirrors
+   * PigeonShopsMap.tsx/PigeonGroupsMap.tsx (issue #275). */
+  userLocation?: { lat: number; lng: number } | null;
 }) {
   const t = useTranslations("pigeonStations");
-  // Issue #256: the initial center/zoom comes from the browser's geolocation
-  // (city-level zoom on the user, falling back to Chiayi City Government) —
-  // see lib/useMapGeolocation.ts. Null while that request is still pending;
-  // the map isn't mounted until it resolves (below). This replaces the
-  // previous behavior of fitBounds()-ing to every station on mount, which
-  // would otherwise immediately zoom back out past whatever geolocation set.
-  const geolocation = useMapGeolocation();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Map<number, L.Marker>>(new Map());
+  const userMarkerRef = useRef<L.CircleMarker | null>(null);
 
   // Mount/unmount the map exactly once, as soon as geolocation resolves.
   useEffect(() => {
@@ -94,6 +103,7 @@ export default function PigeonStationsMap({
       map.remove();
       mapRef.current = null;
       markers.clear();
+      userMarkerRef.current = null;
     };
   }, [geolocation]);
 
@@ -137,6 +147,35 @@ export default function PigeonStationsMap({
     map.flyTo(marker.getLatLng(), Math.max(map.getZoom(), FOCUS_ZOOM), { duration: 0.75 });
     marker.openPopup();
   }, [selectedId]);
+
+  // Issue #275's automatic distance sort/"重新定位" button: draw a distinct
+  // marker (a plain circle, not a station pin, so it reads as "you" rather
+  // than another station) at the user's position and fly the map there.
+  // Removed again if userLocation goes back to null. Mirrors
+  // PigeonShopsMap.tsx exactly.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (!userLocation) {
+      userMarkerRef.current?.remove();
+      userMarkerRef.current = null;
+      return;
+    }
+
+    if (userMarkerRef.current) {
+      userMarkerRef.current.setLatLng([userLocation.lat, userLocation.lng]);
+    } else {
+      userMarkerRef.current = L.circleMarker([userLocation.lat, userLocation.lng], {
+        radius: 8,
+        color: "#ffffff",
+        weight: 2,
+        fillColor: "#2563eb",
+        fillOpacity: 1,
+      }).addTo(map);
+    }
+    map.flyTo([userLocation.lat, userLocation.lng], Math.max(map.getZoom(), FOCUS_ZOOM), { duration: 0.75 });
+  }, [userLocation, geolocation]);
 
   // While geolocation is still pending, don't mount the container div at all
   // — the mount effect above only creates the Leaflet map once `geolocation`

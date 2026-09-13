@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { haversineDistanceKm, sortByDistanceFromOrigin } from "./pigeonDirectoryDistance";
+import { haversineDistanceKm, selectDistanceSortOrigin, sortByDistanceFromOrigin } from "./pigeonDirectoryDistance";
+import type { MapGeolocationResult } from "./useMapGeolocation";
 
 interface Entry {
   id: number;
@@ -91,5 +92,21 @@ describe("sortByDistanceFromOrigin", () => {
     const copy = [...entries];
     sortByDistanceFromOrigin(entries, origin);
     expect(entries).toEqual(copy);
+  });
+});
+
+describe("selectDistanceSortOrigin", () => {
+  it("returns null while geolocation is still pending", () => {
+    expect(selectDistanceSortOrigin(null)).toBeNull();
+  });
+
+  it("returns the user's point when geolocation genuinely succeeded", () => {
+    const geolocation: MapGeolocationResult = { center: [25.033976, 121.564472], zoom: 13, isUserLocation: true };
+    expect(selectDistanceSortOrigin(geolocation)).toEqual({ lat: 25.033976, lng: 121.564472 });
+  });
+
+  it("returns null for the Chiayi fallback (denied/failed/unsupported), never sorting against it", () => {
+    const geolocation: MapGeolocationResult = { center: [23.4810744, 120.4535581], zoom: 13, isUserLocation: false };
+    expect(selectDistanceSortOrigin(geolocation)).toBeNull();
   });
 });
