@@ -1,17 +1,17 @@
-// Shared "最近一次成功執行時間" tracker for the daily news/races syncs (issue
+// Shared "最近一次成功執行時間" tracker for the daily news sync (issue
 // #261) — see db/init.sql's sync_runs comment for the full story this backs.
-// lib/newsSync.ts's syncHerbotsNews() and lib/racesSync.ts's syncRaces() each
-// call recordRunNow() once they reach their own normal return — success or
-// partial-failure alike, per those modules' own "never throw for a normal
+// lib/newsSync.ts's syncHerbotsNews()
+// calls recordRunNow() once it reaches its own normal return — success or
+// partial-failure alike, per that module's own "never throw for a normal
 // failure" file-header convention, so a degraded run (translation failures,
-// one source unavailable, etc.) still counts as "ran" and doesn't leave the
+// source unavailable, etc.) still counts as "ran" and doesn't leave the
 // job looking perpetually stale. lib/scheduler.ts reads the timestamp back
 // via getLastRunAt()/isSyncStale() to decide whether a post-boot catch-up
 // sync is warranted (see its own header comment for why that check can't be
 // "just sync on every boot" — this host restarts often, per issue #81).
 import { getDb } from "@/lib/db";
 
-export type SyncJobName = "news" | "races";
+export type SyncJobName = "news";
 
 interface SyncRunRow {
   last_run_at: string | Date;

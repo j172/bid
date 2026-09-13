@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { ALL_COUNTIES_VALUE, filterPigeonDirectoryEntries, listPresentCounties } from "@/lib/pigeonDirectoryFilters";
-import { sortByDistanceFrom } from "@/lib/geoDistance";
+import { sortByDistanceFromOrigin } from "@/lib/pigeonDirectoryDistance";
 import type { PigeonGroupMapPoint } from "./PigeonGroupsMap";
 
 // Leaflet touches `window`/DOM APIs at module scope, so it can't render on
@@ -58,11 +58,15 @@ export default function PigeonGroupsExplorer({ groups, noAddressLabel, noCoordin
 
   // Issue #260's "使用目前位置" button: once the browser hands back a real
   // position, re-sort the (already search/county-filtered) list nearest
-  // first via the shared pure helper (lib/geoDistance.ts), annotating each
-  // row with its distance. Entries with no coordinates sort last with
-  // distanceKm: null (see that module's own tests) rather than being hidden.
+  // first via the shared pure helper (lib/pigeonDirectoryDistance.ts),
+  // annotating each row with its distance. Entries with no coordinates sort
+  // last with distanceKm: null (see that module's own tests) rather than
+  // being hidden.
   const sortedGroups = useMemo(
-    () => (userLocation ? sortByDistanceFrom(filteredGroups, userLocation) : filteredGroups.map((group) => ({ ...group, distanceKm: null as number | null }))),
+    () =>
+      userLocation
+        ? sortByDistanceFromOrigin(filteredGroups, userLocation)
+        : filteredGroups.map((group) => ({ ...group, distanceKm: null as number | null })),
     [filteredGroups, userLocation],
   );
 

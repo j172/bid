@@ -406,36 +406,12 @@ CREATE TABLE IF NOT EXISTS pigeon_groups (
   KEY idx_pigeon_groups_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 賽事資訊 (issue #241) — see db/init.sql for the fuller header comment.
--- Brand-new table, whole final schema from day one, same as
--- pigeon_shops/pigeon_stations above. Upserted (not import-log-guarded) by
--- lib/racesSync.ts since a race's status/content legitimately changes over
--- time, unlike a news article.
-CREATE TABLE IF NOT EXISTS races (
-  id BIGINT NOT NULL AUTO_INCREMENT,
-  source VARCHAR(20) NOT NULL,
-  status VARCHAR(20) NOT NULL,
-  title VARCHAR(255) NOT NULL,
-  original_title VARCHAR(255) NULL,
-  content TEXT NOT NULL,
-  original_content TEXT NULL,
-  race_date DATETIME NULL,
-  image_file_name VARCHAR(255) NULL,
-  source_url VARCHAR(500) NOT NULL,
-  created_at DATETIME NOT NULL,
-  updated_at DATETIME NOT NULL,
-  PRIMARY KEY (id),
-  UNIQUE KEY uq_races_source_url (source_url),
-  KEY idx_races_status_date (status, race_date),
-  KEY idx_races_source (source)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- 新聞/賽事同步「最近一次執行時間」追蹤 (issue #261) — see db/init.sql for the
+-- 新聞同步「最近一次執行時間」追蹤 (issue #261) — see db/init.sql for the
 -- fuller header comment. Brand-new table, whole final schema from day one,
--- same as races/pigeon_shops above. Read/written via lib/syncRuns.ts, used by
+-- same as pigeon_shops above. Read/written via lib/syncRuns.ts, used by
 -- lib/scheduler.ts's post-boot staleness-based catch-up sync.
 CREATE TABLE IF NOT EXISTS sync_runs (
-  job_name VARCHAR(50) NOT NULL,  -- 'news' | 'races'
+  job_name VARCHAR(50) NOT NULL,  -- 'news'
   last_run_at DATETIME NOT NULL,
   PRIMARY KEY (job_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -13,12 +13,11 @@
 // fresh module instance via vi.resetModules() + a fresh dynamic import.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { scheduleMock, syncExchangeRatesMock, syncHerbotsNewsMock, syncRacesMock, getLastRunAtMock, isSyncStaleMock } =
+const { scheduleMock, syncExchangeRatesMock, syncHerbotsNewsMock, getLastRunAtMock, isSyncStaleMock } =
   vi.hoisted(() => ({
     scheduleMock: vi.fn(),
     syncExchangeRatesMock: vi.fn(),
     syncHerbotsNewsMock: vi.fn(),
-    syncRacesMock: vi.fn(),
     getLastRunAtMock: vi.fn(),
     isSyncStaleMock: vi.fn(),
   }));
@@ -29,10 +28,6 @@ vi.mock("@/lib/exchangeRates", () => ({ syncExchangeRates: syncExchangeRatesMock
 // mocked for the same "this module's job is wiring, not the sync itself"
 // reason as @/lib/exchangeRates above (lib/newsSync.ts has its own tests).
 vi.mock("@/lib/newsSync", () => ({ syncHerbotsNews: syncHerbotsNewsMock }));
-// issue #241: scheduler.ts also wires up the daily races sync — same
-// mocking reason as @/lib/newsSync above (lib/racesSync.ts has its own
-// tests).
-vi.mock("@/lib/racesSync", () => ({ syncRaces: syncRacesMock }));
 // issue #261: scheduler.ts's post-boot catch-up check reads sync_runs via
 // these — mocked for the same "wiring, not the underlying logic" reason
 // (lib/syncRuns.ts has its own tests, including isSyncStale's actual
@@ -44,7 +39,6 @@ beforeEach(() => {
   scheduleMock.mockReset();
   syncExchangeRatesMock.mockReset();
   syncHerbotsNewsMock.mockReset();
-  syncRacesMock.mockReset();
   getLastRunAtMock.mockReset();
   isSyncStaleMock.mockReset();
   // Default: each job's last run is "recent enough" — most tests care about
@@ -110,10 +104,10 @@ describe("startScheduler", () => {
     startScheduler();
     await vi.advanceTimersByTimeAsync(10_000);
 
-    // Three distinct cron jobs are registered per call (exchange rates +
-    // news + races, see below) — asserting 3 here (not 1) is what actually
+    // Two distinct cron jobs are registered per call (exchange rates +
+    // news) — asserting 2 here (not 1) is what actually
     // proves a second startScheduler() call registered nothing further.
-    expect(scheduleMock).toHaveBeenCalledTimes(3);
+    expect(scheduleMock).toHaveBeenCalledTimes(2);
     expect(syncExchangeRatesMock).toHaveBeenCalledTimes(1);
   });
 });
@@ -171,63 +165,11 @@ describe("startScheduler — herbots.be news sync", () => {
   });
 });
 
-// issue #241
-describe("startScheduler — races sync", () => {
-  it("registers a second 08:40 Asia/Taipei cron job (same batch as the news sync)", async () => {
-    const { startScheduler } = await import("./scheduler");
-
-    startScheduler();
-
-    const racesCalls = scheduleMock.mock.calls.filter(([pattern]) => pattern === "40 8 * * *");
-    expect(racesCalls).toHaveLength(2);
-    expect(racesCalls[1][2]).toEqual({ timezone: "Asia/Taipei" });
-  });
-
-  it("does not sync on boot", async () => {
-    const { startScheduler } = await import("./scheduler");
-    syncExchangeRatesMock.mockResolvedValue(undefined);
-
-    startScheduler();
-    await vi.advanceTimersByTimeAsync(60_000);
-
-    expect(syncRacesMock).not.toHaveBeenCalled();
-  });
-
-  it("runs syncRaces when the registered cron callback fires", async () => {
-    const { startScheduler } = await import("./scheduler");
-    syncRacesMock.mockResolvedValue({
-      loingMa: { imported: 1, updated: 0, errors: [], skipped: false },
-      herbots: { imported: 2, updated: 0, errors: [], translationFailures: 0 },
-    });
-
-    startScheduler();
-    const racesCalls = scheduleMock.mock.calls.filter(([pattern]) => pattern === "40 8 * * *");
-    const callback = racesCalls[1][1] as () => void;
-    callback();
-    await vi.waitFor(() => expect(syncRacesMock).toHaveBeenCalledTimes(1));
-  });
-
-  it("logs rather than throws when the sync rejects", async () => {
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    const { startScheduler } = await import("./scheduler");
-    const syncError = new Error("boom");
-    syncRacesMock.mockRejectedValue(syncError);
-
-    startScheduler();
-    const racesCalls = scheduleMock.mock.calls.filter(([pattern]) => pattern === "40 8 * * *");
-    const callback = racesCalls[1][1] as () => void;
-    callback();
-    await vi.waitFor(() => expect(errorSpy).toHaveBeenCalledWith("[racesSync] scheduled sync failed", syncError));
-
-    errorSpy.mockRestore();
-  });
-});
-
-// issue #261: post-boot catch-up sync — fires news/races once, after the
+// issue #261: post-boot catch-up sync — fires news once, after the
 // same STARTUP_SYNC_DELAY_MS boot delay as exchange rates' own startup sync,
 // only when sync_runs shows that job hasn't completed a run recently.
 describe("startScheduler — post-boot catch-up sync", () => {
-  it("does not fire either catch-up sync when both jobs' last run is recent", async () => {
+  it("does not fire catch-up sync when news last run is recent", async () => {
     const { startScheduler } = await import("./scheduler");
     syncExchangeRatesMock.mockResolvedValue(undefined);
     isSyncStaleMock.mockReturnValue(false);
@@ -236,16 +178,14 @@ describe("startScheduler — post-boot catch-up sync", () => {
     await vi.advanceTimersByTimeAsync(10_000);
 
     expect(getLastRunAtMock).toHaveBeenCalledWith("news");
-    expect(getLastRunAtMock).toHaveBeenCalledWith("races");
     expect(syncHerbotsNewsMock).not.toHaveBeenCalled();
-    expect(syncRacesMock).not.toHaveBeenCalled();
   });
 
-  it("fires syncHerbotsNews as a catch-up when news is stale, without needing races to be stale too", async () => {
+  it("fires syncHerbotsNews as a catch-up when news is stale", async () => {
     const { startScheduler } = await import("./scheduler");
     syncExchangeRatesMock.mockResolvedValue(undefined);
     isSyncStaleMock.mockImplementation((lastRunAt: Date | null) => lastRunAt === null);
-    getLastRunAtMock.mockImplementation(async (jobName: string) => (jobName === "news" ? null : new Date()));
+    getLastRunAtMock.mockResolvedValue(null);
     syncHerbotsNewsMock.mockResolvedValue({
       imported: 2,
       skippedExisting: 0,
@@ -258,47 +198,19 @@ describe("startScheduler — post-boot catch-up sync", () => {
     await vi.advanceTimersByTimeAsync(10_000);
 
     expect(syncHerbotsNewsMock).toHaveBeenCalledTimes(1);
-    // news being stale must not couple with races' own (not-stale) decision.
-    expect(syncRacesMock).not.toHaveBeenCalled();
   });
 
-  it("fires syncRaces as a catch-up when races is stale, without needing news to be stale too", async () => {
-    const { startScheduler } = await import("./scheduler");
-    syncExchangeRatesMock.mockResolvedValue(undefined);
-    getLastRunAtMock.mockImplementation(async (jobName: string) => (jobName === "races" ? null : new Date()));
-    isSyncStaleMock.mockImplementation((lastRunAt: Date | null) => lastRunAt === null);
-    syncRacesMock.mockResolvedValue({
-      loingMa: { imported: 0, updated: 0, errors: [], skipped: false },
-      herbots: { imported: 0, updated: 0, errors: [], translationFailures: 0 },
-    });
-
-    startScheduler();
-    await vi.advanceTimersByTimeAsync(10_000);
-
-    expect(syncRacesMock).toHaveBeenCalledTimes(1);
-    expect(syncHerbotsNewsMock).not.toHaveBeenCalled();
-  });
-
-  it("logs rather than throws when getLastRunAt rejects, without blocking the other job's check", async () => {
+  it("logs rather than throws when getLastRunAt rejects", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const { startScheduler } = await import("./scheduler");
     syncExchangeRatesMock.mockResolvedValue(undefined);
-    getLastRunAtMock.mockImplementation(async (jobName: string) => {
-      if (jobName === "news") throw new Error("DB unreachable");
-      return null;
-    });
+    getLastRunAtMock.mockRejectedValue(new Error("DB unreachable"));
     isSyncStaleMock.mockReturnValue(true);
-    syncRacesMock.mockResolvedValue({
-      loingMa: { imported: 0, updated: 0, errors: [], skipped: false },
-      herbots: { imported: 0, updated: 0, errors: [], translationFailures: 0 },
-    });
 
     startScheduler();
     await vi.advanceTimersByTimeAsync(10_000);
 
     expect(syncHerbotsNewsMock).not.toHaveBeenCalled();
-    // races' own check must still run and fire despite news' check failing.
-    expect(syncRacesMock).toHaveBeenCalledTimes(1);
     expect(errorSpy).toHaveBeenCalledWith(
       "[newsSync] failed to read last sync run time, skipping catch-up check",
       expect.any(Error),
@@ -314,10 +226,6 @@ describe("startScheduler — post-boot catch-up sync", () => {
     getLastRunAtMock.mockResolvedValue(null);
     const syncError = new Error("boom");
     syncHerbotsNewsMock.mockRejectedValue(syncError);
-    syncRacesMock.mockResolvedValue({
-      loingMa: { imported: 0, updated: 0, errors: [], skipped: false },
-      herbots: { imported: 0, updated: 0, errors: [], translationFailures: 0 },
-    });
 
     startScheduler();
     await vi.advanceTimersByTimeAsync(10_000);

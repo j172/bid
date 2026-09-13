@@ -29,7 +29,7 @@ describe("getLastRunAt", () => {
   it("returns null when the job has never recorded a run", async () => {
     queryMock.mockResolvedValueOnce([[]]);
 
-    const result = await getLastRunAt("races");
+    const result = await getLastRunAt("news");
 
     expect(result).toBeNull();
   });

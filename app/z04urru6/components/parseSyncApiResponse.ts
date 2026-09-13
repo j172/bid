@@ -1,13 +1,12 @@
-// issue #261: a manual "立即手動同步" run (news/races) can run long enough
+// issue #261: a manual "立即手動同步" run (news) can run long enough
 // (many external requests, plus a Cloudflare Workers AI translation call per
 // paragraph for herbots.be content) to exceed the production reverse proxy's
 // own timeout — which then returns an HTML/plain-text error page instead of
 // JSON. Calling `response.json()` directly on that turns into an opaque
 // `Unexpected token '<' ... is not valid JSON` exception surfacing straight
-// to the admin. Shared by HerbotsNewsSyncButton.tsx and RacesSyncButton.tsx
-// (the two sync buttons heavy enough to realistically hit this) so both
-// check `response.ok`/content-type the same way before ever calling
-// `.json()`, instead of each button growing its own copy of this check.
+// to the admin. Used by HerbotsNewsSyncButton.tsx
+// (heavy enough to realistically hit this) to check `response.ok`/content-type
+// before ever calling `.json()`.
 export interface ParsedSyncResponse<T> {
   ok: boolean;
   /** Present when ok is false — a clear, user-facing zh-TW message. */

@@ -44,6 +44,26 @@ describe("sortByDistanceFromOrigin", () => {
     entry({ id: 4, name: "另一間無座標店", lat: null, lng: null }),
   ];
 
+  // 台中 sits between Taipei and Kaohsiung — with three positioned entries at
+  // three genuinely different distances (rather than just two), this checks
+  // the full nearest-first ordering and that distanceKm strictly increases
+  // across the whole run, not just that a single nearby entry looks plausible.
+  const TAICHUNG = { lat: 24.1477, lng: 120.6736 };
+
+  it("sorts three positioned entries by strictly increasing distance", () => {
+    const threeWay: Entry[] = [
+      entry({ id: 1, name: "高雄店", lat: KAOHSIUNG_85.lat, lng: KAOHSIUNG_85.lng }),
+      entry({ id: 2, name: "台北店", lat: TAIPEI_101.lat, lng: TAIPEI_101.lng }),
+      entry({ id: 3, name: "台中店", lat: TAICHUNG.lat, lng: TAICHUNG.lng }),
+    ];
+
+    const result = sortByDistanceFromOrigin(threeWay, origin);
+    expect(result.map((e) => e.id)).toEqual([2, 3, 1]);
+    expect(result[0].distanceKm).toBeCloseTo(0, 5);
+    expect(result[1].distanceKm as number).toBeGreaterThan(result[0].distanceKm as number);
+    expect(result[2].distanceKm as number).toBeGreaterThan(result[1].distanceKm as number);
+  });
+
   it("sorts entries with coordinates nearest-first", () => {
     const result = sortByDistanceFromOrigin(entries, origin);
     const positionedIds = result.filter((e) => e.distanceKm !== null).map((e) => e.id);
