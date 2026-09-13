@@ -207,20 +207,6 @@ export async function saveNewsImageFromBuffer(buffer: Buffer, contentType: strin
   return fileName;
 }
 
-// featured_loft_posts (issue #176's 名家專區 article rewrite, replacing #168's
-// homepage_sections-based cards) — same flat single-image storage scheme as
-// saveNewsImage above, just its own subdirectory.
-export async function saveFeaturedLoftPostImage(image: File): Promise<string> {
-  return saveSingleImage(join(UPLOADS_ROOT, "featured-loft-posts"), image);
-}
-
-export function featuredLoftPostImageUrl(fileName: string): string {
-  return `/uploads/featured-loft-posts/${fileName}`;
-}
-
-export async function deleteFeaturedLoftPostImageFile(fileName: string): Promise<void> {
-  await unlink(join(UPLOADS_ROOT, "featured-loft-posts", fileName)).catch(() => {});
-}
 
 // The two halves of the "upload a 主圖, then write the row" dance that the
 // news and pigeon-showcase create/edit routes each spelled out identically

@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { listOpenListings, type ListingType } from "@/lib/listings";
-import {
-  DEFAULT_FEATURED_LOFT_POST_PAGE_SIZE,
-  FEATURED_LOFT_POST_PAGE_SIZES,
-  isFeaturedLoftPostPageSize,
-  listFeaturedLoftPosts,
-} from "@/lib/featuredLoftPosts";
 import { listHomepageSections, getHomepageSectionById } from "@/lib/homepageSections";
 import { currencyForLocale, formatDualPrice, formatNtd } from "@/lib/currency";
-import { featuredLoftPostImageUrl, homepageSectionImageUrl } from "@/lib/uploads";
+import { homepageSectionImageUrl } from "@/lib/uploads";
 import { excerptHtml } from "@/lib/htmlText";
 import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
 import { getLatestStoredRate } from "@/lib/exchangeRates";
@@ -30,7 +24,6 @@ import CategorySelect, { type CategorySelectOption } from "../../components/Cate
 import ProductCard from "../../components/ProductCard";
 import PartnerLoftImage from "../../components/PartnerLoftImage";
 import ContentCardGrid from "../../components/ContentCardGrid";
-import PaginationFooter from "../../components/PaginationFooter";
 import { listPigeonShowcase } from "@/lib/pigeonShowcase";
 import { isPigeonShowcaseCategory, type PigeonShowcaseCategory } from "@/lib/pigeonShowcaseValidation";
 import { pigeonShowcaseImageUrl } from "@/lib/uploads";
@@ -179,23 +172,18 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
     ? allShowcaseItems.filter((item) => item.category === showcaseCategory)
     : allShowcaseItems;
 
-  // Same source as the homepage/`/featured-lofts` partner-loft lists (issue
-  // #178) — options show loft title only, no per-loft listing counts.
+  // Same source as the homepage partner-loft list (issue #178) — options
+  // show loft title only, no per-loft listing counts.
   const partnerLofts = await listHomepageSections("partner_loft", { activeOnly: true });
-  // 名家專區 (issue #176, #228) — moved to bottom of page above footer, with 30/50/100 pagination.
-  const rawFeaturedPageSize = Number(firstParam(params.featuredPageSize));
-  const featuredPageSize = isFeaturedLoftPostPageSize(rawFeaturedPageSize)
-    ? rawFeaturedPageSize
-    : DEFAULT_FEATURED_LOFT_POST_PAGE_SIZE;
-  const featuredPage = Math.max(1, Number(firstParam(params.featuredPage) ?? "1") || 1);
-
-  const { items: featuredLoftPosts, total: featuredLoftsTotal } = await listFeaturedLoftPosts({
-    page: featuredPage,
-    pageSize: featuredPageSize,
-  });
-  const featuredLoftsTotalPages = Math.max(1, Math.ceil(featuredLoftsTotal / featuredPageSize));
+  // 名家專區 (issue #270) — moved to bottom of page above footer (issue
+  // #176/#228's placement), now a small non-paginated curated grid sourced
+  // from homepage_sections('featured_loft') instead of the removed
+  // featured_loft_posts article table — same data source/activeOnly
+  // convention as the homepage carousel above.
+  const featuredLofts = (await listHomepageSections("featured_loft", { activeOnly: true })).filter(
+    (section) => section.linkedLoftId !== null,
+  );
   const t = await getTranslations("listings");
-  const tFeaturedLofts = await getTranslations("featuredLofts");
   const tPigeonShowcase = await getTranslations("pigeonShowcase");
   const tNav = await getTranslations("nav");
   const tFormat = await getTranslations("format");
@@ -252,18 +240,8 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
       loft: firstParam(params.loft),
       tab: firstParam(params.tab),
       showcaseCategory: firstParam(params.showcaseCategory),
-      featuredPage: firstParam(params.featuredPage),
-      featuredPageSize: firstParam(params.featuredPageSize),
       ...partial,
     });
-  }
-
-  function buildFeaturedLoftHref(overrides: { page?: string; pageSize?: string }): string {
-    const baseHref = withFilters({
-      featuredPage: overrides.page ?? (overrides.pageSize ? "1" : firstParam(params.featuredPage)),
-      featuredPageSize: overrides.pageSize ?? firstParam(params.featuredPageSize),
-    });
-    return `${baseHref}#featured-lofts`;
   }
 
   // Each option's href deliberately drops status/withinHours — switching the
@@ -698,53 +676,41 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
         </div>
       )}
 
-      {featuredLoftPosts.length > 0 && (
+      {featuredLofts.length > 0 && (
         <section id="featured-lofts" className="mt-12 scroll-mt-20 border-t border-border pt-8">
           <div className="mb-1 flex items-end justify-between">
             <h2 className="text-2xl font-bold">{t("featuredLoftsTitle")}</h2>
-            <Link href="/featured-lofts" className="text-sm font-semibold text-interactive-primary hover:text-header">
+            {/* issue #270 — no more standalone /featured-lofts list page to
+                view more on; this small curated grid already shows every
+                active card (no pagination), so "查看全部" now points back at
+                /listings, same "generic browse-everything" target the
+                homepage's own 合作鴿舍 section's "查看全部" link uses. */}
+            <Link href="/listings" className="text-sm font-semibold text-interactive-primary hover:text-header">
               {t("featuredLoftsViewAll")}
             </Link>
           </div>
           <p className="text-sm text-ink-light">{t("featuredLoftsSubtitle")}</p>
           <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {featuredLoftPosts.map((post) => (
+            {featuredLofts.map((loft) => (
               <Link
-                key={post.id}
-                href={`/featured-lofts/${post.id}`}
+                key={loft.id}
+                href={`/listings?loft=${loft.linkedLoftId}`}
                 className="group overflow-hidden rounded-2xl border border-border bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-100">
                   <PartnerLoftImage
-                    src={post.imageFileName ? featuredLoftPostImageUrl(post.imageFileName) : IMAGE_FALLBACK_SRC}
-                    alt={post.title}
+                    src={homepageSectionImageUrl(loft.imageFileName)}
+                    alt={loft.title}
                     sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw"
                   />
                 </div>
-                <p className="mt-3 text-sm font-bold text-ink">{post.title}</p>
-                <p className="mt-1 line-clamp-2 text-xs text-ink-light">{excerptHtml(post.content, DESCRIPTION_SNIPPET_LENGTH)}</p>
+                <p className="mt-3 text-sm font-bold text-ink">{loft.title}</p>
+                {loft.bio && (
+                  <p className="mt-1 line-clamp-2 text-xs text-ink-light">{excerptHtml(loft.bio, DESCRIPTION_SNIPPET_LENGTH)}</p>
+                )}
               </Link>
             ))}
           </div>
-
-          <PaginationFooter
-            pageSizes={FEATURED_LOFT_POST_PAGE_SIZES}
-            pageSize={featuredPageSize}
-            page={featuredPage}
-            totalPages={featuredLoftsTotalPages}
-            pageSizeHref={(size) => buildFeaturedLoftHref({ pageSize: String(size), page: "1" })}
-            pageHref={(target) => buildFeaturedLoftHref({ page: String(target) })}
-            labels={{
-              pageSizeLabel: tFeaturedLofts("pageSizeLabel"),
-              prevPage: tFeaturedLofts("prevPage"),
-              nextPage: tFeaturedLofts("nextPage"),
-              pageInfo: tFeaturedLofts("pageInfo", {
-                page: featuredPage,
-                totalPages: featuredLoftsTotalPages,
-                total: featuredLoftsTotal,
-              }),
-            }}
-          />
         </section>
       )}
     </main>

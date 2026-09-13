@@ -25,23 +25,23 @@ const baseItem = {
   title: "翔順名家鴿舍介紹",
   excerpt: "深耕血統三十年",
   imageUrl: "/uploads/featured-loft-7.jpg",
+  linkedLoftId: 42,
   createdAt: "2026/9/1",
 };
 
-// Issue #252 — same fix as NewsCarouselCard: the image was a bare <img> with
-// no link of its own; only the title and CTA button linked to the detail
-// page. These tests lock in that clicking the image now reaches the same
-// /featured-lofts/[id] href as the title/CTA, while the manual carousel
-// controls and the "view more" list-page link stay untouched.
+// Issue #270 — 名家專區 no longer has its own detail page; every card links
+// straight to its linked loft's /listings?loft=<id> instead. Issue #252's
+// original fix (the image itself is a link, not just decorative) still
+// applies, just retargeted.
 describe("FeaturedLoftCarouselCard", () => {
-  it("wraps the image in a link to the same /featured-lofts/[id] href as the title and CTA", () => {
+  it("wraps the image in a link to the same /listings?loft=<linkedLoftId> href as the title and CTA", () => {
     render(
       <FeaturedLoftCarouselCard
         items={[baseItem]}
         activeBadge="名家專區"
         ctaLabel="閱讀更多"
         viewMoreLabel="查看全部"
-        viewMoreHref="/featured-lofts"
+        viewMoreHref="/listings"
         emptyStateTitle="尚無內容"
         emptyStateDesc="敬請期待"
       />,
@@ -50,18 +50,19 @@ describe("FeaturedLoftCarouselCard", () => {
     const image = screen.getByAltText(baseItem.title);
     const imageLink = image.closest("a");
     expect(imageLink).not.toBeNull();
-    expect(imageLink?.getAttribute("href")).toBe("/featured-lofts/7");
+    expect(imageLink?.getAttribute("href")).toBe("/listings?loft=42");
 
     const titleLink = screen.getByText(baseItem.title).closest("a");
     const ctaLink = screen.getByRole("link", { name: "閱讀更多" });
     expect(titleLink).not.toBeNull();
-    expect(titleLink?.getAttribute("href")).toBe("/featured-lofts/7");
-    expect(ctaLink.getAttribute("href")).toBe("/featured-lofts/7");
+    expect(titleLink?.getAttribute("href")).toBe("/listings?loft=42");
+    expect(ctaLink.getAttribute("href")).toBe("/listings?loft=42");
 
-    // The unrelated "view more" link to the /featured-lofts list page must
-    // keep pointing at the list, not the current item's detail page.
+    // The unrelated "view more" link (no single-loft target makes sense for
+    // "view all") must keep pointing at the caller-supplied href, not the
+    // current item's own loft.
     const viewMoreLink = screen.getByRole("link", { name: "查看全部" });
-    expect(viewMoreLink.getAttribute("href")).toBe("/featured-lofts");
+    expect(viewMoreLink.getAttribute("href")).toBe("/listings");
   });
 
   it("keeps the image's aspect-ratio, object-contain and hover classes, plus a pointer cursor", () => {
@@ -71,7 +72,7 @@ describe("FeaturedLoftCarouselCard", () => {
         activeBadge="名家專區"
         ctaLabel="閱讀更多"
         viewMoreLabel="查看全部"
-        viewMoreHref="/featured-lofts"
+        viewMoreHref="/listings"
         emptyStateTitle="尚無內容"
         emptyStateDesc="敬請期待"
       />,
@@ -87,14 +88,14 @@ describe("FeaturedLoftCarouselCard", () => {
   });
 
   it("does not let the image link swallow the manual carousel controls", () => {
-    const items = [baseItem, { ...baseItem, id: 8, title: "第二家名家鴿舍" }];
+    const items = [baseItem, { ...baseItem, id: 8, linkedLoftId: 43, title: "第二家名家鴿舍" }];
     render(
       <FeaturedLoftCarouselCard
         items={items}
         activeBadge="名家專區"
         ctaLabel="閱讀更多"
         viewMoreLabel="查看全部"
-        viewMoreHref="/featured-lofts"
+        viewMoreHref="/listings"
         emptyStateTitle="尚無內容"
         emptyStateDesc="敬請期待"
       />,
@@ -107,6 +108,6 @@ describe("FeaturedLoftCarouselCard", () => {
     fireEvent.click(screen.getByRole("button", { name: "slideNext" }));
 
     const image = screen.getByAltText("第二家名家鴿舍");
-    expect(image.closest("a")?.getAttribute("href")).toBe("/featured-lofts/8");
+    expect(image.closest("a")?.getAttribute("href")).toBe("/listings?loft=43");
   });
 });

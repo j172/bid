@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { listOpenListings } from "@/lib/listings";
-import { listingPhotoUrl, homepageSectionImageUrl, pigeonShowcaseImageUrl, newsImageUrl, featuredLoftPostImageUrl } from "@/lib/uploads";
+import { listingPhotoUrl, homepageSectionImageUrl, pigeonShowcaseImageUrl, newsImageUrl } from "@/lib/uploads";
 import { listHomepageSections } from "@/lib/homepageSections";
 import { listLatestPigeonShowcase } from "@/lib/pigeonShowcase";
 import { listHomepageNewsCarousel } from "@/lib/news";
-import { listLatestFeaturedLoftPosts } from "@/lib/featuredLoftPosts";
 import { excerptHtml } from "@/lib/htmlText";
 import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
 import { currencyForLocale, formatDualPrice, formatNtd } from "@/lib/currency";
@@ -99,22 +98,26 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const partnerLofts = await cachedQuery("home:partnerLofts", 20, () =>
     listHomepageSections("partner_loft", { activeOnly: true }),
   );
-  // 名家專區首頁輪播 (issue #176) — replaces issue #168's static
-  // homepage_sections('featured_loft') card grid with its own
-  // featured_loft_posts table + a NewsCarouselCard-style rotating card
-  // (see FeaturedLoftCarouselCard below). Latest 10, same "carousel of the
-  // newest N" convention as 最新訊息/入賞鴿/進口鴿 below.
+  // 名家專區首頁輪播 (issue #270) — back to a homepage_sections('featured_loft')
+  // curated-card data source (issue #176's independent featured_loft_posts
+  // article table is removed), rendered through the same
+  // FeaturedLoftCarouselCard rotating-card component below; every card must
+  // have a linkedLoftId (enforced by the admin API), so each one links
+  // straight to that loft's /listings?loft=<id> instead of an article page.
   const FEATURED_LOFT_CAROUSEL_EXCERPT_LENGTH = 30;
-  const latestFeaturedLoftPosts = await cachedQuery("home:latestFeaturedLoftPosts", 20, () =>
-    listLatestFeaturedLoftPosts(10),
+  const featuredLofts = await cachedQuery("home:featuredLofts", 20, () =>
+    listHomepageSections("featured_loft", { activeOnly: true }),
   );
-  const featuredLoftCarouselItems = latestFeaturedLoftPosts.map((post) => ({
-    id: post.id,
-    title: post.title,
-    excerpt: excerptHtml(post.content, FEATURED_LOFT_CAROUSEL_EXCERPT_LENGTH),
-    imageUrl: post.imageFileName ? featuredLoftPostImageUrl(post.imageFileName) : "/images/logo.png",
-    createdAt: post.createdAt.toLocaleDateString(),
-  }));
+  const featuredLoftCarouselItems = featuredLofts
+    .filter((section) => section.linkedLoftId !== null)
+    .map((section) => ({
+      id: section.id,
+      title: section.title,
+      excerpt: excerptHtml(section.bio ?? "", FEATURED_LOFT_CAROUSEL_EXCERPT_LENGTH),
+      imageUrl: homepageSectionImageUrl(section.imageFileName),
+      linkedLoftId: section.linkedLoftId!,
+      createdAt: section.createdAt.toLocaleDateString(),
+    }));
 
   // Reference-only currency conversion (issue #45, wired into the homepage
   // for issue #103; extended to multiple currencies per locale in issue
@@ -289,13 +292,17 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                 show a neutral empty state instead of hiding the section"
                 convention as NewsCarouselCard/PigeonShowcaseCarouselCard use;
                 the component itself decides whether to render its empty
-                state. */}
+                state. viewMoreHref is "/listings" rather than any one card's
+                loft (issue #270 — there's no single-loft "view all" target
+                for a section spanning multiple lofts), same convention as
+                the 合作鴿舍 section's own "查看全部" link further down this
+                page. */}
             <FeaturedLoftCarouselCard
               items={featuredLoftCarouselItems}
               activeBadge={t("featuredLoftsCarouselBadge")}
               ctaLabel={t("featuredLoftsCarouselCta")}
               viewMoreLabel={t("featuredLoftsCarouselViewMore")}
-              viewMoreHref="/featured-lofts"
+              viewMoreHref="/listings"
               emptyStateTitle={t("emptyStateTitle")}
               emptyStateDesc={t("featuredLoftsCarouselEmptyDesc")}
             />

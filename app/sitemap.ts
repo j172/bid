@@ -51,7 +51,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...localeEntries("/gdpr", { changeFrequency: "yearly", priority: 0.3 }),
     ...localeEntries("/news", { changeFrequency: "daily", priority: 0.5 }),
     ...localeEntries("/pigeon-showcase", { changeFrequency: "weekly", priority: 0.4 }),
-    ...localeEntries("/featured-lofts", { changeFrequency: "weekly", priority: 0.4 }),
   ];
 
   // All currently-open/scheduled listings (every listing type, every partner

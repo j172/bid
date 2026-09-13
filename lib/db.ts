@@ -305,36 +305,6 @@ CREATE TABLE IF NOT EXISTS news_import_log (
   UNIQUE KEY uq_news_import_log_source_url (source_url)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 名家專區 articles (issue #176) — replaces issue #168's lightweight
--- homepage_sections('featured_loft') cards with an independent, "文章式"
--- table modeled directly on news_posts above: full rich-text content + its
--- own detail page instead of a bare image+blurb card linking straight to
--- /listings?loft=<id>. Brand-new table, whole final schema from day one,
--- same as news_posts/contact_messages. Deliberately NO broadcast_id or any
--- other newsletter field — unlike news_posts this feature never sends a
--- newsletter.
--- image_file_name — same NULL-only-for-rows-with-no-upload-yet story as
--- news_posts.image_file_name above (every create/edit here requires one at
--- the application layer regardless).
--- loft_id is an OPTIONAL pointer at homepage_sections(id) — same "FK to
--- homepage_sections but only rows where section_type='partner_loft'" shape
--- as pigeon_showcase.loft_id above, so it's NOT a DB-level FK (MySQL can't
--- scope one to matching rows only) and is instead checked at the
--- application layer by lib/featuredLoftPosts.ts's isPartnerLoft(), mirroring
--- lib/pigeonShowcase.ts's identical helper. NULL means the post has no
--- linked loft, in which case its detail page omits the "查看商品" button.
-CREATE TABLE IF NOT EXISTS featured_loft_posts (
-  id BIGINT NOT NULL AUTO_INCREMENT,
-  title VARCHAR(100) NOT NULL,
-  image_file_name VARCHAR(255) NULL,
-  content TEXT NOT NULL,           -- sanitizeDescriptionHtml'd TinyMCE HTML, 2000-char plain-text cap
-  loft_id BIGINT NULL,             -- optional homepage_sections.id (合作鴿舍); NULL = no loft link
-  created_at DATETIME NOT NULL,
-  updated_at DATETIME NOT NULL,
-  PRIMARY KEY (id),
-  KEY idx_featured_loft_posts_created (created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- Public /contact form submissions (issue #104) — see db/init.sql for the
 -- fuller header comment. Brand-new table, whole final schema from day one,
 -- same as news_posts above.
@@ -731,6 +701,19 @@ async function ensurePigeonShopCategoryColumn(db: mysql.Pool): Promise<void> {
   await ensureColumn(db, "pigeon_shops", "category", "VARCHAR(100) NULL");
 }
 
+// Issue #270: 名家專區 goes back to being a lightweight homepage_sections
+// ('featured_loft') curated card (see db/init.sql's fuller header comment)
+// instead of issue #176's standalone featured_loft_posts article table.
+// linked_loft_id is the new optional self-referencing pointer (only
+// 'featured_loft' rows set it); DROP TABLE IF EXISTS is safe to run
+// unconditionally on every boot (idempotent, same as the CREATE TABLE IF
+// NOT EXISTS statements above) — the table had zero rows at the time of
+// this ticket, confirmed non-destructive, so no data migration is needed.
+async function ensureFeaturedLoftSectionColumn(db: mysql.Pool): Promise<void> {
+  await ensureColumn(db, "homepage_sections", "linked_loft_id", "BIGINT NULL");
+  await db.query("DROP TABLE IF EXISTS featured_loft_posts");
+}
+
 function createPool(): mysql.Pool {
   return mysql.createPool({
     host: process.env.MYSQL_HOST,
@@ -790,6 +773,7 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensureGoogleAuthColumns(db);
   await ensureNewsSourceColumns(db);
   await ensurePigeonShopCategoryColumn(db);
+  await ensureFeaturedLoftSectionColumn(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {
