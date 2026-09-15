@@ -270,39 +270,32 @@ CREATE TABLE IF NOT EXISTS pigeon_showcase (
 -- it's added to already-deployed databases; the newsletter feature
 -- (lib/newsletter.ts) no longer has a standalone compose/send flow and only
 -- ever broadcasts a post it's linked to from here.
+-- source/source_url/original_title/original_content/published_at/
+-- locked_by_admin (issue #240) originally tracked herbots.be-imported rows
+-- alongside hand-authored ones; the automated herbots.be import pipeline
+-- itself was removed in issue #280 (see lib/news.ts's header comment), but
+-- these columns stay — existing 'herbots' rows are cleaned up separately via
+-- scripts/cleanup-herbots-news.mjs (a manual, one-off production step, not
+-- part of this schema migration), and 'source' still distinguishes
+-- 'manual' from any pre-#280 'herbots' row that hasn't been cleaned up yet.
 CREATE TABLE IF NOT EXISTS news_posts (
   id BIGINT NOT NULL AUTO_INCREMENT,
   title VARCHAR(100) NOT NULL,
   image_file_name VARCHAR(255) NULL,  -- 主圖 (issue #70); NULL only on pre-#70 rows
   content TEXT NOT NULL,           -- sanitizeDescriptionHtml'd TinyMCE HTML, 2000-char plain-text cap
   broadcast_id VARCHAR(255) NULL,  -- Resend broadcast id (issue #80); NULL until a newsletter is sent/scheduled for this post
-  source VARCHAR(20) NOT NULL DEFAULT 'manual', -- 'manual' | 'herbots' (issue #240)
+  source VARCHAR(20) NOT NULL DEFAULT 'manual', -- 'manual' | 'herbots' (issue #240; herbots import removed in #280)
   source_url VARCHAR(500) NULL,     -- herbots.be article URL; de-dup key; NULL on manual rows
   original_title VARCHAR(255) NULL, -- pre-translation title (herbots rows only)
   original_content TEXT NULL,       -- sanitizeDescriptionHtml'd pre-translation content (herbots rows only)
   published_at DATETIME NULL,       -- original herbots.be publish date; NULL on manual rows
-  locked_by_admin TINYINT(1) NOT NULL DEFAULT 0, -- set once an admin edits this row; sync then skips it
+  locked_by_admin TINYINT(1) NOT NULL DEFAULT 0, -- set once an admin edits this row
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
   PRIMARY KEY (id),
   KEY idx_news_posts_created (created_at),
   KEY idx_news_posts_source_published (source, published_at),
   UNIQUE KEY uq_news_posts_source_url (source_url)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- De-dup ledger for the herbots.be news sync (issue #240) — see db/init.sql's
--- fuller header comment. Brand-new table, whole final schema from day one,
--- same as homepage_videos above. Never deleted/edited (see lib/newsImportLog.ts),
--- unlike news_posts itself, so it keeps blocking re-import of an article an
--- admin later deleted from news_posts.
-CREATE TABLE IF NOT EXISTS news_import_log (
-  id BIGINT NOT NULL AUTO_INCREMENT,
-  source VARCHAR(20) NOT NULL,
-  source_url VARCHAR(500) NOT NULL,
-  news_post_id BIGINT NULL,
-  imported_at DATETIME NOT NULL,
-  PRIMARY KEY (id),
-  UNIQUE KEY uq_news_import_log_source_url (source_url)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Public /contact form submissions (issue #104) — see db/init.sql for the
@@ -406,10 +399,12 @@ CREATE TABLE IF NOT EXISTS pigeon_groups (
   KEY idx_pigeon_groups_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 新聞同步「最近一次執行時間」追蹤 (issue #261) — see db/init.sql for the
+-- 通用排程工作「最近一次執行時間」追蹤 (issue #261) — see db/init.sql for the
 -- fuller header comment. Brand-new table, whole final schema from day one,
--- same as pigeon_shops above. Read/written via lib/syncRuns.ts, used by
--- lib/scheduler.ts's post-boot staleness-based catch-up sync.
+-- same as pigeon_shops above. Read/written via lib/syncRuns.ts; its only
+-- caller (lib/scheduler.ts's post-boot staleness-based catch-up sync for the
+-- news sync) was removed in issue #280, so this currently has no callers —
+-- kept in case a future scheduled job wants the same mechanism.
 CREATE TABLE IF NOT EXISTS sync_runs (
   job_name VARCHAR(50) NOT NULL,  -- 'news'
   last_run_at DATETIME NOT NULL,
@@ -659,10 +654,11 @@ async function ensurePigeonShowcaseCategories(db: mysql.Pool): Promise<void> {
 // Issue #237: Google One Tap / Google Sign-In support. Adds google_id column
 // (Google sub identifier) and relaxes password_hash/password_salt to NULL so
 // accounts registered purely via Google don't require synthetic passwords.
-// Issue #240: herbots.be news sync. Adds the source-tracking columns to an
-// already-deployed news_posts table (brand-new installs get them straight
-// from SCHEMA_SQL above); news_import_log is a brand-new table so it needs
-// no ensureColumn calls, just the CREATE TABLE IF NOT EXISTS above.
+// Issue #240: herbots.be news sync (the sync pipeline itself was removed in
+// issue #280, but news_posts keeps these source-tracking columns — see
+// SCHEMA_SQL's news_posts comment above). Adds them to an already-deployed
+// news_posts table; brand-new installs get them straight from SCHEMA_SQL
+// above.
 async function ensureNewsSourceColumns(db: mysql.Pool): Promise<void> {
   await ensureColumn(db, "news_posts", "source", "VARCHAR(20) NOT NULL DEFAULT 'manual'");
   await ensureColumn(db, "news_posts", "source_url", "VARCHAR(500) NULL");

@@ -1,6 +1,9 @@
-// Cloudflare Workers AI translation client (issue #240) — used by the
-// herbots.be news sync (lib/newsSync.ts). Deliberately generic ("translate
-// this plain text to Traditional Chinese") rather than news-specific.
+// Cloudflare Workers AI translation client (issue #240) — originally used by
+// the herbots.be news sync, removed in issue #280 (see that issue for the
+// full history). Deliberately generic ("translate this plain text to
+// Traditional Chinese") rather than news-specific, kept as a reusable
+// utility even though it currently has no caller — do not remove without
+// checking for new callers first.
 //
 // Requires CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_AI_API_TOKEN (see
 // .env.example) — a brand-new Cloudflare credential pair, separate from this
@@ -51,10 +54,10 @@ interface WorkersAiTranslateResponse {
   result?: { translated_text?: string };
 }
 
-// Translates one plain-text string. Callers that have HTML (lib/newsSync.ts)
-// are responsible for stripping tags before calling this and re-wrapping the
-// result afterwards — Workers AI's translation models operate on plain text,
-// they don't understand or preserve markup.
+// Translates one plain-text string. A caller that has HTML is responsible
+// for stripping tags before calling this and re-wrapping the result
+// afterwards — Workers AI's translation models operate on plain text, they
+// don't understand or preserve markup.
 //
 // Empty/whitespace-only input short-circuits to an empty success without a
 // network call — a blank paragraph has nothing to translate, and the API

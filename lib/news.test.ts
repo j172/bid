@@ -155,9 +155,10 @@ describe("updateNews", () => {
     expect(result).toEqual({ ok: true });
   });
 
-  // issue #240: every admin edit locks the row so lib/newsSync.ts never
-  // overwrites it again — this is the only place that flag gets set, so it
-  // has to happen on every call here, not just herbots-imported rows.
+  // issue #240: every admin edit locks the row so an auto-import sync would
+  // never overwrite it again (the sync itself was removed in issue #280) —
+  // this is the only place that flag gets set, so it has to happen on every
+  // call here, not just herbots-imported rows.
   it("always sets locked_by_admin = 1, regardless of the row's source", async () => {
     queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
     await updateNews(1, { title: "t", content: "c", imageFileName: "img.jpg" });

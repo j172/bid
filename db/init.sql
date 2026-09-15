@@ -432,62 +432,43 @@ CREATE TABLE IF NOT EXISTS pigeon_showcase (
 -- always read live from Resend via lib/newsletter.ts's listBroadcasts/
 -- getBroadcast so there's a single source of truth.
 -- source/source_url/original_title/original_content/published_at/
--- locked_by_admin (issue #240) let this same table also hold herbots.be
--- articles synced daily by lib/newsSync.ts, instead of a parallel content
--- table: `title`/`content` always hold the Traditional Chinese version
--- (hand-typed for 'manual' rows, Cloudflare-Workers-AI-translated for
--- 'herbots' rows) so every existing reader of this table keeps working
--- unchanged; original_title/original_content hold the untouched source-
--- language text, rendered underneath the translation on the detail page.
--- source_url is the herbots.be article URL used as the de-dup key (NULL on
--- manual rows — MySQL allows multiple NULLs under a UNIQUE key). published_at
--- is the article's original herbots.be publish date, used instead of
--- created_at (which is this row's *import* time) for the herbots.be
--- newest-first sort so re-running the sync doesn't reorder old articles;
--- NULL on manual rows, which fall back to created_at (see lib/news.ts's
--- ORDER BY COALESCE(published_at, created_at)). locked_by_admin flips to 1
--- the moment an admin saves an edit via app/z04urru6/news/ (any row, manual
--- or imported) — lib/newsSync.ts skips locked herbots rows on every future
--- sync so it never clobbers a manual correction. There is deliberately no
--- "hidden" column: deleting a row via the existing admin delete button
--- already removes it from every public listing, and news_import_log below
--- (not this table) is what stops a deleted/edited-away article from being
--- re-imported.
+-- locked_by_admin (issue #240) originally let this same table also hold
+-- herbots.be articles synced daily by an automated import pipeline —
+-- lib/herbotsNews.ts/lib/newsSync.ts/lib/newsImportLog.ts, plus this table's
+-- own news_import_log de-dup ledger, all removed in issue #280. The columns
+-- stay (existing 'herbots' rows are cleaned up separately via
+-- scripts/cleanup-herbots-news.mjs, a manual one-off production step, not a
+-- schema migration): `title`/`content` always hold the Traditional Chinese
+-- version (hand-typed for 'manual' rows, Cloudflare-Workers-AI-translated for
+-- any remaining pre-#280 'herbots' rows) so every existing reader of this
+-- table keeps working unchanged; original_title/original_content hold the
+-- untouched source-language text, rendered underneath the translation on the
+-- detail page. source_url is the herbots.be article URL that used to be the
+-- de-dup key (NULL on manual rows — MySQL allows multiple NULLs under a
+-- UNIQUE key). published_at is the article's original herbots.be publish
+-- date, used instead of created_at (which is this row's *import* time) for
+-- the herbots.be newest-first sort; NULL on manual rows, which fall back to
+-- created_at (see lib/news.ts's ORDER BY COALESCE(published_at,
+-- created_at)). locked_by_admin flips to 1 the moment an admin saves an edit
+-- via app/z04urru6/news/ (any row, manual or imported).
 CREATE TABLE IF NOT EXISTS news_posts (
   id BIGINT NOT NULL AUTO_INCREMENT,
   title VARCHAR(100) NOT NULL,
   image_file_name VARCHAR(255) NULL,  -- 主圖 (issue #70); NULL only on pre-#70 rows
   content TEXT NOT NULL,           -- sanitizeDescriptionHtml'd TinyMCE HTML, 2000-char plain-text cap
   broadcast_id VARCHAR(255) NULL,  -- Resend broadcast id (issue #80); NULL until a newsletter is sent/scheduled for this post
-  source VARCHAR(20) NOT NULL DEFAULT 'manual', -- 'manual' | 'herbots' (issue #240)
+  source VARCHAR(20) NOT NULL DEFAULT 'manual', -- 'manual' | 'herbots' (issue #240; herbots import removed in #280)
   source_url VARCHAR(500) NULL,     -- herbots.be article URL; de-dup key; NULL on manual rows
   original_title VARCHAR(255) NULL, -- pre-translation title (herbots rows only)
   original_content TEXT NULL,       -- sanitizeDescriptionHtml'd pre-translation content (herbots rows only)
   published_at DATETIME NULL,       -- original herbots.be publish date; NULL on manual rows
-  locked_by_admin TINYINT(1) NOT NULL DEFAULT 0, -- set once an admin edits this row; sync then skips it
+  locked_by_admin TINYINT(1) NOT NULL DEFAULT 0, -- set once an admin edits this row
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
   PRIMARY KEY (id),
   KEY idx_news_posts_created (created_at),
   KEY idx_news_posts_source_published (source, published_at),
   UNIQUE KEY uq_news_posts_source_url (source_url)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- De-dup ledger for the herbots.be news sync (issue #240) — deliberately its
--- own tiny table rather than a parallel content table: it records every
--- source_url this site has ever imported, and unlike news_posts it is never
--- deleted or edited, so it keeps blocking re-import of an article an admin
--- later deleted or hid from news_posts (the requirement a UNIQUE key on
--- news_posts.source_url alone can't satisfy once that row is gone). See
--- lib/newsImportLog.ts.
-CREATE TABLE IF NOT EXISTS news_import_log (
-  id BIGINT NOT NULL AUTO_INCREMENT,
-  source VARCHAR(20) NOT NULL,
-  source_url VARCHAR(500) NOT NULL,
-  news_post_id BIGINT NULL,   -- points at news_posts.id while that row still exists; NULL once deleted
-  imported_at DATETIME NOT NULL,
-  PRIMARY KEY (id),
-  UNIQUE KEY uq_news_import_log_source_url (source_url)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Public /contact form submissions (issue #104) — a brand-new table, whole
@@ -643,17 +624,16 @@ CREATE TABLE IF NOT EXISTS pigeon_groups (
   KEY idx_pigeon_groups_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 新聞每日同步「最近一次執行時間」追蹤 (issue #261) — 部署/重啟後智能
--- 補跑用。這台主機重啟頻繁 (issue #81，約每 4.4 小時一次)，而新聞
--- (lib/newsSync.ts) 每日 cron 同步是相對重的操作（多次外部請求 + herbots.be 內容的
--- Cloudflare Workers AI 翻譯呼叫），所以 lib/scheduler.ts 開機時的補跑邏輯不能像
--- lib/exchangeRates.ts 的 STARTUP_SYNC_DELAY_MS 那樣無條件每次重啟都跑一次，
--- 而是查這張表判斷「距離上次真的跑完是否已經超過門檻」才補跑一次（見 lib/scheduler.ts 的
--- SYNC_STALENESS_THRESHOLD_HOURS 與其補跑邏輯的完整說明）。job_name 直接當
--- PK 用（'news'）；每次 syncHerbotsNews() 執行到正常回傳（不論本次是否有新資料匯入、
--- 是否夾雜 partial failure，只要不是被未預期例外中斷）就會呼叫 lib/syncRuns.ts 的
--- recordRunNow() 覆寫這裡的 last_run_at。這張表只保留「最新一次」的時間戳，
--- 不是流水帳，所以沒有 id/created_at 這種歷史紀錄欄位的必要。
+-- 通用排程工作「最近一次執行時間」追蹤 (issue #261) — 原本供新聞每日同步
+-- (lib/newsSync.ts) 部署/重啟後智能補跑使用：這台主機重啟頻繁 (issue #81，
+-- 約每 4.4 小時一次)，所以不能像 lib/exchangeRates.ts 的 STARTUP_SYNC_DELAY_MS
+-- 那樣無條件每次重啟都跑一次，而是查這張表判斷「距離上次真的跑完是否已經
+-- 超過門檻」才補跑一次。lib/newsSync.ts 與 lib/scheduler.ts 呼叫這張表的補跑
+-- 邏輯已於 issue #280 隨新聞自動匯入機制一併移除，這張表與 lib/syncRuns.ts
+-- 目前沒有任何呼叫者，保留供未來其他排程工作（例如 lib/exchangeRates.ts）
+-- 重用同一套 staleness-based 補跑機制；job_name 直接當 PK 用。這張表只保留
+-- 「最新一次」的時間戳，不是流水帳，所以沒有 id/created_at 這種歷史紀錄欄位
+-- 的必要。
 CREATE TABLE IF NOT EXISTS sync_runs (
   job_name VARCHAR(50) NOT NULL,  -- 'news'
   last_run_at DATETIME NOT NULL,
