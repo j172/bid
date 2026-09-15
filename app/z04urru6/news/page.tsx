@@ -10,7 +10,6 @@ import { filterControlClass, filterFormClass, filterLabelClass, filterSubmitClas
 import NewsFormModal from "./NewsFormModal";
 import DeleteConfirmButton from "../components/DeleteConfirmButton";
 import CancelBroadcastButton from "./CancelBroadcastButton";
-import HerbotsNewsSyncButton from "./HerbotsNewsSyncButton";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +44,6 @@ export default async function NewsAdminPage({ searchParams }: { searchParams: Pr
     <main>
       <AdminPageIntro title="最新訊息管理" description="管理首頁輪播與 /news 清單頁使用的最新訊息公告；herbots.be 匯入的文章與手動撰寫的公告在此列表一併管理。">
         <div className="flex flex-wrap items-center justify-end gap-3">
-          <HerbotsNewsSyncButton />
           <NewsFormModal mode="create" />
         </div>
       </AdminPageIntro>

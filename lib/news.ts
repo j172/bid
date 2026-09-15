@@ -9,14 +9,14 @@
 import { getDb } from "@/lib/db";
 import { paginate } from "@/lib/pagination";
 
-/** 'manual' — hand-authored via app/z04urru6/news/; 'herbots' — imported by lib/newsSync.ts (issue #240). */
+/** 'manual' — hand-authored via app/z04urru6/news/; 'herbots' — imported by the herbots.be auto-import pipeline (issue #240, removed in issue #280). */
 export type NewsPostSource = "manual" | "herbots";
 
 export interface NewsPost {
   id: number;
   /** Traditional Chinese — hand-typed for 'manual' rows, Cloudflare-Workers-AI-translated for 'herbots' rows. */
   title: string;
-  /** Sanitized HTML (see lib/sanitizeDescriptionHtml.ts) — sanitizing is the caller's (API route's / lib/newsSync.ts's) responsibility, not this module's. */
+  /** Sanitized HTML (see lib/sanitizeDescriptionHtml.ts) — sanitizing is the caller's (API route's) responsibility, not this module's. */
   content: string;
   /** 主圖 file name under uploads/news/ (see lib/uploads.ts); NULL only on rows created before issue #70 — every create/edit after #70 requires one. */
   imageFileName: string | null;
@@ -32,7 +32,7 @@ export interface NewsPost {
   originalContent: string | null;
   /** Original herbots.be publish date; NULL on 'manual' rows (which sort by createdAt instead — see listNews). */
   publishedAt: Date | null;
-  /** Set once an admin saves an edit via app/z04urru6/news/ — lib/newsSync.ts then never overwrites this row again. */
+  /** Set once an admin saves an edit via app/z04urru6/news/. */
   lockedByAdmin: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -45,12 +45,16 @@ export interface NewsPostInput {
   imageFileName: string;
 }
 
-// Fields lib/newsSync.ts supplies when importing a herbots.be article —
-// distinct from NewsPostInput (the admin form's shape) since imported rows
-// carry the extra source-tracking columns and never go through the admin
-// form's "must re-upload every edit" image rule.
+// Fields the (now-removed, issue #280) herbots.be auto-import pipeline
+// supplied when importing an article — distinct from NewsPostInput (the
+// admin form's shape) since imported rows carry the extra source-tracking
+// columns and never went through the admin form's "must re-upload every
+// edit" image rule. createImportedNews below (this shape's only write path)
+// currently has no caller now that the import pipeline is gone; kept so
+// existing 'herbots' rows' shape stays documented until
+// scripts/cleanup-herbots-news.mjs removes them.
 export interface ImportedNewsPostInput {
-  /** Traditional Chinese translation (or the original English text as a fallback when translation is unavailable — see lib/newsSync.ts). */
+  /** Traditional Chinese translation (or the original English text as a fallback when translation was unavailable). */
   title: string;
   /** Sanitized HTML, already translated (or original-language fallback). */
   content: string;
@@ -205,9 +209,8 @@ export async function createNews(input: NewsPostInput): Promise<NewsPostOutcome 
 
 // Always sets locked_by_admin = 1 (issue #240): this is the only write path
 // behind the admin edit form (app/api/admin/news/[id]/route.ts), so any call
-// here IS an admin's manual edit — including of a 'herbots'-imported row —
-// and lib/newsSync.ts must never again overwrite whatever the admin just
-// saved. A no-op on already-locked/'manual' rows.
+// here IS an admin's manual edit — including of a 'herbots'-imported row.
+// A no-op on already-locked/'manual' rows.
 export async function updateNews(id: number, input: NewsPostInput): Promise<NewsPostOutcome> {
   const db = await getDb();
   const [result] = await db.query(
@@ -220,12 +223,12 @@ export async function updateNews(id: number, input: NewsPostInput): Promise<News
   return { ok: true };
 }
 
-// Inserts one herbots.be-imported row (issue #240) — lib/newsSync.ts's only
-// write path. Deliberately separate from createNews: imported rows always
-// carry source='herbots' plus the original-language columns, and (unlike
-// the admin form's createNews) are never "locked" at creation time — only a
-// later admin edit (updateNews above) sets locked_by_admin, which is what
-// tells the next sync run to leave this row alone.
+// Inserts one herbots.be-imported row (issue #240) — was the (now-removed,
+// issue #280) auto-import pipeline's only write path; currently has no
+// caller. Deliberately separate from createNews: imported rows always carry
+// source='herbots' plus the original-language columns, and (unlike the
+// admin form's createNews) were never "locked" at creation time — only a
+// later admin edit (updateNews above) sets locked_by_admin.
 export async function createImportedNews(input: ImportedNewsPostInput): Promise<NewsPostOutcome & { id?: number }> {
   const db = await getDb();
   const [result] = await db.query(

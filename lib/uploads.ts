@@ -184,30 +184,6 @@ export async function deleteNewsImageFile(fileName: string): Promise<void> {
   await unlink(join(UPLOADS_ROOT, "news", fileName)).catch(() => {});
 }
 
-// herbots.be news sync (issue #240) — the source article's cover photo comes
-// back as raw bytes + a Content-Type header (fetched via lib/herbotsNews.ts's
-// fetch() client), not a browser-submitted File, so it can't go
-// through saveSingleImage's File-shaped API above. Re-hosts the image under
-// the same uploads/news/ directory news_posts.image_file_name always points
-// at, rather than storing the remote s3.herbots.be URL directly, so every
-// existing reader of image_file_name (newsImageUrl, deleteNewsImageFile, the
-// admin list thumbnail) keeps working unchanged for imported rows too.
-// Returns null (never throws) on an unsupported content type or an
-// oversized download — the caller (lib/newsSync.ts) treats that the same as
-// "this article had no cover image" rather than failing the whole import.
-export async function saveNewsImageFromBuffer(buffer: Buffer, contentType: string): Promise<string | null> {
-  const extension = ALLOWED_EXTENSIONS[contentType];
-  if (!extension || buffer.byteLength === 0 || buffer.byteLength > MAX_PHOTO_BYTES) {
-    return null;
-  }
-  const dir = join(UPLOADS_ROOT, "news");
-  await mkdir(dir, { recursive: true });
-  const fileName = `${randomBytes(16).toString("hex")}.${extension}`;
-  await writeFile(join(dir, fileName), buffer);
-  return fileName;
-}
-
-
 // The two halves of the "upload a 主圖, then write the row" dance that the
 // news and pigeon-showcase create/edit routes each spelled out identically
 // (issue #139 M2). Kept as two small helpers rather than one do-everything

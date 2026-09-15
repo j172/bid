@@ -1,14 +1,13 @@
-// Shared "最近一次成功執行時間" tracker for the daily news sync (issue
+// Shared "最近一次成功執行時間" tracker, generic across scheduled jobs (issue
 // #261) — see db/init.sql's sync_runs comment for the full story this backs.
-// lib/newsSync.ts's syncHerbotsNews()
-// calls recordRunNow() once it reaches its own normal return — success or
-// partial-failure alike, per that module's own "never throw for a normal
-// failure" file-header convention, so a degraded run (translation failures,
-// source unavailable, etc.) still counts as "ran" and doesn't leave the
-// job looking perpetually stale. lib/scheduler.ts reads the timestamp back
-// via getLastRunAt()/isSyncStale() to decide whether a post-boot catch-up
-// sync is warranted (see its own header comment for why that check can't be
-// "just sync on every boot" — this host restarts often, per issue #81).
+// Originally backed the daily herbots.be news sync's post-boot catch-up
+// check in lib/scheduler.ts (getLastRunAt()/isSyncStale() decided whether a
+// catch-up sync was warranted — see that module's former header comment for
+// why the check couldn't be "just sync on every boot", this host restarts
+// often per issue #81); that news sync pipeline (and its use of this module)
+// was removed in issue #280, so this module currently has no caller. Kept in
+// case a future scheduled job wants the same staleness-based catch-up
+// mechanism — see SyncJobName below, which would need a new member added.
 import { getDb } from "@/lib/db";
 
 export type SyncJobName = "news";
