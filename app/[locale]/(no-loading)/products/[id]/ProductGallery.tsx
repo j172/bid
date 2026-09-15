@@ -1,0 +1,201 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
+import { IMAGE_FALLBACK_SRC, useImageSetFallback } from "@/lib/imageFallback";
+
+interface ProductGalleryProps {
+  title: string;
+  imageUrls: string[];
+}
+
+// Own copy of app/[locale]/listings/(no-loading)/[id]/ListingGallery.tsx
+// (main image + thumbnail strip + prev/next + lightbox + ← / → keyboard nav)
+// under its own "productDetail" translation namespace rather than reusing
+// "listingDetail" — the two pages describe different resources (listings vs.
+// this ticket's standalone products), and this keeps issue #277 from having
+// to touch listings' translation keys or gallery component.
+export default function ProductGallery({ title, imageUrls }: ProductGalleryProps) {
+  const t = useTranslations("productDetail");
+  const urls = useMemo(() => imageUrls.filter(Boolean), [imageUrls]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const selectedUrl = urls[selectedIndex] ?? "";
+  const galleryRef = useRef<HTMLDivElement>(null);
+
+  const { resolveSrc, markFailed } = useImageSetFallback();
+
+  const moveSelection = useCallback(
+    (direction: 1 | -1) => {
+      if (urls.length <= 1) return;
+      setSelectedIndex((previous) => {
+        const next = previous + direction;
+        if (next < 0) return urls.length - 1;
+        if (next >= urls.length) return 0;
+        return next;
+      });
+    },
+    [urls.length],
+  );
+
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [urls.length]);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (lightboxOpen && event.key === "Escape") {
+        setLightboxOpen(false);
+        return;
+      }
+      if (!galleryRef.current?.contains(document.activeElement)) return;
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        moveSelection(-1);
+      }
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        moveSelection(1);
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [lightboxOpen, moveSelection]);
+
+  if (urls.length === 0) {
+    return (
+      <div className="flex aspect-video items-center justify-center overflow-hidden rounded-xl border border-border bg-surface-muted">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={IMAGE_FALLBACK_SRC} alt={title} className="h-full w-full object-contain p-8" />
+        <p className="sr-only">{t("noImage")}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4" ref={galleryRef}>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setLightboxOpen(true)}
+          className="aspect-video w-full cursor-zoom-in overflow-hidden rounded-2xl border border-border bg-surface-muted shadow-sm"
+          aria-label={t("galleryZoomLabel", { title })}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={resolveSrc(selectedUrl)}
+            alt={title}
+            loading="eager"
+            fetchPriority="high"
+            className="h-full w-full object-contain"
+            onError={() => markFailed(selectedUrl)}
+          />
+        </button>
+
+        {urls.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                moveSelection(-1);
+              }}
+              aria-label={t("galleryPrevious")}
+              className="absolute left-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-sm transition hover:bg-white"
+            >
+              ←
+            </button>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                moveSelection(1);
+              }}
+              aria-label={t("galleryNext")}
+              className="absolute right-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-sm transition hover:bg-white"
+            >
+              →
+            </button>
+          </>
+        )}
+      </div>
+
+      {urls.length > 1 && (
+        <div className="flex gap-3 overflow-x-auto pb-1">
+          {urls.map((url, index) => {
+            const active = index === selectedIndex;
+            return (
+              <button
+                key={url}
+                type="button"
+                onClick={() => setSelectedIndex(index)}
+                aria-label={t("galleryImageLabel", { title, index: index + 1 })}
+                aria-pressed={active}
+                className={`h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg border bg-white transition ${
+                  active
+                    ? "border-interactive-primary ring-2 ring-interactive-primary/30"
+                    : "border-border hover:border-interactive-primary/50 focus-visible:border-interactive-primary"
+                }`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={resolveSrc(url)}
+                  alt={title}
+                  className="h-full w-full object-cover"
+                  onError={() => markFailed(url)}
+                />
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {urls.length > 1 && <p className="text-xs text-ink-light">{t("galleryKeyboardHint")}</p>}
+
+      {lightboxOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label={t("galleryLightboxLabel", { title })}>
+          <button type="button" className="absolute right-4 top-4 rounded-full bg-white/90 px-3 py-1 text-sm font-semibold text-ink" onClick={() => setLightboxOpen(false)}>
+            {t("galleryClose")}
+          </button>
+          <div className="relative max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-2xl bg-black">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={resolveSrc(selectedUrl)}
+              alt={title}
+              className="h-full max-h-[90vh] w-full object-contain"
+              onError={() => markFailed(selectedUrl)}
+            />
+
+            {urls.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    moveSelection(-1);
+                  }}
+                  aria-label={t("galleryPrevious")}
+                  className="absolute left-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-sm transition hover:bg-white"
+                >
+                  ←
+                </button>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    moveSelection(1);
+                  }}
+                  aria-label={t("galleryNext")}
+                  className="absolute right-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-sm transition hover:bg-white"
+                >
+                  →
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

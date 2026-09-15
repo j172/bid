@@ -11,6 +11,12 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { label: "開放中商品", href: "/z04urru6/listings", section: "commerce" },
   { label: "建立商品", href: "/z04urru6/listings/new", section: "commerce" },
   { label: "已結標結算", href: "/z04urru6/listings/closed", section: "commerce" },
+  // 商品管理 (issue #277) — standalone products/product_photos CRUD powering
+  // the homepage carousel (issue #278) and /products/[id] detail page.
+  // Deliberately independent of listings (see db/init.sql's products table
+  // comment), so it sits alongside listings under "commerce" rather than
+  // nested under "content" the way homepage_sections-backed screens are.
+  { label: "商品管理", href: "/z04urru6/products", section: "commerce" },
   { label: "訂單管理", href: "/z04urru6/orders", section: "commerce" },
   { label: "使用者列表", href: "/z04urru6/users", section: "commerce" },
   { label: "合作鴿舍管理", href: "/z04urru6/homepage/partner-lofts", section: "content" },

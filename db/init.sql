@@ -660,3 +660,54 @@ CREATE TABLE IF NOT EXISTS sync_runs (
   PRIMARY KEY (job_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 首頁商品輪播用「商品」CMS (issue #277, GRILL ME 系列需求 1/4 —
+-- 首頁輪播本身是後續依賴此表的 issue #278) — 獨立、後台可管理的商品資料來源，
+-- 取代目前首頁 HeroSection 右側依 listings 價格排序產生的 topPriceCards。
+-- 明確不沿用 homepage_sections（見該表上方註解）：這是一組有自己專屬欄位
+-- （價格顯示文字、多圖圖庫＋封面）、且與 listings/homepage_sections 完全無關
+-- 的全新、純後台編寫內容，homepage_sections 目前的 section_type 生態（
+-- partner_loft／featured_loft）也沒有涵蓋「多圖圖庫＋純顯示用價格文字」這種
+-- 形狀。price_text 刻意是純文字（例如「NT$12,000」），不是數字欄位：這批商品
+-- 只用於首頁輪播展示與商品詳情頁閱讀，從不進入 listings/bids/purchases 那種
+-- 交易流程，因此完全不做金額運算或驗證。沒有分類標籤／有效期限／外部連結欄位
+-- （對應 issue 需求討論中明確排除的三項）：沒有連結欄位是因為點擊行為改為系統
+-- 依 id 自動導向站內 /products/[id] 詳情頁（見 app/[locale]/(no-loading)/
+-- products/[id]/page.tsx），而不是像 homepage_sections 舊版那樣讓管理員手動
+-- 填一個 URL。is_active／sort_order 是這張表在首頁輪播／後台清單的上下架與
+-- 排序依據，同 homepage_videos 的慣例（見上方 homepage_videos 表）。
+CREATE TABLE IF NOT EXISTS products (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  title VARCHAR(255) NOT NULL,
+  price_text VARCHAR(100) NOT NULL,  -- 純顯示用價格文字，例如「NT$12,000」；不做金額運算或驗證
+  description TEXT NOT NULL,         -- 純文字簡介（非富文本），呈現於商品詳情頁
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_products_active_sort (is_active, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 商品圖庫 (issue #277) — 一對多商品照片，比照 listing_photos 的
+-- 「listing_id + file_name + sort_order」一對多圖庫慣例（見上方 listing_photos
+-- 表），檔案本身透過 lib/uploads.ts 的 saveProductPhotos／productPhotoUrl 存取，
+-- 同 saveListingPhotos 的 uploads/<資源>/<id>/ 目錄慣例。is_cover 額外標記其中
+-- 一張作為首頁輪播卡與商品詳情頁預設顯示的封面圖 —— listing_photos 沒有這個
+-- 欄位，因為 listings 的封面圖固定用 sort_order 最小（第一張）那張；這裡改用
+-- 明確欄位是因為後台需要讓管理員「指定」封面圖（不只是把某張拖到第一順位），
+-- 見 app/z04urru6/products/ProductPhotoGalleryEditor.tsx。應用層（見
+-- lib/products.ts 的 replaceProductPhotos／resolveProductPhotoOrder in
+-- lib/productPhotoOrder.ts）保證每個 product_id 底下恆有且只有一張 is_cover=1
+-- 的照片；沒有 DB 級的 UNIQUE 部分索引可以表達這個限制（MySQL 不支援 partial
+-- unique index），所以不在 schema 層強制。
+CREATE TABLE IF NOT EXISTS product_photos (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  product_id BIGINT NOT NULL,
+  file_name VARCHAR(255) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_cover TINYINT(1) NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_product_photos_product (product_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

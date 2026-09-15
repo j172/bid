@@ -1219,5 +1219,19 @@
     "watchVideo": "点击播放视频",
     "viewPost": "前往查看动态",
     "closePlayer": "关闭播放器"
+  },
+  "productDetail": {
+    "breadcrumbHome": "首页",
+    "breadcrumbSelf": "商品详情",
+    "priceLabel": "价格",
+    "descriptionHeading": "商品简介",
+    "noImage": "尚无照片",
+    "galleryZoomLabel": "放大查看 {title}",
+    "galleryImageLabel": "{title} 图片 {index}",
+    "galleryKeyboardHint": "使用 ← / → 切换照片",
+    "galleryLightboxLabel": "{title} 大图预览",
+    "galleryClose": "关闭",
+    "galleryPrevious": "上一张照片",
+    "galleryNext": "下一张照片"
   }
 }

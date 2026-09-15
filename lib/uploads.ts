@@ -137,6 +137,26 @@ export async function copyListingPhotos(fromListingId: number, toListingId: numb
   }
 }
 
+// products gallery (issue #277) — same per-parent-id multi-photo storage
+// scheme as saveListingPhotos/listingPhotoUrl/deleteListingPhotoFiles above,
+// just its own uploads/products/<id>/ directory. Which file is the 封面圖
+// (cover photo) is tracked in product_photos.is_cover (see lib/products.ts),
+// not by anything in the file name or path here.
+export async function saveProductPhotos(productId: number, photos: File[]): Promise<string[]> {
+  return saveImages(join(UPLOADS_ROOT, "products", String(productId)), photos);
+}
+
+export function productPhotoUrl(productId: number, fileName: string): string {
+  return `/uploads/products/${productId}/${fileName}`;
+}
+
+export async function deleteProductPhotoFiles(productId: number, fileNames: string[]): Promise<void> {
+  const dir = join(UPLOADS_ROOT, "products", String(productId));
+  for (const fileName of fileNames) {
+    await unlink(join(dir, fileName)).catch(() => {});
+  }
+}
+
 // homepage_sections (合作鴿舍 etc. — see lib/homepageSections.ts) — one
 // image per row, flat directory since there's no per-row id yet at upload
 // time (unlike listing photos, which are keyed by an already-inserted
