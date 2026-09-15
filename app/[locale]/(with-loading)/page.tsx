@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { listOpenListings } from "@/lib/listings";
-import { listingPhotoUrl, homepageSectionImageUrl, pigeonShowcaseImageUrl, newsImageUrl } from "@/lib/uploads";
+import { listingPhotoUrl, homepageSectionImageUrl, pigeonShowcaseImageUrl, newsImageUrl, productPhotoUrl } from "@/lib/uploads";
+import { listProducts } from "@/lib/products";
 import { listHomepageSections } from "@/lib/homepageSections";
 import { listLatestPigeonShowcase } from "@/lib/pigeonShowcase";
 import { listHomepageNewsCarousel } from "@/lib/news";
@@ -21,7 +22,6 @@ import {
   selectQuickCloseAuctions,
   selectTopAuctionsByBids,
   selectTopFixedByPurchases,
-  selectTopPriceAuctions,
 } from "@/lib/homepageListings";
 import { Link } from "@/i18n/navigation";
 import HeroSection from "../components/HeroSection";
@@ -42,7 +42,6 @@ export const dynamic = "force-dynamic";
 const EAGER_COUNTS = { balanced: 1, aggressive: 2 } as const;
 
 const ENDING_SOON_LIMIT = 5;
-const TOP_PRICE_LIMIT = 2;
 const QUICK_DEALS_LIMIT = 3;
 const NEW_ARRIVALS_LIMIT = 8;
 const MOST_ACTIVE_LIMIT = 6;
@@ -189,6 +188,26 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
 
 
+  // Hero 側欄商品輪播 (issue #278) — admin-managed `products` rows
+  // (is_active = 1, ordered by sort_order; see lib/products.ts's
+  // listProducts), replacing the old topPriceCards static list of
+  // highest-priced open auctions. Cover photo falls back to the first photo
+  // by sort_order when no row has is_cover set, same fallback the public
+  // product detail page's generateMetadata uses (app/[locale]/
+  // (no-loading)/products/[id]/page.tsx) — the admin UI (#277) should always
+  // enforce exactly one cover, so this is a defensive fallback, not the
+  // expected path.
+  const activeProducts = await cachedQuery("home:activeProducts", 20, () => listProducts({ activeOnly: true }));
+  const productCarouselItems = activeProducts.map((product) => {
+    const cover = product.photos.find((photo) => photo.isCover) ?? product.photos[0];
+    return {
+      id: product.id,
+      title: product.title,
+      priceText: product.priceText,
+      imageUrl: cover ? productPhotoUrl(product.id, cover.fileName) : IMAGE_FALLBACK_SRC,
+    };
+  });
+
   const socialItems = await getSocialMediaFeed();
 
   const heroRenderedAt = new Date().toISOString();
@@ -197,7 +216,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   // Every curated section below is a named rule in lib/homepageListings.ts
   // (issue #139 item 3) — see there for what each ordering means and why.
   const endingSoonAuctions = selectEndingSoonAuctions(listings, ENDING_SOON_LIMIT);
-  const topPriceAuctions = selectTopPriceAuctions(listings, TOP_PRICE_LIMIT);
   const quickDeals = listings.slice(0, QUICK_DEALS_LIMIT);
   const newArrivals = listings.slice(0, NEW_ARRIVALS_LIMIT);
   const bestMixed = selectMostActive(listings, MOST_ACTIVE_LIMIT);
@@ -267,7 +285,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     bidCount: item.bidCount,
   });
   const heroCards = endingSoonAuctions.map(toHeroCard);
-  const topPriceHeroCards = topPriceAuctions.map(toHeroCard);
 
   return (
     <main className="pb-8">
@@ -348,7 +365,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       <HeroSection
         browseHref={`/listings?type=auction${perfSuffix}`}
         cards={heroCards}
-        topPriceCards={topPriceHeroCards}
+        products={productCarouselItems}
         renderedAt={heroRenderedAt}
         currencyRates={currencyRates}
       />

@@ -6,7 +6,7 @@ import { Link } from "@/i18n/navigation";
 import ProgressiveImage from "@/app/components/ProgressiveImage";
 import CarouselControls from "./CarouselControls";
 import CountdownTiles from "./CountdownTiles";
-import ProductImage from "./ProductImage";
+import ProductCarouselCard, { type ProductCarouselItem } from "./ProductCarouselCard";
 import { useHeroCountdown } from "@/lib/useHeroCountdown";
 import { formatDualPrice, type CurrencyRate } from "@/lib/currency";
 
@@ -25,7 +25,11 @@ interface HeroCardItem {
 interface HeroSectionProps {
   browseHref: string;
   cards: HeroCardItem[];
-  topPriceCards: HeroCardItem[];
+  // 商品管理輪播 (issue #278) — admin-managed `products` rows
+  // (is_active = 1, ordered by sort_order), replacing the old
+  // `topPriceCards` static list of highest-priced open auctions entirely.
+  // See ProductCarouselCard for the rendering/empty-state.
+  products: ProductCarouselItem[];
   renderedAt: string;
   // Reference-only currency conversion (issue #45, wired into the hero
   // section for issue #103; multi-currency per issue #154) — computed
@@ -110,7 +114,7 @@ function EndTimeCountdown({
 export default function HeroSection({
   browseHref,
   cards,
-  topPriceCards,
+  products,
   renderedAt,
   currencyRates,
 }: HeroSectionProps) {
@@ -253,58 +257,13 @@ export default function HeroSection({
           </article>
 
           <div className="grid gap-4">
-            {topPriceCards.map((item, index) => (
-              <Link
-                key={item.id}
-                href={item.href}
-                className="group relative overflow-hidden rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
-              >
-                <div
-                  className={`pointer-events-none absolute inset-0 opacity-80 ${
-                    index === 0
-                      ? "bg-gradient-to-br from-steel-azure-50 via-white to-steel-azure-50"
-                      : "bg-gradient-to-br from-amber-50 via-white to-rose-50"
-                  }`}
-                />
-                <div className="relative">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.145em] text-interactive-primary drop-shadow-[0_1px_0_rgba(255,255,255,0.72)]">{tHome("topPriceBadge")}</p>
-                  <h2 className="mt-2 line-clamp-2 text-xl font-extrabold leading-tight text-ink">{item.title}</h2>
-                  <div className="mt-4 rounded-2xl border border-amber-200/70 bg-gradient-to-r from-amber-50 via-white to-yellow-50 px-4 py-3 shadow-[0_8px_20px_rgba(217,119,6,0.12)] ring-1 ring-white/70">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-700 drop-shadow-[0_1px_0_rgba(255,255,255,0.78)]">{tDetail("specCurrentPrice")}</p>
-                    <div className="mt-1 flex flex-wrap items-end gap-2">
-                      <span className="text-3xl font-black leading-none text-amber-900 sm:text-[2rem]">
-                        {formatDualPrice(item.currentPrice, currencyRates)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <span className="rounded-full border border-slate-200 bg-white/85 px-3 py-1.5 text-sm font-medium tracking-[0.01em] text-ink-light shadow-[0_4px_10px_rgba(15,23,42,0.08)]">
-                      <RemainingText endsAt={item.endsAt} renderedAt={renderedAt} t={tFormat} />
-                    </span>
-                  </div>
-                  <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1.5 text-sm font-semibold text-header shadow-sm">
-                    <span>{tListings("viewDetails")}</span>
-                    <span aria-hidden>→</span>
-                  </div>
-
-                  {item.photoUrl && (
-                    <div
-                      className={`mt-5 aspect-[16/9] overflow-hidden rounded-2xl ${
-                        item.hasPhoto ? "bg-slate-100" : "bg-white/90"
-                      }`}
-                    >
-                      <ProductImage
-                        src={item.photoUrl}
-                        alt={item.title}
-                        eager={false}
-                        fetchPriority="auto"
-                        sizes="(max-width: 1024px) 100vw, 22vw"
-                      />
-                    </div>
-                  )}
-                </div>
-              </Link>
-            ))}
+            <ProductCarouselCard
+              items={products}
+              activeBadge={tHome("productCarouselBadge")}
+              ctaLabel={tHome("cardCta")}
+              emptyStateTitle={tHome("emptyStateTitle")}
+              emptyStateDesc={tHome("productCarouselEmptyDesc")}
+            />
           </div>
         </div>
       </div>
