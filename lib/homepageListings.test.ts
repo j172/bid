@@ -8,7 +8,6 @@ import {
   selectQuickCloseAuctions,
   selectTopAuctionsByBids,
   selectTopFixedByPurchases,
-  selectTopPriceAuctions,
 } from "./homepageListings";
 import type { ListingType } from "./listings";
 
@@ -92,22 +91,6 @@ describe("selectEndingSoonAuctions", () => {
     const before = rows.map((r) => r.id);
     selectEndingSoonAuctions(rows, 5);
     expect(rows.map((r) => r.id)).toEqual(before);
-  });
-});
-
-describe("selectTopPriceAuctions", () => {
-  it("orders by highest price, breaking ties by ending soonest", () => {
-    const rows = [
-      row({ id: 1, current_price: 900, ends_at: hoursFromNow(40) }),
-      row({ id: 2, current_price: 900, ends_at: hoursFromNow(4) }),
-      row({ id: 3, current_price: 5000 }),
-    ];
-    expect(selectTopPriceAuctions(rows, 5).map((r) => r.id)).toEqual([3, 2, 1]);
-  });
-
-  it("ignores fixed-price listings", () => {
-    const rows = [row({ id: 1, listing_type: "fixed_price", price: 99999, ends_at: null }), row({ id: 2 })];
-    expect(selectTopPriceAuctions(rows, 5).map((r) => r.id)).toEqual([2]);
   });
 });
 

@@ -46,14 +46,6 @@ export function selectEndingSoonAuctions<T extends DatedAuction & { photos: stri
   return [...withPhoto, ...withoutPhoto].slice(0, limit);
 }
 
-/** "頂標" hero side cards: dearest open auctions, ties broken by ending soonest. */
-export function selectTopPriceAuctions<T extends DatedAuction>(listings: readonly T[], limit: number): T[] {
-  return listings
-    .filter((item) => item.listing_type === "auction" && item.ends_at)
-    .sort((a, b) => b.current_price - a.current_price || a.ends_at!.getTime() - b.ends_at!.getTime())
-    .slice(0, limit);
-}
-
 interface ActivityRankedListing extends TypedListing {
   bidCount: number;
   purchaseCount: number;
