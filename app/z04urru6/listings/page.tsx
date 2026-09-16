@@ -12,6 +12,7 @@ import { parseFirstParam, parsePageParam, type SearchParams } from "../component
 import { AdminTable, AdminTableCell, AdminTableRow } from "../components/AdminTable";
 import { SuccessBannerProvider } from "../components/SuccessBanner";
 import { filterControlClass, filterFormClass, filterLabelClass, filterSubmitClass } from "../components/tableStyles";
+import { PRIMARY_TRIGGER_CLASS } from "../components/adminButtonClasses";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,11 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
     <main>
       <ListingsCreatedBanner />
       <SuccessBannerProvider>
-      <AdminPageIntro title="開放中商品" description="管理可售商品、調整排序並快速處理下架操作。" />
+      <AdminPageIntro title="鴿子管理" description="管理可售商品、調整排序並快速處理下架操作。">
+        <Link href="/z04urru6/listings/new" className={PRIMARY_TRIGGER_CLASS}>
+          ＋ 新增商品
+        </Link>
+      </AdminPageIntro>
 
       <form className={filterFormClass} method="GET">
         <label className={filterLabelClass}>

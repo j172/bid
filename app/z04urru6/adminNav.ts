@@ -8,8 +8,13 @@ export interface AdminNavItem {
 // CRUD from #33.
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { label: "總覽", href: "/z04urru6", section: "dashboard" },
-  { label: "開放中商品", href: "/z04urru6/listings", section: "commerce" },
-  { label: "建立商品", href: "/z04urru6/listings/new", section: "commerce" },
+  // 鴿子管理 (issue #287) — merges what used to be two separate nav entries,
+  // "開放中商品" (/listings) and "建立商品" (/listings/new), into one, modeled
+  // loosely on 商品管理 (#277)'s single-page list + create/edit entry point.
+  // /listings/new remains its own standalone route/page (its form is too
+  // complex for a modal) — the listings list page now just links to it via a
+  // "＋新增商品" button instead of exposing a second nav item for it.
+  { label: "鴿子管理", href: "/z04urru6/listings", section: "commerce" },
   { label: "已結標結算", href: "/z04urru6/listings/closed", section: "commerce" },
   // 商品管理 (issue #277) — standalone products/product_photos CRUD powering
   // the homepage carousel (issue #278) and /products/[id] detail page.
