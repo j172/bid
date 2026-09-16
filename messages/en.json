@@ -1232,5 +1232,15 @@
     "galleryClose": "Close",
     "galleryPrevious": "Previous photo",
     "galleryNext": "Next photo"
+  },
+  "productsList": {
+    "title": "Product Catalog",
+    "subtitle": "Browse every product currently for sale — tap a card for the full details.",
+    "noItems": "No products are available right now. Please check back later.",
+    "viewDetails": "View Details",
+    "pageSizeLabel": "Per page:",
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "pageInfo": "Page {page} of {totalPages} ({total} total)"
   }
 }
