@@ -1235,5 +1235,15 @@
     "galleryClose": "關閉",
     "galleryPrevious": "上一張照片",
     "galleryNext": "下一張照片"
+  },
+  "productsList": {
+    "title": "商品目錄",
+    "subtitle": "瀏覽所有上架中的商品，點選卡片查看完整介紹。",
+    "noItems": "目前尚無上架商品，請稍後再回來查看。",
+    "viewDetails": "查看詳情",
+    "pageSizeLabel": "每頁顯示：",
+    "prevPage": "上一頁",
+    "nextPage": "下一頁",
+    "pageInfo": "第 {page} / {totalPages} 頁（共 {total} 筆）"
   }
 }
