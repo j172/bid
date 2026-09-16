@@ -21,12 +21,14 @@ export interface Product {
   title: string;
   /** Free display text (e.g. "NT$12,000") — never parsed as a number. */
   priceText: string;
-  /** Plain text, not rich/HTML — see lib/productValidation.ts. */
+  /** Rich text (TinyMCE HTML), sanitized via lib/sanitizeDescriptionHtml.ts before storage — see lib/productValidation.ts. Issue #286: previously plain text; existing plain-text rows remain valid, untagged HTML. */
   description: string;
   sortOrder: number;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  /** Optional featured YouTube video link (issue #286) — rendered on the public product detail page when set. */
+  youtubeUrl: string | null;
 }
 
 export interface ProductWithPhotos extends Product {
@@ -42,6 +44,8 @@ export interface NewProductInput {
   sortOrder?: number;
   /** Defaults to true (visible). */
   isActive?: boolean;
+  /** Optional featured YouTube video (issue #286) — null/omit for none. */
+  youtubeUrl?: string | null;
 }
 
 export interface UpdateProductInput {
@@ -50,6 +54,8 @@ export interface UpdateProductInput {
   description: string;
   sortOrder: number;
   isActive: boolean;
+  /** Full replace, like every other field here — null clears it. */
+  youtubeUrl: string | null;
 }
 
 export type ProductOutcome = { ok: true } | { ok: false; error: string };
@@ -63,6 +69,7 @@ interface ProductRow {
   is_active: number;
   created_at: Date;
   updated_at: Date;
+  youtube_url: string | null;
 }
 
 interface ProductPhotoRow {
@@ -84,6 +91,7 @@ function mapProductRow(row: ProductRow): Product {
     isActive: Boolean(row.is_active),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    youtubeUrl: row.youtube_url,
   };
 }
 
@@ -161,9 +169,9 @@ export async function createProduct(input: NewProductInput): Promise<number> {
   }
 
   const [result] = await db.query(
-    `INSERT INTO products (title, price_text, description, sort_order, is_active, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
-    [input.title, input.priceText, input.description, sortOrder, input.isActive === false ? 0 : 1],
+    `INSERT INTO products (title, price_text, description, sort_order, is_active, created_at, updated_at, youtube_url)
+     VALUES (?, ?, ?, ?, ?, NOW(), NOW(), ?)`,
+    [input.title, input.priceText, input.description, sortOrder, input.isActive === false ? 0 : 1, input.youtubeUrl ?? null],
   );
   return (result as { insertId: number }).insertId;
 }
@@ -171,9 +179,9 @@ export async function createProduct(input: NewProductInput): Promise<number> {
 export async function updateProduct(id: number, input: UpdateProductInput): Promise<ProductOutcome> {
   const db = await getDb();
   const [result] = await db.query(
-    `UPDATE products SET title = ?, price_text = ?, description = ?, sort_order = ?, is_active = ?, updated_at = NOW()
+    `UPDATE products SET title = ?, price_text = ?, description = ?, sort_order = ?, is_active = ?, youtube_url = ?, updated_at = NOW()
      WHERE id = ?`,
-    [input.title, input.priceText, input.description, input.sortOrder, input.isActive ? 1 : 0, id],
+    [input.title, input.priceText, input.description, input.sortOrder, input.isActive ? 1 : 0, input.youtubeUrl, id],
   );
   if ((result as { affectedRows: number }).affectedRows === 0) {
     return { ok: false, error: "找不到這個商品" };

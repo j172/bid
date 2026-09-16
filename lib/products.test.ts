@@ -143,7 +143,7 @@ describe("createProduct", () => {
 
     expect(id).toBe(42);
     expect(queryMock).toHaveBeenCalledTimes(1);
-    expect(queryMock.mock.calls[0][1]).toEqual(["t", "NT$1", "d", 3, 1]);
+    expect(queryMock.mock.calls[0][1]).toEqual(["t", "NT$1", "d", 3, 1, null]);
   });
 
   it("defaults sortOrder to MAX(sort_order) + 1 when omitted", async () => {
@@ -154,7 +154,7 @@ describe("createProduct", () => {
 
     expect(id).toBe(8);
     expect(queryMock).toHaveBeenCalledTimes(2);
-    expect(queryMock.mock.calls[1][1]).toEqual(["t", "NT$1", "d", 7, 1]);
+    expect(queryMock.mock.calls[1][1]).toEqual(["t", "NT$1", "d", 7, 1, null]);
   });
 
   it("stores isActive: false as 0", async () => {
@@ -173,14 +173,29 @@ describe("createProduct", () => {
 describe("updateProduct", () => {
   it("returns ok:false when no row matched (deleted or bad id)", async () => {
     queryMock.mockResolvedValueOnce([{ affectedRows: 0 }]);
-    const result = await updateProduct(1, { title: "t", priceText: "NT$1", description: "d", sortOrder: 0, isActive: true });
+    const result = await updateProduct(1, {
+      title: "t",
+      priceText: "NT$1",
+      description: "d",
+      sortOrder: 0,
+      isActive: true,
+      youtubeUrl: null,
+    });
     expect(result).toEqual({ ok: false, error: "找不到這個商品" });
   });
 
   it("returns ok:true when a row is updated", async () => {
     queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
-    const result = await updateProduct(1, { title: "t", priceText: "NT$1", description: "d", sortOrder: 0, isActive: true });
+    const result = await updateProduct(1, {
+      title: "t",
+      priceText: "NT$1",
+      description: "d",
+      sortOrder: 0,
+      isActive: true,
+      youtubeUrl: "https://youtu.be/dQw4w9WgXcQ",
+    });
     expect(result).toEqual({ ok: true });
+    expect(queryMock.mock.calls[0][1]).toEqual(["t", "NT$1", "d", 0, 1, "https://youtu.be/dQw4w9WgXcQ", 1]);
   });
 });
 

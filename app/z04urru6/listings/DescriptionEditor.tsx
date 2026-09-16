@@ -21,10 +21,20 @@ interface DescriptionEditorProps {
   value: string;
   onChange: (html: string) => void;
   error?: string | null;
+  /**
+   * Set false to omit the image-insert toolbar button/plugin (and its
+   * upload handler) while keeping everything else, including the "插入
+   * YouTube 影片" button — used by ProductFormModal (issue #286), which
+   * reuses this editor to gain that YouTube button but has no per-product
+   * description-image upload path (extractForSubmit's `images` would always
+   * come back empty for it anyway, since there'd be no way to trigger an
+   * upload). Defaults to true (listings keep full image support).
+   */
+  enableImages?: boolean;
 }
 
 const DescriptionEditor = forwardRef<DescriptionEditorHandle, DescriptionEditorProps>(function DescriptionEditor(
-  { value, onChange, error },
+  { value, onChange, error, enableImages = true },
   ref,
 ) {
   const editorRef = useRef<TinyMCEEditor | null>(null);
@@ -62,11 +72,11 @@ const DescriptionEditor = forwardRef<DescriptionEditorHandle, DescriptionEditorP
         init={{
           ...TINYMCE_BASE_INIT,
           height: 360,
-          plugins: "lists link image table fullscreen searchreplace code",
+          plugins: enableImages ? "lists link image table fullscreen searchreplace code" : "lists link table fullscreen searchreplace code",
           toolbar:
             "undo redo | blocks fontsize | bold italic underline strikethrough | forecolor backcolor | " +
             "alignleft aligncenter alignright alignjustify | bullist numlist | blockquote hr | " +
-            "subscript superscript codeformat | link image insertyoutube table | removeformat | " +
+            `subscript superscript codeformat | link ${enableImages ? "image " : ""}insertyoutube table | removeformat | ` +
             "searchreplace fullscreen code",
           setup: (editor) => {
             editor.ui.registry.addButton("insertyoutube", {

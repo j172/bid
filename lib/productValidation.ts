@@ -2,18 +2,28 @@
 // app/api/admin/products/route.ts / [id]/route.ts. No HTTP/DB involved, so
 // it's directly unit-testable, same split as lib/listingValidation.ts.
 //
-// All three text fields are plain text (not TinyMCE-authored rich text like
-// listings'/news'/pigeon_showcase's description fields — see this ticket's
-// spec), so every one of them reuses richTextValidation's
-// validateRequiredTextField rather than validateRichTextField.
+// title/priceText stay plain text, validated via richTextValidation's
+// validateRequiredTextField. description switched to TinyMCE-authored rich
+// text in issue #286 (same DescriptionEditor listings use, mainly to gain
+// its "插入 YouTube 影片" button) and now goes through validateRichTextField
+// instead — byte-for-byte the same four-check shape lib/listingValidation.ts
+// already uses for listings' description.
 
-import { validateRequiredTextField, type FieldValidationResult } from "@/lib/richTextValidation";
+import { validateRequiredTextField, validateRichTextField, type FieldValidationResult } from "@/lib/richTextValidation";
 
 export const PRODUCT_TITLE_MAX = 255;
 // Plain display text only (e.g. "NT$12,000") — never parsed as a number or
 // used in any calculation; see db/init.sql's products.price_text comment.
 export const PRODUCT_PRICE_TEXT_MAX = 100;
+// Measured against the *plain text* of the description (HTML tags stripped)
+// since issue #286 switched authoring to rich text (TinyMCE) — same reasoning
+// as lib/listingValidation.ts's DESCRIPTION_MAX.
 export const PRODUCT_DESCRIPTION_MAX = 2000;
+// Generous raw-HTML ceiling, purely to stop pathological markup from
+// bloating storage — not a limit admins are meant to hit in normal use, so
+// it isn't surfaced as a counter. Same value/reasoning as
+// lib/listingValidation.ts's DESCRIPTION_HTML_MAX.
+export const PRODUCT_DESCRIPTION_HTML_MAX = 20_000;
 
 export function validateProductTitle(title: string): FieldValidationResult {
   return validateRequiredTextField(title, {
@@ -32,10 +42,12 @@ export function validateProductPriceText(priceText: string): FieldValidationResu
 }
 
 export function validateProductDescription(description: string): FieldValidationResult {
-  return validateRequiredTextField(description, {
-    requiredError: "請輸入商品簡介",
-    tooLongError: `商品簡介不能超過 ${PRODUCT_DESCRIPTION_MAX} 個字`,
-    max: PRODUCT_DESCRIPTION_MAX,
+  return validateRichTextField(description, {
+    emptyError: "請輸入商品簡介",
+    tooLongHtmlError: "商品簡介內容過長",
+    tooLongTextError: `商品簡介不能超過 ${PRODUCT_DESCRIPTION_MAX} 個字`,
+    htmlMax: PRODUCT_DESCRIPTION_HTML_MAX,
+    textMax: PRODUCT_DESCRIPTION_MAX,
   });
 }
 

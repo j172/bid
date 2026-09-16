@@ -16,6 +16,7 @@ import {
 import { MAX_PHOTO_COUNT } from "@/lib/photoLimits";
 import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
 import { descriptionImageUrl, saveDescriptionImages, saveListingPhotos } from "@/lib/uploads";
+import { validateYoutubeUrl } from "@/lib/youtubeEmbed";
 import { submitToIndexNow } from "@/lib/indexnow";
 import { localizedUrls } from "@/lib/seo";
 
@@ -29,6 +30,7 @@ export async function POST(request: Request) {
   const description = String(form.get("description") ?? "").trim();
   const loftIdRaw = String(form.get("loftId") ?? "").trim();
   const loftId = loftIdRaw === "" ? null : Number(loftIdRaw);
+  const youtubeUrlRaw = String(form.get("youtubeUrl") ?? "").trim();
   const photos = form.getAll("photos").filter((entry): entry is File => entry instanceof File && entry.size > 0);
   const descriptionImages = form
     .getAll("descriptionImages")
@@ -55,6 +57,11 @@ export async function POST(request: Request) {
   if (!loftIdResult.ok) {
     return NextResponse.json({ ok: false, error: loftIdResult.error }, { status: 400 });
   }
+  const youtubeUrlResult = validateYoutubeUrl(youtubeUrlRaw);
+  if (!youtubeUrlResult.ok) {
+    return NextResponse.json({ ok: false, error: youtubeUrlResult.error }, { status: 400 });
+  }
+  const youtubeUrl = youtubeUrlRaw === "" ? null : youtubeUrlRaw;
 
   let input: NewListingInput;
 
@@ -82,7 +89,7 @@ export async function POST(request: Request) {
     // description is filled in after insertListing, once its final HTML
     // (with description-image placeholders resolved and the whole thing
     // sanitized) is ready — see the comment below insertListing.
-    input = { listingType, title, description: "", price, stockQuantity, createdBy: auth.user.id, loftId };
+    input = { listingType, title, description: "", price, stockQuantity, createdBy: auth.user.id, loftId, youtubeUrl };
   } else {
     const startingPrice = Number(form.get("startingPrice"));
     const buyItNowPriceRaw = String(form.get("buyItNowPrice") ?? "").trim();
@@ -116,7 +123,18 @@ export async function POST(request: Request) {
       }
     }
 
-    input = { listingType, title, description: "", startingPrice, buyItNowPrice, startsAt, endsAt, createdBy: auth.user.id, loftId };
+    input = {
+      listingType,
+      title,
+      description: "",
+      startingPrice,
+      buyItNowPrice,
+      startsAt,
+      endsAt,
+      createdBy: auth.user.id,
+      loftId,
+      youtubeUrl,
+    };
   }
 
   // The listing's own id names its photo/description-image directories, so

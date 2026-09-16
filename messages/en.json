@@ -1223,6 +1223,7 @@
     "breadcrumbSelf": "Product Details",
     "priceLabel": "Price",
     "descriptionHeading": "Description",
+    "videoHeading": "Video",
     "noImage": "No photos yet",
     "galleryZoomLabel": "Zoom in on {title}",
     "galleryImageLabel": "{title} photo {index}",

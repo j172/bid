@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import RichTextContent from "../../../components/RichTextContent";
+import YoutubeEmbed from "../../../components/YoutubeEmbed";
 import { Link } from "@/i18n/navigation";
 
 type TabKey = "description" | "additional" | "activity";
@@ -20,6 +21,10 @@ interface ListingDetailTabsProps {
   additionalTitle: string;
   activityTitle: string;
   description: string;
+  /** Optional featured YouTube video (issue #286) — rendered above the description when set, null otherwise (no placeholder/empty state). */
+  youtubeUrl: string | null;
+  /** Used as the embed's accessible <iframe title> when youtubeUrl is set. */
+  listingTitle: string;
   specs: Array<{ label: string; value: string; href?: string }>;
   /** Pre-formatted total bid/purchase count sentence — shown once, not per-row (see issue #45). */
   activityTotalCountLabel: string;
@@ -36,6 +41,8 @@ export default function ListingDetailTabs({
   additionalTitle,
   activityTitle,
   description,
+  youtubeUrl,
+  listingTitle,
   specs,
   activityTotalCountLabel,
   activityLines,
@@ -84,6 +91,7 @@ export default function ListingDetailTabs({
       {activeTab === "description" && (
         <div className="pt-6">
           <h3 className="text-xl font-black text-ink">{descriptionTitle}</h3>
+          {youtubeUrl && <YoutubeEmbed url={youtubeUrl} title={listingTitle} className="mb-5 mt-3" />}
           <RichTextContent html={description} className="mt-3 leading-7 text-ink-light" />
         </div>
       )}

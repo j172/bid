@@ -435,6 +435,8 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
         additionalTitle={t("additionalHeading")}
         activityTitle={t("activityHeading")}
         description={listing.description}
+        youtubeUrl={listing.youtube_url}
+        listingTitle={listing.title}
         specs={specs}
         activityTotalCountLabel={
           isFixedPrice

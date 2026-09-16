@@ -19,6 +19,7 @@ import {
 import { MAX_PHOTO_COUNT } from "@/lib/photoLimits";
 import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
 import { deleteListingPhotoFiles, descriptionImageUrl, saveDescriptionImages, saveListingPhotos } from "@/lib/uploads";
+import { validateYoutubeUrl } from "@/lib/youtubeEmbed";
 import { parseIdParam } from "@/lib/routeParams";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -53,6 +54,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const stockRemaining = Number(form.get("stockRemaining"));
   const loftIdRaw = String(form.get("loftId") ?? "").trim();
   const loftId = loftIdRaw === "" ? null : Number(loftIdRaw);
+  const youtubeUrlRaw = String(form.get("youtubeUrl") ?? "").trim();
   const newPhotos = form.getAll("photos").filter((entry): entry is File => entry instanceof File && entry.size > 0);
   const descriptionImages = form
     .getAll("descriptionImages")
@@ -87,6 +89,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!loftIdResult.ok) {
     return NextResponse.json({ ok: false, error: loftIdResult.error }, { status: 400 });
   }
+  const youtubeUrlResult = validateYoutubeUrl(youtubeUrlRaw);
+  if (!youtubeUrlResult.ok) {
+    return NextResponse.json({ ok: false, error: youtubeUrlResult.error }, { status: 400 });
+  }
+  const youtubeUrl = youtubeUrlRaw === "" ? null : youtubeUrlRaw;
   if (order.length === 0) {
     return NextResponse.json({ ok: false, error: "至少需要一張照片" }, { status: 400 });
   }
@@ -121,7 +128,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ ok: false, error: "照片資料不正確" }, { status: 400 });
   }
 
-  const result = await updateFixedPriceListing(listingId, { title, description: finalDescription, price, stockRemaining, loftId });
+  const result = await updateFixedPriceListing(listingId, {
+    title,
+    description: finalDescription,
+    price,
+    stockRemaining,
+    loftId,
+    youtubeUrl,
+  });
   if (!result.ok) {
     // Roll back the newly-saved files — the update was rejected (e.g. the
     // listing was cancelled by someone else between the check above and now).

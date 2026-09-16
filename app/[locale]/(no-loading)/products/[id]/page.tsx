@@ -8,10 +8,13 @@ import {
   buildBreadcrumbListJsonLd,
   canonicalUrl,
   hreflangAlternates,
+  stripHtmlToPlainText,
   truncateForMetaDescription,
 } from "@/lib/seo";
 import { safeJsonLdString } from "@/lib/jsonLdScript";
 import { Link } from "@/i18n/navigation";
+import RichTextContent from "@/app/[locale]/components/RichTextContent";
+import YoutubeEmbed from "@/app/[locale]/components/YoutubeEmbed";
 import ProductGallery from "./ProductGallery";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +41,7 @@ export async function generateMetadata({
   const product = await loadActiveProduct(id);
   if (!product) return {};
 
-  const description = truncateForMetaDescription(product.description);
+  const description = truncateForMetaDescription(stripHtmlToPlainText(product.description));
   const pathname = `/products/${product.id}`;
   const cover = product.photos.find((photo) => photo.isCover) ?? product.photos[0];
   const imageUrl = cover ? absoluteUrl(productPhotoUrl(product.id, cover.fileName)) : absoluteUrl("/images/logo.png");
@@ -103,8 +106,15 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
           <div>
             <h2 className="text-lg font-bold text-ink">{t("descriptionHeading")}</h2>
-            <p className="mt-3 whitespace-pre-wrap leading-7 text-ink-light">{product.description}</p>
+            <RichTextContent html={product.description} className="mt-3 leading-7 text-ink-light" />
           </div>
+
+          {product.youtubeUrl && (
+            <div>
+              <h2 className="text-lg font-bold text-ink">{t("videoHeading")}</h2>
+              <YoutubeEmbed url={product.youtubeUrl} title={product.title} className="mt-3" />
+            </div>
+          )}
         </div>
       </div>
     </main>

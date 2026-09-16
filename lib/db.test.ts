@@ -11,6 +11,7 @@ import {
   ensureEmailVerificationColumns,
   ensureGoogleAuthColumns,
   ensureHomepageVideosVideoIdIndex,
+  ensureYoutubeUrlColumns,
   schemaStatements,
   splitSqlStatements,
 } from "./db";
@@ -106,6 +107,39 @@ describe("ensureGoogleAuthColumns", () => {
     expect(calls[3][0]).toBe("ALTER TABLE users ADD UNIQUE KEY uq_users_google_id (google_id)");
     expect(calls[4][0]).toBe("ALTER TABLE users MODIFY COLUMN password_hash VARCHAR(255) NULL");
     expect(calls[5][0]).toBe("ALTER TABLE users MODIFY COLUMN password_salt VARCHAR(255) NULL");
+  });
+});
+
+describe("ensureYoutubeUrlColumns", () => {
+  it("adds youtube_url to both listings and products when missing", async () => {
+    const calls: [string, unknown[] | undefined][] = [];
+    const db = fakePool((sql, params) => {
+      calls.push([sql, params]);
+      if (sql.includes("information_schema.COLUMNS")) {
+        return [[{ cnt: 0 }]];
+      }
+      return [{}];
+    });
+
+    await ensureYoutubeUrlColumns(db);
+
+    expect(calls).toHaveLength(4);
+    expect(calls[0][1]).toEqual(["listings", "youtube_url"]);
+    expect(calls[1][0]).toBe("ALTER TABLE listings ADD COLUMN youtube_url VARCHAR(255) NULL");
+    expect(calls[2][1]).toEqual(["products", "youtube_url"]);
+    expect(calls[3][0]).toBe("ALTER TABLE products ADD COLUMN youtube_url VARCHAR(255) NULL");
+  });
+
+  it("is idempotent: does nothing further once both columns already exist", async () => {
+    const calls: [string, unknown[] | undefined][] = [];
+    const db = fakePool((sql, params) => {
+      calls.push([sql, params]);
+      return [[{ cnt: 1 }]];
+    });
+
+    await ensureYoutubeUrlColumns(db);
+
+    expect(calls).toHaveLength(2);
   });
 });
 

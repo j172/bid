@@ -9,7 +9,9 @@ import {
   validateProductTitle,
 } from "@/lib/productValidation";
 import { deleteProduct, getProductById, replaceProductPhotos, updateProduct } from "@/lib/products";
+import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
 import { deleteProductPhotoFiles, productPhotoUrl, saveProductPhotos } from "@/lib/uploads";
+import { validateYoutubeUrl } from "@/lib/youtubeEmbed";
 import { parseIdParam } from "@/lib/routeParams";
 
 // Powers the admin edit modal's prefill (ProductFormModal.tsx) — always
@@ -61,6 +63,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const sortOrder = Number(form.get("sortOrder"));
   const isActiveRaw = String(form.get("isActive") ?? "true");
   const isActive = isActiveRaw === "true" || isActiveRaw === "1";
+  const youtubeUrlRaw = String(form.get("youtubeUrl") ?? "").trim();
   const newPhotos = form.getAll("photos").filter((entry): entry is File => entry instanceof File && entry.size > 0);
 
   const order = parseProductPhotoOrder(String(form.get("order") ?? "[]"));
@@ -84,6 +87,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!sortOrderResult.ok) {
     return NextResponse.json({ ok: false, error: sortOrderResult.error }, { status: 400 });
   }
+  const youtubeUrlResult = validateYoutubeUrl(youtubeUrlRaw);
+  if (!youtubeUrlResult.ok) {
+    return NextResponse.json({ ok: false, error: youtubeUrlResult.error }, { status: 400 });
+  }
+  const youtubeUrl = youtubeUrlRaw === "" ? null : youtubeUrlRaw;
   if (order.length === 0) {
     return NextResponse.json({ ok: false, error: "至少需要一張照片" }, { status: 400 });
   }
@@ -111,7 +119,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ ok: false, error: "照片資料不正確" }, { status: 400 });
   }
 
-  const result = await updateProduct(productId, { title, priceText, description, sortOrder, isActive });
+  const result = await updateProduct(productId, {
+    title,
+    priceText,
+    description: sanitizeDescriptionHtml(description),
+    sortOrder,
+    isActive,
+    youtubeUrl,
+  });
   if (!result.ok) {
     // Roll back the newly-saved files — the update was rejected (e.g. the
     // product was deleted by someone else between the check above and now).

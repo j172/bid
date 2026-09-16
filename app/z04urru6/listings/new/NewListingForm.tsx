@@ -27,6 +27,7 @@ export default function NewListingForm() {
   const [callForPrice, setCallForPrice] = useState(false);
   const [stockQuantity, setStockQuantity] = useState("");
   const [loftId, setLoftId] = useState("");
+  const [youtubeUrl, setYoutubeUrl] = useState("");
   const [photoItems, setPhotoItems] = useState<PhotoItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -54,6 +55,7 @@ export default function NewListingForm() {
       formData.set("endsAt", endsAt);
     }
     if (loftId) formData.set("loftId", loftId);
+    formData.set("youtubeUrl", youtubeUrl.trim());
     for (const item of photoItems) {
       if (item.kind === "new") formData.append("photos", item.file);
     }
@@ -130,6 +132,20 @@ export default function NewListingForm() {
         描述
         <DescriptionEditor ref={descriptionEditorRef} value={description} onChange={setDescription} />
       </div>
+
+      <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+        精選 YouTube 影片連結（選填，於商品詳情頁單獨播放，與描述內插入的影片無關）
+        <input
+          value={youtubeUrl}
+          onChange={(e) => setYoutubeUrl(e.target.value)}
+          type="url"
+          placeholder="https://www.youtube.com/watch?v=..."
+          className={inputClass}
+        />
+        {listingType === "auction" && (
+          <span className="text-xs text-ink-light">競標商品僅能在建立時設定此欄位，建立後無法編輯。</span>
+        )}
+      </label>
 
       {listingType === "fixed_price" ? (
         <>
