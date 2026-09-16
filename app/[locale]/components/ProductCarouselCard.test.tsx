@@ -14,6 +14,7 @@ vi.mock("@/i18n/navigation", () => ({
 
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => key,
+  useLocale: () => "zh-TW",
 }));
 
 afterEach(() => {
@@ -63,8 +64,9 @@ describe("ProductCarouselCard", () => {
     expect(imageLink).not.toBeNull();
     expect(imageLink?.getAttribute("href")).toBe("/products/7");
 
-    const titleLink = screen.getByText(baseItem.title).closest("a");
-    expect(titleLink?.getAttribute("href")).toBe("/products/7");
+    // Title is now plain text (not a link) — the image+badge link above
+    // already covers that role.
+    expect(screen.getByText(baseItem.title).closest("a")).toBeNull();
 
     const ctaLink = screen.getByRole("link", { name: "查看詳情" });
     expect(ctaLink.getAttribute("href")).toBe("/products/7");
