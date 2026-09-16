@@ -63,7 +63,7 @@ export default function ProductCarouselCard({
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-white p-4 shadow-sm">
       <div className="mb-2">
-        <span className="inline-flex items-center rounded-full bg-twilight-indigo-600 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-md">
+        <span className="inline-flex rounded-md bg-twilight-indigo-600 px-2 py-1 text-[11px] font-bold text-white">
           {activeBadge}
         </span>
       </div>
