@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { MODAL_TRIGGER_CLASS } from "../components/adminButtonClasses";
 import AdminModal from "../components/AdminModal";
 import ModalFormActions from "../components/ModalFormActions";
+import { useSuccessBanner } from "../components/SuccessBanner";
 import DescriptionEditor, { type DescriptionEditorHandle } from "../listings/DescriptionEditor";
 import ProductPhotoGalleryEditor, { type ProductPhotoItem } from "./ProductPhotoGalleryEditor";
 import { PRODUCT_PRICE_TEXT_MAX, PRODUCT_TITLE_MAX } from "@/lib/productValidation";
@@ -32,6 +33,7 @@ type Props = { mode: "create" } | { mode: "edit"; product: EditProduct };
 // forms' single ImageUploadField.
 export default function ProductFormModal(props: Props) {
   const router = useRouter();
+  const showBanner = useSuccessBanner();
   const isEdit = props.mode === "edit";
   const descriptionEditorRef = useRef<DescriptionEditorHandle>(null);
 
@@ -123,6 +125,7 @@ export default function ProductFormModal(props: Props) {
     setOpen(false);
     if (!isEdit) resetForm();
     router.refresh();
+    showBanner(isEdit ? "updated" : "created");
   }
 
   return (

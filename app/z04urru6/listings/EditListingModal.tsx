@@ -8,6 +8,7 @@ import { usePartnerLofts } from "./usePartnerLofts";
 import { SECONDARY_TRIGGER_CLASS } from "../components/adminButtonClasses";
 import AdminModal from "../components/AdminModal";
 import ModalFormActions from "../components/ModalFormActions";
+import { useSuccessBanner } from "../components/SuccessBanner";
 import { PRICE_MAX, TITLE_MAX } from "@/lib/listingValidation";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
@@ -15,6 +16,7 @@ const counterClass = (current: number, max: number) => `text-xs ${current > max 
 
 export default function EditListingModal({ listingId }: { listingId: number }) {
   const router = useRouter();
+  const showBanner = useSuccessBanner();
   const descriptionEditorRef = useRef<DescriptionEditorHandle>(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -120,6 +122,7 @@ export default function EditListingModal({ listingId }: { listingId: number }) {
     }
     setOpen(false);
     router.refresh();
+    showBanner("updated");
   }
 
   return (

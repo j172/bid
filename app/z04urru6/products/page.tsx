@@ -2,6 +2,7 @@ import { listProducts } from "@/lib/products";
 import { productPhotoUrl } from "@/lib/uploads";
 import AdminPageIntro from "../AdminPageIntro";
 import { AdminTable, AdminTableCell, AdminTableRow } from "../components/AdminTable";
+import { SuccessBannerProvider } from "../components/SuccessBanner";
 import ProductFormModal from "./ProductFormModal";
 import DeleteButton from "./DeleteButton";
 
@@ -20,6 +21,7 @@ export default async function ProductsAdminPage() {
 
   return (
     <main>
+      <SuccessBannerProvider>
       <AdminPageIntro
         title="商品管理"
         description="管理首頁輪播與商品詳情頁使用的獨立商品資料：標題、多張圖片圖庫（含封面圖指定）、價格顯示文字、簡介、排序與上下架。停用後不會出現在首頁輪播，商品詳情頁也會顯示 404。"
@@ -84,6 +86,7 @@ export default async function ProductsAdminPage() {
           })}
         </AdminTable>
       )}
+      </SuccessBannerProvider>
     </main>
   );
 }

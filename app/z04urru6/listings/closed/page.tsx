@@ -16,6 +16,7 @@ import AdminPageIntro from "../../AdminPageIntro";
 import AdminPagination from "../../components/AdminPagination";
 import { buildQueryString, parseFirstParam, parsePageParam, type SearchParams } from "../../components/searchParams";
 import { AdminTable, AdminTableCell, AdminTableRow } from "../../components/AdminTable";
+import { SuccessBannerProvider } from "../../components/SuccessBanner";
 import { filterControlClass, filterFormClass, filterLabelClass, filterSubmitClass } from "../../components/tableStyles";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +41,7 @@ export default async function ClosedListingsPage({ searchParams }: { searchParam
 
   return (
     <main>
+      <SuccessBannerProvider>
       <AdminPageIntro title="已結標商品結算" description="追蹤得標與結算狀態，並支援流標商品快速重新上架。" />
 
       <form className={filterFormClass} method="GET">
@@ -151,6 +153,7 @@ export default async function ClosedListingsPage({ searchParams }: { searchParam
         params={params}
         keys={QUERY_KEYS}
       />
+      </SuccessBannerProvider>
     </main>
   );
 }

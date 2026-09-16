@@ -4,6 +4,7 @@ import { useId, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminModal from "../components/AdminModal";
 import ModalFormActions from "../components/ModalFormActions";
+import { useSuccessBanner } from "../components/SuccessBanner";
 import { extractYouTubeId } from "@/lib/youtubeEmbed";
 
 const inputClass =
@@ -25,6 +26,7 @@ type Props =
 
 export default function HomepageVideoFormModal(props: Props) {
   const router = useRouter();
+  const showBanner = useSuccessBanner();
   const isEdit = props.mode === "edit";
   const titleInputId = useId();
   const urlInputId = useId();
@@ -101,6 +103,7 @@ export default function HomepageVideoFormModal(props: Props) {
       setOpen(false);
       if (!isEdit) resetForm();
       router.refresh();
+      showBanner(isEdit ? "updated" : "created");
     } catch {
       setSubmitting(false);
       setError("連線失敗，請稍後再試");

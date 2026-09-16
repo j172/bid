@@ -8,6 +8,7 @@ import AdminModal from "../components/AdminModal";
 import ImageUploadField from "../components/ImageUploadField";
 import ModalFormActions from "../components/ModalFormActions";
 import SimpleRichTextEditor from "../components/SimpleRichTextEditor";
+import { useSuccessBanner } from "../components/SuccessBanner";
 import { useImageUploadPreview } from "../components/useImageUploadPreview";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 text-sm focus:border-interactive-primary focus:outline-none";
@@ -41,6 +42,7 @@ const CATEGORY_LABEL: Record<PigeonShowcaseCategory, string> = { award: "入賞�
 // explicit "新增／編輯時前後端都強制要求上傳" requirement.
 export default function PigeonShowcaseFormModal(props: Props) {
   const router = useRouter();
+  const showBanner = useSuccessBanner();
   const isEdit = props.mode === "edit";
 
   const [open, setOpen] = useState(false);
@@ -97,6 +99,7 @@ export default function PigeonShowcaseFormModal(props: Props) {
     setOpen(false);
     if (!isEdit) resetForm();
     router.refresh();
+    showBanner(isEdit ? "updated" : "created");
   }
 
   return (

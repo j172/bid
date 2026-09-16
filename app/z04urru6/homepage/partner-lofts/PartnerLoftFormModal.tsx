@@ -6,6 +6,7 @@ import { MODAL_TRIGGER_CLASS } from "../../components/adminButtonClasses";
 import AdminModal from "../../components/AdminModal";
 import ImageUploadField from "../../components/ImageUploadField";
 import ModalFormActions from "../../components/ModalFormActions";
+import { useSuccessBanner } from "../../components/SuccessBanner";
 import { useImageUploadPreview } from "../../components/useImageUploadPreview";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 text-sm focus:border-interactive-primary focus:outline-none";
@@ -32,6 +33,7 @@ type Props = { mode: "create"; sectionType: string } | { mode: "edit"; sectionTy
 // collapsed into one component since the form is much smaller here.
 export default function PartnerLoftFormModal(props: Props) {
   const router = useRouter();
+  const showBanner = useSuccessBanner();
   const isEdit = props.mode === "edit";
 
   const [open, setOpen] = useState(false);
@@ -87,6 +89,7 @@ export default function PartnerLoftFormModal(props: Props) {
     setOpen(false);
     if (!isEdit) resetForm();
     router.refresh();
+    showBanner(isEdit ? "updated" : "created");
   }
 
   return (

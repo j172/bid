@@ -2,6 +2,7 @@ import { listHomepageSections } from "@/lib/homepageSections";
 import { homepageSectionImageUrl } from "@/lib/uploads";
 import AdminPageIntro from "../../AdminPageIntro";
 import { AdminTable, AdminTableCell, AdminTableRow } from "../../components/AdminTable";
+import { SuccessBannerProvider } from "../../components/SuccessBanner";
 import FeaturedLoftFormModal from "./FeaturedLoftFormModal";
 import DeleteButton from "./DeleteButton";
 
@@ -29,6 +30,7 @@ export default async function FeaturedLoftsAdminPage() {
 
   return (
     <main>
+      <SuccessBannerProvider>
       <AdminPageIntro title="名家專區管理" description="管理首頁輪播與 /listings 頁面底部區塊使用的名家專區卡片：圖片、富文本內容與必選的關聯鴿舍。首頁／商品列表卡片點擊後都會導向該鴿舍的商品列表。停用後會立即隱藏，不需重新部署。">
         <FeaturedLoftFormModal mode="create" sectionType={SECTION_TYPE} lofts={loftOptions} />
       </AdminPageIntro>
@@ -85,6 +87,7 @@ export default async function FeaturedLoftsAdminPage() {
           })}
         </AdminTable>
       )}
+      </SuccessBannerProvider>
     </main>
   );
 }

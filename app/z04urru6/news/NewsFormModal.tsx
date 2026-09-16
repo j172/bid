@@ -10,6 +10,7 @@ import AdminModal from "../components/AdminModal";
 import ImageUploadField from "../components/ImageUploadField";
 import ModalFormActions from "../components/ModalFormActions";
 import SimpleRichTextEditor from "../components/SimpleRichTextEditor";
+import { useSuccessBanner } from "../components/SuccessBanner";
 import { useImageUploadPreview } from "../components/useImageUploadPreview";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 text-sm focus:border-interactive-primary focus:outline-none";
@@ -52,6 +53,7 @@ function toLocalDatetimeValue(iso: string): string {
 // separate review/test-send step, and no extra confirm() dialog.
 export default function NewsFormModal(props: Props) {
   const router = useRouter();
+  const showBanner = useSuccessBanner();
   const isEdit = props.mode === "edit";
   const broadcast = isEdit ? props.item.broadcast : null;
   const locked = broadcast?.status === "sent";
@@ -124,6 +126,7 @@ export default function NewsFormModal(props: Props) {
     setOpen(false);
     if (!isEdit) resetForm();
     router.refresh();
+    showBanner(isEdit ? "updated" : "created");
 
     // Newsletter send/cancel is best-effort and independent of the news post
     // itself (issue #73, extended by #80) — the post above is already saved

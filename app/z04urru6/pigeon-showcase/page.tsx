@@ -12,6 +12,7 @@ import AdminPageIntro from "../AdminPageIntro";
 import AdminPagination from "../components/AdminPagination";
 import { parseFirstParam, parsePageParam, type SearchParams } from "../components/searchParams";
 import { AdminTable, AdminTableCell, AdminTableRow } from "../components/AdminTable";
+import { SuccessBannerProvider } from "../components/SuccessBanner";
 import { filterControlClass, filterFormClass, filterLabelClass, filterSubmitClass } from "../components/tableStyles";
 import PigeonShowcaseFormModal from "./PigeonShowcaseFormModal";
 import DeleteConfirmButton from "../components/DeleteConfirmButton";
@@ -48,6 +49,7 @@ export default async function PigeonShowcaseAdminPage({ searchParams }: { search
 
   return (
     <main>
+      <SuccessBannerProvider>
       <AdminPageIntro title="入賞鴿／進口鴿／代表種鴿管理" description="管理首頁輪播與分類清單頁使用的入賞鴿／進口鴿／代表種鴿資料。">
         <PigeonShowcaseFormModal mode="create" lofts={loftOptions} />
       </AdminPageIntro>
@@ -145,6 +147,7 @@ export default async function PigeonShowcaseAdminPage({ searchParams }: { search
         params={params}
         keys={QUERY_KEYS}
       />
+      </SuccessBannerProvider>
     </main>
   );
 }
