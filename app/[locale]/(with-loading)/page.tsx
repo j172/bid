@@ -197,6 +197,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   // (no-loading)/products/[id]/page.tsx) — the admin UI (#277) should always
   // enforce exactly one cover, so this is a defensive fallback, not the
   // expected path.
+  const PRODUCT_CAROUSEL_EXCERPT_LENGTH = 30;
   const activeProducts = await cachedQuery("home:activeProducts", 20, () => listProducts({ activeOnly: true }));
   const productCarouselItems = activeProducts.map((product) => {
     const cover = product.photos.find((photo) => photo.isCover) ?? product.photos[0];
@@ -204,6 +205,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       id: product.id,
       title: product.title,
       priceText: product.priceText,
+      excerpt: excerptHtml(product.description, PRODUCT_CAROUSEL_EXCERPT_LENGTH),
       imageUrl: cover ? productPhotoUrl(product.id, cover.fileName) : IMAGE_FALLBACK_SRC,
     };
   });

@@ -92,4 +92,34 @@ describe("ProductCarouselCard", () => {
     expect(image.closest("a")?.getAttribute("href")).toBe("/products/9");
     expect(screen.getByText("NT$5,500").textContent).toBe("NT$5,500");
   });
+
+  it("shows the description excerpt between the price and the CTA when present", () => {
+    render(
+      <ProductCarouselCard
+        items={[{ ...baseItem, excerpt: "血統優良，體型健壯，適合長距離賽事訓練使用…" }]}
+        activeBadge="精選商品"
+        ctaLabel="查看詳情"
+        emptyStateTitle="尚無內容"
+        emptyStateDesc="敬請期待"
+      />,
+    );
+
+    expect(screen.getByText("血統優良，體型健壯，適合長距離賽事訓練使用…").textContent).toBe(
+      "血統優良，體型健壯，適合長距離賽事訓練使用…",
+    );
+  });
+
+  it("renders no excerpt paragraph when the excerpt is empty or absent", () => {
+    const { container } = render(
+      <ProductCarouselCard
+        items={[{ ...baseItem, excerpt: "" }]}
+        activeBadge="精選商品"
+        ctaLabel="查看詳情"
+        emptyStateTitle="尚無內容"
+        emptyStateDesc="敬請期待"
+      />,
+    );
+
+    expect(container.querySelector(".mt-2\\.5")).toBeNull();
+  });
 });
