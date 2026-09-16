@@ -27,6 +27,15 @@ export interface ProductCarouselItem {
   title: string;
   /** Free display text (e.g. "NT$12,000"), never parsed as a number — see lib/products.ts's Product.priceText. */
   priceText: string;
+  /**
+   * Plain-text excerpt of the product's HTML description (issue #295),
+   * pre-truncated by the caller via lib/htmlText.ts's excerptHtml — same
+   * convention as FeaturedLoftCarouselCard/NewsCarouselCard/
+   * PigeonShowcaseCarouselCard's `excerpt` fields. Renders nothing (no
+   * empty paragraph, no stray margin) when empty, e.g. a product with no
+   * description yet.
+   */
+  excerpt?: string;
   /** Pre-resolved by the caller to the site placeholder when the product has no cover photo yet. */
   imageUrl: string;
 }
@@ -100,6 +109,9 @@ export default function ProductCarouselCard({
       <div className="mt-2 flex items-end gap-2">
         <p className="text-lg font-black text-interactive-primary">{formatProductPriceText(current.priceText, locale)}</p>
       </div>
+      {current.excerpt ? (
+        <p className="mt-2.5 line-clamp-2 text-xs text-ink-light sm:text-sm">{current.excerpt}</p>
+      ) : null}
       <div className="mt-3 text-[11px]">
         <Link href={href} className="block w-full rounded-md bg-header px-2 py-1 text-center font-semibold text-white">
           {ctaLabel}
