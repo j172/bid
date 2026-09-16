@@ -33,6 +33,7 @@ const existingProduct = {
   isActive: true,
   createdAt: new Date(),
   updatedAt: new Date(),
+  youtubeUrl: null,
   photos: [{ id: 1, fileName: "a.webp", sortOrder: 0, isCover: true }],
 };
 
@@ -47,6 +48,7 @@ function buildEditForm(overrides: Record<string, string> = {}, photos: File[] = 
   form.set("description", overrides.description ?? "簡介");
   form.set("sortOrder", overrides.sortOrder ?? "0");
   form.set("isActive", overrides.isActive ?? "true");
+  if (overrides.youtubeUrl !== undefined) form.set("youtubeUrl", overrides.youtubeUrl);
   form.set(
     "order",
     overrides.order ?? JSON.stringify([{ type: "existing", fileName: "a.webp", isCover: true }]),
@@ -118,6 +120,15 @@ describe("PATCH /api/admin/products/[id]", () => {
     expect((await res.json()).error).toBe("排序必須是不小於 0 的整數");
   });
 
+  it("rejects an invalid youtubeUrl", async () => {
+    vi.mocked(requireAdmin).mockResolvedValueOnce(adminAuth);
+    vi.mocked(getProductById).mockResolvedValueOnce(existingProduct);
+    const req = new Request("http://localhost", { method: "PATCH", body: buildEditForm({ youtubeUrl: "not-a-url" }) });
+    const res = await PATCH(req, params("5"));
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe("無效的 YouTube 網址，請確認包含正確的影片 ID");
+  });
+
   it("rejects dropping every photo (order resolves to empty)", async () => {
     vi.mocked(requireAdmin).mockResolvedValueOnce(adminAuth);
     vi.mocked(getProductById).mockResolvedValueOnce(existingProduct);
@@ -149,6 +160,7 @@ describe("PATCH /api/admin/products/[id]", () => {
       description: "簡介",
       sortOrder: 0,
       isActive: true,
+      youtubeUrl: null,
     });
     expect(replaceProductPhotos).toHaveBeenCalledWith(5, [{ fileName: "a.webp", isCover: true }]);
     // a.webp is kept, so nothing should be deleted from disk.

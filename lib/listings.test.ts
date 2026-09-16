@@ -214,7 +214,7 @@ describe("insertListing (fixed_price, call for price)", () => {
 
     expect(id).toBe(42);
     const [, params] = queryMock.mock.calls[0];
-    expect(params).toEqual(["電洽商品", "desc", 0, 0, null, 5, 5, 1, null]);
+    expect(params).toEqual(["電洽商品", "desc", 0, 0, null, 5, 5, 1, null, null]);
   });
 
   it("still writes the same value into all three price columns for a normally-priced listing", async () => {
@@ -230,7 +230,24 @@ describe("insertListing (fixed_price, call for price)", () => {
     });
 
     const [, params] = queryMock.mock.calls[0];
-    expect(params).toEqual(["定價商品", "desc", 1000, 1000, 1000, 3, 3, 1, null]);
+    expect(params).toEqual(["定價商品", "desc", 1000, 1000, 1000, 3, 3, 1, null, null]);
+  });
+
+  it("writes the given youtubeUrl instead of null when provided", async () => {
+    queryMock.mockResolvedValueOnce([{ insertId: 44 }]);
+
+    await insertListing({
+      listingType: "fixed_price",
+      title: "商品",
+      description: "desc",
+      price: 500,
+      stockQuantity: 1,
+      createdBy: 1,
+      youtubeUrl: "https://youtu.be/dQw4w9WgXcQ",
+    });
+
+    const [, params] = queryMock.mock.calls[0];
+    expect(params.at(-1)).toBe("https://youtu.be/dQw4w9WgXcQ");
   });
 });
 
@@ -259,7 +276,7 @@ describe("updateFixedPriceListing (call for price)", () => {
 
     expect(result).toEqual({ ok: true });
     const [, updateParams] = connectionQueryMock.mock.calls.at(-1)!;
-    expect(updateParams).toEqual(["電洽商品", "desc", null, 0, 0, 12, 10, null, 7]);
+    expect(updateParams).toEqual(["電洽商品", "desc", null, 0, 0, 12, 10, null, null, 7]);
     expect(commitMock).toHaveBeenCalled();
   });
 
@@ -278,7 +295,7 @@ describe("updateFixedPriceListing (call for price)", () => {
 
     expect(result).toEqual({ ok: true });
     const [, updateParams] = connectionQueryMock.mock.calls.at(-1)!;
-    expect(updateParams).toEqual(["定價商品", "desc", 2000, 2000, 2000, 4, 4, null, 8]);
+    expect(updateParams).toEqual(["定價商品", "desc", 2000, 2000, 2000, 4, 4, null, null, 8]);
   });
 });
 

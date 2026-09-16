@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MODAL_TRIGGER_CLASS } from "../components/adminButtonClasses";
 import AdminModal from "../components/AdminModal";
 import ModalFormActions from "../components/ModalFormActions";
+import DescriptionEditor, { type DescriptionEditorHandle } from "../listings/DescriptionEditor";
 import ProductPhotoGalleryEditor, { type ProductPhotoItem } from "./ProductPhotoGalleryEditor";
-import { PRODUCT_DESCRIPTION_MAX, PRODUCT_PRICE_TEXT_MAX, PRODUCT_TITLE_MAX } from "@/lib/productValidation";
+import { PRODUCT_PRICE_TEXT_MAX, PRODUCT_TITLE_MAX } from "@/lib/productValidation";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 text-sm focus:border-interactive-primary focus:outline-none";
 const counterClass = (current: number, max: number) => `text-xs ${current > max ? "text-ended" : "text-ink-light"}`;
@@ -18,6 +19,7 @@ type EditProduct = {
   description: string;
   sortOrder: number;
   isActive: boolean;
+  youtubeUrl: string | null;
   photos: { fileName: string; url: string; isCover: boolean }[];
 };
 
@@ -31,6 +33,7 @@ type Props = { mode: "create" } | { mode: "edit"; product: EditProduct };
 export default function ProductFormModal(props: Props) {
   const router = useRouter();
   const isEdit = props.mode === "edit";
+  const descriptionEditorRef = useRef<DescriptionEditorHandle>(null);
 
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(isEdit ? props.product.title : "");
@@ -38,6 +41,7 @@ export default function ProductFormModal(props: Props) {
   const [description, setDescription] = useState(isEdit ? props.product.description : "");
   const [sortOrder, setSortOrder] = useState(isEdit ? String(props.product.sortOrder) : "");
   const [isActive, setIsActive] = useState(isEdit ? props.product.isActive : true);
+  const [youtubeUrl, setYoutubeUrl] = useState(isEdit ? (props.product.youtubeUrl ?? "") : "");
   const [photoItems, setPhotoItems] = useState<ProductPhotoItem[]>(
     isEdit
       ? props.product.photos.map((photo) => ({
@@ -57,6 +61,7 @@ export default function ProductFormModal(props: Props) {
     setDescription(isEdit ? props.product.description : "");
     setSortOrder(isEdit ? String(props.product.sortOrder) : "");
     setIsActive(isEdit ? props.product.isActive : true);
+    setYoutubeUrl(isEdit ? (props.product.youtubeUrl ?? "") : "");
     setPhotoItems(
       isEdit
         ? props.product.photos.map((photo) => ({
@@ -81,6 +86,8 @@ export default function ProductFormModal(props: Props) {
 
     setSubmitting(true);
 
+    const { html: descriptionHtml } = descriptionEditorRef.current!.extractForSubmit();
+
     let newIndex = 0;
     const order = photoItems.map((item) =>
       item.kind === "existing"
@@ -91,9 +98,10 @@ export default function ProductFormModal(props: Props) {
     const formData = new FormData();
     formData.set("title", title);
     formData.set("priceText", priceText);
-    formData.set("description", description);
+    formData.set("description", descriptionHtml);
     if (sortOrder.trim() !== "") formData.set("sortOrder", sortOrder.trim());
     formData.set("isActive", isActive ? "true" : "false");
+    formData.set("youtubeUrl", youtubeUrl.trim());
     formData.set("order", JSON.stringify(order));
     for (const item of photoItems) {
       if (item.kind === "new") formData.append("photos", item.file);
@@ -148,19 +156,20 @@ export default function ProductFormModal(props: Props) {
 
             <ProductPhotoGalleryEditor items={photoItems} onChange={setPhotoItems} />
 
-            <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+            <div className="flex flex-col gap-1 text-sm font-medium text-ink-light">
               商品簡介
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                maxLength={PRODUCT_DESCRIPTION_MAX}
-                rows={4}
-                required
+              <DescriptionEditor ref={descriptionEditorRef} value={description} onChange={setDescription} enableImages={false} />
+            </div>
+
+            <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+              精選 YouTube 影片連結（選填，於商品詳情頁單獨播放，與簡介內插入的影片無關）
+              <input
+                value={youtubeUrl}
+                onChange={(e) => setYoutubeUrl(e.target.value)}
+                type="url"
+                placeholder="https://www.youtube.com/watch?v=..."
                 className={inputClass}
               />
-              <span className={counterClass(description.length, PRODUCT_DESCRIPTION_MAX)}>
-                {description.length}/{PRODUCT_DESCRIPTION_MAX}
-              </span>
             </label>
 
             <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">

@@ -737,6 +737,17 @@ async function ensureFeaturedLoftSectionColumn(db: mysql.Pool): Promise<void> {
   await db.query("DROP TABLE IF EXISTS featured_loft_posts");
 }
 
+// Issue #286: optional 精選 YouTube 影片連結，讓管理員在建立/編輯商品
+// (products) 或商品 (listings) 時貼上單一 YouTube 網址，供公開詳情頁內嵌
+// 播放器（見 lib/youtubeEmbed.ts 的 extractYouTubeId + 兩個 [id]/page.tsx）。
+// 與 homepage_videos 不同，這裡只存原始網址、不另外存 video_id／唯一索引
+// ——homepage_videos 要防止管理員重複收錄同一支影片，這裡每個商品/商品
+// 只有單一欄位，不需要去重。
+export async function ensureYoutubeUrlColumns(db: mysql.Pool): Promise<void> {
+  await ensureColumn(db, "listings", "youtube_url", "VARCHAR(255) NULL");
+  await ensureColumn(db, "products", "youtube_url", "VARCHAR(255) NULL");
+}
+
 function createPool(): mysql.Pool {
   return mysql.createPool({
     host: process.env.MYSQL_HOST,
@@ -797,6 +808,7 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensureNewsSourceColumns(db);
   await ensurePigeonShopCategoryColumn(db);
   await ensureFeaturedLoftSectionColumn(db);
+  await ensureYoutubeUrlColumns(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {

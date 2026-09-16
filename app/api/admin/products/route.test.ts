@@ -37,6 +37,7 @@ function buildCreateForm(overrides: Record<string, string> = {}, photos: File[] 
   form.set("description", overrides.description ?? "簡介內容");
   if (overrides.sortOrder !== undefined) form.set("sortOrder", overrides.sortOrder);
   if (overrides.isActive !== undefined) form.set("isActive", overrides.isActive);
+  if (overrides.youtubeUrl !== undefined) form.set("youtubeUrl", overrides.youtubeUrl);
   form.set(
     "order",
     overrides.order ?? JSON.stringify(photos.map((_, index) => ({ type: "new", index, isCover: index === 0 }))),
@@ -70,6 +71,7 @@ describe("GET /api/admin/products", () => {
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),
+        youtubeUrl: null,
         photos: [{ id: 10, fileName: "a.webp", sortOrder: 0, isCover: true }],
       },
     ]);
@@ -109,6 +111,35 @@ describe("POST /api/admin/products", () => {
     expect((await res.json()).error).toBe("請輸入價格顯示文字");
   });
 
+  it("rejects an invalid youtubeUrl", async () => {
+    vi.mocked(requireAdmin).mockResolvedValueOnce(adminAuth);
+    const req = new Request("http://localhost", {
+      method: "POST",
+      body: buildCreateForm({ youtubeUrl: "not-a-youtube-url" }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe("無效的 YouTube 網址，請確認包含正確的影片 ID");
+    expect(createProduct).not.toHaveBeenCalled();
+  });
+
+  it("accepts a blank youtubeUrl (optional field) and a valid one", async () => {
+    vi.mocked(requireAdmin).mockResolvedValueOnce(adminAuth);
+    vi.mocked(createProduct).mockResolvedValueOnce(42);
+    vi.mocked(saveProductPhotos).mockResolvedValueOnce(["a.webp"]);
+
+    const req = new Request("http://localhost", {
+      method: "POST",
+      body: buildCreateForm({ youtubeUrl: "https://youtu.be/dQw4w9WgXcQ" }),
+    });
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(createProduct).toHaveBeenCalledWith(
+      expect.objectContaining({ youtubeUrl: "https://youtu.be/dQw4w9WgXcQ" }),
+    );
+  });
+
   it("rejects malformed order JSON", async () => {
     vi.mocked(requireAdmin).mockResolvedValueOnce(adminAuth);
     const req = new Request("http://localhost", { method: "POST", body: buildCreateForm({ order: "{not json" }) });
@@ -146,6 +177,7 @@ describe("POST /api/admin/products", () => {
       description: "簡介內容",
       sortOrder: undefined,
       isActive: undefined,
+      youtubeUrl: null,
     });
     expect(saveProductPhotos).toHaveBeenCalledWith(42, expect.any(Array));
     expect(replaceProductPhotos).toHaveBeenCalledWith(42, [{ fileName: "a.webp", isCover: true }]);

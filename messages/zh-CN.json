@@ -1226,6 +1226,7 @@
     "breadcrumbSelf": "商品详情",
     "priceLabel": "价格",
     "descriptionHeading": "商品简介",
+    "videoHeading": "影片介绍",
     "noImage": "尚无照片",
     "galleryZoomLabel": "放大查看 {title}",
     "galleryImageLabel": "{title} 图片 {index}",

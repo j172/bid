@@ -71,6 +71,8 @@ export interface Listing {
   created_at: Date;
   /** Optional 合作鴿舍 (homepage_sections.id) this listing belongs to (issue #45) — null when not set. No DB-level FK (see db/init.sql). */
   loft_id: number | null;
+  /** Optional featured YouTube video link (issue #286) — separate from any <iframe> inlined into `description` via DescriptionEditor's own insert-video button. Auction listings can only set this at creation; fixed_price listings can edit it any time (see updateFixedPriceListing). */
+  youtube_url: string | null;
 }
 
 export interface ListingWithPhotos extends Listing {
@@ -101,6 +103,8 @@ export type NewListingInput = (
 ) & {
   /** Optional 合作鴿舍 selection (issue #45) — null/omit for none. */
   loftId?: number | null;
+  /** Optional featured YouTube video (issue #286) — null/omit for none. Settable at creation for both listing types; see updateFixedPriceListing for the fixed_price-only edit path. */
+  youtubeUrl?: string | null;
 };
 
 // Split from photo storage: the listing's id (used as its photo directory
@@ -120,8 +124,8 @@ export async function insertListing(input: NewListingInput): Promise<number> {
     const [result] = await db.query(
       `INSERT INTO listings
          (title, description, listing_type, starting_price, current_price, price, stock_quantity, stock_remaining,
-          ends_at, status, created_by, created_at, loft_id)
-       VALUES (?, ?, 'fixed_price', ?, ?, ?, ?, ?, NULL, 'open', ?, NOW(), ?)`,
+          ends_at, status, created_by, created_at, loft_id, youtube_url)
+       VALUES (?, ?, 'fixed_price', ?, ?, ?, ?, ?, NULL, 'open', ?, NOW(), ?, ?)`,
       [
         input.title,
         input.description,
@@ -132,6 +136,7 @@ export async function insertListing(input: NewListingInput): Promise<number> {
         input.stockQuantity,
         input.createdBy,
         loftId,
+        input.youtubeUrl ?? null,
       ],
     );
     return (result as { insertId: number }).insertId;
@@ -142,8 +147,8 @@ export async function insertListing(input: NewListingInput): Promise<number> {
   const status = input.startsAt !== null ? "scheduled" : "open";
   const [result] = await db.query(
     `INSERT INTO listings
-       (title, description, listing_type, starting_price, current_price, buy_it_now_price, starts_at, ends_at, status, created_by, created_at, loft_id)
-     VALUES (?, ?, 'auction', ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
+       (title, description, listing_type, starting_price, current_price, buy_it_now_price, starts_at, ends_at, status, created_by, created_at, loft_id, youtube_url)
+     VALUES (?, ?, 'auction', ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?)`,
     [
       input.title,
       input.description,
@@ -155,6 +160,7 @@ export async function insertListing(input: NewListingInput): Promise<number> {
       status,
       input.createdBy,
       loftId,
+      input.youtubeUrl ?? null,
     ],
   );
 
@@ -247,7 +253,7 @@ export async function relistClosedListing(
   const db = await getDb();
 
   const [rows] = await db.query(
-    "SELECT title, description, listing_type, status, leader_user_id, created_by FROM listings WHERE id = ? LIMIT 1",
+    "SELECT title, description, listing_type, status, leader_user_id, created_by, youtube_url FROM listings WHERE id = ? LIMIT 1",
     [listingId],
   );
   const listing = (
@@ -258,6 +264,7 @@ export async function relistClosedListing(
       status: string;
       leader_user_id: number | null;
       created_by: number;
+      youtube_url: string | null;
     }[]
   )[0];
   if (!listing) {
@@ -282,6 +289,7 @@ export async function relistClosedListing(
     startsAt: input.startsAt,
     endsAt: input.endsAt,
     createdBy: listing.created_by,
+    youtubeUrl: listing.youtube_url,
   });
 
   const photoFileNames = await getPhotoFileNames(listingId);
@@ -1155,6 +1163,8 @@ export async function updateFixedPriceListing(
     stockRemaining: number;
     /** Optional loft selection (issue #45) — like every other field here, this is a full replace: omit/null clears loft_id. */
     loftId?: number | null;
+    /** Optional featured YouTube video (issue #286) — like loftId, a full replace: omit/null clears it. */
+    youtubeUrl?: string | null;
   },
 ): Promise<UpdateFixedPriceListingOutcome> {
   const db = await getDb();
@@ -1194,7 +1204,7 @@ export async function updateFixedPriceListing(
     await connection.query(
       `UPDATE listings
        SET title = ?, description = ?, price = ?, current_price = ?, starting_price = ?,
-           stock_quantity = ?, stock_remaining = ?, loft_id = ?
+           stock_quantity = ?, stock_remaining = ?, loft_id = ?, youtube_url = ?
        WHERE id = ?`,
       [
         input.title,
@@ -1205,6 +1215,7 @@ export async function updateFixedPriceListing(
         sold + input.stockRemaining,
         input.stockRemaining,
         input.loftId ?? null,
+        input.youtubeUrl ?? null,
         listingId,
       ],
     );

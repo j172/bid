@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  PRODUCT_DESCRIPTION_HTML_MAX,
   PRODUCT_DESCRIPTION_MAX,
   PRODUCT_PRICE_TEXT_MAX,
   PRODUCT_TITLE_MAX,
@@ -44,7 +45,7 @@ describe("validateProductPriceText", () => {
 });
 
 describe("validateProductDescription", () => {
-  it("accepts a normal plain-text description", () => {
+  it("accepts a normal plain-text description (existing rows predate rich text, issue #286)", () => {
     expect(validateProductDescription("這是商品簡介")).toEqual({ ok: true });
   });
 
@@ -54,6 +55,24 @@ describe("validateProductDescription", () => {
 
   it("rejects a description over the max length", () => {
     expect(validateProductDescription("a".repeat(PRODUCT_DESCRIPTION_MAX + 1)).ok).toBe(false);
+  });
+
+  it("accepts a description at exactly the max length", () => {
+    expect(validateProductDescription("a".repeat(PRODUCT_DESCRIPTION_MAX))).toEqual({ ok: true });
+  });
+
+  it("measures length against visible text, not HTML markup", () => {
+    const html = `<p><strong>${"a".repeat(PRODUCT_DESCRIPTION_MAX)}</strong></p>`;
+    expect(validateProductDescription(html)).toEqual({ ok: true });
+  });
+
+  it("rejects an empty rich-text description (tags with no visible text)", () => {
+    expect(validateProductDescription("<p><br></p>").ok).toBe(false);
+  });
+
+  it("rejects raw HTML over the safety ceiling even if visible text is short", () => {
+    const html = `<p>hi</p><!--${"a".repeat(PRODUCT_DESCRIPTION_HTML_MAX)}-->`;
+    expect(validateProductDescription(html).ok).toBe(false);
   });
 });
 

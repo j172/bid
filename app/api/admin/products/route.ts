@@ -9,7 +9,9 @@ import {
   validateProductTitle,
 } from "@/lib/productValidation";
 import { createProduct, deleteProduct, listProducts, replaceProductPhotos } from "@/lib/products";
+import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
 import { deleteProductPhotoFiles, productPhotoUrl, saveProductPhotos } from "@/lib/uploads";
+import { validateYoutubeUrl } from "@/lib/youtubeEmbed";
 
 // Admin list view (issue #277) — includes inactive (已下架) rows, same
 // "admin sees everything, activeOnly is only for public-facing reads"
@@ -40,6 +42,7 @@ export async function POST(request: Request) {
   const sortOrder = sortOrderRaw === "" ? undefined : Number(sortOrderRaw);
   const isActiveRaw = form.get("isActive");
   const isActive = isActiveRaw === null ? undefined : isActiveRaw === "true" || isActiveRaw === "1";
+  const youtubeUrlRaw = String(form.get("youtubeUrl") ?? "").trim();
   const newPhotos = form.getAll("photos").filter((entry): entry is File => entry instanceof File && entry.size > 0);
 
   // Shape-validated up front (same reasoning as
@@ -67,6 +70,11 @@ export async function POST(request: Request) {
   if (!sortOrderResult.ok) {
     return NextResponse.json({ ok: false, error: sortOrderResult.error }, { status: 400 });
   }
+  const youtubeUrlResult = validateYoutubeUrl(youtubeUrlRaw);
+  if (!youtubeUrlResult.ok) {
+    return NextResponse.json({ ok: false, error: youtubeUrlResult.error }, { status: 400 });
+  }
+  const youtubeUrl = youtubeUrlRaw === "" ? null : youtubeUrlRaw;
   if (order.length === 0) {
     return NextResponse.json({ ok: false, error: "至少需要上傳一張照片" }, { status: 400 });
   }
@@ -77,7 +85,17 @@ export async function POST(request: Request) {
   // The product's own id names its photo directory, so it has to exist
   // before any files are saved — same "insert first, save photos under that
   // id, then attach them" sequencing as insertListing/addListingPhotos.
-  const productId = await createProduct({ title, priceText, description, sortOrder, isActive });
+  // description is rich text (TinyMCE, issue #286) — sanitized before
+  // storage, same "sanitize on write" rule listings' description follows
+  // (the public product page now renders it via dangerouslySetInnerHTML too).
+  const productId = await createProduct({
+    title,
+    priceText,
+    description: sanitizeDescriptionHtml(description),
+    sortOrder,
+    isActive,
+    youtubeUrl,
+  });
 
   try {
     const savedFileNames = await saveProductPhotos(productId, newPhotos);

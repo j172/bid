@@ -27,6 +27,7 @@ export default function EditListingModal({ listingId }: { listingId: number }) {
   const [callForPrice, setCallForPrice] = useState(false);
   const [stockRemaining, setStockRemaining] = useState("");
   const [loftId, setLoftId] = useState("");
+  const [youtubeUrl, setYoutubeUrl] = useState("");
   const [photoItems, setPhotoItems] = useState<PhotoItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -54,6 +55,7 @@ export default function EditListingModal({ listingId }: { listingId: number }) {
     setPrice(isCallForPrice ? "" : String(data.listing.price));
     setStockRemaining(String(data.listing.stockRemaining));
     setLoftId(data.listing.loftId ? String(data.listing.loftId) : "");
+    setYoutubeUrl(data.listing.youtubeUrl ?? "");
     setPhotoItems(
       data.listing.photos.map((photo: { fileName: string; url: string }) => ({
         kind: "existing" as const,
@@ -76,6 +78,7 @@ export default function EditListingModal({ listingId }: { listingId: number }) {
     setCallForPrice(false);
     setStockRemaining("");
     setLoftId("");
+    setYoutubeUrl("");
     setPhotoItems([]);
   }
 
@@ -98,6 +101,7 @@ export default function EditListingModal({ listingId }: { listingId: number }) {
     formData.set("callForPrice", String(callForPrice));
     formData.set("stockRemaining", stockRemaining);
     formData.set("loftId", loftId);
+    formData.set("youtubeUrl", youtubeUrl.trim());
     formData.set("order", JSON.stringify(order));
     for (const item of photoItems) {
       if (item.kind === "new") formData.append("photos", item.file);
@@ -180,6 +184,17 @@ export default function EditListingModal({ listingId }: { listingId: number }) {
                   />
                   電洽（不提供固定價格，買家需自行洽詢賣家）
                 </label>
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+                精選 YouTube 影片連結（選填，於商品詳情頁單獨播放，與描述內插入的影片無關）
+                <input
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
+                  type="url"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  className={inputClass}
+                />
               </label>
 
               <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">

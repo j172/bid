@@ -68,6 +68,7 @@ export default async function ProductsAdminPage() {
                         description: product.description,
                         sortOrder: product.sortOrder,
                         isActive: product.isActive,
+                        youtubeUrl: product.youtubeUrl,
                         photos: product.photos.map((photo) => ({
                           fileName: photo.fileName,
                           url: productPhotoUrl(product.id, photo.fileName),

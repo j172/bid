@@ -271,6 +271,7 @@ CREATE TABLE IF NOT EXISTS listings (
   stock_remaining BIGINT NULL,
   loft_id BIGINT NULL,                        -- optional homepage_sections.id (合作鴿舍) this listing belongs to; single-select, no DB-level FK (see below)
   winner_notified_at DATETIME NULL,           -- set on a successful "you won" email (lib/notifications.ts's notifyWinner/sendWinnerEmail, issue #48); NULL means never sent or last send failed
+  youtube_url VARCHAR(255) NULL,              -- optional featured YouTube video link (issue #286), separate from any <iframe> the seller inlined into `description` via DescriptionEditor's own "插入 YouTube 影片" button; auction listings can only set this at creation (no post-creation field edits, same limitation as every other auction column here), fixed_price listings can edit it any time
   PRIMARY KEY (id),
   KEY idx_listings_status_ends (status, ends_at),
   KEY idx_listings_status_starts (status, starts_at)
@@ -659,11 +660,12 @@ CREATE TABLE IF NOT EXISTS products (
   id BIGINT NOT NULL AUTO_INCREMENT,
   title VARCHAR(255) NOT NULL,
   price_text VARCHAR(100) NOT NULL,  -- 純顯示用價格文字，例如「NT$12,000」；不做金額運算或驗證
-  description TEXT NOT NULL,         -- 純文字簡介（非富文本），呈現於商品詳情頁
+  description TEXT NOT NULL,         -- 富文本（TinyMCE，issue #286 起改用與 listings 相同的 DescriptionEditor），儲存前經 sanitizeDescriptionHtml 清洗；既有的純文字舊資料原樣相容（無標籤的純文字本身就是合法、安全的 HTML 片段）
   sort_order INT NOT NULL DEFAULT 0,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
+  youtube_url VARCHAR(255) NULL,      -- 選填精選 YouTube 影片連結（issue #286），前台以 lib/youtubeEmbed.ts 的 extractYouTubeId 取出影片 ID 後內嵌播放器
   PRIMARY KEY (id),
   KEY idx_products_active_sort (is_active, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
