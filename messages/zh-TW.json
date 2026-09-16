@@ -1253,11 +1253,5 @@
     "callForPriceNoticeAfter": "洽詢價格與購買方式。",
     "loginPrompt": "登入",
     "loginToBuy": "後才能購買"
-  },
-  "productsCatalog": {
-    "title": "所有商品",
-    "breadcrumbHome": "首頁",
-    "breadcrumbSelf": "所有商品",
-    "empty": "目前沒有上架中的商品，請稍後再回來查看。"
   }
 }

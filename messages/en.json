@@ -1250,11 +1250,5 @@
     "callForPriceNoticeAfter": "for pricing and purchase details.",
     "loginPrompt": "Log in",
     "loginToBuy": " to purchase"
-  },
-  "productsCatalog": {
-    "title": "All Products",
-    "breadcrumbHome": "Home",
-    "breadcrumbSelf": "All Products",
-    "empty": "No products are available right now — please check back later."
   }
 }
