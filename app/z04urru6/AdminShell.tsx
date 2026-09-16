@@ -128,7 +128,10 @@ export default function AdminShell({ children, email }: { children: ReactNode; e
     if (parts[0] !== "z04urru6") return crumbs;
 
     const directMap: Record<string, { label: string; icon: string }> = {
-      listings: { label: "開放中商品", icon: "📦" },
+      // "listings" 這條理論上不會被用到——ADMIN_NAV_ITEMS 裡 /z04urru6/listings
+      // 已經有「鴿子管理」的 label，會優先命中上面的 navLabel 查詢——保留只是
+      // 當作沒有命中時的保險備援，維持與 nav 一致的命名（issue #287）。
+      listings: { label: "鴿子管理", icon: "📦" },
       orders: { label: "訂單管理", icon: "🧾" },
       users: { label: "使用者列表", icon: "👤" },
       new: { label: "建立商品", icon: "➕" },
