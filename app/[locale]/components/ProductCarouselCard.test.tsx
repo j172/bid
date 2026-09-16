@@ -34,7 +34,9 @@ describe("ProductCarouselCard", () => {
       <ProductCarouselCard
         items={[]}
         activeBadge="精選商品"
-        ctaLabel="查看詳情"
+        ctaLabel="立即購買"
+        viewMoreLabel="查看更多"
+        viewMoreHref="/products"
         emptyStateTitle="尚無內容"
         emptyStateDesc="目前尚無上架商品，請稍後再回來查看。"
       />,
@@ -52,7 +54,9 @@ describe("ProductCarouselCard", () => {
       <ProductCarouselCard
         items={[baseItem]}
         activeBadge="精選商品"
-        ctaLabel="查看詳情"
+        ctaLabel="立即購買"
+        viewMoreLabel="查看更多"
+        viewMoreHref="/products"
         emptyStateTitle="尚無內容"
         emptyStateDesc="敬請期待"
       />,
@@ -68,10 +72,30 @@ describe("ProductCarouselCard", () => {
     // already covers that role.
     expect(screen.getByText(baseItem.title).closest("a")).toBeNull();
 
-    const ctaLink = screen.getByRole("link", { name: "查看詳情" });
+    const ctaLink = screen.getByRole("link", { name: "立即購買" });
     expect(ctaLink.getAttribute("href")).toBe("/products/7");
 
     expect(screen.getByText(baseItem.priceText).textContent).toBe(baseItem.priceText);
+  });
+
+  it("renders a secondary '查看更多' link to the /products catalog page, separate from the per-item CTA", () => {
+    render(
+      <ProductCarouselCard
+        items={[baseItem]}
+        activeBadge="精選商品"
+        ctaLabel="立即購買"
+        viewMoreLabel="查看更多"
+        viewMoreHref="/products"
+        emptyStateTitle="尚無內容"
+        emptyStateDesc="敬請期待"
+      />,
+    );
+
+    const viewMoreLink = screen.getByRole("link", { name: "查看更多" });
+    expect(viewMoreLink.getAttribute("href")).toBe("/products");
+    // Distinct from the per-item CTA, which still points at the item's own detail page.
+    const ctaLink = screen.getByRole("link", { name: "立即購買" });
+    expect(ctaLink.getAttribute("href")).toBe("/products/7");
   });
 
   it("does not let the image link swallow the manual carousel controls", () => {
@@ -80,7 +104,9 @@ describe("ProductCarouselCard", () => {
       <ProductCarouselCard
         items={items}
         activeBadge="精選商品"
-        ctaLabel="查看詳情"
+        ctaLabel="立即購買"
+        viewMoreLabel="查看更多"
+        viewMoreHref="/products"
         emptyStateTitle="尚無內容"
         emptyStateDesc="敬請期待"
       />,
@@ -98,7 +124,9 @@ describe("ProductCarouselCard", () => {
       <ProductCarouselCard
         items={[{ ...baseItem, excerpt: "血統優良，體型健壯，適合長距離賽事訓練使用…" }]}
         activeBadge="精選商品"
-        ctaLabel="查看詳情"
+        ctaLabel="立即購買"
+        viewMoreLabel="查看更多"
+        viewMoreHref="/products"
         emptyStateTitle="尚無內容"
         emptyStateDesc="敬請期待"
       />,
@@ -114,7 +142,9 @@ describe("ProductCarouselCard", () => {
       <ProductCarouselCard
         items={[{ ...baseItem, excerpt: "" }]}
         activeBadge="精選商品"
-        ctaLabel="查看詳情"
+        ctaLabel="立即購買"
+        viewMoreLabel="查看更多"
+        viewMoreHref="/products"
         emptyStateTitle="尚無內容"
         emptyStateDesc="敬請期待"
       />,

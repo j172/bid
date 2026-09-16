@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
 import { getProductById } from "@/lib/products";
 import { productPhotoUrl } from "@/lib/uploads";
 import {
@@ -17,6 +18,7 @@ import { Link } from "@/i18n/navigation";
 import RichTextContent from "@/app/[locale]/components/RichTextContent";
 import YoutubeEmbed from "@/app/[locale]/components/YoutubeEmbed";
 import ProductGallery from "./ProductGallery";
+import PurchaseForm from "./PurchaseForm";
 
 export const dynamic = "force-dynamic";
 
@@ -76,6 +78,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   }
 
   const t = await getTranslations("productDetail");
+  const user = await getCurrentUser();
   const imageUrls = product.photos.map((photo) => productPhotoUrl(product.id, photo.fileName));
 
   const breadcrumbJsonLd = buildBreadcrumbListJsonLd([
@@ -103,6 +106,38 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
           <div className="rounded-2xl border border-border bg-white p-6 shadow-sm">
             <p className="text-sm font-semibold uppercase tracking-wide text-ink-light">{t("priceLabel")}</p>
             <p className="mt-2 text-4xl font-black text-interactive-primary">{formatProductPriceText(product.priceText, locale)}</p>
+
+            {/* Purchase flow (issue #298) — a call-for-price product
+                (price === null) can never be bought online regardless of
+                login state, so it always shows the contact notice instead,
+                same as listings' own call-for-price branch. Otherwise:
+                logged-out visitors get a login prompt (mirrors
+                listings' loginPrompt/loginToBuy copy), logged-in visitors
+                get the real purchase form — PurchaseForm itself renders the
+                "已售完" state internally when stockRemaining is 0. */}
+            {product.price !== null ? (
+              user ? (
+                <div className="mt-6 border-t border-border pt-6">
+                  <h2 className="mb-3 text-lg font-bold text-ink">{t("purchaseHeading")}</h2>
+                  <PurchaseForm productId={product.id} stockRemaining={product.stockRemaining ?? 0} />
+                </div>
+              ) : (
+                <p className="mt-6 border-t border-border pt-6 text-sm text-ink-light">
+                  <Link href="/login" className="font-medium text-interactive-primary hover:underline">
+                    {t("loginPrompt")}
+                  </Link>
+                  {t("loginToBuy")}
+                </p>
+              )
+            ) : (
+              <p className="mt-6 border-t border-border pt-6 text-sm text-ink-light">
+                {t("callForPriceNoticeBefore")}{" "}
+                <Link href="/contact" className="font-medium text-interactive-primary hover:underline">
+                  {t("callForPriceContactLink")}
+                </Link>{" "}
+                {t("callForPriceNoticeAfter")}
+              </p>
+            )}
           </div>
 
           <div>

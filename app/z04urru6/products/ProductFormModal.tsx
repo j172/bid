@@ -8,7 +8,7 @@ import ModalFormActions from "../components/ModalFormActions";
 import { useSuccessBanner } from "../components/SuccessBanner";
 import DescriptionEditor, { type DescriptionEditorHandle } from "../listings/DescriptionEditor";
 import ProductPhotoGalleryEditor, { type ProductPhotoItem } from "./ProductPhotoGalleryEditor";
-import { PRODUCT_PRICE_TEXT_MAX, PRODUCT_TITLE_MAX } from "@/lib/productValidation";
+import { PRODUCT_PRICE_MAX, PRODUCT_TITLE_MAX } from "@/lib/productValidation";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 text-sm focus:border-interactive-primary focus:outline-none";
 const counterClass = (current: number, max: number) => `text-xs ${current > max ? "text-ended" : "text-ink-light"}`;
@@ -16,7 +16,10 @@ const counterClass = (current: number, max: number) => `text-xs ${current > max 
 type EditProduct = {
   id: number;
   title: string;
-  priceText: string;
+  /** Null means 電洽 (call for price, issue #298). */
+  price: number | null;
+  /** Remaining stock — null when price is null. */
+  stockRemaining: number | null;
   description: string;
   sortOrder: number;
   isActive: boolean;
@@ -39,7 +42,20 @@ export default function ProductFormModal(props: Props) {
 
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(isEdit ? props.product.title : "");
-  const [priceText, setPriceText] = useState(isEdit ? props.product.priceText : "");
+  // 電洽 (call for price, issue #298 — mirrors listings' own callForPrice UI,
+  // issue #266): checking the box disables and clears both the price and
+  // stock inputs, since a 電洽 product is never sold online and a stock
+  // count for it has no purpose.
+  const [callForPrice, setCallForPrice] = useState(isEdit ? props.product.price === null : false);
+  const [price, setPrice] = useState(isEdit && props.product.price !== null ? String(props.product.price) : "");
+  // Create mode collects the initial stock *quantity*; edit mode collects
+  // the remaining stock directly (stock_quantity is then recomputed server-
+  // side from sold + this value — see lib/products.ts's updateProduct) —
+  // same "quantity at creation, remaining thereafter" split as
+  // NewListingForm.tsx vs EditListingModal.tsx.
+  const [stockValue, setStockValue] = useState(
+    isEdit && props.product.stockRemaining !== null ? String(props.product.stockRemaining) : "",
+  );
   const [description, setDescription] = useState(isEdit ? props.product.description : "");
   const [sortOrder, setSortOrder] = useState(isEdit ? String(props.product.sortOrder) : "");
   const [isActive, setIsActive] = useState(isEdit ? props.product.isActive : true);
@@ -59,7 +75,9 @@ export default function ProductFormModal(props: Props) {
 
   function resetForm() {
     setTitle(isEdit ? props.product.title : "");
-    setPriceText(isEdit ? props.product.priceText : "");
+    setCallForPrice(isEdit ? props.product.price === null : false);
+    setPrice(isEdit && props.product.price !== null ? String(props.product.price) : "");
+    setStockValue(isEdit && props.product.stockRemaining !== null ? String(props.product.stockRemaining) : "");
     setDescription(isEdit ? props.product.description : "");
     setSortOrder(isEdit ? String(props.product.sortOrder) : "");
     setIsActive(isEdit ? props.product.isActive : true);
@@ -99,7 +117,12 @@ export default function ProductFormModal(props: Props) {
 
     const formData = new FormData();
     formData.set("title", title);
-    formData.set("priceText", priceText);
+    formData.set("callForPrice", String(callForPrice));
+    formData.set("price", price);
+    // Field name differs by mode: create collects the initial quantity,
+    // edit collects the remaining stock directly — see stockValue's own
+    // comment above.
+    formData.set(isEdit ? "stockRemaining" : "stockQuantity", stockValue);
     formData.set("description", descriptionHtml);
     if (sortOrder.trim() !== "") formData.set("sortOrder", sortOrder.trim());
     formData.set("isActive", isActive ? "true" : "false");
@@ -146,14 +169,43 @@ export default function ProductFormModal(props: Props) {
             </label>
 
             <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-              價格顯示文字（純文字，例如「NT$12,000」或「電洽」，不做金額運算）
+              價格
               <input
-                value={priceText}
-                onChange={(e) => setPriceText(e.target.value)}
-                maxLength={PRODUCT_PRICE_TEXT_MAX}
-                placeholder="NT$12,000"
-                required
-                className={inputClass}
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                type="number"
+                min={1}
+                max={PRODUCT_PRICE_MAX}
+                step={1}
+                required={!callForPrice}
+                disabled={callForPrice}
+                className={`${inputClass} disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-ink-light`}
+              />
+              <label className="flex items-center gap-2 font-normal text-ink">
+                <input
+                  type="checkbox"
+                  checked={callForPrice}
+                  onChange={(e) => {
+                    setCallForPrice(e.target.checked);
+                    setPrice("");
+                    setStockValue("");
+                  }}
+                />
+                電洽（不提供固定價格，此商品不開放線上下單，前台顯示聯絡方式）
+              </label>
+            </label>
+
+            <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+              {isEdit ? "剩餘庫存" : "庫存數量"}
+              <input
+                value={stockValue}
+                onChange={(e) => setStockValue(e.target.value)}
+                type="number"
+                min={0}
+                step={1}
+                required={!callForPrice}
+                disabled={callForPrice}
+                className={`${inputClass} disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-ink-light`}
               />
             </label>
 

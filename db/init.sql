@@ -656,10 +656,23 @@ CREATE TABLE IF NOT EXISTS sync_runs (
 -- products/[id]/page.tsx），而不是像 homepage_sections 舊版那樣讓管理員手動
 -- 填一個 URL。is_active／sort_order 是這張表在首頁輪播／後台清單的上下架與
 -- 排序依據，同 homepage_videos 的慣例（見上方 homepage_videos 表）。
+-- price_text/price 併存的原因（issue #298）：price_text 仍是 formatProductPriceText
+-- （#293）唯一讀取的欄位，但不再是管理員自由輸入——建立/編輯商品時由後台依
+-- price（電洽則為 NULL）自動算出並寫回 price_text（電洽 -> "電洽"；有價格 ->
+-- 該數字的字串形式，讓 formatProductPriceText 既有的「純數字字串才加 NT$」邏輯
+-- 原樣套用），所以前台每一處既有的 formatProductPriceText(product.priceText, ...)
+-- 呼叫點完全不用改。price 才是新的交易/庫存邏輯（購買、訂單金額）真正讀寫的
+-- 欄位；price_text 純粹是這欄位的顯示鏡射。stock_quantity/stock_remaining 是
+-- 比照 listings 的同名欄位（見上方 listings 表）新增的庫存追蹤欄位，NULL 代表
+-- 電洽／尚未開放線上下單。既有 price_text 舊資料的一次性轉換見
+-- scripts/migrate-product-prices.mjs（人工於正式站執行，不隨部署自動跑）。
 CREATE TABLE IF NOT EXISTS products (
   id BIGINT NOT NULL AUTO_INCREMENT,
   title VARCHAR(255) NOT NULL,
-  price_text VARCHAR(100) NOT NULL,  -- 純顯示用價格文字，例如「NT$12,000」；不做金額運算或驗證
+  price_text VARCHAR(100) NOT NULL,  -- 純顯示用價格文字，例如「NT$12,000」或「電洽」；由 price/callForPrice 自動算出，見上方欄位註解
+  price BIGINT NULL,                 -- 結構化價格（issue #298）；NULL 代表電洽，此類商品不可線上下單
+  stock_quantity BIGINT NULL,        -- 初始庫存數量；NULL 代表電洽／尚未開放線上下單
+  stock_remaining BIGINT NULL,       -- 剩餘庫存，下單時以 SELECT...FOR UPDATE 鎖列扣減，避免超賣
   description TEXT NOT NULL,         -- 富文本（TinyMCE，issue #286 起改用與 listings 相同的 DescriptionEditor），儲存前經 sanitizeDescriptionHtml 清洗；既有的純文字舊資料原樣相容（無標籤的純文字本身就是合法、安全的 HTML 片段）
   sort_order INT NOT NULL DEFAULT 0,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
@@ -691,5 +704,32 @@ CREATE TABLE IF NOT EXISTS product_photos (
   created_at DATETIME NOT NULL,
   PRIMARY KEY (id),
   KEY idx_product_photos_product (product_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- products 專屬訂單流程 (issue #298) —— 明確獨立於 listings 的 purchases／
+-- settlement 機制之外（見 lib/productOrders.ts 開頭註解），listings 既有的
+-- 已結算／未結算二態不套用在這裡；products 訂單改用較完整的五態狀態機：
+-- 'pending'（下單剛建立）-> 'shipped'（後台標記已出貨，可選填 tracking_number）
+-- -> 'completed'（已完成），'cancelled'／'refunded' 可從任一非終態轉入，三者皆為
+-- 終態（見 lib/productOrders.ts 的 resolveProductOrderStatusTransition）。
+-- 'refunded' 純粹是紀錄性狀態（本次不整合金流，退款不會觸發任何實際金流動作）。
+-- unit_price／total_amount 是下單當下的快照（products.price 之後可被後台改
+-- 動），不會回頭重算，同 listings.purchases 的既有慣例。tracking_number 僅供
+-- 後台紀錄，沒有買家端物流查詢頁（不在本次範圍內）。
+CREATE TABLE IF NOT EXISTS product_orders (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  product_id BIGINT NOT NULL,
+  buyer_id BIGINT NOT NULL,
+  quantity BIGINT NOT NULL,
+  unit_price BIGINT NOT NULL,
+  total_amount BIGINT NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending',  -- 'pending' | 'shipped' | 'completed' | 'cancelled' | 'refunded'
+  tracking_number VARCHAR(100) NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_product_orders_product (product_id),
+  KEY idx_product_orders_buyer (buyer_id),
+  KEY idx_product_orders_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

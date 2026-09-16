@@ -437,6 +437,41 @@ CREATE TABLE IF NOT EXISTS product_photos (
   PRIMARY KEY (id),
   KEY idx_product_photos_product (product_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- products' own order flow (issue #298) — brand-new table, whole final
+-- schema from day one, same as sync_runs/contact_messages above. Deliberately
+-- independent of listings' \`purchases\`/settlement tables (see
+-- lib/productOrders.ts's header comment): products previously had zero
+-- transactional history, so this ticket owns its own table rather than
+-- retrofitting listings' binary settled/unsettled shape. status is a richer
+-- 5-value state machine (see lib/productOrders.ts's
+-- resolveProductOrderStatusTransition) — 'pending' (just placed) ->
+-- 'shipped' (admin marked it shipped, optionally with tracking_number) ->
+-- 'completed', with 'cancelled'/'refunded' reachable from either
+-- non-terminal state. 'refunded' is a record-only status (issue #298: no
+-- payment gateway, so nothing actually moves money) — same "admin recorded
+-- an offline action" spirit as listings.settlement_account/amount, just
+-- richer than that binary. tracking_number is admin-entered free text, no
+-- buyer-facing tracking page (out of scope). unit_price/total_amount are
+-- snapshotted at purchase time (products.price can change after the fact via
+-- the admin edit form; the order must keep the price the buyer actually paid),
+-- same "snapshot, don't recompute" convention as listings.purchases.
+CREATE TABLE IF NOT EXISTS product_orders (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  product_id BIGINT NOT NULL,
+  buyer_id BIGINT NOT NULL,
+  quantity BIGINT NOT NULL,
+  unit_price BIGINT NOT NULL,
+  total_amount BIGINT NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending',  -- 'pending' | 'shipped' | 'completed' | 'cancelled' | 'refunded'
+  tracking_number VARCHAR(100) NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_product_orders_product (product_id),
+  KEY idx_product_orders_buyer (buyer_id),
+  KEY idx_product_orders_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
 
 // Columns added after their table's initial CREATE TABLE IF NOT EXISTS;
@@ -748,6 +783,26 @@ export async function ensureYoutubeUrlColumns(db: mysql.Pool): Promise<void> {
   await ensureColumn(db, "products", "youtube_url", "VARCHAR(255) NULL");
 }
 
+// Issue #298: converts `products` from a pure-display entity into one with a
+// real (payment-gateway-free) order flow — structured, nullable numeric
+// `price` (NULL means 電洽/call-for-price, same convention as
+// listings.price) plus stock_quantity/stock_remaining, same column shapes
+// listings already carries (see ensureBiddingColumns' listings.price/
+// stock_quantity/stock_remaining above). Existing `price_text` data is NOT
+// migrated here — ensureColumn only adds columns, it never rewrites
+// existing rows' data — see scripts/migrate-product-prices.mjs for the
+// one-time, manually-run production data migration (numeric-string
+// price_text values auto-convert to `price`; everything else becomes
+// price = NULL, requiring an admin to manually fill in the real price
+// later). Every row starts at price = NULL / stock_quantity = NULL /
+// stock_remaining = NULL (i.e. "call for price, not yet purchasable
+// online") until either that script or a subsequent admin edit sets them.
+async function ensureProductOrderColumns(db: mysql.Pool): Promise<void> {
+  await ensureColumn(db, "products", "price", "BIGINT NULL");
+  await ensureColumn(db, "products", "stock_quantity", "BIGINT NULL");
+  await ensureColumn(db, "products", "stock_remaining", "BIGINT NULL");
+}
+
 function createPool(): mysql.Pool {
   return mysql.createPool({
     host: process.env.MYSQL_HOST,
@@ -809,6 +864,7 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensurePigeonShopCategoryColumn(db);
   await ensureFeaturedLoftSectionColumn(db);
   await ensureYoutubeUrlColumns(db);
+  await ensureProductOrderColumns(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {

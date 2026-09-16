@@ -22,6 +22,10 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   // comment), so it sits alongside listings under "commerce" rather than
   // nested under "content" the way homepage_sections-backed screens are.
   { label: "商品管理", href: "/z04urru6/products", section: "commerce" },
+  // 商品訂單 (issue #298) — products' own order-management page, deliberately
+  // named/routed apart from 訂單管理 (listings' fixed_price purchases) below
+  // to avoid confusing the two independent order flows.
+  { label: "商品訂單", href: "/z04urru6/product-orders", section: "commerce" },
   { label: "訂單管理", href: "/z04urru6/orders", section: "commerce" },
   { label: "使用者列表", href: "/z04urru6/users", section: "commerce" },
   { label: "合作鴿舍管理", href: "/z04urru6/homepage/partner-lofts", section: "content" },

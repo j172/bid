@@ -260,7 +260,9 @@ export default function HeroSection({
             <ProductCarouselCard
               items={products}
               activeBadge={tHome("productCarouselBadge")}
-              ctaLabel={tHome("cardCta")}
+              ctaLabel={tHome("productCarouselCta")}
+              viewMoreLabel={tHome("productCarouselViewMore")}
+              viewMoreHref="/products"
               emptyStateTitle={tHome("emptyStateTitle")}
               emptyStateDesc={tHome("productCarouselEmptyDesc")}
             />
