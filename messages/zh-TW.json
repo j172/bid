@@ -62,7 +62,8 @@
     "partnerLoftsSubtitle": "與我們長期合作的優質鴿舍，點選前往鴿舍專屬商品頁",
     "partnerLoftsViewAll": "查看全部商品",
     "timeless": "長期販售",
-    "cardCta": "查看詳情",
+    "productCarouselCta": "立即購買",
+    "productCarouselViewMore": "查看更多",
     "serviceFast": "快速上架",
     "serviceFastDesc": "商品建立後即可立即公開，競標狀態即時更新。",
     "serviceSecure": "安全交易",
@@ -295,6 +296,14 @@
     "submit": "購買",
     "submitting": "處理中...",
     "defaultError": "購買失敗"
+  },
+  "productPurchaseForm": {
+    "soldOut": "已售罄",
+    "quantityLabel": "購買數量（剩餘 {count} 件）",
+    "confirm": "確定要下單購買 {count} 件嗎？",
+    "submit": "立即購買",
+    "submitting": "處理中...",
+    "defaultError": "下單失敗"
   },
   "statusBadge": {
     "scheduled": "尚未開標",
@@ -671,7 +680,9 @@
     "CONTACT_SUBMIT_FAILED": "送出失敗，請稍後再試",
     "PROFILE_INCOMPLETE": "出價或購買前，請先至帳戶設定填寫聯絡電話與收件地址",
     "GOOGLE_AUTH_FAILED": "Google 登入驗證失敗，請稍後再試",
-    "PASSWORD_ALREADY_SET": "該帳戶已設定過密碼，請使用修改密碼功能"
+    "PASSWORD_ALREADY_SET": "該帳戶已設定過密碼，請使用修改密碼功能",
+    "PRODUCT_NOT_ACTIVE": "這個商品目前無法購買",
+    "PRODUCT_CALL_FOR_PRICE": "這個商品採電洽方式，無法線上下單，請自行洽詢賣家"
   },
   "pigeonShowcase": {
     "title": "舍內名鴿名鑑",
@@ -1234,6 +1245,19 @@
     "galleryLightboxLabel": "{title} 大圖預覽",
     "galleryClose": "關閉",
     "galleryPrevious": "上一張照片",
-    "galleryNext": "下一張照片"
+    "galleryNext": "下一張照片",
+    "purchaseHeading": "立即購買",
+    "soldOut": "已售完",
+    "callForPriceNoticeBefore": "此商品採電洽方式，請透過",
+    "callForPriceContactLink": "聯絡我們",
+    "callForPriceNoticeAfter": "洽詢價格與購買方式。",
+    "loginPrompt": "登入",
+    "loginToBuy": "後才能購買"
+  },
+  "productsCatalog": {
+    "title": "所有商品",
+    "breadcrumbHome": "首頁",
+    "breadcrumbSelf": "所有商品",
+    "empty": "目前沒有上架中的商品，請稍後再回來查看。"
   }
 }

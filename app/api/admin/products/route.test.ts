@@ -33,7 +33,9 @@ const adminAuth = { user: { id: 1, email: "admin@example.com", role: "admin" as 
 function buildCreateForm(overrides: Record<string, string> = {}, photos: File[] = [new File(["x"], "a.webp")]) {
   const form = new FormData();
   form.set("title", overrides.title ?? "限量特惠鴿");
-  form.set("priceText", overrides.priceText ?? "NT$12,000");
+  form.set("callForPrice", overrides.callForPrice ?? "false");
+  form.set("price", overrides.price ?? "12000");
+  form.set("stockQuantity", overrides.stockQuantity ?? "5");
   form.set("description", overrides.description ?? "簡介內容");
   if (overrides.sortOrder !== undefined) form.set("sortOrder", overrides.sortOrder);
   if (overrides.isActive !== undefined) form.set("isActive", overrides.isActive);
@@ -65,7 +67,10 @@ describe("GET /api/admin/products", () => {
       {
         id: 1,
         title: "t",
-        priceText: "NT$1",
+        priceText: "1",
+        price: 1,
+        stockQuantity: 5,
+        stockRemaining: 5,
         description: "d",
         sortOrder: 0,
         isActive: true,
@@ -103,12 +108,37 @@ describe("POST /api/admin/products", () => {
     expect(createProduct).not.toHaveBeenCalled();
   });
 
-  it("rejects a missing price display text", async () => {
+  it("rejects an invalid price when not call-for-price", async () => {
     vi.mocked(requireAdmin).mockResolvedValueOnce(adminAuth);
-    const req = new Request("http://localhost", { method: "POST", body: buildCreateForm({ priceText: "" }) });
+    const req = new Request("http://localhost", { method: "POST", body: buildCreateForm({ price: "0" }) });
     const res = await POST(req);
     expect(res.status).toBe(400);
-    expect((await res.json()).error).toBe("請輸入價格顯示文字");
+    expect((await res.json()).error).toBe("價格必須是正數");
+    expect(createProduct).not.toHaveBeenCalled();
+  });
+
+  it("rejects a missing stock quantity when not call-for-price", async () => {
+    vi.mocked(requireAdmin).mockResolvedValueOnce(adminAuth);
+    const req = new Request("http://localhost", { method: "POST", body: buildCreateForm({ stockQuantity: "" }) });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe("庫存數量必須是正整數");
+    expect(createProduct).not.toHaveBeenCalled();
+  });
+
+  it("skips price/stock validation entirely when callForPrice is true", async () => {
+    vi.mocked(requireAdmin).mockResolvedValueOnce(adminAuth);
+    vi.mocked(createProduct).mockResolvedValueOnce(42);
+    vi.mocked(saveProductPhotos).mockResolvedValueOnce(["a.webp"]);
+
+    const req = new Request("http://localhost", {
+      method: "POST",
+      body: buildCreateForm({ callForPrice: "true", price: "", stockQuantity: "" }),
+    });
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(createProduct).toHaveBeenCalledWith(expect.objectContaining({ price: null, stockQuantity: null }));
   });
 
   it("rejects an invalid youtubeUrl", async () => {
@@ -173,7 +203,8 @@ describe("POST /api/admin/products", () => {
     expect(json).toEqual({ ok: true, id: 42 });
     expect(createProduct).toHaveBeenCalledWith({
       title: "限量特惠鴿",
-      priceText: "NT$12,000",
+      price: 12000,
+      stockQuantity: 5,
       description: "簡介內容",
       sortOrder: undefined,
       isActive: undefined,

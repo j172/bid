@@ -62,7 +62,8 @@
     "partnerLoftsSubtitle": "Our trusted long-term partner lofts — browse each loft's dedicated listings",
     "partnerLoftsViewAll": "View all listings",
     "timeless": "Always available",
-    "cardCta": "View details",
+    "productCarouselCta": "Buy Now",
+    "productCarouselViewMore": "View More",
     "serviceFast": "Fast publishing",
     "serviceFastDesc": "Listings go live immediately and update in real time.",
     "serviceSecure": "Secure transaction rules",
@@ -292,6 +293,14 @@
     "submit": "Buy Now",
     "submitting": "Processing...",
     "defaultError": "Purchase failed"
+  },
+  "productPurchaseForm": {
+    "soldOut": "Sold out",
+    "quantityLabel": "Quantity ({count} left)",
+    "confirm": "Place an order for {count}?",
+    "submit": "Buy Now",
+    "submitting": "Processing...",
+    "defaultError": "Order failed"
   },
   "statusBadge": {
     "scheduled": "Not started yet",
@@ -668,7 +677,9 @@
     "CONTACT_SUBMIT_FAILED": "Failed to send message. Please try again later.",
     "PROFILE_INCOMPLETE": "Please complete your phone number and shipping address in account settings before bidding or purchasing",
     "GOOGLE_AUTH_FAILED": "Google authentication failed. Please try again later",
-    "PASSWORD_ALREADY_SET": "A password has already been set for this account. Please use the change password function"
+    "PASSWORD_ALREADY_SET": "A password has already been set for this account. Please use the change password function",
+    "PRODUCT_NOT_ACTIVE": "This product is currently unavailable",
+    "PRODUCT_CALL_FOR_PRICE": "This product is call-for-price and can't be ordered online — please contact the seller directly"
   },
   "pigeonShowcase": {
     "title": "Pigeon Showcase",
@@ -1231,6 +1242,19 @@
     "galleryLightboxLabel": "{title} full-size preview",
     "galleryClose": "Close",
     "galleryPrevious": "Previous photo",
-    "galleryNext": "Next photo"
+    "galleryNext": "Next photo",
+    "purchaseHeading": "Buy Now",
+    "soldOut": "Sold out",
+    "callForPriceNoticeBefore": "This product is call-for-price — please",
+    "callForPriceContactLink": "contact us",
+    "callForPriceNoticeAfter": "for pricing and purchase details.",
+    "loginPrompt": "Log in",
+    "loginToBuy": " to purchase"
+  },
+  "productsCatalog": {
+    "title": "All Products",
+    "breadcrumbHome": "Home",
+    "breadcrumbSelf": "All Products",
+    "empty": "No products are available right now — please check back later."
   }
 }

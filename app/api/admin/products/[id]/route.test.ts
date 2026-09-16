@@ -27,7 +27,10 @@ const adminAuth = { user: { id: 1, email: "admin@example.com", role: "admin" as 
 const existingProduct = {
   id: 5,
   title: "限量特惠鴿",
-  priceText: "NT$12,000",
+  priceText: "12000",
+  price: 12000,
+  stockQuantity: 10,
+  stockRemaining: 10,
   description: "簡介",
   sortOrder: 0,
   isActive: true,
@@ -44,7 +47,9 @@ function params(id: string) {
 function buildEditForm(overrides: Record<string, string> = {}, photos: File[] = []) {
   const form = new FormData();
   form.set("title", overrides.title ?? "限量特惠鴿");
-  form.set("priceText", overrides.priceText ?? "NT$12,000");
+  form.set("callForPrice", overrides.callForPrice ?? "false");
+  form.set("price", overrides.price ?? "12000");
+  form.set("stockRemaining", overrides.stockRemaining ?? "10");
   form.set("description", overrides.description ?? "簡介");
   form.set("sortOrder", overrides.sortOrder ?? "0");
   form.set("isActive", overrides.isActive ?? "true");
@@ -120,6 +125,31 @@ describe("PATCH /api/admin/products/[id]", () => {
     expect((await res.json()).error).toBe("排序必須是不小於 0 的整數");
   });
 
+  it("rejects an invalid price when not call-for-price", async () => {
+    vi.mocked(requireAdmin).mockResolvedValueOnce(adminAuth);
+    vi.mocked(getProductById).mockResolvedValueOnce(existingProduct);
+    const req = new Request("http://localhost", { method: "PATCH", body: buildEditForm({ price: "0" }) });
+    const res = await PATCH(req, params("5"));
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe("價格必須是正數");
+  });
+
+  it("skips price/stock validation and writes null for both when callForPrice is true", async () => {
+    vi.mocked(requireAdmin).mockResolvedValueOnce(adminAuth);
+    vi.mocked(getProductById).mockResolvedValueOnce(existingProduct);
+    vi.mocked(saveProductPhotos).mockResolvedValueOnce([]);
+    vi.mocked(updateProduct).mockResolvedValueOnce({ ok: true });
+
+    const req = new Request("http://localhost", {
+      method: "PATCH",
+      body: buildEditForm({ callForPrice: "true", price: "", stockRemaining: "" }),
+    });
+    const res = await PATCH(req, params("5"));
+
+    expect(res.status).toBe(200);
+    expect(updateProduct).toHaveBeenCalledWith(5, expect.objectContaining({ price: null, stockRemaining: null }));
+  });
+
   it("rejects an invalid youtubeUrl", async () => {
     vi.mocked(requireAdmin).mockResolvedValueOnce(adminAuth);
     vi.mocked(getProductById).mockResolvedValueOnce(existingProduct);
@@ -156,7 +186,8 @@ describe("PATCH /api/admin/products/[id]", () => {
     expect(res.status).toBe(200);
     expect(updateProduct).toHaveBeenCalledWith(5, {
       title: "新標題",
-      priceText: "NT$12,000",
+      price: 12000,
+      stockRemaining: 10,
       description: "簡介",
       sortOrder: 0,
       isActive: true,

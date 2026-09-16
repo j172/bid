@@ -25,6 +25,14 @@ const EMAIL_MESSAGES: Record<
     auctionEndedBody: (title: string) => string;
     purchaseConfirmedSubject: string;
     purchaseConfirmedBody: (title: string, quantity: number, totalAmount: number) => string;
+    // products' own order-confirmation email (issue #298) — deliberately a
+    // separate pair from purchaseConfirmedSubject/Body above: that one is
+    // listings' fixed_price purchases (`purchases` table) and must never be
+    // touched by this ticket; this one is products' brand-new `product_orders`
+    // flow. Same copy spirit ("we'll follow up about payment/delivery"),
+    // reworded for products' language ("商品" wording already fits both).
+    productOrderConfirmedSubject: string;
+    productOrderConfirmedBody: (title: string, quantity: number, totalAmount: number) => string;
     winnerSubject: string;
     winnerBody: (title: string, finalPrice: number) => string;
     resetPasswordSubject: string;
@@ -50,6 +58,9 @@ const EMAIL_MESSAGES: Record<
     purchaseConfirmedSubject: "購買成功",
     purchaseConfirmedBody: (title, quantity, totalAmount) =>
       `<p>你已購買「${title}」x ${quantity}，總金額 ${totalAmount}。管理員會與你聯繫後續付款與交付事宜。</p>`,
+    productOrderConfirmedSubject: "訂單成立",
+    productOrderConfirmedBody: (title, quantity, totalAmount) =>
+      `<p>你已下單「${title}」x ${quantity}，總金額 ${totalAmount}。管理員會與你聯繫後續付款與出貨事宜，出貨後可於後台查詢物流單號。</p>`,
     winnerSubject: "恭喜得標",
     winnerBody: (title, finalPrice) =>
       `<p>恭喜你得標「${title}」，得標金額 ${finalPrice}。管理員會與你聯繫後續付款與交付事宜。</p>`,
@@ -74,6 +85,9 @@ const EMAIL_MESSAGES: Record<
     purchaseConfirmedSubject: "购买成功",
     purchaseConfirmedBody: (title, quantity, totalAmount) =>
       `<p>你已购买「${title}」x ${quantity}，总金额 ${totalAmount}。管理员会与你联系后续付款与交付事宜。</p>`,
+    productOrderConfirmedSubject: "订单成立",
+    productOrderConfirmedBody: (title, quantity, totalAmount) =>
+      `<p>你已下单「${title}」x ${quantity}，总金额 ${totalAmount}。管理员会与你联系后续付款与出货事宜，出货后可于后台查询物流单号。</p>`,
     winnerSubject: "恭喜得标",
     winnerBody: (title, finalPrice) =>
       `<p>恭喜你得标「${title}」，得标金额 ${finalPrice}。管理员会与你联系后续付款与交付事宜。</p>`,
@@ -99,6 +113,9 @@ const EMAIL_MESSAGES: Record<
     purchaseConfirmedSubject: "Purchase confirmed",
     purchaseConfirmedBody: (title, quantity, totalAmount) =>
       `<p>You purchased "${title}" x ${quantity}, total amount ${totalAmount}. The admin will contact you about payment and delivery.</p>`,
+    productOrderConfirmedSubject: "Order placed",
+    productOrderConfirmedBody: (title, quantity, totalAmount) =>
+      `<p>You placed an order for "${title}" x ${quantity}, total amount ${totalAmount}. The admin will contact you about payment and shipping — once shipped, you can ask for the tracking number.</p>`,
     winnerSubject: "Congratulations, you won!",
     winnerBody: (title, finalPrice) =>
       `<p>Congratulations — you won "${title}" for ${finalPrice}. The admin will contact you about payment and delivery.</p>`,
@@ -191,6 +208,35 @@ export function notifyPurchaseConfirmed(purchaseId: number): void {
       messages.purchaseConfirmedBody(row.title, row.quantity, row.totalAmount),
     );
   })().catch((error) => console.error("notifyPurchaseConfirmed failed:", error));
+}
+
+// products' own order-confirmation notification (issue #298) — called from
+// purchaseProduct (lib/productOrders.ts) with the newly-inserted
+// product_orders row's id, same "look up its own details" shape as
+// notifyPurchaseConfirmed above. Deliberately independent of that function
+// and its `purchases`/listings query: this reads `product_orders`/`products`
+// only, never touching listings' tables.
+export function notifyProductOrderConfirmed(orderId: number): void {
+  void (async () => {
+    const db = await getDb();
+    const [rows] = await db.query(
+      `SELECT u.email AS email, u.locale AS locale, p.title AS title, po.quantity AS quantity, po.total_amount AS totalAmount
+       FROM product_orders po
+       JOIN users u ON u.id = po.buyer_id
+       JOIN products p ON p.id = po.product_id
+       WHERE po.id = ?`,
+      [orderId],
+    );
+    const row = (rows as { email: string; locale: string; title: string; quantity: number; totalAmount: number }[])[0];
+    if (!row) return;
+
+    const messages = EMAIL_MESSAGES[resolveLocale(row.locale)];
+    await sendEmail(
+      row.email,
+      messages.productOrderConfirmedSubject,
+      messages.productOrderConfirmedBody(row.title, row.quantity, row.totalAmount),
+    );
+  })().catch((error) => console.error("notifyProductOrderConfirmed failed:", error));
 }
 
 // Winner-specific "congratulations, you won" notification (issue #48) —

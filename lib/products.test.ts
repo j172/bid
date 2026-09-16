@@ -36,7 +36,10 @@ describe("listProducts", () => {
         {
           id: 1,
           title: "限量特惠鴿",
-          price_text: "NT$12,000",
+          price_text: "12000",
+          price: 12000,
+          stock_quantity: 5,
+          stock_remaining: 5,
           description: "簡介",
           sort_order: 0,
           is_active: 1,
@@ -60,7 +63,10 @@ describe("listProducts", () => {
       {
         id: 1,
         title: "限量特惠鴿",
-        priceText: "NT$12,000",
+        priceText: "12000",
+        price: 12000,
+        stockQuantity: 5,
+        stockRemaining: 5,
         description: "簡介",
         sortOrder: 0,
         isActive: true,
@@ -101,6 +107,9 @@ describe("getProductById", () => {
           id: 5,
           title: "t",
           price_text: "電洽",
+          price: null,
+          stock_quantity: null,
+          stock_remaining: null,
           description: "d",
           sort_order: 2,
           is_active: 0,
@@ -139,43 +148,53 @@ describe("createProduct", () => {
   it("uses an explicit sortOrder without a lookup query", async () => {
     queryMock.mockResolvedValueOnce([{ insertId: 42 }]);
 
-    const id = await createProduct({ title: "t", priceText: "NT$1", description: "d", sortOrder: 3 });
+    const id = await createProduct({ title: "t", price: 1, stockQuantity: 5, description: "d", sortOrder: 3 });
 
     expect(id).toBe(42);
     expect(queryMock).toHaveBeenCalledTimes(1);
-    expect(queryMock.mock.calls[0][1]).toEqual(["t", "NT$1", "d", 3, 1, null]);
+    // price_text is derived from price ("1"), and stock_remaining starts
+    // equal to the initial stock_quantity.
+    expect(queryMock.mock.calls[0][1]).toEqual(["t", "1", 1, 5, 5, "d", 3, 1, null]);
+  });
+
+  it("derives price_text as 電洽 when price is null (call for price)", async () => {
+    queryMock.mockResolvedValueOnce([{ insertId: 1 }]);
+    await createProduct({ title: "t", price: null, stockQuantity: null, description: "d", sortOrder: 0 });
+    expect(queryMock.mock.calls[0][1]).toEqual(["t", "電洽", null, null, null, "d", 0, 1, null]);
   });
 
   it("defaults sortOrder to MAX(sort_order) + 1 when omitted", async () => {
     queryMock.mockResolvedValueOnce([[{ nextOrder: 7 }]]);
     queryMock.mockResolvedValueOnce([{ insertId: 8 }]);
 
-    const id = await createProduct({ title: "t", priceText: "NT$1", description: "d" });
+    const id = await createProduct({ title: "t", price: 1, stockQuantity: 5, description: "d" });
 
     expect(id).toBe(8);
     expect(queryMock).toHaveBeenCalledTimes(2);
-    expect(queryMock.mock.calls[1][1]).toEqual(["t", "NT$1", "d", 7, 1, null]);
+    expect(queryMock.mock.calls[1][1]).toEqual(["t", "1", 1, 5, 5, "d", 7, 1, null]);
   });
 
   it("stores isActive: false as 0", async () => {
     queryMock.mockResolvedValueOnce([{ insertId: 1 }]);
-    await createProduct({ title: "t", priceText: "NT$1", description: "d", sortOrder: 0, isActive: false });
-    expect(queryMock.mock.calls[0][1][4]).toBe(0);
+    await createProduct({ title: "t", price: 1, stockQuantity: 5, description: "d", sortOrder: 0, isActive: false });
+    expect(queryMock.mock.calls[0][1][7]).toBe(0);
   });
 
   it("defaults isActive to 1 when omitted", async () => {
     queryMock.mockResolvedValueOnce([{ insertId: 1 }]);
-    await createProduct({ title: "t", priceText: "NT$1", description: "d", sortOrder: 0 });
-    expect(queryMock.mock.calls[0][1][4]).toBe(1);
+    await createProduct({ title: "t", price: 1, stockQuantity: 5, description: "d", sortOrder: 0 });
+    expect(queryMock.mock.calls[0][1][7]).toBe(1);
   });
 });
 
 describe("updateProduct", () => {
   it("returns ok:false when no row matched (deleted or bad id)", async () => {
+    queryMock.mockResolvedValueOnce([[{ sold: 0 }]]);
     queryMock.mockResolvedValueOnce([{ affectedRows: 0 }]);
     const result = await updateProduct(1, {
       title: "t",
-      priceText: "NT$1",
+      price: 1,
+      stockRemaining: 5,
       description: "d",
       sortOrder: 0,
       isActive: true,
@@ -184,18 +203,37 @@ describe("updateProduct", () => {
     expect(result).toEqual({ ok: false, error: "找不到這個商品" });
   });
 
-  it("returns ok:true when a row is updated", async () => {
+  it("returns ok:true and recomputes stock_quantity as sold + stockRemaining", async () => {
+    queryMock.mockResolvedValueOnce([[{ sold: 3 }]]);
     queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
     const result = await updateProduct(1, {
       title: "t",
-      priceText: "NT$1",
+      price: 1,
+      stockRemaining: 5,
       description: "d",
       sortOrder: 0,
       isActive: true,
       youtubeUrl: "https://youtu.be/dQw4w9WgXcQ",
     });
     expect(result).toEqual({ ok: true });
-    expect(queryMock.mock.calls[0][1]).toEqual(["t", "NT$1", "d", 0, 1, "https://youtu.be/dQw4w9WgXcQ", 1]);
+    expect(queryMock.mock.calls[0][0]).toContain("FROM product_orders WHERE product_id = ?");
+    // stock_quantity = sold (3) + stockRemaining (5) = 8.
+    expect(queryMock.mock.calls[1][1]).toEqual(["t", "1", 1, 8, 5, "d", 0, 1, "https://youtu.be/dQw4w9WgXcQ", 1]);
+  });
+
+  it("keeps price/stock null when the product is 電洽", async () => {
+    queryMock.mockResolvedValueOnce([[{ sold: 0 }]]);
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+    await updateProduct(1, {
+      title: "t",
+      price: null,
+      stockRemaining: null,
+      description: "d",
+      sortOrder: 0,
+      isActive: true,
+      youtubeUrl: null,
+    });
+    expect(queryMock.mock.calls[1][1]).toEqual(["t", "電洽", null, null, null, "d", 0, 1, null, 1]);
   });
 });
 

@@ -46,12 +46,17 @@ export default function ProductCarouselCard({
   items,
   activeBadge,
   ctaLabel,
+  viewMoreLabel,
+  viewMoreHref,
   emptyStateTitle,
   emptyStateDesc,
 }: {
   items: ProductCarouselItem[];
   activeBadge: string;
   ctaLabel: string;
+  /** "查看更多" secondary link to the /products catalog page (issue #298) — sits next to the primary CTA, not the card header (contrast FeaturedLoftCarouselCard's corner placement). */
+  viewMoreLabel: string;
+  viewMoreHref: string;
   emptyStateTitle: string;
   emptyStateDesc: string;
 }) {
@@ -112,9 +117,18 @@ export default function ProductCarouselCard({
       {current.excerpt ? (
         <p className="mt-2.5 line-clamp-2 text-xs text-ink-light sm:text-sm">{current.excerpt}</p>
       ) : null}
-      <div className="mt-3 text-[11px]">
-        <Link href={href} className="block w-full rounded-md bg-header px-2 py-1 text-center font-semibold text-white">
+      <div className="mt-3 flex items-center gap-2 text-[11px]">
+        <Link
+          href={href}
+          className="block flex-1 rounded-md bg-header px-2 py-1 text-center font-semibold text-white"
+        >
           {ctaLabel}
+        </Link>
+        <Link
+          href={viewMoreHref}
+          className="shrink-0 font-semibold text-interactive-primary hover:underline"
+        >
+          {viewMoreLabel}
         </Link>
       </div>
     </article>

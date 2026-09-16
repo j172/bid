@@ -4,8 +4,9 @@ import { MAX_PHOTO_COUNT } from "@/lib/photoLimits";
 import { parseProductPhotoOrder, resolveProductPhotoOrder } from "@/lib/productPhotoOrder";
 import {
   validateProductDescription,
-  validateProductPriceText,
+  validateProductPriceOrCallForPrice,
   validateProductSortOrder,
+  validateProductStockQuantity,
   validateProductTitle,
 } from "@/lib/productValidation";
 import { createProduct, deleteProduct, listProducts, replaceProductPhotos } from "@/lib/products";
@@ -36,7 +37,14 @@ export async function POST(request: Request) {
 
   const form = await request.formData();
   const title = String(form.get("title") ?? "").trim();
-  const priceText = String(form.get("priceText") ?? "").trim();
+  // 電洽 (call for price, issue #298 — mirrors listings' own callForPrice,
+  // issue #266): the admin checks a box instead of filling in a price, and
+  // price/stockQuantity validation is skipped entirely in that case;
+  // createProduct then writes price=NULL/stockQuantity=NULL instead of these
+  // (unused) form values.
+  const callForPrice = String(form.get("callForPrice") ?? "") === "true";
+  const priceRaw = Number(form.get("price"));
+  const stockQuantityRaw = Number(form.get("stockQuantity"));
   const description = String(form.get("description") ?? "").trim();
   const sortOrderRaw = String(form.get("sortOrder") ?? "").trim();
   const sortOrder = sortOrderRaw === "" ? undefined : Number(sortOrderRaw);
@@ -58,9 +66,13 @@ export async function POST(request: Request) {
   if (!titleResult.ok) {
     return NextResponse.json({ ok: false, error: titleResult.error }, { status: 400 });
   }
-  const priceTextResult = validateProductPriceText(priceText);
-  if (!priceTextResult.ok) {
-    return NextResponse.json({ ok: false, error: priceTextResult.error }, { status: 400 });
+  const priceResult = validateProductPriceOrCallForPrice(callForPrice, priceRaw);
+  if (!priceResult.ok) {
+    return NextResponse.json({ ok: false, error: priceResult.error }, { status: 400 });
+  }
+  const stockQuantityResult = validateProductStockQuantity(stockQuantityRaw, callForPrice);
+  if (!stockQuantityResult.ok) {
+    return NextResponse.json({ ok: false, error: stockQuantityResult.error }, { status: 400 });
   }
   const descriptionResult = validateProductDescription(description);
   if (!descriptionResult.ok) {
@@ -88,9 +100,13 @@ export async function POST(request: Request) {
   // description is rich text (TinyMCE, issue #286) — sanitized before
   // storage, same "sanitize on write" rule listings' description follows
   // (the public product page now renders it via dangerouslySetInnerHTML too).
+  const price = callForPrice ? null : priceRaw;
+  const stockQuantity = callForPrice ? null : stockQuantityRaw;
+
   const productId = await createProduct({
     title,
-    priceText,
+    price,
+    stockQuantity,
     description: sanitizeDescriptionHtml(description),
     sortOrder,
     isActive,

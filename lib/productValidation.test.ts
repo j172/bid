@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   PRODUCT_DESCRIPTION_HTML_MAX,
   PRODUCT_DESCRIPTION_MAX,
-  PRODUCT_PRICE_TEXT_MAX,
+  PRODUCT_PRICE_MAX,
   PRODUCT_TITLE_MAX,
   validateProductDescription,
-  validateProductPriceText,
+  validateProductPrice,
+  validateProductPriceOrCallForPrice,
   validateProductSortOrder,
+  validateProductStockQuantity,
+  validateProductStockRemaining,
   validateProductTitle,
 } from "./productValidation";
 
@@ -29,18 +32,64 @@ describe("validateProductTitle", () => {
   });
 });
 
-describe("validateProductPriceText", () => {
-  it("accepts free-text price display, not parsed as a number", () => {
-    expect(validateProductPriceText("NT$12,000")).toEqual({ ok: true });
-    expect(validateProductPriceText("電洽")).toEqual({ ok: true });
+describe("validateProductPrice", () => {
+  it("accepts a positive number", () => {
+    expect(validateProductPrice(12000)).toEqual({ ok: true });
   });
 
-  it("rejects an empty price text", () => {
-    expect(validateProductPriceText("").ok).toBe(false);
+  it("rejects zero, negative, or non-finite values", () => {
+    expect(validateProductPrice(0).ok).toBe(false);
+    expect(validateProductPrice(-1).ok).toBe(false);
+    expect(validateProductPrice(NaN).ok).toBe(false);
   });
 
-  it("rejects price text over the max length", () => {
-    expect(validateProductPriceText("a".repeat(PRODUCT_PRICE_TEXT_MAX + 1)).ok).toBe(false);
+  it("rejects a value over the max", () => {
+    expect(validateProductPrice(PRODUCT_PRICE_MAX + 1).ok).toBe(false);
+  });
+
+  it("accepts a value at exactly the max", () => {
+    expect(validateProductPrice(PRODUCT_PRICE_MAX)).toEqual({ ok: true });
+  });
+});
+
+describe("validateProductPriceOrCallForPrice", () => {
+  it("skips validation entirely when callForPrice is true, regardless of value", () => {
+    expect(validateProductPriceOrCallForPrice(true, NaN)).toEqual({ ok: true });
+    expect(validateProductPriceOrCallForPrice(true, -1)).toEqual({ ok: true });
+  });
+
+  it("falls through to normal price validation when callForPrice is false", () => {
+    expect(validateProductPriceOrCallForPrice(false, 12000)).toEqual({ ok: true });
+    expect(validateProductPriceOrCallForPrice(false, 0).ok).toBe(false);
+  });
+});
+
+describe("validateProductStockQuantity", () => {
+  it("skips validation when callForPrice is true", () => {
+    expect(validateProductStockQuantity(NaN, true)).toEqual({ ok: true });
+    expect(validateProductStockQuantity(0, true)).toEqual({ ok: true });
+  });
+
+  it("requires a positive integer when callForPrice is false", () => {
+    expect(validateProductStockQuantity(5, false)).toEqual({ ok: true });
+    expect(validateProductStockQuantity(0, false).ok).toBe(false);
+    expect(validateProductStockQuantity(-1, false).ok).toBe(false);
+    expect(validateProductStockQuantity(1.5, false).ok).toBe(false);
+  });
+});
+
+describe("validateProductStockRemaining", () => {
+  it("skips validation when callForPrice is true", () => {
+    expect(validateProductStockRemaining(NaN, true)).toEqual({ ok: true });
+  });
+
+  it("allows exactly zero (temporarily sold out) when callForPrice is false", () => {
+    expect(validateProductStockRemaining(0, false)).toEqual({ ok: true });
+  });
+
+  it("rejects a negative or non-integer value when callForPrice is false", () => {
+    expect(validateProductStockRemaining(-1, false).ok).toBe(false);
+    expect(validateProductStockRemaining(1.5, false).ok).toBe(false);
   });
 });
 

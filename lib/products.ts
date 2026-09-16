@@ -5,6 +5,14 @@
 // project has no ORM. Deliberately its own table rather than reusing
 // homepage_sections or binding to listings — see db/init.sql's header
 // comment on the products table for the full reasoning.
+//
+// Issue #298 gave `products` a real (payment-gateway-free) order flow —
+// price/stockQuantity/stockRemaining below, and the purchase/order-status
+// logic in lib/productOrders.ts. This module still only owns the
+// products/product_photos CRUD; the transactional purchase flow (row
+// locking, `product_orders`) lives in that sibling module instead, same
+// split as lib/listings.ts (CRUD + bidding) vs lib/purchase.ts (pure
+// purchase domain logic).
 
 import { getDb } from "@/lib/db";
 import type { ResolvedProductPhoto } from "@/lib/productPhotoOrder";
@@ -19,8 +27,22 @@ export interface ProductPhoto {
 export interface Product {
   id: number;
   title: string;
-  /** Free display text (e.g. "NT$12,000") — never parsed as a number. */
+  /**
+   * Display text derived from `price`/`price` being null (issue #298) —
+   * "電洽" when price is null, otherwise the plain digit string of `price`
+   * (e.g. "12000") so lib/productPriceText.ts's formatProductPriceText (its
+   * existing "digits-only string gets an NT$ prefix" rule, issue #293)
+   * keeps working completely unchanged at every render site. No longer a
+   * free-text admin input — see createProduct/updateProduct's `priceText`
+   * derivation below.
+   */
   priceText: string;
+  /** Structured numeric price (issue #298); null means 電洽 (call for price) — this product can never be purchased online. */
+  price: number | null;
+  /** Initial stock at creation; null means 電洽/not sold online. */
+  stockQuantity: number | null;
+  /** Remaining purchasable stock, decremented transactionally by lib/productOrders.ts's purchaseProduct; null means 電洽/not sold online. */
+  stockRemaining: number | null;
   /** Rich text (TinyMCE HTML), sanitized via lib/sanitizeDescriptionHtml.ts before storage — see lib/productValidation.ts. Issue #286: previously plain text; existing plain-text rows remain valid, untagged HTML. */
   description: string;
   sortOrder: number;
@@ -38,7 +60,10 @@ export interface ProductWithPhotos extends Product {
 
 export interface NewProductInput {
   title: string;
-  priceText: string;
+  /** Null means 電洽 (call for price, issue #298) — createProduct then writes price=NULL and derives priceText="電洽" instead of this value. */
+  price: number | null;
+  /** Initial stock; null when price is null (電洽 products aren't sold online, so tracking stock for them has no purpose). */
+  stockQuantity: number | null;
   description: string;
   /** Omit to default to end-of-list (MAX(sort_order) + 1) — see createProduct. */
   sortOrder?: number;
@@ -50,7 +75,16 @@ export interface NewProductInput {
 
 export interface UpdateProductInput {
   title: string;
-  priceText: string;
+  /** Null means 電洽 — see NewProductInput's equivalent comment. */
+  price: number | null;
+  /**
+   * Remaining stock (like updateFixedPriceListing, NOT the initial
+   * quantity) — updateProduct recomputes stock_quantity = alreadySold +
+   * this value, same "never let admin input regress stock accounting"
+   * pattern lib/listings.ts's updateFixedPriceListing uses. Null when price
+   * is null.
+   */
+  stockRemaining: number | null;
   description: string;
   sortOrder: number;
   isActive: boolean;
@@ -64,6 +98,9 @@ interface ProductRow {
   id: number;
   title: string;
   price_text: string;
+  price: number | null;
+  stock_quantity: number | null;
+  stock_remaining: number | null;
   description: string;
   sort_order: number;
   is_active: number;
@@ -86,6 +123,9 @@ function mapProductRow(row: ProductRow): Product {
     id: row.id,
     title: row.title,
     priceText: row.price_text,
+    price: row.price,
+    stockQuantity: row.stock_quantity,
+    stockRemaining: row.stock_remaining,
     description: row.description,
     sortOrder: row.sort_order,
     isActive: Boolean(row.is_active),
@@ -93,6 +133,16 @@ function mapProductRow(row: ProductRow): Product {
     updatedAt: row.updated_at,
     youtubeUrl: row.youtube_url,
   };
+}
+
+// Derives the display-only price_text column from the structured price
+// (issue #298) — "電洽" when null, otherwise the plain digit string of the
+// number so lib/productPriceText.ts's formatProductPriceText (issue #293)
+// keeps auto-formatting it with an NT$ prefix exactly as it always has, with
+// zero changes needed at any of its render call sites (ProductCarouselCard,
+// the admin list, the public detail page).
+function derivePriceText(price: number | null): string {
+  return price === null ? "電洽" : String(price);
 }
 
 function mapPhotoRow(row: ProductPhotoRow): ProductPhoto {
@@ -169,19 +219,58 @@ export async function createProduct(input: NewProductInput): Promise<number> {
   }
 
   const [result] = await db.query(
-    `INSERT INTO products (title, price_text, description, sort_order, is_active, created_at, updated_at, youtube_url)
-     VALUES (?, ?, ?, ?, ?, NOW(), NOW(), ?)`,
-    [input.title, input.priceText, input.description, sortOrder, input.isActive === false ? 0 : 1, input.youtubeUrl ?? null],
+    `INSERT INTO products
+       (title, price_text, price, stock_quantity, stock_remaining, description, sort_order, is_active, created_at, updated_at, youtube_url)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?)`,
+    [
+      input.title,
+      derivePriceText(input.price),
+      input.price,
+      input.stockQuantity,
+      // Initial stock_remaining always starts equal to stock_quantity — no
+      // sales exist yet for a brand-new row.
+      input.stockQuantity,
+      input.description,
+      sortOrder,
+      input.isActive === false ? 0 : 1,
+      input.youtubeUrl ?? null,
+    ],
   );
   return (result as { insertId: number }).insertId;
 }
 
+// stock_quantity is recomputed from actual order history + the new
+// stock_remaining (rather than taken as separate input) so the "剩餘 X / Y"
+// display never goes inconsistent regardless of how many times a product
+// gets restocked — same pattern lib/listings.ts's updateFixedPriceListing
+// uses for the identical reason.
 export async function updateProduct(id: number, input: UpdateProductInput): Promise<ProductOutcome> {
   const db = await getDb();
+
+  const [soldRows] = await db.query(
+    "SELECT COALESCE(SUM(quantity), 0) AS sold FROM product_orders WHERE product_id = ?",
+    [id],
+  );
+  const sold = (soldRows as { sold: number }[])[0].sold;
+  const stockQuantity = input.stockRemaining === null ? null : sold + input.stockRemaining;
+
   const [result] = await db.query(
-    `UPDATE products SET title = ?, price_text = ?, description = ?, sort_order = ?, is_active = ?, youtube_url = ?, updated_at = NOW()
+    `UPDATE products
+     SET title = ?, price_text = ?, price = ?, stock_quantity = ?, stock_remaining = ?,
+         description = ?, sort_order = ?, is_active = ?, youtube_url = ?, updated_at = NOW()
      WHERE id = ?`,
-    [input.title, input.priceText, input.description, input.sortOrder, input.isActive ? 1 : 0, input.youtubeUrl, id],
+    [
+      input.title,
+      derivePriceText(input.price),
+      input.price,
+      stockQuantity,
+      input.stockRemaining,
+      input.description,
+      input.sortOrder,
+      input.isActive ? 1 : 0,
+      input.youtubeUrl,
+      id,
+    ],
   );
   if ((result as { affectedRows: number }).affectedRows === 0) {
     return { ok: false, error: "找不到這個商品" };

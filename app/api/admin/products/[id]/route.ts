@@ -4,8 +4,9 @@ import { MAX_PHOTO_COUNT } from "@/lib/photoLimits";
 import { parseProductPhotoOrder, resolveProductPhotoOrder } from "@/lib/productPhotoOrder";
 import {
   validateProductDescription,
-  validateProductPriceText,
+  validateProductPriceOrCallForPrice,
   validateProductSortOrder,
+  validateProductStockRemaining,
   validateProductTitle,
 } from "@/lib/productValidation";
 import { deleteProduct, getProductById, replaceProductPhotos, updateProduct } from "@/lib/products";
@@ -58,7 +59,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const form = await request.formData();
   const title = String(form.get("title") ?? "").trim();
-  const priceText = String(form.get("priceText") ?? "").trim();
+  const callForPrice = String(form.get("callForPrice") ?? "") === "true";
+  const priceRaw = Number(form.get("price"));
+  const stockRemainingRaw = Number(form.get("stockRemaining"));
   const description = String(form.get("description") ?? "").trim();
   const sortOrder = Number(form.get("sortOrder"));
   const isActiveRaw = String(form.get("isActive") ?? "true");
@@ -75,9 +78,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!titleResult.ok) {
     return NextResponse.json({ ok: false, error: titleResult.error }, { status: 400 });
   }
-  const priceTextResult = validateProductPriceText(priceText);
-  if (!priceTextResult.ok) {
-    return NextResponse.json({ ok: false, error: priceTextResult.error }, { status: 400 });
+  const priceResult = validateProductPriceOrCallForPrice(callForPrice, priceRaw);
+  if (!priceResult.ok) {
+    return NextResponse.json({ ok: false, error: priceResult.error }, { status: 400 });
+  }
+  const stockRemainingResult = validateProductStockRemaining(stockRemainingRaw, callForPrice);
+  if (!stockRemainingResult.ok) {
+    return NextResponse.json({ ok: false, error: stockRemainingResult.error }, { status: 400 });
   }
   const descriptionResult = validateProductDescription(description);
   if (!descriptionResult.ok) {
@@ -119,9 +126,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ ok: false, error: "照片資料不正確" }, { status: 400 });
   }
 
+  const price = callForPrice ? null : priceRaw;
+  const stockRemaining = callForPrice ? null : stockRemainingRaw;
+
   const result = await updateProduct(productId, {
     title,
-    priceText,
+    price,
+    stockRemaining,
     description: sanitizeDescriptionHtml(description),
     sortOrder,
     isActive,

@@ -24,7 +24,7 @@ export default async function ProductsAdminPage() {
       <SuccessBannerProvider>
       <AdminPageIntro
         title="商品管理"
-        description="管理首頁輪播與商品詳情頁使用的獨立商品資料：標題、多張圖片圖庫（含封面圖指定）、價格顯示文字、簡介、排序與上下架。停用後不會出現在首頁輪播，商品詳情頁也會顯示 404。"
+        description="管理首頁輪播與商品詳情頁使用的獨立商品資料：標題、多張圖片圖庫（含封面圖指定）、價格（或電洽）、庫存、簡介、排序與上下架。停用後不會出現在首頁輪播，商品詳情頁也會顯示 404。有價格且有庫存的商品可於前台線上下單，訂單請至「商品訂單」頁面管理。"
       >
         <ProductFormModal mode="create" />
       </AdminPageIntro>
@@ -32,7 +32,7 @@ export default async function ProductsAdminPage() {
       {products.length === 0 ? (
         <p className="mt-6 text-ink-light">目前沒有任何商品，請點選上方「新增商品」建立第一筆資料。</p>
       ) : (
-        <AdminTable headers={["封面圖", "標題", "價格顯示", "簡介", "排序", "狀態", ""]}>
+        <AdminTable headers={["封面圖", "標題", "價格", "庫存", "簡介", "排序", "狀態", ""]}>
           {products.map((product) => {
             const cover = product.photos.find((photo) => photo.isCover) ?? product.photos[0];
             const coverUrl = cover ? productPhotoUrl(product.id, cover.fileName) : null;
@@ -47,7 +47,12 @@ export default async function ProductsAdminPage() {
                   )}
                 </AdminTableCell>
                 <AdminTableCell className="font-medium">{product.title}</AdminTableCell>
-                <AdminTableCell className="text-ink-light">{product.priceText}</AdminTableCell>
+                <AdminTableCell className="text-ink-light">
+                  {product.price === null ? "電洽" : product.price.toLocaleString("zh-TW")}
+                </AdminTableCell>
+                <AdminTableCell className="text-ink-light">
+                  {product.stockRemaining === null ? "—" : `${product.stockRemaining} / ${product.stockQuantity}`}
+                </AdminTableCell>
                 <AdminTableCell className="max-w-xs truncate text-ink-light" title={product.description}>
                   {product.description}
                 </AdminTableCell>
@@ -66,7 +71,8 @@ export default async function ProductsAdminPage() {
                       product={{
                         id: product.id,
                         title: product.title,
-                        priceText: product.priceText,
+                        price: product.price,
+                        stockRemaining: product.stockRemaining,
                         description: product.description,
                         sortOrder: product.sortOrder,
                         isActive: product.isActive,
