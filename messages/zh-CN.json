@@ -1253,5 +1253,15 @@
     "callForPriceNoticeAfter": "洽询价格与购买方式。",
     "loginPrompt": "登录",
     "loginToBuy": "后才能购买"
+  },
+  "productsList": {
+    "title": "商品目录",
+    "subtitle": "浏览所有上架中的商品，点选卡片查看完整介绍。",
+    "noItems": "目前尚无上架商品，请稍后再回来查看。",
+    "viewDetails": "查看详情",
+    "pageSizeLabel": "每页显示：",
+    "prevPage": "上一页",
+    "nextPage": "下一页",
+    "pageInfo": "第 {page} / {totalPages} 页（共 {total} 笔）"
   }
 }
