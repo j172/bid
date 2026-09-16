@@ -1,6 +1,7 @@
 import AdminPageIntro from "../AdminPageIntro";
 import { AdminTable, AdminTableCell, AdminTableRow } from "../components/AdminTable";
 import DeleteConfirmButton from "../components/DeleteConfirmButton";
+import { SuccessBannerProvider } from "../components/SuccessBanner";
 import PigeonStationFormModal from "./PigeonStationFormModal";
 import { listPigeonStations } from "@/lib/pigeonStations";
 
@@ -15,6 +16,7 @@ export default async function PigeonStationsAdminPage() {
 
   return (
     <main>
+      <SuccessBannerProvider>
       <AdminPageIntro
         title="取鴿站管理"
         description="管理全台取鴿站名錄，前台「取鴿站地圖目錄」頁面會顯示以下所有資料。緯度／經度留空的站點僅會出現在前台列表，不會顯示在地圖上。"
@@ -79,6 +81,7 @@ export default async function PigeonStationsAdminPage() {
           </AdminTable>
         </div>
       )}
+      </SuccessBannerProvider>
     </main>
   );
 }

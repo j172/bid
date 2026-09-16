@@ -1,6 +1,7 @@
 import AdminPageIntro from "../AdminPageIntro";
 import { AdminTable, AdminTableCell, AdminTableRow } from "../components/AdminTable";
 import DeleteConfirmButton from "../components/DeleteConfirmButton";
+import { SuccessBannerProvider } from "../components/SuccessBanner";
 import HomepageVideoFormModal from "./HomepageVideoFormModal";
 import { HOMEPAGE_VIDEOS_MAX, listHomepageVideos } from "@/lib/homepageVideos";
 
@@ -13,6 +14,7 @@ export default async function HomepageVideosAdminPage() {
 
   return (
     <main>
+      <SuccessBannerProvider>
       <AdminPageIntro
         title="官方影音管理"
         description="管理首頁「官方社群影音動態」專區所要指定的 YouTube 影音（最多 6 則）。設定後前台將優先播放此處啟用的影片；若清空未設定，前台將自動退回頻道 RSS 抓取最新影片。"
@@ -109,6 +111,7 @@ export default async function HomepageVideosAdminPage() {
           </AdminTable>
         </div>
       )}
+      </SuccessBannerProvider>
     </main>
   );
 }

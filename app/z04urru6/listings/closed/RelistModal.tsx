@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import AdminModal from "../../components/AdminModal";
 import ModalFormActions from "../../components/ModalFormActions";
+import { useSuccessBanner } from "../../components/SuccessBanner";
 import { ENDS_AT_MAX_DAYS, PRICE_MAX } from "@/lib/listingValidation";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
@@ -16,6 +17,7 @@ function defaultEndsAt(): string {
 
 export default function RelistModal({ listingId }: { listingId: number }) {
   const router = useRouter();
+  const showBanner = useSuccessBanner();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -80,8 +82,11 @@ export default function RelistModal({ listingId }: { listingId: number }) {
       setError(data.error ?? "重新上架失敗");
       return;
     }
+    // 重新上架成功後留在「已結標結算」列表，不要導去前台商品詳情頁
+    // （issue #291）；重新上架視為「建立」，套用同一組成功 banner 文案。
     setOpen(false);
-    router.push(`/listings/${data.id}`);
+    router.refresh();
+    showBanner("created");
   }
 
   return (

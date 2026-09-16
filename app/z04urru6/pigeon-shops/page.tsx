@@ -1,6 +1,7 @@
 import AdminPageIntro from "../AdminPageIntro";
 import { AdminTable, AdminTableCell, AdminTableRow } from "../components/AdminTable";
 import DeleteConfirmButton from "../components/DeleteConfirmButton";
+import { SuccessBannerProvider } from "../components/SuccessBanner";
 import PigeonShopFormModal from "./PigeonShopFormModal";
 import { listPigeonShops } from "@/lib/pigeonShops";
 
@@ -14,6 +15,7 @@ export default async function PigeonShopsAdminPage() {
 
   return (
     <main>
+      <SuccessBannerProvider>
       <AdminPageIntro
         title="鴿店地圖目錄管理"
         description="管理前台「鴿店地圖目錄」（/pigeon-shops）顯示的鴿店聯絡資訊。初始資料由一次性匯入腳本（scripts/import-pigeon-shops.mjs）匯入，之後可在此手動新增、修改或刪除。"
@@ -75,6 +77,7 @@ export default async function PigeonShopsAdminPage() {
           </AdminTable>
         </div>
       )}
+      </SuccessBannerProvider>
     </main>
   );
 }

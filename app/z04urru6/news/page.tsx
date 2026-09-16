@@ -6,6 +6,7 @@ import AdminPageIntro from "../AdminPageIntro";
 import AdminPagination from "../components/AdminPagination";
 import { parseFirstParam, parsePageParam, type SearchParams } from "../components/searchParams";
 import { AdminTable, AdminTableCell, AdminTableRow } from "../components/AdminTable";
+import { SuccessBannerProvider } from "../components/SuccessBanner";
 import { filterControlClass, filterFormClass, filterLabelClass, filterSubmitClass } from "../components/tableStyles";
 import NewsFormModal from "./NewsFormModal";
 import DeleteConfirmButton from "../components/DeleteConfirmButton";
@@ -42,6 +43,7 @@ export default async function NewsAdminPage({ searchParams }: { searchParams: Pr
 
   return (
     <main>
+      <SuccessBannerProvider>
       <AdminPageIntro title="最新訊息管理" description="管理首頁輪播與 /news 清單頁使用的最新訊息公告；herbots.be 匯入的文章與手動撰寫的公告在此列表一併管理。">
         <div className="flex flex-wrap items-center justify-end gap-3">
           <NewsFormModal mode="create" />
@@ -135,6 +137,7 @@ export default async function NewsAdminPage({ searchParams }: { searchParams: Pr
         params={params}
         keys={QUERY_KEYS}
       />
+      </SuccessBannerProvider>
     </main>
   );
 }

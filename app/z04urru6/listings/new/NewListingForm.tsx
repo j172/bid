@@ -71,7 +71,9 @@ export default function NewListingForm() {
       setError(data.error ?? "建立失敗");
       return;
     }
-    router.push(`/listings/${data.id}`);
+    // 建立成功後留在後台列表，不要導去前台商品詳情頁（issue #291）；
+    // ?created=1 讓 /z04urru6/listings 顯示一次性的成功 banner。
+    router.push("/z04urru6/listings?created=1");
   }
 
   return (

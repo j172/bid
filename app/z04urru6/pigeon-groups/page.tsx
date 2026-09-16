@@ -1,6 +1,7 @@
 import AdminPageIntro from "../AdminPageIntro";
 import { AdminTable, AdminTableCell, AdminTableRow } from "../components/AdminTable";
 import DeleteConfirmButton from "../components/DeleteConfirmButton";
+import { SuccessBannerProvider } from "../components/SuccessBanner";
 import PigeonGroupFormModal from "./PigeonGroupFormModal";
 import { listPigeonGroups } from "@/lib/pigeonGroups";
 
@@ -15,6 +16,7 @@ export default async function PigeonGroupsAdminPage() {
 
   return (
     <main>
+      <SuccessBannerProvider>
       <AdminPageIntro
         title="鴿會查詢管理"
         description="管理前台「鴿會查詢」（/pigeon-groups）顯示的鴿會聯絡資訊。初始資料由一次性匯入腳本（scripts/import-cb-pigeon-groups.mjs）匯入，之後可在此手動新增、修改或刪除。"
@@ -109,6 +111,7 @@ export default async function PigeonGroupsAdminPage() {
           </AdminTable>
         </div>
       )}
+      </SuccessBannerProvider>
     </main>
   );
 }

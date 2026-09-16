@@ -2,6 +2,7 @@ import { listHomepageSections } from "@/lib/homepageSections";
 import { homepageSectionImageUrl } from "@/lib/uploads";
 import AdminPageIntro from "../../AdminPageIntro";
 import { AdminTable, AdminTableCell, AdminTableRow } from "../../components/AdminTable";
+import { SuccessBannerProvider } from "../../components/SuccessBanner";
 import PartnerLoftFormModal from "./PartnerLoftFormModal";
 import DeleteButton from "./DeleteButton";
 
@@ -22,6 +23,7 @@ export default async function PartnerLoftsAdminPage() {
 
   return (
     <main>
+      <SuccessBannerProvider>
       <AdminPageIntro title="合作鴿舍管理" description="管理首頁「合作鴿舍」區塊的卡片：圖片、簡介與排序。首頁卡片點擊後會導向該鴿舍的商品列表。停用後會立即從首頁隱藏，不需重新部署。">
         <PartnerLoftFormModal mode="create" sectionType={SECTION_TYPE} />
       </AdminPageIntro>
@@ -72,6 +74,7 @@ export default async function PartnerLoftsAdminPage() {
           })}
         </AdminTable>
       )}
+      </SuccessBannerProvider>
     </main>
   );
 }

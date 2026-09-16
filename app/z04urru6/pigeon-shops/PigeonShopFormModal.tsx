@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminModal from "../components/AdminModal";
 import ModalFormActions from "../components/ModalFormActions";
+import { useSuccessBanner } from "../components/SuccessBanner";
 
 const inputClass =
   "w-full rounded-md border border-border px-3 py-2 text-sm focus:border-interactive-primary focus:outline-none";
@@ -34,6 +35,7 @@ type Props = { mode: "create" } | { mode: "edit"; shop: EditPigeonShop };
 // blank/NULL for nicepigeon.com-sourced rows and most hand-added ones.
 export default function PigeonShopFormModal(props: Props) {
   const router = useRouter();
+  const showBanner = useSuccessBanner();
   const isEdit = props.mode === "edit";
   const nameInputId = useId();
   const phoneInputId = useId();
@@ -111,6 +113,7 @@ export default function PigeonShopFormModal(props: Props) {
       setOpen(false);
       if (!isEdit) resetForm();
       router.refresh();
+      showBanner(isEdit ? "updated" : "created");
     } catch {
       setSubmitting(false);
       setError("連線失敗，請稍後再試");
