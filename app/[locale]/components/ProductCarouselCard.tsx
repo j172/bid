@@ -1,9 +1,10 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import CarouselControls from "./CarouselControls";
 import { useRotatingIndex } from "@/lib/useRotatingIndex";
+import { formatProductPriceText } from "@/lib/productPriceText";
 
 // Homepage Hero sidebar carousel for the admin-managed `products` CMS
 // (issue #278) — replaces the old `topPriceCards` static stacked list (the
@@ -46,6 +47,7 @@ export default function ProductCarouselCard({
   emptyStateDesc: string;
 }) {
   const t = useTranslations("home");
+  const locale = useLocale();
   const [index, setIndex] = useRotatingIndex(items.length, ROTATE_INTERVAL_MS);
 
   if (items.length === 0) {
@@ -61,24 +63,25 @@ export default function ProductCarouselCard({
   const href = `/products/${current.id}`;
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-white p-4 shadow-sm">
-      <div className="mb-2">
-        <span className="inline-flex rounded-md bg-twilight-indigo-600 px-2 py-1 text-[11px] font-bold text-white">
-          {activeBadge}
-        </span>
-      </div>
+    <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-interactive-primary/60 hover:shadow-md">
       {/* Same "image itself is a link" convention as NewsCarouselCard /
-          FeaturedLoftCarouselCard (issue #252). */}
-      <Link
-        href={href}
-        className="relative block aspect-[16/9] w-full cursor-pointer overflow-hidden rounded-xl bg-slate-100"
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={current.imageUrl}
-          alt={current.title}
-          className="absolute inset-0 h-full w-full object-contain transition-transform duration-700 ease-out group-hover:scale-105"
-        />
+          FeaturedLoftCarouselCard (issue #252). Badge lives inside the same
+          Link as the image (matching HomeProductCard.tsx's structure). */}
+      <Link href={href} className="block">
+        <div className="mb-2">
+          <span className="inline-flex rounded-md bg-twilight-indigo-600 px-2 py-1 text-[11px] font-bold text-white">
+            {activeBadge}
+          </span>
+        </div>
+        <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-slate-100">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={current.imageUrl}
+            alt={current.title}
+            className="absolute inset-0 h-full w-full object-contain"
+          />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition group-hover:opacity-100" />
+        </div>
       </Link>
       <CarouselControls
         itemCount={items.length}
@@ -92,16 +95,13 @@ export default function ProductCarouselCard({
         nextLabel={t("slideNext")}
       />
       <h3 className="mt-3 line-clamp-2 text-xl font-extrabold leading-snug tracking-tight text-ink sm:text-2xl">
-        <Link href={href} className="transition-opacity hover:opacity-80">
-          {current.title}
-        </Link>
+        {current.title}
       </h3>
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
-        <span className="text-lg font-black text-interactive-primary">{current.priceText}</span>
-        <Link
-          href={href}
-          className="inline-flex items-center gap-1.5 rounded-full bg-header px-4 py-1.5 text-xs font-bold text-white transition-colors hover:bg-twilight-indigo-600"
-        >
+      <div className="mt-2 flex items-end gap-2">
+        <p className="text-lg font-black text-interactive-primary">{formatProductPriceText(current.priceText, locale)}</p>
+      </div>
+      <div className="mt-3 text-[11px]">
+        <Link href={href} className="block w-full rounded-md bg-header px-2 py-1 text-center font-semibold text-white">
           {ctaLabel}
         </Link>
       </div>

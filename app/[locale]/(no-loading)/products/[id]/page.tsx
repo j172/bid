@@ -12,6 +12,7 @@ import {
   truncateForMetaDescription,
 } from "@/lib/seo";
 import { safeJsonLdString } from "@/lib/jsonLdScript";
+import { formatProductPriceText } from "@/lib/productPriceText";
 import { Link } from "@/i18n/navigation";
 import RichTextContent from "@/app/[locale]/components/RichTextContent";
 import YoutubeEmbed from "@/app/[locale]/components/YoutubeEmbed";
@@ -67,8 +68,8 @@ export async function generateMetadata({
   };
 }
 
-export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default async function ProductDetailPage({ params }: { params: Promise<{ locale: string; id: string }> }) {
+  const { locale, id } = await params;
   const product = await loadActiveProduct(id);
   if (!product) {
     notFound();
@@ -101,7 +102,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
           <div className="rounded-2xl border border-border bg-white p-6 shadow-sm">
             <p className="text-sm font-semibold uppercase tracking-wide text-ink-light">{t("priceLabel")}</p>
-            <p className="mt-2 text-4xl font-black text-interactive-primary">{product.priceText}</p>
+            <p className="mt-2 text-4xl font-black text-interactive-primary">{formatProductPriceText(product.priceText, locale)}</p>
           </div>
 
           <div>
