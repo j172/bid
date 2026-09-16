@@ -2,7 +2,8 @@
   "nav": {
     "siteName": "Xiangshui",
     "home": "Home",
-    "browse": "Browse Listings",
+    "browse": "Browse Products",
+    "browseListings": "Browse Listings",
     "myBids": "My Bid History",
     "admin": "Admin",
     "account": "Account",

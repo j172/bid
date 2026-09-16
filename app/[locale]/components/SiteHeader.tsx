@@ -89,8 +89,11 @@ export default async function SiteHeader() {
               <Link href="/" className="rounded-md px-3 py-2 hover:bg-slate-100">
                 {t("home")}
               </Link>
-              <Link href="/listings" className="rounded-md px-3 py-2 hover:bg-slate-100">
+              <Link href="/products" className="rounded-md px-3 py-2 hover:bg-slate-100">
                 {t("browse")}
+              </Link>
+              <Link href="/listings" className="rounded-md px-3 py-2 hover:bg-slate-100">
+                {t("browseListings")}
               </Link>
 
               <details className="group rounded-md px-3 py-1 text-ink">
@@ -211,8 +214,11 @@ export default async function SiteHeader() {
             <Link href="/" className="font-medium hover:text-interactive-primary">
               {t("home")}
             </Link>
-            <Link href="/listings" className="font-medium hover:text-interactive-primary">
+            <Link href="/products" className="font-medium hover:text-interactive-primary">
               {t("browse")}
+            </Link>
+            <Link href="/listings" className="font-medium hover:text-interactive-primary">
+              {t("browseListings")}
             </Link>
             <Link href="/contact" className="font-medium hover:text-interactive-primary">
               {t("contact")}
