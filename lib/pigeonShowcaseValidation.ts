@@ -3,7 +3,10 @@
 
 import { validateRequiredTextField, validateRichTextField, type FieldValidationResult } from "@/lib/richTextValidation";
 
-export const PIGEON_SHOWCASE_CATEGORIES = ["award", "imported", "representative"] as const;
+// 'world_famous' (世界名鴿) added by issue #307, replacing the homepage's old
+// "熱門成交排行" section with a curated world-famous-pigeons showcase fed by
+// this same table/category system.
+export const PIGEON_SHOWCASE_CATEGORIES = ["award", "imported", "representative", "world_famous"] as const;
 export type PigeonShowcaseCategory = (typeof PIGEON_SHOWCASE_CATEGORIES)[number];
 
 export const NAME_MAX = 100;

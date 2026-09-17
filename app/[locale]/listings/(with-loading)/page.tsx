@@ -189,10 +189,18 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   const tFormat = await getTranslations("format");
   const anonymousBuyer = await getTranslations("mask").then((tMask) => tMask("anonymousBuyer"));
 
-  const PIGEON_CATEGORY_TITLE_KEY: Record<PigeonShowcaseCategory, "awardTitle" | "importedTitle" | "representativeTitle"> = {
+  // 'world_famous' (issue #307) has no dedicated sub-filter button below (out
+  // of this issue's scope — only the badge label needs a valid entry so
+  // world_famous items don't crash when they show up under the "全部" tab);
+  // see this map's only other use at PIGEON_CATEGORY_TITLE_KEY[item.category] below.
+  const PIGEON_CATEGORY_TITLE_KEY: Record<
+    PigeonShowcaseCategory,
+    "awardTitle" | "importedTitle" | "representativeTitle" | "worldFamousTitle"
+  > = {
     award: "awardTitle",
     imported: "importedTitle",
     representative: "representativeTitle",
+    world_famous: "worldFamousTitle",
   };
 
   // Reference-only currency conversion (issue #45; multi-currency per issue

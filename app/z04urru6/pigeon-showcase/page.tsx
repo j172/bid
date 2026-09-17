@@ -19,7 +19,12 @@ import DeleteConfirmButton from "../components/DeleteConfirmButton";
 
 export const dynamic = "force-dynamic";
 
-const CATEGORY_LABEL: Record<PigeonShowcaseCategory, string> = { award: "入賞鴿", imported: "進口鴿", representative: "代表種鴿" };
+const CATEGORY_LABEL: Record<PigeonShowcaseCategory, string> = {
+  award: "入賞鴿",
+  imported: "進口鴿",
+  representative: "代表種鴿",
+  world_famous: "世界名鴿",
+};
 
 const QUERY_KEYS = ["category", "search", "loftId", "pageSize", "page"] as const;
 
@@ -50,7 +55,7 @@ export default async function PigeonShowcaseAdminPage({ searchParams }: { search
   return (
     <main>
       <SuccessBannerProvider>
-      <AdminPageIntro title="入賞鴿／進口鴿／代表種鴿管理" description="管理首頁輪播與分類清單頁使用的入賞鴿／進口鴿／代表種鴿資料。">
+      <AdminPageIntro title="鴿種介紹專區" description="管理首頁輪播與分類清單頁使用的入賞鴿／進口鴿／代表種鴿／世界名鴿資料。">
         <PigeonShowcaseFormModal mode="create" lofts={loftOptions} />
       </AdminPageIntro>
 
@@ -62,6 +67,7 @@ export default async function PigeonShowcaseAdminPage({ searchParams }: { search
             <option value="award">入賞鴿</option>
             <option value="imported">進口鴿</option>
             <option value="representative">代表種鴿</option>
+            <option value="world_famous">世界名鴿</option>
           </select>
         </label>
         <label className={filterLabelClass}>

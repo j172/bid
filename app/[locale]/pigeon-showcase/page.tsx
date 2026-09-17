@@ -43,15 +43,23 @@ const QUERY_KEYS = ["category", "pageSize", "page", "loftId"] as const;
 // category title and (via CATEGORY_LOFT_TITLE_KEY below) the "{loft} 的 XX"
 // variant shown when ?loftId= is set. Kept as maps rather than a binary
 // ternary now that there are three categories (issue #170's 代表種鴿).
-const CATEGORY_TITLE_KEY: Record<PigeonShowcaseCategory, "awardTitle" | "importedTitle" | "representativeTitle"> = {
+const CATEGORY_TITLE_KEY: Record<
+  PigeonShowcaseCategory,
+  "awardTitle" | "importedTitle" | "representativeTitle" | "worldFamousTitle"
+> = {
   award: "awardTitle",
   imported: "importedTitle",
   representative: "representativeTitle",
+  world_famous: "worldFamousTitle",
 };
-const CATEGORY_LOFT_TITLE_KEY: Record<PigeonShowcaseCategory, "loftAwardTitle" | "loftImportedTitle" | "loftRepresentativeTitle"> = {
+const CATEGORY_LOFT_TITLE_KEY: Record<
+  PigeonShowcaseCategory,
+  "loftAwardTitle" | "loftImportedTitle" | "loftRepresentativeTitle" | "loftWorldFamousTitle"
+> = {
   award: "loftAwardTitle",
   imported: "loftImportedTitle",
   representative: "loftRepresentativeTitle",
+  world_famous: "loftWorldFamousTitle",
 };
 
 // Shares its card grid and pagination footer with app/[locale]/news/page.tsx
@@ -115,6 +123,12 @@ export default async function PigeonShowcaseListPage({ searchParams }: { searchP
           className={tabClass(category === "representative")}
         >
           {t("representativeTitle")}
+        </Link>
+        <Link
+          href={`/pigeon-showcase?${buildQuery(params, QUERY_KEYS, { category: "world_famous", page: "1", loftId: "" })}`}
+          className={tabClass(category === "world_famous")}
+        >
+          {t("worldFamousTitle")}
         </Link>
       </div>
 
