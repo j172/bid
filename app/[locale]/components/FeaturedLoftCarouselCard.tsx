@@ -5,11 +5,12 @@ import { Link } from "@/i18n/navigation";
 import CarouselControls from "./CarouselControls";
 import { useRotatingIndex } from "@/lib/useRotatingIndex";
 
-// Homepage carousel card for 名家專區 (issue #270) — rotating showcase of
-// curated homepage_sections('featured_loft') cards, clicking through
-// straight to that card's linked loft's /listings?loft=<id> instead of an
-// article detail page (issue #176's independent featured_loft_posts article
-// table + detail page are removed). This is a close copy of
+// Homepage carousel card for 名家專區 (issue #270; reverted back to a blog-style
+// flow by issue #314) — rotating showcase of curated
+// homepage_sections('featured_loft') cards. Each card/CTA links to that
+// card's own article page at /featured-lofts/<id> (this row's own id, NOT
+// linkedLoftId — the article page itself embeds the linkedLoftId loft's
+// current listings/showcase below the full bio). This is a close copy of
 // NewsCarouselCard.tsx (same visual language: white card, badge above a
 // letterboxed image, title/excerpt/meta below in normal flow, 5s auto-rotate
 // via useRotatingIndex) — the one addition is a viewMoreHref/viewMoreLabel
@@ -22,7 +23,13 @@ export interface FeaturedLoftCarouselItem {
   excerpt: string;
   /** Pre-resolved by the caller to the site placeholder when the item has no 主圖 yet. */
   imageUrl: string;
-  /** The 合作鴿舍 (homepage_sections id) this card links to — every card/CTA href is `/listings?loft=${linkedLoftId}`. */
+  /**
+   * The 合作鴿舍 (homepage_sections id) this card is linked to — no longer
+   * used to build this card's own href (see `id` above), but still passed
+   * through by callers building the article page's embedded loft section
+   * link elsewhere. Kept on this interface so callers don't need two
+   * near-identical item shapes.
+   */
   linkedLoftId: number;
   /**
    * Pre-formatted date label for the meta row — the caller formats
@@ -66,7 +73,7 @@ export default function FeaturedLoftCarouselCard({
   }
 
   const current = items[index];
-  const href = `/listings?loft=${current.linkedLoftId}`;
+  const href = `/featured-lofts/${current.id}`;
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-white p-4 shadow-sm">

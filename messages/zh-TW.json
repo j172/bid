@@ -722,6 +722,12 @@
     "sidebarLatestWorldFamous": "最新世界名鴿",
     "backToList": "查看更多"
   },
+  "featuredLoftDetail": {
+    "breadcrumbHome": "首頁",
+    "loftLine": "合作鴿舍：{loft}",
+    "sectionHeading": "商品與舍內名鴿",
+    "viewLoftLink": "前往鴿舍專區看更多 →"
+  },
   "news": {
     "title": "最新訊息",
     "subtitle": "掌握最新公告與消息，點選卡片查看完整內容。",

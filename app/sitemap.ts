@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { routing } from "@/i18n/routing";
 import { listOpenListings } from "@/lib/listings";
 import { listNewsForSitemap } from "@/lib/news";
+import { listHomepageSections } from "@/lib/homepageSections";
 import { hreflangAlternates, localizedUrls } from "@/lib/seo";
 
 // Dynamic sitemap.xml (issue #107) — DB-backed (open listings change all the
@@ -79,6 +80,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: post.updatedAt ?? post.createdAt,
         changeFrequency: "weekly",
         priority: 0.6,
+      }),
+    );
+  }
+
+  // All active 名家專區 article pages (issue #314) — same treatment as the
+  // news detail pages above.
+  const featuredLofts = await listHomepageSections("featured_loft", { activeOnly: true });
+  for (const section of featuredLofts) {
+    entries.push(
+      ...localeEntries(`/featured-lofts/${section.id}`, {
+        lastModified: section.updatedAt,
+        changeFrequency: "weekly",
+        priority: 0.5,
       }),
     );
   }

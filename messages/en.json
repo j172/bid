@@ -719,6 +719,12 @@
     "sidebarLatestWorldFamous": "Latest World-Famous Pigeons",
     "backToList": "View More"
   },
+  "featuredLoftDetail": {
+    "breadcrumbHome": "Home",
+    "loftLine": "Partner loft: {loft}",
+    "sectionHeading": "Listings & Pigeon Showcase",
+    "viewLoftLink": "View more at the loft's storefront →"
+  },
   "news": {
     "title": "Latest News",
     "subtitle": "Stay up to date with the latest announcements — tap a card for the full story.",
