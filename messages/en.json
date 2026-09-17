@@ -11,7 +11,6 @@
     "explore": "Explore",
     "allCategories": "All Categories",
     "contact": "Contact",
-    "auctionTerms": "Auction Terms",
     "topbarNotice": "Built for live auctions, auto bidding, and buy-it-now checkout",
     "searchAll": "All",
     "searchAuction": "Auction",
@@ -360,7 +359,7 @@
     "lineId": "LINE ID (letters, digits, '.', '_', '-', 4-20 characters)",
     "phone": "Phone number (digits, - and spaces only, 7-15 digits)",
     "address": "Address",
-    "termsLabel": "I have read and agree to the <auctionTermsLink>Auction Rules</auctionTermsLink> and <privacyLink>Privacy Policy</privacyLink>",
+    "termsLabel": "I have read and agree to the <termsLink>Terms of Use</termsLink> and <privacyLink>Privacy Policy</privacyLink>",
     "submit": "Sign Up",
     "submitting": "Signing up...",
     "defaultError": "Sign up failed",
@@ -987,9 +986,9 @@
   },
   "termsPage": {
     "title": "Terms of Use",
-    "metaDescription": "Terms of use for this pigeon auction platform: account registration, bidding and purchase rules, payment and settlement, prohibited conduct, liability, and jurisdiction.",
+    "metaDescription": "Terms of use for this pigeon auction platform: account registration, bidding and purchase rules, payment and settlement, forfeiture and returns, shipping, prohibited conduct, liability, and jurisdiction.",
     "intro": "Welcome. Please read these terms carefully before using the site — by registering an account or using any feature, you confirm that you have read and accepted them.",
-    "lastUpdated": "Last updated: 8 August 2026",
+    "lastUpdated": "Last updated: 18 September 2026",
     "notice": "To protect both buyers and sellers, all terms and policies on this platform comply with relevant regulations and trading guidelines.",
     "sections": [
       {
@@ -1015,9 +1014,10 @@
       {
         "title": "4. Bidding and purchase rules",
         "bullets": [
-          "A bid is binding as soon as it is submitted and cannot be withdrawn or amended at will.",
-          "Auto bidding raises your bid automatically to the minimum amount needed to lead, up to the maximum you set.",
-          "An auction closes at the time shown on the listing page; the highest valid bid at that moment wins.",
+          "A bid is binding as soon as it is submitted and cannot be withdrawn or amended at will. After signing in with your member account and password, go to the listing page, choose an amount, and submit.",
+          "Auto bidding raises your bid automatically to the minimum amount needed to lead, up to the maximum you set. Each bid raises the price by at least NT$1,000; if your bid shows as tied with another bidder, please outbid by at least two increments to take the lead.",
+          "An auction closes at the time shown on the listing page; the highest valid bid at that moment wins. Each bird closes three minutes apart from the next, and a bid placed within the last five minutes before the scheduled close extends that auction by five minutes, repeatedly if further bids arrive within the extended window (for example, a scheduled 9:00 close extends to 9:02 on a bid at 8:57, and to 9:06 on a further bid at 9:01).",
+          "The last time to bid on any auction closing that day is 11:59pm; after 11:59pm it closes automatically and the last bidder wins. Because bidding environments and network speeds vary, we recommend bidding at least one minute before closing and refreshing the page afterwards to confirm the result.",
           "Fixed-price listings are sold \"buy it now\" — the first buyer to complete payment gets the bird while stock lasts.",
           "We may cancel an individual bid or an entire auction in cases of obvious system error, mispricing, bid rigging, or other improper bidding.",
           "All amounts settle in New Taiwan Dollars; USD and CNY figures shown on the site are indicative conversions only."
@@ -1026,17 +1026,60 @@
       {
         "title": "5. Seller and partner loft obligations",
         "paragraphs": [
-          "Anyone listing a bird must have the right to sell it, must ensure the listed information (pedigree, ring number, race results, health) is true, and must deliver as agreed. Quality, pedigree, and health are the lister's responsibility; we perform the formal checks needed on listing data but do not thereby assume warranty liability for the bird itself."
+          "Anyone listing a bird must have the right to sell it, must ensure the listed information (pedigree, ring number, race results, health) is true, and must deliver as agreed. Quality, pedigree, and health are the lister's responsibility; we perform the formal checks needed on listing data but do not thereby assume warranty liability for the bird itself.",
+          "This site only provides an information and matchmaking service for sellers to list pigeons and have transactions arranged; it is not a party to the resulting sale contract. Pedigree documents are supplied by the pigeon's owner, photos are taken by a commissioned photographer, and sex is largely the owner's own judgment — this information is for reference only, and the actual bird and its pedigree documents govern."
         ]
       },
       {
         "title": "6. Payment and settlement",
         "paragraphs": [
-          "After winning or purchasing, pay within the period and by the method stated in your notification. If payment is late we may cancel the transaction, relist the bird, and restrict or terminate account access depending on the circumstances. Handover, transport, and quarantine are arranged between buyer and seller with our assistance."
+          "After winning or purchasing, pay within the period and by the method stated in your notification. If payment is late we may cancel the transaction, relist the bird, and restrict or terminate account access depending on the circumstances. Handover, transport, and quarantine are arranged between buyer and seller with our assistance.",
+          "After an auction ends, we send winning and payment details by LINE or text message; please pay by bank transfer within three days (online payment tools are not yet supported). Auction pigeons are consolidated and shipped the week after the auction ends.",
+          "For a bird located abroad and priced over NT$50,000, purchase is by deposit and balance:"
+        ],
+        "bullets": [
+          "Pay a 20% deposit at the time of purchase.",
+          "Pay the balance three days before the pigeon clears quarantine abroad.",
+          "Transport takes longer for these birds — shipping begins only after the pigeon arrives in Taiwan and completes quarantine, so please be patient."
         ]
       },
       {
-        "title": "7. Prohibited conduct",
+        "title": "7. Forfeited bids and breach handling",
+        "paragraphs": [
+          "Bid carefully: winning a bid and then failing to complete the transaction is treated as a breach of contract, and we will suspend that member's bidding-related privileges. A bad-faith forfeited bid is a civil breach and, in serious cases, may constitute fraud under the Criminal Code.",
+          "A member in breach must pay a penalty of 25% of the winning bid as a breach-handling fee; bidding eligibility is restored only once that penalty has been settled."
+        ]
+      },
+      {
+        "title": "8. Reporting a problem and returns",
+        "bullets": [
+          "(1) Inability to breed: the evaluation period is 50 days from the date you receive the pigeon (excluding young birds or birds in molt). If the pigeon proves able to breed, the buyer may not request a return or exchange.",
+          "(2) Incorrect sex: please notify us within one week of receiving the pigeon.",
+          "(3) Illness discovered: please notify us within three days of receiving the pigeon (please take photographs and contact our customer service)."
+        ],
+        "footnote": "No return, exchange, or refund is accepted for loft-clearance auctions under any circumstance. For other listings, no return, exchange, or refund is accepted other than for a sick bird or incorrect sex reported within the periods above; reporting after those periods means you are considered to have fully accepted the pigeon's condition as received."
+      },
+      {
+        "title": "9. Additional shipping matters for replacement birds",
+        "paragraphs": [
+          "Transport costs relating to illness, an inability to breed, or a replacement bird are the buyer's responsibility.",
+          "For an \"imported original pigeon\": international shipping for the purchase, or for any later return or exchange, is always paid by the buyer and is non-refundable — please confirm this before bidding."
+        ]
+      },
+      {
+        "title": "10. Shipping method",
+        "paragraphs": [
+          "Both auction and fixed-price pigeons ship by air courier or rail; shipments are consolidated after payment, and our customer service center will confirm your pickup time with you (we recommend contacting us on LINE).",
+          "Please note:"
+        ],
+        "bullets": [
+          "Please bring valid ID and your personal seal/chop when collecting a pigeon.",
+          "Pickup must be completed within two days of arrival; if you fail to collect on time or do not report an issue, we cannot provide any compensation or guarantee.",
+          "Shipments to outlying islands incur an additional NT$1,000 charter/ferry transport fee."
+        ]
+      },
+      {
+        "title": "11. Prohibited conduct",
         "bullets": [
           "Providing false information, impersonating someone else, or registering multiple accounts to evade restrictions.",
           "Bid rigging, shill bidding, colluding to manipulate the closing price, or bidding with no intention of paying.",
@@ -1046,161 +1089,43 @@
         ]
       },
       {
-        "title": "8. Intellectual property",
+        "title": "12. Intellectual property",
         "paragraphs": [
           "The interface, code, text, images, and databases of this site belong to us or our licensors, except for listing photos and descriptions, which are supplied by the lister and licensed to us for use here. None of it may be reproduced, adapted, distributed, or used commercially without our prior written consent."
         ]
       },
       {
-        "title": "9. Disclaimer and limitation of liability",
+        "title": "13. Disclaimer and limitation of liability",
         "paragraphs": [
-          "The service is provided \"as is\"; we do not guarantee uninterrupted or error-free operation. Race results, breeding performance, and offspring quality are inherently uncertain and we make no promises about them. To the fullest extent permitted by law we are not liable for indirect, incidental, or consequential loss, and where we are liable, our total liability is capped at the amount actually paid for the transaction concerned."
+          "The service is provided \"as is\"; we do not guarantee uninterrupted or error-free operation. Race results, breeding performance, and offspring quality are inherently uncertain and we make no promises about them. To the fullest extent permitted by law we are not liable for indirect, incidental, or consequential loss, and where we are liable, our total liability is capped at the amount actually paid for the transaction concerned.",
+          "If a Chinese description of a bird differs from its original pedigree document, the original document governs; other than a pigeon sent for professional sex testing, we cannot guarantee a bird's sex is fully correct.",
+          "We are not liable for shipping delays or losses caused by natural disasters, epidemics, flight delays, or other events beyond our control."
         ]
       },
       {
-        "title": "10. Suspension and termination",
+        "title": "14. Suspension and termination",
         "paragraphs": [
           "We may suspend part or all of the service for maintenance, upgrades, or reasons beyond our control. We may suspend or terminate an account that breaches these terms or the law, and reserve all remedies available to us."
         ]
       },
       {
-        "title": "11. Personal data",
+        "title": "15. Personal data",
         "paragraphs": [
           "We collect, process, and use personal data in accordance with our Privacy Policy. EU and UK users should also read our GDPR notice."
         ]
       },
       {
-        "title": "12. Governing law and jurisdiction",
+        "title": "16. Governing law and jurisdiction",
         "paragraphs": [
           "These terms are governed by and construed under applicable law. For any dispute arising from these terms or the service, the parties agree to the competent local court as the court of first instance, without prejudice to any jurisdictional protections consumers enjoy by law."
         ]
       },
       {
-        "title": "13. Contact us",
+        "title": "17. Contact us",
         "bullets": [
           "Email: service@xiangshuicn.cc",
           "Phone: (+886) 0909-256-829",
           "Service: Nationwide direct transport & scheduled handover"
-        ]
-      }
-    ]
-  },
-  "auctionTermsPage": {
-    "title": "Auction Terms",
-    "metaDescription": "Auction terms for Xiangshui Racing Pigeon Network: platform role, bidding process, closing-time extensions, forfeiture penalties, issue-reporting windows, payment, and shipping — read before you bid.",
-    "intro": "Please review and agree to the following before placing any bid on an auction pigeon.",
-    "lastUpdated": "Last updated: 18 September 2026",
-    "notice": "By placing a bid, you confirm that you have reviewed and agreed to the terms above.",
-    "sections": [
-      {
-        "title": "Xiangshui Racing Pigeon Network platform rules",
-        "paragraphs": [
-          "This site only provides an information and matchmaking service platform for sellers to list pigeons and have transactions arranged. The quality, price, and health of a pigeon, as listed by its owner (the seller), are the seller's responsibility; this platform is not a party to the resulting sale contract."
-        ]
-      },
-      {
-        "title": "How bidding works",
-        "paragraphs": [
-          "After signing in with your member account and password, go to the auction page, click to place a bid, choose an amount, and submit."
-        ]
-      },
-      {
-        "title": "Special notes",
-        "bullets": [
-          "1. For loft-clearance auctions, all sales are final — no returns, exchanges, or refunds. Please bid carefully.",
-          "2. Bid carefully: a bad-faith forfeited bid is a civil breach of contract and, in serious cases, may constitute fraud under the Criminal Code.",
-          "3. Pedigree documents on the site are supplied by the pigeon's owner, and photos are taken by a commissioned photographer.",
-          "4. Pigeons are living animals; sex and pedigree are largely the owner's own judgment, so information on the site is for reference only."
-        ]
-      },
-      {
-        "title": "Bid increments",
-        "bullets": [
-          "Each bid raises the price by NT$1,000.",
-          "If your bid shows as tied with another bidder, please outbid by at least two increments and raise your offer further to take the lead."
-        ]
-      },
-      {
-        "title": "Closing time (each bird closes three minutes apart)",
-        "paragraphs": [
-          "(1) A bid placed within the last five minutes before an auction's scheduled close extends that auction by five minutes.",
-          "(2) On the day an auction is due to close, the last time to bid is 11:59pm; after 11:59pm the auction closes automatically and the last bidder wins — please take note.",
-          "※ Because bidding environments and network speeds vary, we recommend bidding early (at least one minute before closing) so a connection issue does not cost you the win.",
-          "(a) If the scheduled closing time is 9:00 and a bid is placed between 8:55 and 9:00, the closing time automatically extends by five minutes.",
-          "Example: if closing is 9:00 and a bid comes in at 8:57, the closing time extends to 9:02.",
-          "(b) If the auction goes into extension (new closing time 9:02):",
-          "※ a bid placed at 9:01 extends the closing time again, to 9:06 (a further five minutes).",
-          "When the auction ends, please refresh the page to confirm whether you won, in case the data shown on screen was delayed."
-        ]
-      },
-      {
-        "title": "Forfeited bids",
-        "paragraphs": [
-          "Winning a bid and then failing to complete the transaction is treated as a breach of contract, and the platform will suspend that member's bidding-related privileges.",
-          "The platform may charge a penalty of 25% of the winning bid as a breach-handling fee; bidding eligibility is restored only once that penalty has been settled."
-        ]
-      },
-      {
-        "title": "Reporting a problem",
-        "bullets": [
-          "(1) Inability to breed: the evaluation period is 50 days from the date you receive the pigeon (excluding young birds or birds in molt). If the pigeon proves able to breed, the buyer may not request a return or exchange.",
-          "(2) Incorrect sex: please notify us within one week of receiving the pigeon.",
-          "(3) Illness discovered: please notify us within three days of receiving the pigeon (please take photographs and contact Xiangshui Racing Pigeon Network customer service)."
-        ],
-        "footnote": "※ Once you have received a pigeon, no return, exchange, or refund is accepted other than for a sick bird or incorrect sex (loft-clearance birds cannot be returned, exchanged, or refunded under any circumstance). If you report an issue after the periods above, you are considered to have fully accepted the pigeon's condition as received and may not request a return, exchange, or refund for any reason."
-      },
-      {
-        "title": "Payment",
-        "paragraphs": [
-          "After the auction ends, we will send your winning details and payment information by LINE or text message; please pay within three days. (Please pay by bank transfer — online payment tools are not yet supported.)",
-          "(Auction pigeons are consolidated and shipped the week after the auction ends.)"
-        ]
-      },
-      {
-        "title": "Pigeons located abroad, priced over NT$50,000",
-        "paragraphs": [
-          "How to purchase:"
-        ],
-        "bullets": [
-          "1. To purchase, please pay a 20% deposit first.",
-          "2. Please pay the balance three days before the pigeon clears quarantine abroad.",
-          "3. Transport takes longer for these birds — shipping to you begins only after the pigeon arrives in Taiwan and completes quarantine, so please be patient."
-        ]
-      },
-      {
-        "title": "Additional shipping matters",
-        "paragraphs": [
-          "Costs relating to illness, intangible issues, or transport are the buyer's responsibility.",
-          "For an \"imported original pigeon\": international shipping for the purchase, or for any return or exchange, is always paid by the buyer (international shipping is non-refundable) — please confirm this before bidding."
-        ]
-      },
-      {
-        "title": "Shipping method",
-        "paragraphs": [
-          "Both auction and fixed-price pigeons ship via \"Air Force One\" courier or by rail; shipments are consolidated after payment, and our customer service center will confirm your pickup time with you (we recommend contacting us on LINE — please add us as a friend).",
-          "※ Please note:"
-        ],
-        "bullets": [
-          "(1) Please bring valid ID and your personal seal/chop when collecting a pigeon.",
-          "(2) Pickup must be completed within two days of arrival.",
-          "(3) Shipments to outlying islands incur an additional NT$1,000 charter/ferry transport fee."
-        ]
-      },
-      {
-        "title": "Rights and obligations",
-        "bullets": [
-          "(1) A pigeon's details are based primarily on its pedigree certificate; photos are for reference only and the actual bird governs (the platform only lists it on the seller's behalf).",
-          "(2) If there is illness or anything unusual within three days of receiving the pigeon, please contact Xiangshui Racing Pigeon Network customer service.",
-          "(3) If you fail to collect the pigeon or report an issue within the required three days, Xiangshui Racing Pigeon Network cannot provide any compensation or guarantee.",
-          "(4) If the Chinese translation differs from the original, the original pedigree document governs.",
-          "(5) Other than a pigeon sent for professional sex testing, a bird's sex cannot be fully confirmed.",
-          "(6) The platform is not liable for delays or losses caused by natural disasters, epidemics, flight delays, or other events beyond its control."
-        ]
-      },
-      {
-        "title": "Disputes and jurisdiction",
-        "paragraphs": [
-          "Any dispute should first be resolved in good faith through negotiation between the parties. If negotiation fails, both parties agree that the laws of the Republic of China (Taiwan) govern, with the New Taipei District Court as the exclusive court of first instance."
         ]
       }
     ]

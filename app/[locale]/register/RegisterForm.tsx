@@ -158,9 +158,9 @@ export default function RegisterForm() {
         />
         <span className="font-normal">
           {t.rich("termsLabel", {
-            auctionTermsLink: (chunks) => (
+            termsLink: (chunks) => (
               <Link
-                href="/auction-terms"
+                href="/terms"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-medium text-interactive-primary hover:underline"

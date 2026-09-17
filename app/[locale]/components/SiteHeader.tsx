@@ -123,9 +123,6 @@ export default async function SiteHeader() {
               <Link href="/contact" className="rounded-md px-3 py-2 hover:bg-slate-100">
                 {t("contact")}
               </Link>
-              <Link href="/auction-terms" className="rounded-md px-3 py-2 hover:bg-slate-100">
-                {t("auctionTerms")}
-              </Link>
               {user && (
                 <Link href="/my-bids" className="rounded-md px-3 py-2 hover:bg-slate-100">
                   {t("myBids")}
@@ -225,9 +222,6 @@ export default async function SiteHeader() {
             </Link>
             <Link href="/contact" className="font-medium hover:text-interactive-primary">
               {t("contact")}
-            </Link>
-            <Link href="/auction-terms" className="font-medium hover:text-interactive-primary">
-              {t("auctionTerms")}
             </Link>
             {user && (
               <Link href="/my-bids" className="font-medium hover:text-interactive-primary">
