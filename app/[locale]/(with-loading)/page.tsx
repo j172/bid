@@ -17,11 +17,8 @@ import {
   QUICK_CLOSE_WINDOW_HOURS,
   filterByListingType,
   selectEndingSoonAuctions,
-  selectMostActive,
   selectNewestFixedPrice,
   selectQuickCloseAuctions,
-  selectTopAuctionsByBids,
-  selectTopFixedByPurchases,
 } from "@/lib/homepageListings";
 import { Link } from "@/i18n/navigation";
 import HeroSection from "../components/HeroSection";
@@ -44,9 +41,11 @@ const EAGER_COUNTS = { balanced: 1, aggressive: 2 } as const;
 const ENDING_SOON_LIMIT = 5;
 const QUICK_DEALS_LIMIT = 3;
 const NEW_ARRIVALS_LIMIT = 8;
-const MOST_ACTIVE_LIMIT = 6;
-const TOP_BY_TYPE_LIMIT = 4;
 const FIXED_PRICE_SECTION_LIMIT = 6;
+// 世界名鴿介紹專區 (issue #307, replacing the old "熱門成交排行" section) —
+// caps the homepage grid at 6 cards, same cap convention as
+// FIXED_PRICE_SECTION_LIMIT above.
+const WORLD_FAMOUS_PIGEONS_LIMIT = 6;
 
 // Homepage-specific alternates (issue #107 items 6-7) — deliberately not
 // hoisted into the shared root layout's generateMetadata (app/[locale]/
@@ -163,6 +162,24 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     imageUrl: pigeon.imageFileName ? pigeonShowcaseImageUrl(pigeon.imageFileName) : "/images/logo.png",
   }));
 
+  // 世界名鴿介紹專區 (issue #307) — replaces the old "熱門成交排行" section
+  // below with the latest world_famous-category pigeon_showcase rows (up to
+  // WORLD_FAMOUS_PIGEONS_LIMIT). Deliberately its own query rather than
+  // reusing the award/imported/representative Promise.all above, since this
+  // section renders a full-width card grid (not a sidebar carousel) and only
+  // needs a plain array, not the *CarouselItem shape those three feed into
+  // PigeonShowcaseCarouselCard.
+  const WORLD_FAMOUS_EXCERPT_LENGTH = 60;
+  const worldFamousPigeons = await cachedQuery("home:pigeonShowcase:worldFamous", 20, () =>
+    listLatestPigeonShowcase("world_famous", WORLD_FAMOUS_PIGEONS_LIMIT),
+  );
+  const worldFamousPigeonItems = worldFamousPigeons.map((pigeon) => ({
+    id: pigeon.id,
+    name: pigeon.name,
+    excerpt: excerptHtml(pigeon.description, WORLD_FAMOUS_EXCERPT_LENGTH),
+    imageUrl: pigeon.imageFileName ? pigeonShowcaseImageUrl(pigeon.imageFileName) : IMAGE_FALLBACK_SRC,
+  }));
+
   // 最新訊息首頁輪播 (issue #56, capped list logic extended by #240) — latest
   // 10 posts, manual announcements prioritized ahead of herbots.be imports
   // (see lib/news.ts's listHomepageNewsCarousel) — replacing the large
@@ -220,9 +237,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const endingSoonAuctions = selectEndingSoonAuctions(listings, ENDING_SOON_LIMIT);
   const quickDeals = listings.slice(0, QUICK_DEALS_LIMIT);
   const newArrivals = listings.slice(0, NEW_ARRIVALS_LIMIT);
-  const bestMixed = selectMostActive(listings, MOST_ACTIVE_LIMIT);
-  const topAuctions = selectTopAuctionsByBids(listings, TOP_BY_TYPE_LIMIT);
-  const topFixed = selectTopFixedByPurchases(listings, TOP_BY_TYPE_LIMIT);
   // Independent "定價種鴿" homepage section (issue #36) — renders nothing
   // when there are none (see JSX below).
   const fixedPriceListings = selectNewestFixedPrice(listings, FIXED_PRICE_SECTION_LIMIT);
@@ -465,73 +479,47 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </section>
       )}
 
+      {/* 世界名鴿介紹專區 (issue #307) — replaces the old "熱門成交排行"
+          section (bestMixed grid + 人氣競標/熱銷商品 side-by-side lists).
+          Always rendered (not gated on `.length > 0`), same "keep the
+          section's layout slot occupied, show a neutral empty state instead
+          of hiding the section entirely" convention as the carousel cards
+          above — expected to render its "即將推出" empty state at launch,
+          since there's no world_famous data yet. */}
       <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
         <div className="flex items-end justify-between">
-          <h2 className="text-2xl font-bold">{t("bestSellersTitle")}</h2>
-          <Link href="/listings" className="text-sm font-semibold text-interactive-primary hover:text-header">
+          <h2 className="text-2xl font-bold">{t("worldFamousPigeonsTitle")}</h2>
+          <Link
+            href="/pigeon-showcase?category=world_famous"
+            className="text-sm font-semibold text-interactive-primary hover:text-header"
+          >
             {t("viewAll")}
           </Link>
         </div>
 
-        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {bestMixed.map((item, index) => (
-            <HomeProductCard
-              key={`best-${item.id}`}
-              id={item.id}
-              title={item.title}
-              imageSrc={photoUrlFor(item)}
-              hasPhoto={Boolean(item.photos[0])}
-              badgeLabel={item.listing_type === "auction" ? t("badgeHotBidding") : t("badgeBestPrice")}
-              statusLabel={item.listing_type === "auction" ? t("statusBidding") : t("statusFixedDeal")}
-              countLabel={
-                item.listing_type === "auction"
-                  ? t("bidCountShort", { count: item.bidCount })
-                  : t("purchaseCountShort", { count: item.purchaseCount })
-              }
-              priceText={
-                item.listing_type === "fixed_price" && item.price === null
-                  ? tListings("callForPrice")
-                  : formatDualPrice(item.listing_type === "auction" ? item.current_price : item.price!, currencyRates)
-              }
-              ctaLabel={item.listing_type === "fixed_price" ? t("promoFixedCta") : t("promoAuctionCta")}
-              eager={index < 1}
-            />
-          ))}
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <article className="rounded-2xl border border-border bg-white p-5 shadow-sm">
-            <h3 className="text-lg font-black">{t("bestAuction")}</h3>
-            <div className="mt-3 space-y-2">
-              {topAuctions.map((item) => (
-                <Link key={item.id} href={`/listings/${item.id}`} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 hover:bg-slate-100">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold">{item.title}</p>
-                    <p className="text-xs text-ink-light">{item.bidCount === 0 ? tListings("noBidsYet") : tListings("totalBids", { count: item.bidCount })}</p>
-                  </div>
-                  <p className="ml-3 shrink-0 text-sm font-bold text-interactive-primary">{formatDualPrice(item.current_price, currencyRates)}</p>
-                </Link>
-              ))}
-            </div>
-          </article>
-
-          <article className="rounded-2xl border border-border bg-white p-5 shadow-sm">
-            <h3 className="text-lg font-black">{t("bestFixed")}</h3>
-            <div className="mt-3 space-y-2">
-              {topFixed.map((item) => (
-                <Link key={item.id} href={`/listings/${item.id}`} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 hover:bg-slate-100">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold">{item.title}</p>
-                    <p className="text-xs text-ink-light">{t("purchaseCountShort", { count: item.purchaseCount })}</p>
-                  </div>
-                  <p className="ml-3 shrink-0 text-sm font-bold text-interactive-primary">
-                    {item.price === null ? tListings("callForPrice") : formatDualPrice(item.price, currencyRates)}
-                  </p>
-                </Link>
-              ))}
-            </div>
-          </article>
-        </div>
+        {worldFamousPigeonItems.length === 0 ? (
+          <div className="mt-5 flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-slate-50 p-10 text-center">
+            <p className="text-sm font-bold text-ink-light">{t("worldFamousPigeonsEmptyTitle")}</p>
+            <p className="mt-2 max-w-md text-xs text-ink-light">{t("worldFamousPigeonsEmptyDesc")}</p>
+          </div>
+        ) : (
+          <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {worldFamousPigeonItems.map((pigeon) => (
+              <Link
+                key={pigeon.id}
+                href={`/pigeon-showcase/${pigeon.id}`}
+                className="group flex flex-col overflow-hidden rounded-xl border border-border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={pigeon.imageUrl} alt={pigeon.name} className="h-40 w-full bg-slate-100 object-contain" />
+                <div className="flex flex-1 flex-col p-5">
+                  <h3 className="truncate text-lg font-bold text-ink">{pigeon.name}</h3>
+                  <p className="mt-3 line-clamp-3 text-sm text-ink-light">{pigeon.excerpt}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-6">

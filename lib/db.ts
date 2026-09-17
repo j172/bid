@@ -700,17 +700,25 @@ export async function ensureEmailVerificationColumns(db: mysql.Pool): Promise<vo
 }
 
 // Issue #170: adds the third 'representative' (代表種鴿) pigeon_showcase
-// category alongside 'award'/'imported'. Same story as
+// category alongside 'award'/'imported'. Issue #307 adds a fourth,
+// 'world_famous' (世界名鴿), feeding the homepage's new "世界名鴿介紹專區"
+// section (replacing the old "熱門成交排行" section). Same story as
 // ensureBuyItNowNullable/ensureEndsAtNullable above — an already-deployed
-// database's category column was created with the two-value ENUM from
-// SCHEMA_SQL's original CREATE TABLE, so a fresh install picks up the third
+// database's category column was created with a narrower ENUM from
+// SCHEMA_SQL's original CREATE TABLE, so a fresh install picks up every
 // value from SCHEMA_SQL directly but an existing one needs its ENUM
 // definition widened explicitly. MODIFY COLUMN is idempotent (re-running it
-// once the ENUM already includes 'representative' is a no-op), so this is
-// safe to call unconditionally on every boot rather than probing
-// information_schema first.
+// once the ENUM already includes every value is a no-op), so this is safe to
+// call unconditionally on every boot rather than probing information_schema
+// first — this is also why production doesn't need the standalone
+// scripts/migrate-pigeon-showcase-world-famous-category.mjs run by hand: the
+// very next boot after this deploy applies the same ALTER automatically. That
+// script still exists per issue #307's explicit request, for anyone who wants
+// to apply the ENUM widening ahead of a deploy or audit it independently.
 async function ensurePigeonShowcaseCategories(db: mysql.Pool): Promise<void> {
-  await db.query("ALTER TABLE pigeon_showcase MODIFY COLUMN category ENUM('award','imported','representative') NOT NULL");
+  await db.query(
+    "ALTER TABLE pigeon_showcase MODIFY COLUMN category ENUM('award','imported','representative','world_famous') NOT NULL",
+  );
 }
 
 // Issue #237: Google One Tap / Google Sign-In support. Adds google_id column

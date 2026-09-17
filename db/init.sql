@@ -404,7 +404,7 @@ CREATE TABLE IF NOT EXISTS exchange_rates (
 -- upload on every create/edit, so every row written after #70 always has one.
 CREATE TABLE IF NOT EXISTS pigeon_showcase (
   id BIGINT NOT NULL AUTO_INCREMENT,
-  category ENUM('award','imported','representative') NOT NULL,  -- 'award' 入賞鴿 | 'imported' 進口鴿 | 'representative' 代表種鴿
+  category ENUM('award','imported','representative','world_famous') NOT NULL,  -- 'award' 入賞鴿 | 'imported' 進口鴿 | 'representative' 代表種鴿 | 'world_famous' 世界名鴿 (issue #307)
   name VARCHAR(100) NOT NULL,
   loft_id BIGINT NOT NULL,
   image_file_name VARCHAR(255) NULL,            -- 主圖 (issue #70); NULL only on pre-#70 rows

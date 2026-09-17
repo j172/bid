@@ -14,6 +14,11 @@ describe("isPigeonShowcaseCategory", () => {
     expect(isPigeonShowcaseCategory("imported")).toBe(true);
   });
 
+  it("accepts representative and world_famous", () => {
+    expect(isPigeonShowcaseCategory("representative")).toBe(true);
+    expect(isPigeonShowcaseCategory("world_famous")).toBe(true);
+  });
+
   it("rejects anything else, including old pigeon_gallery-style category strings", () => {
     expect(isPigeonShowcaseCategory("custom")).toBe(false);
     expect(isPigeonShowcaseCategory("")).toBe(false);

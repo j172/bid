@@ -30,7 +30,12 @@ type EditItem = {
 
 type Props = { mode: "create"; lofts: PigeonLoftOption[] } | { mode: "edit"; lofts: PigeonLoftOption[]; item: EditItem };
 
-const CATEGORY_LABEL: Record<PigeonShowcaseCategory, string> = { award: "入賞鴿", imported: "進口鴿", representative: "代表種鴿" };
+const CATEGORY_LABEL: Record<PigeonShowcaseCategory, string> = {
+  award: "入賞鴿",
+  imported: "進口鴿",
+  representative: "代表種鴿",
+  world_famous: "世界名鴿",
+};
 
 // Same create/edit modal split pattern as
 // app/z04urru6/homepage/partner-lofts/PartnerLoftFormModal.tsx — one

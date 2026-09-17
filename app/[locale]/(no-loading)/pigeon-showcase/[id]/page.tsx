@@ -61,11 +61,17 @@ export async function generateMetadata({
 
 const SIDEBAR_LATEST_LIMIT = 5;
 
-const CATEGORY_LABEL_KEY = { award: "awardTitle", imported: "importedTitle", representative: "representativeTitle" } as const;
+const CATEGORY_LABEL_KEY = {
+  award: "awardTitle",
+  imported: "importedTitle",
+  representative: "representativeTitle",
+  world_famous: "worldFamousTitle",
+} as const;
 const SIDEBAR_TITLE_KEY = {
   award: "sidebarLatestAward",
   imported: "sidebarLatestImported",
   representative: "sidebarLatestRepresentative",
+  world_famous: "sidebarLatestWorldFamous",
 } as const;
 
 // Layout reference: NextMerce's "blog-details-with-sidebar" (issue #54) —
