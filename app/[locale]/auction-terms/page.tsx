@@ -1,14 +1,12 @@
-import type { Metadata } from "next";
-import LegalPage, { legalPageMetadata } from "../components/legalPage";
+import { permanentRedirect } from "@/i18n/navigation";
 
-const NAMESPACE = "auctionTermsPage";
-const PATHNAME = "/auction-terms";
-
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+// The auction terms page (issue #303) was merged into /terms (issue #313):
+// the content now lives in termsPage's sections, so this route only exists
+// to send existing links/search-engine indexes to the merged page instead
+// of 404ing. permanentRedirect() is locale-aware (createNavigation), so
+// /zh-TW/auction-terms -> /zh-TW/terms, /auction-terms (default locale,
+// unprefixed) -> /terms, etc., and issues a 308 permanent redirect.
+export default async function AuctionTermsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  return legalPageMetadata(NAMESPACE, PATHNAME, locale);
-}
-
-export default async function AuctionTermsPage() {
-  return <LegalPage namespace={NAMESPACE} />;
+  permanentRedirect({ href: "/terms", locale });
 }
