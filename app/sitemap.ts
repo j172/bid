@@ -45,6 +45,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Static legal/help pages (issue #121) — same "rarely changes, low
     // priority" treatment as /contact.
     ...localeEntries("/privacy", { changeFrequency: "yearly", priority: 0.3 }),
+    ...localeEntries("/auction-terms", { changeFrequency: "yearly", priority: 0.3 }),
     ...localeEntries("/refund", { changeFrequency: "yearly", priority: 0.3 }),
     ...localeEntries("/terms", { changeFrequency: "yearly", priority: 0.3 }),
     ...localeEntries("/faq", { changeFrequency: "yearly", priority: 0.3 }),
