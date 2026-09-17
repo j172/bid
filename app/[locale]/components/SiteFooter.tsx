@@ -116,6 +116,11 @@ export default async function SiteFooter() {
               </Link>
             </li>
             <li>
+              <Link href="/auction-terms" className="hover:text-interactive-primary">
+                {t("auctionTerms")}
+              </Link>
+            </li>
+            <li>
               <Link href="/faq" className="hover:text-interactive-primary">
                 {t("faq")}
               </Link>
