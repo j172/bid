@@ -721,6 +721,12 @@
     "sidebarLatestWorldFamous": "最新世界名鸽",
     "backToList": "查看更多"
   },
+  "featuredLoftDetail": {
+    "breadcrumbHome": "首页",
+    "loftLine": "合作鸽舍：{loft}",
+    "sectionHeading": "商品与舍内名鸽",
+    "viewLoftLink": "前往鸽舍专区看更多 →"
+  },
   "news": {
     "title": "最新消息",
     "subtitle": "掌握最新公告与消息，点选卡片查看完整内容。",

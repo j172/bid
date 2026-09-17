@@ -2,13 +2,12 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { listOpenListings, type ListingType } from "@/lib/listings";
 import { listHomepageSections, getHomepageSectionById } from "@/lib/homepageSections";
-import { currencyForLocale, formatDualPrice, formatNtd } from "@/lib/currency";
+import { currencyForLocale } from "@/lib/currency";
 import { homepageSectionImageUrl } from "@/lib/uploads";
 import { excerptHtml } from "@/lib/htmlText";
 import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
 import { getLatestStoredRate } from "@/lib/exchangeRates";
-import { formatRemaining } from "@/lib/format";
-import { maskDisplayName } from "@/lib/mask";
+import { buildListingCardView } from "@/lib/listingCardView";
 import { absoluteUrl, canonicalListingsUrl, hreflangAlternates } from "@/lib/seo";
 import {
   countByCategory,
@@ -36,17 +35,13 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const DESCRIPTION_SNIPPET_LENGTH = 30;
+// Separate from lib/listingCardView.ts's LISTING_DESCRIPTION_SNIPPET_LENGTH
+// (which happens to share the same value) — this one trims the 名家專區
+// card's bio excerpt further down this page, an unrelated field.
+const FEATURED_LOFT_BIO_EXCERPT_LENGTH = 30;
 
 function perfModeFromSearchParams(params: SearchParams): "balanced" | "aggressive" {
   return firstParam(params.perf) === "aggressive" ? "aggressive" : "balanced";
-}
-
-function descriptionSnippet(description: string): string {
-  const trimmed = description.trim();
-  return trimmed.length > DESCRIPTION_SNIPPET_LENGTH
-    ? `${trimmed.slice(0, DESCRIPTION_SNIPPET_LENGTH)}…`
-    : trimmed;
 }
 
 // <title>/<meta description> for the listings list/category page (issue
@@ -292,11 +287,6 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
       href: withFilters({ loft: String(loft.id), tab: undefined, showcaseCategory: undefined }),
     })),
   ];
-
-  const TYPE_BADGE_LABEL: Record<ListingType, string> = {
-    auction: t("badgeAuction"),
-    fixed_price: t("badgeFixedPrice"),
-  };
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
@@ -608,72 +598,11 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
 
             <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
               {sortedListings.map((listing, index) => {
-                const isClosed = listing.status === "closed";
+                const card = buildListingCardView(listing, { t, tFormat, currencyRates, anonymousBuyer });
                 return (
                   <ProductCard
-                    key={listing.id}
-                    id={listing.id}
-                    title={listing.title}
-                    description={descriptionSnippet(listing.description)}
-                    photo={listing.photos[0]}
-                    typeBadgeLabel={isClosed ? t("badgeClosed") : TYPE_BADGE_LABEL[listing.listing_type]}
-                    loftName={listing.loftName}
-                    quickActionLabel={isClosed ? t("viewDetails") : t("quickAction")}
-                    viewDetailsLabel={t("viewDetails")}
-                    isClosed={isClosed}
-                    priceText={
-                      isClosed && listing.listing_type === "auction"
-                        ? t("finalPrice", { price: formatNtd(listing.current_price) })
-                        : listing.listing_type === "fixed_price" && listing.price === null
-                          ? t("callForPrice")
-                          : formatDualPrice(
-                              listing.listing_type === "fixed_price" ? listing.price! : listing.current_price,
-                              currencyRates,
-                            )
-                    }
-                    detailLines={
-                      isClosed
-                        ? listing.listing_type === "fixed_price"
-                          ? [
-                              t("soldOut"),
-                              t("totalPurchases", { count: listing.purchaseCount }),
-                            ]
-                          : [
-                              listing.ends_at
-                                ? formatRemaining(listing.ends_at, tFormat)
-                                : t("statusEnded"),
-                              listing.bidCount === 0
-                                ? t("noBidsEnded")
-                                : t("finalLeader", {
-                                    name: maskDisplayName(listing.leaderDisplayName, anonymousBuyer),
-                                  }),
-                              t("totalBids", { count: listing.bidCount }),
-                            ]
-                        : listing.listing_type === "fixed_price"
-                          ? [
-                              listing.stock_remaining === 0
-                                ? t("soldOut")
-                                : t("remainingUnits", { count: listing.stock_remaining ?? 0 }),
-                              t("totalPurchases", { count: listing.purchaseCount }),
-                            ]
-                          : listing.status === "scheduled" && listing.starts_at
-                            ? [
-                                formatRemaining(listing.starts_at, tFormat, {
-                                  prefixKey: "startsInPrefix",
-                                  endedKey: "startingSoon",
-                                }),
-                              ]
-                            : [
-                                ...(listing.buy_it_now_price !== null
-                                  ? [t("buyItNowPrice", { price: formatNtd(listing.buy_it_now_price) })]
-                                  : []),
-                                listing.ends_at ? formatRemaining(listing.ends_at, tFormat) : t("timeless"),
-                                listing.bidCount === 0
-                                  ? t("noBidsYet")
-                                  : t("currentLeader", { name: maskDisplayName(listing.leaderDisplayName, anonymousBuyer) }),
-                                t("totalBids", { count: listing.bidCount }),
-                              ]
-                    }
+                    key={card.id}
+                    {...card}
                     eager={index < gridEagerCount}
                     highPriorityImage={index < 2}
                   />
@@ -688,11 +617,13 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
         <section id="featured-lofts" className="mt-12 scroll-mt-20 border-t border-border pt-8">
           <div className="mb-1 flex items-end justify-between">
             <h2 className="text-2xl font-bold">{t("featuredLoftsTitle")}</h2>
-            {/* issue #270 — no more standalone /featured-lofts list page to
-                view more on; this small curated grid already shows every
-                active card (no pagination), so "查看全部" now points back at
+            {/* issue #270 — still no standalone /featured-lofts index/list
+                page (this small curated grid already shows every active
+                card, no pagination), so "查看全部" keeps pointing back at
                 /listings, same "generic browse-everything" target the
-                homepage's own 合作鴿舍 section's "查看全部" link uses. */}
+                homepage's own 合作鴿舍 section's "查看全部" link uses. Each
+                card below, though, now links to its own article page
+                (issue #314) rather than straight to the listings grid. */}
             <Link href="/listings" className="text-sm font-semibold text-interactive-primary hover:text-header">
               {t("featuredLoftsViewAll")}
             </Link>
@@ -702,7 +633,7 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
             {featuredLofts.map((loft) => (
               <Link
                 key={loft.id}
-                href={`/listings?loft=${loft.linkedLoftId}`}
+                href={`/featured-lofts/${loft.id}`}
                 className="group overflow-hidden rounded-2xl border border-border bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-100">
@@ -714,7 +645,7 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
                 </div>
                 <p className="mt-3 text-sm font-bold text-ink">{loft.title}</p>
                 {loft.bio && (
-                  <p className="mt-1 line-clamp-2 text-xs text-ink-light">{excerptHtml(loft.bio, DESCRIPTION_SNIPPET_LENGTH)}</p>
+                  <p className="mt-1 line-clamp-2 text-xs text-ink-light">{excerptHtml(loft.bio, FEATURED_LOFT_BIO_EXCERPT_LENGTH)}</p>
                 )}
               </Link>
             ))}

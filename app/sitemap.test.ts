@@ -22,6 +22,23 @@ vi.mock("@/lib/news", () => ({
   ]),
 }));
 
+vi.mock("@/lib/homepageSections", () => ({
+  listHomepageSections: vi.fn().mockResolvedValue([
+    {
+      id: 7,
+      sectionType: "featured_loft",
+      title: "翔順名家鴿舍介紹",
+      imageFileName: "featured-7.jpg",
+      bio: "介紹內容",
+      linkedLoftId: 3,
+      sortOrder: 0,
+      isActive: true,
+      createdAt: new Date("2026-03-03T00:00:00.000Z"),
+      updatedAt: new Date("2026-03-03T12:00:00.000Z"),
+    },
+  ]),
+}));
+
 describe("sitemap.ts", () => {
   it("includes homepage, key pages, open listings, and published news posts across locales", async () => {
     const entries = await sitemap();
@@ -43,5 +60,12 @@ describe("sitemap.ts", () => {
     // News item carries lastModified from updatedAt
     const newsEntry = entries.find((e) => e.url === "https://xiangshuicn.cc/news/99");
     expect(newsEntry?.lastModified).toEqual(new Date("2026-03-02T12:00:00.000Z"));
+
+    // Featured-loft article entries exist (issue #314)
+    expect(entries.some((e) => e.url === "https://xiangshuicn.cc/featured-lofts/7")).toBe(true);
+    expect(entries.some((e) => e.url === "https://xiangshuicn.cc/zh-CN/featured-lofts/7")).toBe(true);
+    expect(entries.some((e) => e.url === "https://xiangshuicn.cc/en/featured-lofts/7")).toBe(true);
+    const featuredLoftEntry = entries.find((e) => e.url === "https://xiangshuicn.cc/featured-lofts/7");
+    expect(featuredLoftEntry?.lastModified).toEqual(new Date("2026-03-03T12:00:00.000Z"));
   });
 });

@@ -29,12 +29,12 @@ const baseItem = {
   createdAt: "2026/9/1",
 };
 
-// Issue #270 — 名家專區 no longer has its own detail page; every card links
-// straight to its linked loft's /listings?loft=<id> instead. Issue #252's
-// original fix (the image itself is a link, not just decorative) still
-// applies, just retargeted.
+// Issue #314 — 名家專區 is a blog-style flow again; every card links to its
+// own article page at /featured-lofts/<id> (this row's own id, NOT
+// linkedLoftId). Issue #252's original fix (the image itself is a link, not
+// just decorative) still applies, just retargeted.
 describe("FeaturedLoftCarouselCard", () => {
-  it("wraps the image in a link to the same /listings?loft=<linkedLoftId> href as the title and CTA", () => {
+  it("wraps the image in a link to /featured-lofts/<id> (its own id, not linkedLoftId), same as the title and CTA", () => {
     render(
       <FeaturedLoftCarouselCard
         items={[baseItem]}
@@ -50,17 +50,17 @@ describe("FeaturedLoftCarouselCard", () => {
     const image = screen.getByAltText(baseItem.title);
     const imageLink = image.closest("a");
     expect(imageLink).not.toBeNull();
-    expect(imageLink?.getAttribute("href")).toBe("/listings?loft=42");
+    expect(imageLink?.getAttribute("href")).toBe("/featured-lofts/7");
 
     const titleLink = screen.getByText(baseItem.title).closest("a");
     const ctaLink = screen.getByRole("link", { name: "閱讀更多" });
     expect(titleLink).not.toBeNull();
-    expect(titleLink?.getAttribute("href")).toBe("/listings?loft=42");
-    expect(ctaLink.getAttribute("href")).toBe("/listings?loft=42");
+    expect(titleLink?.getAttribute("href")).toBe("/featured-lofts/7");
+    expect(ctaLink.getAttribute("href")).toBe("/featured-lofts/7");
 
     // The unrelated "view more" link (no single-loft target makes sense for
     // "view all") must keep pointing at the caller-supplied href, not the
-    // current item's own loft.
+    // current item's own article.
     const viewMoreLink = screen.getByRole("link", { name: "查看全部" });
     expect(viewMoreLink.getAttribute("href")).toBe("/listings");
   });
@@ -88,7 +88,7 @@ describe("FeaturedLoftCarouselCard", () => {
   });
 
   it("does not let the image link swallow the manual carousel controls", () => {
-    const items = [baseItem, { ...baseItem, id: 8, linkedLoftId: 43, title: "第二家名家鴿舍" }];
+    const items = [baseItem, { ...baseItem, id: 8, title: "第二家名家鴿舍" }];
     render(
       <FeaturedLoftCarouselCard
         items={items}
@@ -108,6 +108,6 @@ describe("FeaturedLoftCarouselCard", () => {
     fireEvent.click(screen.getByRole("button", { name: "slideNext" }));
 
     const image = screen.getByAltText("第二家名家鴿舍");
-    expect(image.closest("a")?.getAttribute("href")).toBe("/listings?loft=43");
+    expect(image.closest("a")?.getAttribute("href")).toBe("/featured-lofts/8");
   });
 });
