@@ -7,7 +7,6 @@
 
 import { getHomepageSectionById } from "@/lib/homepageSections";
 import { validateRichTextField } from "@/lib/richTextValidation";
-import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
 
 export const BIO_MAX = 2000;
 // 'featured_loft' (名家專區, issue #270) authors its bio/內容 field as rich
@@ -41,10 +40,20 @@ export async function resolveLinkedLoftId(sectionType: string, raw: string): Pro
 
 export type BioResult = { ok: true; bio: string | null } | { ok: false; error: string };
 
-// 'featured_loft' rows' bio/內容 field is rich text (sanitized + measured
-// against the visible-text/raw-HTML caps above); every other section_type
-// keeps the plain-text BIO_MAX check. Optional either way — an empty field
-// means "no bio/內容", not a validation error.
+// 'featured_loft' rows' bio/內容 field is rich text (measured against the
+// visible-text/raw-HTML caps above); every other section_type keeps the
+// plain-text BIO_MAX check. Optional either way — an empty field means "no
+// bio/內容", not a validation error.
+//
+// Deliberately does NOT sanitize the 'featured_loft' HTML itself (unlike
+// earlier versions of this function) — the raw value may still contain
+// DescriptionEditor/SimpleRichTextEditor's `cid:N` inline-image placeholders
+// (issue #315), and lib/sanitizeDescriptionHtml.ts has no reason to allow a
+// `cid:` URI scheme, so it would strip those <img> tags if it ran before
+// they're resolved to real /uploads/... URLs. Callers resolve placeholders
+// via lib/descriptionImages.ts's resolveDescriptionImagePlaceholders and
+// THEN sanitize (same order every other content type's API route already
+// follows for its own rich-text field) before storing the result.
 export function resolveBio(sectionType: string, raw: string): BioResult {
   if (raw === "") {
     return { ok: true, bio: null };
@@ -60,7 +69,7 @@ export function resolveBio(sectionType: string, raw: string): BioResult {
     if (!result.ok) {
       return { ok: false, error: result.error };
     }
-    return { ok: true, bio: sanitizeDescriptionHtml(raw) };
+    return { ok: true, bio: raw };
   }
   if (raw.length > BIO_MAX) {
     return { ok: false, error: `簡介上限 ${BIO_MAX} 字` };

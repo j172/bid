@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/apiAuth";
+import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
+import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
 import { MAX_PHOTO_COUNT } from "@/lib/photoLimits";
 import { parseProductPhotoOrder, resolveProductPhotoOrder } from "@/lib/productPhotoOrder";
 import {
@@ -9,9 +11,15 @@ import {
   validateProductStockQuantity,
   validateProductTitle,
 } from "@/lib/productValidation";
-import { createProduct, deleteProduct, listProducts, replaceProductPhotos } from "@/lib/products";
+import { createProduct, deleteProduct, listProducts, replaceProductPhotos, updateProductDescription } from "@/lib/products";
 import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
-import { deleteProductPhotoFiles, productPhotoUrl, saveProductPhotos } from "@/lib/uploads";
+import {
+  deleteProductPhotoFiles,
+  descriptionImageUrl,
+  productPhotoUrl,
+  saveDescriptionImages,
+  saveProductPhotos,
+} from "@/lib/uploads";
 import { validateYoutubeUrl } from "@/lib/youtubeEmbed";
 
 // Admin list view (issue #277) — includes inactive (已下架) rows, same
@@ -52,6 +60,9 @@ export async function POST(request: Request) {
   const isActive = isActiveRaw === null ? undefined : isActiveRaw === "true" || isActiveRaw === "1";
   const youtubeUrlRaw = String(form.get("youtubeUrl") ?? "").trim();
   const newPhotos = form.getAll("photos").filter((entry): entry is File => entry instanceof File && entry.size > 0);
+  const descriptionImages = form
+    .getAll("descriptionImages")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
 
   // Shape-validated up front (same reasoning as
   // app/api/admin/listings/[id]/edit/route.ts's use of parsePhotoOrder): an
@@ -93,13 +104,18 @@ export async function POST(request: Request) {
   if (order.length > MAX_PHOTO_COUNT) {
     return NextResponse.json({ ok: false, error: `照片最多 ${MAX_PHOTO_COUNT} 張` }, { status: 400 });
   }
+  if (descriptionImages.length > DESCRIPTION_IMAGE_MAX_COUNT) {
+    return NextResponse.json({ ok: false, error: `描述圖片最多 ${DESCRIPTION_IMAGE_MAX_COUNT} 張` }, { status: 400 });
+  }
 
-  // The product's own id names its photo directory, so it has to exist
-  // before any files are saved — same "insert first, save photos under that
-  // id, then attach them" sequencing as insertListing/addListingPhotos.
-  // description is rich text (TinyMCE, issue #286) — sanitized before
-  // storage, same "sanitize on write" rule listings' description follows
-  // (the public product page now renders it via dangerouslySetInnerHTML too).
+  // The product's own id names its photo/description-image directories, so
+  // it has to exist before any files are saved — same "insert first, save
+  // photos under that id, then attach them" sequencing as
+  // insertListing/addListingPhotos. description is inserted empty and only
+  // backfilled (sanitized, with its `cid:N` image placeholders resolved to
+  // real URLs) once that's done — same two-phase sequencing as
+  // app/api/admin/listings/route.ts (issue #315 gave products its own
+  // description-image upload path, mirroring listings').
   const price = callForPrice ? null : priceRaw;
   const stockQuantity = callForPrice ? null : stockQuantityRaw;
 
@@ -107,7 +123,7 @@ export async function POST(request: Request) {
     title,
     price,
     stockQuantity,
-    description: sanitizeDescriptionHtml(description),
+    description: "",
     sortOrder,
     isActive,
     youtubeUrl,
@@ -124,6 +140,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: "照片資料不正確" }, { status: 400 });
     }
     await replaceProductPhotos(productId, resolved);
+
+    const descriptionImageFileNames = await saveDescriptionImages("products", productId, descriptionImages);
+    const descriptionImageUrls = descriptionImageFileNames.map((fileName) =>
+      descriptionImageUrl("products", productId, fileName),
+    );
+    const resolvedDescription = resolveDescriptionImagePlaceholders(description, descriptionImageUrls);
+    await updateProductDescription(productId, sanitizeDescriptionHtml(resolvedDescription));
   } catch (error) {
     await deleteProduct(productId);
     const message = error instanceof Error ? error.message : "圖片上傳失敗";

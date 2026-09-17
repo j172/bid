@@ -147,8 +147,10 @@ export async function POST(request: Request) {
     const fileNames = await saveListingPhotos(listingId, photos);
     await addListingPhotos(listingId, fileNames);
 
-    const descriptionImageFileNames = await saveDescriptionImages(listingId, descriptionImages);
-    const descriptionImageUrls = descriptionImageFileNames.map((fileName) => descriptionImageUrl(listingId, fileName));
+    const descriptionImageFileNames = await saveDescriptionImages("listings", listingId, descriptionImages);
+    const descriptionImageUrls = descriptionImageFileNames.map((fileName) =>
+      descriptionImageUrl("listings", listingId, fileName),
+    );
     const resolvedDescription = resolveDescriptionImagePlaceholders(description, descriptionImageUrls);
     await updateListingDescription(listingId, sanitizeDescriptionHtml(resolvedDescription));
   } catch (error) {

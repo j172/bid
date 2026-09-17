@@ -1,8 +1,22 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/apiAuth";
-import { createHomepageSection, listHomepageSections } from "@/lib/homepageSections";
+import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
+import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
+import {
+  createHomepageSection,
+  deleteHomepageSection,
+  listHomepageSections,
+  updateHomepageSectionBio,
+} from "@/lib/homepageSections";
 import { resolveBio, resolveLinkedLoftId } from "@/lib/homepageSectionApiValidation";
-import { homepageSectionImageUrl, saveHomepageSectionImage } from "@/lib/uploads";
+import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
+import {
+  deleteHomepageSectionImageFile,
+  descriptionImageUrl,
+  homepageSectionImageUrl,
+  saveDescriptionImages,
+  saveHomepageSectionImage,
+} from "@/lib/uploads";
 
 const TITLE_MAX = 255;
 const SECTION_TYPE_MAX = 30;
@@ -42,6 +56,9 @@ export async function POST(request: Request) {
   const isActiveRaw = form.get("isActive");
   const isActive = isActiveRaw === null ? undefined : isActiveRaw === "true" || isActiveRaw === "1";
   const image = form.get("image");
+  const descriptionImages = form
+    .getAll("descriptionImages")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
 
   if (!sectionType || sectionType.length > SECTION_TYPE_MAX) {
     return NextResponse.json({ ok: false, error: "sectionType 不正確" }, { status: 400 });
@@ -63,6 +80,9 @@ export async function POST(request: Request) {
   if (!(image instanceof File) || image.size === 0) {
     return NextResponse.json({ ok: false, error: "請上傳圖片" }, { status: 400 });
   }
+  if (descriptionImages.length > DESCRIPTION_IMAGE_MAX_COUNT) {
+    return NextResponse.json({ ok: false, error: `描述圖片最多 ${DESCRIPTION_IMAGE_MAX_COUNT} 張` }, { status: 400 });
+  }
 
   let imageFileName: string;
   try {
@@ -72,14 +92,39 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: message }, { status: 400 });
   }
 
+  // bio is inserted empty and only backfilled (sanitized when the row is a
+  // 'featured_loft' — see resolveBio's own comment on why sanitizing happens
+  // here, after placeholder resolution, rather than inside it) once the
+  // row's id exists — its inline description images are stored under
+  // uploads/homepage-sections/<id>/description/ (see lib/uploads.ts's
+  // saveDescriptionImages), same two-phase sequencing as
+  // app/api/admin/listings/route.ts (issue #315).
   const id = await createHomepageSection({
     sectionType,
     title,
-    bio: bioResult.bio,
+    bio: null,
     linkedLoftId: linkedLoftResult.linkedLoftId,
     imageFileName,
     sortOrder,
     isActive,
   });
+
+  try {
+    const descriptionImageFileNames = await saveDescriptionImages("homepage-sections", id, descriptionImages);
+    if (bioResult.bio !== null) {
+      const descriptionImageUrls = descriptionImageFileNames.map((fileName) =>
+        descriptionImageUrl("homepage-sections", id, fileName),
+      );
+      const resolvedBio = resolveDescriptionImagePlaceholders(bioResult.bio, descriptionImageUrls);
+      const finalBio = sectionType === "featured_loft" ? sanitizeDescriptionHtml(resolvedBio) : resolvedBio;
+      await updateHomepageSectionBio(id, finalBio);
+    }
+  } catch (error) {
+    await deleteHomepageSection(id);
+    await deleteHomepageSectionImageFile(imageFileName);
+    const message = error instanceof Error ? error.message : "圖片上傳失敗";
+    return NextResponse.json({ ok: false, error: message }, { status: 400 });
+  }
+
   return NextResponse.json({ ok: true, id });
 }

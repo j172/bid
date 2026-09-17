@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/apiAuth";
+import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
+import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
 import { deleteHomepageSection, getHomepageSectionById, updateHomepageSection } from "@/lib/homepageSections";
 import { resolveBio, resolveLinkedLoftId } from "@/lib/homepageSectionApiValidation";
-import { deleteHomepageSectionImageFile, homepageSectionImageUrl, saveHomepageSectionImage } from "@/lib/uploads";
+import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
+import {
+  deleteHomepageSectionImageFile,
+  descriptionImageUrl,
+  homepageSectionImageUrl,
+  saveDescriptionImages,
+  saveHomepageSectionImage,
+} from "@/lib/uploads";
 import { parseIdParam } from "@/lib/routeParams";
 
 const TITLE_MAX = 255;
@@ -51,6 +60,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const isActiveRaw = String(form.get("isActive") ?? "true");
   const isActive = isActiveRaw === "true" || isActiveRaw === "1";
   const newImage = form.get("image");
+  const descriptionImages = form
+    .getAll("descriptionImages")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
 
   if (!title || title.length > TITLE_MAX) {
     return NextResponse.json({ ok: false, error: `請輸入標題（上限 ${TITLE_MAX} 字）` }, { status: 400 });
@@ -69,6 +81,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!Number.isFinite(sortOrder) || !Number.isInteger(sortOrder) || sortOrder < 0) {
     return NextResponse.json({ ok: false, error: "排序必須是不小於 0 的整數" }, { status: 400 });
   }
+  if (descriptionImages.length > DESCRIPTION_IMAGE_MAX_COUNT) {
+    return NextResponse.json({ ok: false, error: `描述圖片最多 ${DESCRIPTION_IMAGE_MAX_COUNT} 張` }, { status: 400 });
+  }
 
   let imageFileName = existing.imageFileName;
   if (newImage instanceof File && newImage.size > 0) {
@@ -80,9 +95,32 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
   }
 
+  // Resolves bio's `cid:N` inline-image placeholders to real URLs and
+  // (for 'featured_loft' rows) sanitizes — see resolveBio's own comment on
+  // why sanitizing happens here rather than inside it.
+  let finalBio: string | null;
+  try {
+    const descriptionImageFileNames = await saveDescriptionImages("homepage-sections", sectionId, descriptionImages);
+    if (bioResult.bio === null) {
+      finalBio = null;
+    } else {
+      const descriptionImageUrls = descriptionImageFileNames.map((fileName) =>
+        descriptionImageUrl("homepage-sections", sectionId, fileName),
+      );
+      const resolvedBio = resolveDescriptionImagePlaceholders(bioResult.bio, descriptionImageUrls);
+      finalBio = existing.sectionType === "featured_loft" ? sanitizeDescriptionHtml(resolvedBio) : resolvedBio;
+    }
+  } catch (error) {
+    if (imageFileName !== existing.imageFileName) {
+      await deleteHomepageSectionImageFile(imageFileName);
+    }
+    const message = error instanceof Error ? error.message : "圖片上傳失敗";
+    return NextResponse.json({ ok: false, error: message }, { status: 400 });
+  }
+
   const result = await updateHomepageSection(sectionId, {
     title,
-    bio: bioResult.bio,
+    bio: finalBio,
     linkedLoftId: linkedLoftResult.linkedLoftId,
     sortOrder,
     isActive,

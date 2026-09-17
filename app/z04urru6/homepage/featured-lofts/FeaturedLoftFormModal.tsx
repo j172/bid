@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MODAL_TRIGGER_CLASS } from "../../components/adminButtonClasses";
 import AdminModal from "../../components/AdminModal";
 import ImageUploadField from "../../components/ImageUploadField";
 import ModalFormActions from "../../components/ModalFormActions";
-import SimpleRichTextEditor from "../../components/SimpleRichTextEditor";
+import SimpleRichTextEditor, { type SimpleRichTextEditorHandle } from "../../components/SimpleRichTextEditor";
 import { useSuccessBanner } from "../../components/SuccessBanner";
 import { useImageUploadPreview } from "../../components/useImageUploadPreview";
 
@@ -46,6 +46,7 @@ export default function FeaturedLoftFormModal(props: Props) {
   const router = useRouter();
   const showBanner = useSuccessBanner();
   const isEdit = props.mode === "edit";
+  const contentEditorRef = useRef<SimpleRichTextEditorHandle>(null);
 
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(isEdit ? props.section.title : "");
@@ -84,13 +85,17 @@ export default function FeaturedLoftFormModal(props: Props) {
     }
 
     setSubmitting(true);
+    const { html: contentHtml, images: descriptionImages } = contentEditorRef.current!.extractForSubmit();
     const formData = new FormData();
     formData.set("title", title);
-    formData.set("bio", content);
+    formData.set("bio", contentHtml);
     formData.set("linkedLoftId", linkedLoftId);
     if (sortOrder.trim() !== "") formData.set("sortOrder", sortOrder.trim());
     formData.set("isActive", isActive ? "true" : "false");
     if (file) formData.set("image", file);
+    for (const descriptionImage of descriptionImages) {
+      formData.append("descriptionImages", descriptionImage);
+    }
 
     let response: Response;
     if (isEdit) {
@@ -132,7 +137,7 @@ export default function FeaturedLoftFormModal(props: Props) {
 
             <div className="flex flex-col gap-1 text-sm font-medium text-ink-light">
               內容
-              <SimpleRichTextEditor value={content} onChange={setContent} maxLength={CONTENT_MAX} />
+              <SimpleRichTextEditor ref={contentEditorRef} value={content} onChange={setContent} maxLength={CONTENT_MAX} />
             </div>
 
             <ImageUploadField

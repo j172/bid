@@ -14,6 +14,7 @@ import {
   listNews,
   setNewsBroadcastId,
   updateNews,
+  updateNewsContent,
 } from "./news";
 
 const { queryMock } = vi.hoisted(() => ({ queryMock: vi.fn() }));
@@ -139,6 +140,17 @@ describe("createNews", () => {
 
     expect(result).toEqual({ ok: true, id: 42 });
     expect(queryMock.mock.calls[0][1]).toEqual(["t", "img.jpg", "c"]);
+  });
+});
+
+describe("updateNewsContent", () => {
+  it("writes the content column for the given id without touching locked_by_admin", async () => {
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+    await updateNewsContent(42, "<p>已解析圖片網址</p>");
+    expect(queryMock).toHaveBeenCalledWith("UPDATE news_posts SET content = ? WHERE id = ?", [
+      "<p>已解析圖片網址</p>",
+      42,
+    ]);
   });
 });
 

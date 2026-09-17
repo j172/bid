@@ -106,7 +106,7 @@ export default function ProductFormModal(props: Props) {
 
     setSubmitting(true);
 
-    const { html: descriptionHtml } = descriptionEditorRef.current!.extractForSubmit();
+    const { html: descriptionHtml, images: descriptionImages } = descriptionEditorRef.current!.extractForSubmit();
 
     let newIndex = 0;
     const order = photoItems.map((item) =>
@@ -130,6 +130,9 @@ export default function ProductFormModal(props: Props) {
     formData.set("order", JSON.stringify(order));
     for (const item of photoItems) {
       if (item.kind === "new") formData.append("photos", item.file);
+    }
+    for (const image of descriptionImages) {
+      formData.append("descriptionImages", image);
     }
 
     let response: Response;
@@ -213,7 +216,7 @@ export default function ProductFormModal(props: Props) {
 
             <div className="flex flex-col gap-1 text-sm font-medium text-ink-light">
               商品簡介
-              <DescriptionEditor ref={descriptionEditorRef} value={description} onChange={setDescription} enableImages={false} />
+              <DescriptionEditor ref={descriptionEditorRef} value={description} onChange={setDescription} />
             </div>
 
             <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">

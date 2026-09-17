@@ -189,6 +189,21 @@ export async function updatePigeonShowcase(id: number, input: PigeonShowcaseInpu
   return { ok: true };
 }
 
+// Used only by the create route (issue #315): a pigeon_showcase row's id has
+// to exist before its description images can be saved under
+// uploads/pigeon-showcase/<id>/description/ (see lib/uploads.ts's
+// saveDescriptionImages), so createPigeonShowcase is called first with a
+// placeholder description and this backfills the real one — sanitized, with
+// its `cid:N` image placeholders already resolved to real URLs — once that's
+// done. Same two-phase sequencing as lib/listings.ts's
+// updateListingDescription. The edit route doesn't need this: the row's id
+// is already known from the URL, so updatePigeonShowcase's regular full
+// update can carry the final description directly.
+export async function updatePigeonShowcaseDescription(id: number, description: string): Promise<void> {
+  const db = await getDb();
+  await db.query("UPDATE pigeon_showcase SET description = ? WHERE id = ?", [description, id]);
+}
+
 export async function deletePigeonShowcase(id: number): Promise<PigeonShowcaseOutcome> {
   const db = await getDb();
   const [result] = await db.query("DELETE FROM pigeon_showcase WHERE id = ?", [id]);

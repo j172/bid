@@ -1,9 +1,18 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/apiAuth";
+import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
+import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
 import { deleteNews, getNewsById, updateNews, type NewsPostInput } from "@/lib/news";
 import { validateNewsContent, validateNewsTitle } from "@/lib/newsValidation";
 import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
-import { deleteNewsImageFile, saveImageOrError, saveNewsImage, withImageRollback } from "@/lib/uploads";
+import {
+  deleteNewsImageFile,
+  descriptionImageUrl,
+  saveDescriptionImages,
+  saveImageOrError,
+  saveNewsImage,
+  withImageRollback,
+} from "@/lib/uploads";
 import { cancelBroadcast } from "@/lib/newsletter";
 import { createAndSendNewsBroadcast, resolveBroadcastLock, resolveOrigin } from "@/lib/newsNewsletterSync";
 import { parseIdParam } from "@/lib/routeParams";
@@ -32,6 +41,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const title = String(form.get("title") ?? "").trim();
   const content = String(form.get("content") ?? "").trim();
   const image = form.get("image");
+  const descriptionImages = form
+    .getAll("descriptionImages")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
   // Unlike create (where the field's absence just means "no opt-in"),
   // NewsFormModal always sends this in edit mode (issue #80) — "false" here
   // is a real signal to cancel an active broadcast, not an omitted field.
@@ -49,6 +61,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!(image instanceof File) || image.size === 0) {
     return NextResponse.json({ ok: false, error: "請上傳主圖" }, { status: 400 });
   }
+  if (descriptionImages.length > DESCRIPTION_IMAGE_MAX_COUNT) {
+    return NextResponse.json({ ok: false, error: `描述圖片最多 ${DESCRIPTION_IMAGE_MAX_COUNT} 張` }, { status: 400 });
+  }
 
   const saved = await saveImageOrError(() => saveNewsImage(image));
   if (!saved.ok) {
@@ -56,7 +71,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
   const imageFileName = saved.fileName;
 
-  const input: NewsPostInput = { title, content: sanitizeDescriptionHtml(content), imageFileName };
+  let finalContent: string;
+  try {
+    const descriptionImageFileNames = await saveDescriptionImages("news", newsId, descriptionImages);
+    const descriptionImageUrls = descriptionImageFileNames.map((fileName) =>
+      descriptionImageUrl("news", newsId, fileName),
+    );
+    finalContent = sanitizeDescriptionHtml(resolveDescriptionImagePlaceholders(content, descriptionImageUrls));
+  } catch (error) {
+    await deleteNewsImageFile(imageFileName);
+    const message = error instanceof Error ? error.message : "圖片上傳失敗";
+    return NextResponse.json({ ok: false, error: message }, { status: 400 });
+  }
+
+  const input: NewsPostInput = { title, content: finalContent, imageFileName };
   const result = await withImageRollback(
     () => updateNews(newsId, input),
     () => deleteNewsImageFile(imageFileName),

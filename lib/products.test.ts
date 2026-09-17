@@ -15,6 +15,7 @@ import {
   listProducts,
   replaceProductPhotos,
   updateProduct,
+  updateProductDescription,
 } from "./products";
 
 const { queryMock } = vi.hoisted(() => ({ queryMock: vi.fn() }));
@@ -184,6 +185,17 @@ describe("createProduct", () => {
     queryMock.mockResolvedValueOnce([{ insertId: 1 }]);
     await createProduct({ title: "t", price: 1, stockQuantity: 5, description: "d", sortOrder: 0 });
     expect(queryMock.mock.calls[0][1][7]).toBe(1);
+  });
+});
+
+describe("updateProductDescription", () => {
+  it("writes the description column for the given id", async () => {
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+    await updateProductDescription(42, "<p>已解析圖片網址</p>");
+    expect(queryMock).toHaveBeenCalledWith("UPDATE products SET description = ? WHERE id = ?", [
+      "<p>已解析圖片網址</p>",
+      42,
+    ]);
   });
 });
 

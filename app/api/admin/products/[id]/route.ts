@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/apiAuth";
+import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
+import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
 import { MAX_PHOTO_COUNT } from "@/lib/photoLimits";
 import { parseProductPhotoOrder, resolveProductPhotoOrder } from "@/lib/productPhotoOrder";
 import {
@@ -11,7 +13,13 @@ import {
 } from "@/lib/productValidation";
 import { deleteProduct, getProductById, replaceProductPhotos, updateProduct } from "@/lib/products";
 import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
-import { deleteProductPhotoFiles, productPhotoUrl, saveProductPhotos } from "@/lib/uploads";
+import {
+  deleteProductPhotoFiles,
+  descriptionImageUrl,
+  productPhotoUrl,
+  saveDescriptionImages,
+  saveProductPhotos,
+} from "@/lib/uploads";
 import { validateYoutubeUrl } from "@/lib/youtubeEmbed";
 import { parseIdParam } from "@/lib/routeParams";
 
@@ -68,6 +76,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const isActive = isActiveRaw === "true" || isActiveRaw === "1";
   const youtubeUrlRaw = String(form.get("youtubeUrl") ?? "").trim();
   const newPhotos = form.getAll("photos").filter((entry): entry is File => entry instanceof File && entry.size > 0);
+  const descriptionImages = form
+    .getAll("descriptionImages")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
 
   const order = parseProductPhotoOrder(String(form.get("order") ?? "[]"));
   if (order === null) {
@@ -105,12 +116,21 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (order.length > MAX_PHOTO_COUNT) {
     return NextResponse.json({ ok: false, error: `照片最多 ${MAX_PHOTO_COUNT} 張` }, { status: 400 });
   }
+  if (descriptionImages.length > DESCRIPTION_IMAGE_MAX_COUNT) {
+    return NextResponse.json({ ok: false, error: `描述圖片最多 ${DESCRIPTION_IMAGE_MAX_COUNT} 張` }, { status: 400 });
+  }
 
   const currentFileNames = existing.photos.map((photo) => photo.fileName);
 
   let savedFileNames: string[];
+  let finalDescription: string;
   try {
     savedFileNames = await saveProductPhotos(productId, newPhotos);
+    const descriptionImageFileNames = await saveDescriptionImages("products", productId, descriptionImages);
+    const descriptionImageUrls = descriptionImageFileNames.map((fileName) =>
+      descriptionImageUrl("products", productId, fileName),
+    );
+    finalDescription = sanitizeDescriptionHtml(resolveDescriptionImagePlaceholders(description, descriptionImageUrls));
   } catch (error) {
     const message = error instanceof Error ? error.message : "圖片上傳失敗";
     return NextResponse.json({ ok: false, error: message }, { status: 400 });
@@ -133,7 +153,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     title,
     price,
     stockRemaining,
-    description: sanitizeDescriptionHtml(description),
+    description: finalDescription,
     sortOrder,
     isActive,
     youtubeUrl,
