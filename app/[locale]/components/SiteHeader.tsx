@@ -26,7 +26,7 @@ export default async function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 text-ink shadow-[0_10px_30px_rgba(15,23,42,0.06)] backdrop-blur">
       <div className="border-b border-slate-200 bg-gradient-to-r from-slate-950 via-baltic-blue-950 to-slate-950 text-slate-100">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2 text-xs sm:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2 text-xs sm:px-6">
           <p>{t("topbarNotice")}</p>
           <span className="inline-flex rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium text-white lg:hidden">
             🔒 {t("trustSecure")}
@@ -42,7 +42,7 @@ export default async function SiteHeader() {
         </div>
       </div>
 
-      <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-4 sm:px-6">
+      <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-4 sm:px-6">
         <Link href="/" className="mr-2 flex shrink-0 items-center gap-2 text-lg font-black tracking-tight sm:text-xl">
           <span className="inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             <Image
@@ -212,7 +212,7 @@ export default async function SiteHeader() {
       </div>
 
       <div className="hidden border-t border-slate-200 bg-gradient-to-b from-white to-slate-50 lg:block">
-        <div className="mx-auto max-w-6xl px-4 py-2.5 sm:px-6">
+        <div className="mx-auto max-w-7xl px-4 py-2.5 sm:px-6">
           <nav className="flex min-w-0 flex-wrap items-center gap-5 text-sm text-ink">
             <Link href="/" className="font-medium hover:text-interactive-primary">
               {t("home")}

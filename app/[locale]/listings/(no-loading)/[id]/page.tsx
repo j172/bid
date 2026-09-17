@@ -224,7 +224,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
   ]);
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
       {/* JSON-LD requires raw <script> content. productJsonLd carries admin-editable
           fields (listing.title is not sanitizeDescriptionHtml'd), so it goes through
           safeJsonLdString rather than bare JSON.stringify — see lib/jsonLdScript.ts

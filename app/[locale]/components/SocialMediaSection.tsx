@@ -39,7 +39,7 @@ export default function SocialMediaSection({ items }: { items: SocialItem[] }) {
   });
 
   return (
-    <section className="mx-auto mt-12 max-w-6xl px-4 sm:px-6">
+    <section className="mx-auto mt-12 max-w-7xl px-4 sm:px-6">
       <div className="rounded-3xl border border-border bg-white p-6 shadow-sm sm:p-8">
         {/* Header and Quick Follow buttons */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

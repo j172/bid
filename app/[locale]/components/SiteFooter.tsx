@@ -12,7 +12,7 @@ export default async function SiteFooter() {
 
   return (
     <footer className="mt-14 border-t border-border bg-white">
-      <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 pt-10 sm:px-6">
+      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 pt-10 sm:px-6">
         {/* Issue #150: the homepage now shows this same card mid-page, so
             the footer's copy is hidden there to avoid showing it twice. */}
         <HideOnHomepage>
@@ -26,7 +26,7 @@ export default async function SiteFooter() {
         </section>
       </div>
 
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 py-12 sm:px-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-12 sm:px-6 md:grid-cols-2 lg:grid-cols-4">
         <section>
           <h3 className="text-sm font-extrabold uppercase tracking-wide text-ink">{t("helpSupportTitle")}</h3>
           <p className="mt-3 text-sm leading-6 text-ink-light">{t("brandSubtitle")}</p>
@@ -173,7 +173,7 @@ export default async function SiteFooter() {
       </div>
 
       <div className="border-t border-border bg-slate-50">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-4 text-xs text-ink-light sm:flex-row sm:px-6">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-4 text-xs text-ink-light sm:flex-row sm:px-6">
           <p>{t("copyright")}</p>
         </div>
       </div>

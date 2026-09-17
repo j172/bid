@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 // Shared narrow-column reading layout for the static legal/help pages
 // (privacy, refund, terms, faq, gdpr — issue #121). Deliberately max-w-3xl
-// rather than the max-w-6xl card grids the rest of the public site uses
+// rather than the max-w-7xl card grids the rest of the public site uses
 // (see app/[locale]/contact/page.tsx): these pages are long-form prose, and a
 // narrower measure keeps line lengths readable.
 interface LegalPageShellProps {

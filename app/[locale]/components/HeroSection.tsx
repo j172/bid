@@ -141,7 +141,7 @@ export default function HeroSection({
   const activeCard = cards[activeIndex];
   return (
     <section className="bg-gradient-to-b from-[#eef4ff] via-[#f4f7fb] to-[#f8fafc]">
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-12">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-12">
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
           <article className="relative isolate overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-baltic-blue-950 to-baltic-blue-900 p-7 text-white shadow-[0_25px_70px_rgba(15,23,42,0.22)] lg:col-span-2 lg:min-h-[440px] lg:p-9">
             <div className="pointer-events-none absolute -left-20 -top-20 h-56 w-56 rounded-full bg-white/10 blur-2xl" />

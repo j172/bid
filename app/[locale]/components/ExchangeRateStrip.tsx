@@ -14,7 +14,7 @@ import { getAllLatestStoredRates } from "@/lib/exchangeRates";
 // tone, see app/styles/design-tokens.css) rather than the newsletter card's
 // blue, so the two read as related but distinct. No outer wrapper here
 // (unlike the old bg-slate-50 strip) — SiteFooter places this directly
-// inside its own max-w-6xl/px-4 container, right above the newsletter card.
+// inside its own max-w-7xl/px-4 container, right above the newsletter card.
 //
 // `className` (issue #150) lets a second call site — the homepage's
 // news/pigeon-showcase grid — merge in height-stretching flex classes so
