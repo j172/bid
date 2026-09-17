@@ -26,7 +26,12 @@ export default async function SiteFooter() {
         </section>
       </div>
 
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-12 sm:px-6 md:grid-cols-2 lg:grid-cols-4">
+      {/* Issue #316: split the old "quick links" column into 法律條款 /
+          鴿界目錄, bringing the desktop layout to 5 columns. Keeping the
+          existing md:grid-cols-2 collapse and adding an lg:grid-cols-3 step
+          avoids squeezing 5 columns into the 1024–1279px range; the full
+          5-column layout only kicks in at xl (1280px+). */}
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-12 sm:px-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <section>
           <h3 className="text-sm font-extrabold uppercase tracking-wide text-ink">{t("helpSupportTitle")}</h3>
           <p className="mt-3 text-sm leading-6 text-ink-light">{t("brandSubtitle")}</p>
@@ -78,6 +83,18 @@ export default async function SiteFooter() {
               </svg>
             </a>
           </div>
+          <ul className="mt-4 space-y-2 text-sm text-ink-light">
+            <li>
+              <Link href="/faq" className="hover:text-interactive-primary">
+                {t("faq")}
+              </Link>
+            </li>
+            <li>
+              <Link href="/contact" className="hover:text-interactive-primary">
+                {t("contact")}
+              </Link>
+            </li>
+          </ul>
         </section>
 
         <section>
@@ -107,7 +124,7 @@ export default async function SiteFooter() {
         </section>
 
         <section>
-          <h3 className="text-sm font-extrabold uppercase tracking-wide text-ink">{t("quickLinksTitle")}</h3>
+          <h3 className="text-sm font-extrabold uppercase tracking-wide text-ink">{t("legalTitle")}</h3>
           <ul className="mt-3 space-y-2 text-sm text-ink-light">
             <li>
               <Link href="/privacy" className="hover:text-interactive-primary">
@@ -125,25 +142,16 @@ export default async function SiteFooter() {
               </Link>
             </li>
             <li>
-              <Link href="/auction-terms" className="hover:text-interactive-primary">
-                {t("auctionTerms")}
-              </Link>
-            </li>
-            <li>
-              <Link href="/faq" className="hover:text-interactive-primary">
-                {t("faq")}
-              </Link>
-            </li>
-            <li>
               <Link href="/gdpr" className="hover:text-interactive-primary">
                 {t("gdpr")}
               </Link>
             </li>
-            <li>
-              <Link href="/contact" className="hover:text-interactive-primary">
-                {t("contact")}
-              </Link>
-            </li>
+          </ul>
+        </section>
+
+        <section>
+          <h3 className="text-sm font-extrabold uppercase tracking-wide text-ink">{t("pigeonDirectoryTitle")}</h3>
+          <ul className="mt-3 space-y-2 text-sm text-ink-light">
             <li>
               <Link href="/pigeon-stations" className="hover:text-interactive-primary">
                 {t("pigeonStations")}
