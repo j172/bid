@@ -2,7 +2,7 @@ export default function LocaleHomeLoading() {
   return (
     <main className="pb-8">
       <section className="bg-header text-white">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-14 sm:px-6 lg:grid-cols-2 lg:items-center">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 py-14 sm:px-6 lg:grid-cols-2 lg:items-center">
           <div>
             <div className="h-6 w-40 animate-pulse rounded-full bg-slate-700" />
             <div className="mt-5 h-12 w-4/5 animate-pulse rounded bg-slate-700" />
@@ -26,7 +26,7 @@ export default function LocaleHomeLoading() {
         </div>
       </section>
 
-      <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
+      <section className="mx-auto mt-10 max-w-7xl px-4 sm:px-6">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 8 }).map((_, index) => (
             <div key={index} className="rounded-xl border border-border bg-white p-3 shadow-sm">

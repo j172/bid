@@ -158,7 +158,7 @@ export default function ProductGallery({ title, imageUrls }: ProductGalleryProps
           <button type="button" className="absolute right-4 top-4 rounded-full bg-white/90 px-3 py-1 text-sm font-semibold text-ink" onClick={() => setLightboxOpen(false)}>
             {t("galleryClose")}
           </button>
-          <div className="relative max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-2xl bg-black">
+          <div className="relative max-h-[90vh] w-full max-w-7xl overflow-hidden rounded-2xl bg-black">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={resolveSrc(selectedUrl)}

@@ -1,6 +1,6 @@
 export default function ListingsLoading() {
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
       <div className="rounded-xl bg-white p-4 shadow-sm sm:p-6">
         <div className="h-3 w-36 animate-pulse rounded bg-slate-200" />
         <div className="mt-3 h-8 w-56 animate-pulse rounded bg-slate-200" />

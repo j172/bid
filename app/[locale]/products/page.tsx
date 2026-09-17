@@ -71,7 +71,7 @@ export default async function ProductsListPage({ searchParams }: { searchParams:
   const pageItems = activeProducts.slice(offset, offset + limit);
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
       <h1 className="text-3xl font-black text-ink">{t("title")}</h1>
       <p className="mt-2 text-sm text-ink-light">{t("subtitle")}</p>
 

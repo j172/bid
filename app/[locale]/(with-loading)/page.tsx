@@ -306,7 +306,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     <main className="pb-8">
       {/* Issue #148: reordered so the 最新消息／入賞鴿／進口鴿 showcase grid
           leads the page, directly above the hero auction rail. */}
-      <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
+      <section className="mx-auto mt-6 max-w-7xl px-4 sm:px-6">
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
           <div className="flex flex-col gap-5 lg:col-span-2">
             <NewsCarouselCard
@@ -386,7 +386,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         currencyRates={currencyRates}
       />
 
-      <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
+      <section className="mx-auto mt-10 max-w-7xl px-4 sm:px-6">
         <div className="flex items-end justify-between">
           <h2 className="text-2xl font-bold">{t("newArrivals")}</h2>
           <Link href={perfMode === "aggressive" ? "/listings?perf=aggressive" : "/listings"} className="text-sm font-semibold text-interactive-primary hover:text-header">
@@ -446,7 +446,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       </section>
 
       {partnerLofts.length > 0 && (
-        <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-6">
+        <section className="mx-auto mt-8 max-w-7xl px-4 sm:px-6">
           <div className="mb-1 flex items-end justify-between">
             <h2 className="text-2xl font-bold">{t("partnerLoftsTitle")}</h2>
             <Link href="/listings" className="text-sm font-semibold text-interactive-primary hover:text-header">
@@ -486,7 +486,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           of hiding the section entirely" convention as the carousel cards
           above — expected to render its "即將推出" empty state at launch,
           since there's no world_famous data yet. */}
-      <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
+      <section className="mx-auto mt-10 max-w-7xl px-4 sm:px-6">
         <div className="flex items-end justify-between">
           <h2 className="text-2xl font-bold">{t("worldFamousPigeonsTitle")}</h2>
           <Link
@@ -522,7 +522,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         )}
       </section>
 
-      <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-6">
+      <section className="mx-auto mt-8 max-w-7xl px-4 sm:px-6">
         <div className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -578,7 +578,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       </section>
 
       {fixedPriceListings.length > 0 && (
-        <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
+        <section className="mx-auto mt-6 max-w-7xl px-4 sm:px-6">
           <div className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -622,7 +622,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
 
 
-      <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
+      <section className="mx-auto mt-10 max-w-7xl px-4 sm:px-6">
         <h2 className="text-2xl font-bold">{t("weatherTitle")}</h2>
         <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="overflow-hidden rounded-2xl border border-border bg-white shadow-sm">
@@ -652,7 +652,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </div>
       </section>
 
-      <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
+      <section className="mx-auto mt-10 max-w-7xl px-4 sm:px-6">
         <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-baltic-blue-900 to-slate-900 p-7 text-white shadow-lg">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-steel-azure-200">{t("trustEyebrow")}</p>
           <h2 className="mt-2 text-3xl font-black">{t("trustTitle")}</h2>
@@ -667,7 +667,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </div>
       </section>
 
-      <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
+      <section className="mx-auto mt-10 max-w-7xl px-4 sm:px-6">
         <div className="rounded-2xl border border-border bg-white px-4 py-3 shadow-sm">
           <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
             <span className="rounded-full bg-header px-3 py-1 font-semibold text-white">{t("quickNavTitle")}</span>
@@ -684,7 +684,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </div>
       </section>
 
-      <section id="auto-bidding-explainer" className="mx-auto mt-5 max-w-6xl scroll-mt-24 px-4 sm:px-6">
+      <section id="auto-bidding-explainer" className="mx-auto mt-5 max-w-7xl scroll-mt-24 px-4 sm:px-6">
         <div className="rounded-2xl border border-interactive-primary/20 bg-interactive-primary-subtle p-5 shadow-sm sm:p-6">
           <h2 className="text-lg font-black text-ink">{tAutoBid("title")}</h2>
           <p className="mt-1 text-sm text-ink-light">{tAutoBid("description")}</p>
@@ -705,7 +705,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </div>
       </section>
 
-      <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
+      <section className="mx-auto mt-6 max-w-7xl px-4 sm:px-6">
         <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-border bg-white shadow-sm md:grid-cols-2 lg:grid-cols-4">
           <article className="flex items-center gap-3 border-b border-border px-5 py-4 md:border-r lg:border-b-0">
             <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-steel-azure-50 text-lg">🚚</span>
@@ -738,7 +738,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </div>
       </section>
 
-      <section className="mx-auto mt-10 max-w-6xl px-4 sm:px-6">
+      <section className="mx-auto mt-10 max-w-7xl px-4 sm:px-6">
         <div className="flex items-end justify-between">
           <h2 className="text-2xl font-bold">{t("browseByCategory")}</h2>
         </div>
@@ -763,7 +763,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </div>
       </section>
 
-      <section className="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
+      <section className="mx-auto mt-6 max-w-7xl px-4 sm:px-6">
         <ExchangeRateStrip />
       </section>
 
