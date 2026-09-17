@@ -531,6 +531,7 @@
     "helpSupportTitle": "Help & Support",
     "supportPhone": "Support: +886 909-256-829",
     "supportEmail": "service@xiangshuicn.cc",
+    "supportLine": "LINE Support: Add friend",
     "accountTitle": "Account",
     "loginRegister": "Log in / Sign up",
     "accountSettings": "Account settings",
@@ -1389,5 +1390,11 @@
     "prevPage": "Previous",
     "nextPage": "Next",
     "pageInfo": "Page {page} of {totalPages} ({total} total)"
+  },
+  "lineContact": {
+    "ariaLabel": "Contact us on LINE"
+  },
+  "backToTop": {
+    "ariaLabel": "Back to top"
   }
 }

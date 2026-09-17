@@ -9,9 +9,11 @@ import { SITE_URL } from "@/lib/siteUrl";
 import { absoluteUrl, buildOrganizationJsonLd, buildWebSiteJsonLd } from "@/lib/seo";
 import { safeJsonLdString } from "@/lib/jsonLdScript";
 import { getCurrentUser } from "@/lib/auth";
+import BackToTopButton from "./components/BackToTopButton";
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import GoogleAnalytics from "./components/GoogleAnalytics";
 import GoogleOneTap from "./components/GoogleOneTap";
+import LineContactButton from "./components/LineContactButton";
 import MicrosoftClarity from "./components/MicrosoftClarity";
 import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
@@ -146,6 +148,8 @@ export default async function LocaleLayout({
           {children}
           <SiteFooter />
           <CookieConsentBanner />
+          <LineContactButton />
+          <BackToTopButton />
         </NextIntlClientProvider>
       </body>
     </html>

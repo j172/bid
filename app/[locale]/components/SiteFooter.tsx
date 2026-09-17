@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import ExchangeRateStrip from "./ExchangeRateStrip";
 import HideOnHomepage from "./HideOnHomepage";
 import NewsletterForm from "./NewsletterForm";
+import { LINE_CONTACT_HREF } from "@/lib/lineContact";
 import { SOCIAL_LINKS } from "@/lib/socialMediaConstants";
 
 
@@ -31,6 +32,14 @@ export default async function SiteFooter() {
           <p className="mt-3 text-sm leading-6 text-ink-light">{t("brandSubtitle")}</p>
           <p className="mt-4 text-sm font-medium text-ink">{t("supportPhone")}</p>
           <p className="text-sm text-ink-light">{t("supportEmail")}</p>
+          <a
+            href={LINE_CONTACT_HREF}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 inline-block text-sm text-ink-light hover:text-interactive-primary"
+          >
+            {t("supportLine")}
+          </a>
           <div className="mt-4 flex items-center gap-3">
             <a
               href={SOCIAL_LINKS.facebook}
