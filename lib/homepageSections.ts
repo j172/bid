@@ -166,6 +166,21 @@ export async function updateHomepageSection(
   return { ok: true };
 }
 
+// Used only by the create route (issue #315, 'featured_loft' rows only): a
+// section's id has to exist before its bio's inline description images can
+// be saved under uploads/homepage-sections/<id>/description/ (see
+// lib/uploads.ts's saveDescriptionImages), so createHomepageSection is
+// called first with a placeholder bio and this backfills the real one —
+// sanitized, with its `cid:N` image placeholders already resolved to real
+// URLs — once that's done. Same two-phase sequencing as lib/listings.ts's
+// updateListingDescription. The edit route doesn't need this: the section's
+// id is already known from the URL, so updateHomepageSection's regular full
+// update can carry the final bio directly.
+export async function updateHomepageSectionBio(id: number, bio: string | null): Promise<void> {
+  const db = await getDb();
+  await db.query("UPDATE homepage_sections SET bio = ? WHERE id = ?", [bio, id]);
+}
+
 export async function deleteHomepageSection(id: number): Promise<HomepageSectionOutcome> {
   const db = await getDb();
 

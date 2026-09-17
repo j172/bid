@@ -3,10 +3,9 @@
 import { forwardRef, useImperativeHandle, useRef } from "react";
 import { Editor } from "@tinymce/tinymce-react";
 import type { Editor as TinyMCEEditor } from "tinymce";
-import { convertPhotoToWebp } from "@/lib/convertPhotoToWebp";
-import { DESCRIPTION_IMAGE_MAX_BYTES, DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
 import { DESCRIPTION_MAX, descriptionPlainTextLength } from "@/lib/listingValidation";
-import { extractYouTubeId } from "@/lib/youtubeEmbed";
+import { createDescriptionImagesUploadHandler, extractDescriptionImagesForSubmit } from "../components/descriptionImageUpload";
+import { registerInsertYoutubeButton } from "../components/insertYoutubeButton";
 import { TINYMCE_BASE_INIT, TINYMCE_LICENSE_KEY, TINYMCE_SCRIPT_SRC } from "../components/richTextEditorConfig";
 
 export interface DescriptionEditorHandle {
@@ -24,11 +23,12 @@ interface DescriptionEditorProps {
   /**
    * Set false to omit the image-insert toolbar button/plugin (and its
    * upload handler) while keeping everything else, including the "插入
-   * YouTube 影片" button — used by ProductFormModal (issue #286), which
-   * reuses this editor to gain that YouTube button but has no per-product
-   * description-image upload path (extractForSubmit's `images` would always
-   * come back empty for it anyway, since there'd be no way to trigger an
-   * upload). Defaults to true (listings keep full image support).
+   * YouTube 影片" button. No current caller sets this — every content type
+   * that reuses this editor (listings, products since issue #315) now has
+   * its own description-image upload path — but it's kept available rather
+   * than removed, since a future rich-text field without one (same shape as
+   * ProductFormModal's pre-#315 situation) would need it again. Defaults to
+   * true.
    */
   enableImages?: boolean;
 }
@@ -42,17 +42,7 @@ const DescriptionEditor = forwardRef<DescriptionEditorHandle, DescriptionEditorP
 
   useImperativeHandle(ref, () => ({
     extractForSubmit() {
-      const doc = new DOMParser().parseFromString(value, "text/html");
-      const images: File[] = [];
-      doc.querySelectorAll("img").forEach((img) => {
-        const src = img.getAttribute("src") ?? "";
-        const file = pendingImagesRef.current.get(src);
-        if (file) {
-          img.setAttribute("src", `cid:${images.length}`);
-          images.push(file);
-        }
-      });
-      return { html: doc.body.innerHTML, images };
+      return extractDescriptionImagesForSubmit(value, pendingImagesRef.current);
     },
   }));
 
@@ -78,69 +68,12 @@ const DescriptionEditor = forwardRef<DescriptionEditorHandle, DescriptionEditorP
             "alignleft aligncenter alignright alignjustify | bullist numlist | blockquote hr | " +
             `subscript superscript codeformat | link ${enableImages ? "image " : ""}insertyoutube table | removeformat | ` +
             "searchreplace fullscreen code",
-          setup: (editor) => {
-            editor.ui.registry.addButton("insertyoutube", {
-              icon: "embed",
-              tooltip: "插入 YouTube 影片",
-              onAction: () => {
-                editor.windowManager.open({
-                  title: "插入 YouTube 影片",
-                  body: {
-                    type: "panel",
-                    items: [
-                      {
-                        type: "input",
-                        name: "url",
-                        label: "YouTube 網址",
-                        placeholder: "https://www.youtube.com/watch?v=...",
-                      },
-                    ],
-                  },
-                  initialData: { url: "" },
-                  buttons: [
-                    { type: "cancel", text: "取消" },
-                    { type: "submit", text: "插入", primary: true },
-                  ],
-                  onSubmit: (api) => {
-                    const videoId = extractYouTubeId(String(api.getData().url));
-                    if (!videoId) {
-                      editor.notificationManager.open({ text: "請輸入有效的 YouTube 網址", type: "error" });
-                      return;
-                    }
-                    editor.insertContent(
-                      `<iframe src="https://www.youtube-nocookie.com/embed/${videoId}" width="560" height="315" ` +
-                        `allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ` +
-                        `allowfullscreen title="YouTube video player" frameborder="0"></iframe>`,
-                    );
-                    api.close();
-                  },
-                });
-              },
-            });
-          },
+          setup: registerInsertYoutubeButton,
           // Images are never uploaded to a server endpoint here — the handler
           // below intercepts every insert, converts it client-side, and hands
           // back a local blob: URL for display. The real file only leaves the
           // browser when the surrounding listing form is submitted.
-          images_upload_handler: (blobInfo) =>
-            new Promise<string>((resolve, reject) => {
-              const liveCount =
-                editorRef.current?.getBody().querySelectorAll('img[src^="blob:"]').length ?? pendingImagesRef.current.size;
-              if (liveCount >= DESCRIPTION_IMAGE_MAX_COUNT) {
-                reject(`描述圖片最多 ${DESCRIPTION_IMAGE_MAX_COUNT} 張`);
-                return;
-              }
-              const original = new File([blobInfo.blob()], blobInfo.filename(), { type: blobInfo.blob().type });
-              convertPhotoToWebp(original).then((converted) => {
-                if (converted.size > DESCRIPTION_IMAGE_MAX_BYTES) {
-                  reject(`圖片超過單檔 ${DESCRIPTION_IMAGE_MAX_BYTES / 1024 / 1024}MB 上限`);
-                  return;
-                }
-                const url = URL.createObjectURL(converted);
-                pendingImagesRef.current.set(url, converted);
-                resolve(url);
-              });
-            }),
+          images_upload_handler: createDescriptionImagesUploadHandler(editorRef, pendingImagesRef),
         }}
       />
       <div className="flex items-center justify-between">

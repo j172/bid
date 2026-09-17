@@ -223,6 +223,22 @@ export async function updateNews(id: number, input: NewsPostInput): Promise<News
   return { ok: true };
 }
 
+// Used only by the create route (issue #315): a news post's id has to exist
+// before its description images can be saved under
+// uploads/news/<id>/description/ (see lib/uploads.ts's
+// saveDescriptionImages), so createNews is called first with a placeholder
+// content and this backfills the real one — sanitized, with its `cid:N`
+// image placeholders already resolved to real URLs — once that's done. Same
+// two-phase sequencing as lib/listings.ts's updateListingDescription.
+// Deliberately doesn't touch locked_by_admin/updated_at the way updateNews
+// does — this finishes the same create request, not a later admin edit. The
+// edit route doesn't need this: the news id is already known from the URL,
+// so updateNews's regular full update can carry the final content directly.
+export async function updateNewsContent(id: number, content: string): Promise<void> {
+  const db = await getDb();
+  await db.query("UPDATE news_posts SET content = ? WHERE id = ?", [content, id]);
+}
+
 // Inserts one herbots.be-imported row (issue #240) — was the (now-removed,
 // issue #280) auto-import pipeline's only write path; currently has no
 // caller. Deliberately separate from createNews: imported rows always carry

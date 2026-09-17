@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextResponse } from "next/server";
 import { GET, POST } from "./route";
 import { requireAdmin } from "@/lib/apiAuth";
-import { createProduct, deleteProduct, listProducts, replaceProductPhotos } from "@/lib/products";
+import { createProduct, deleteProduct, listProducts, replaceProductPhotos, updateProductDescription } from "@/lib/products";
 import { deleteProductPhotoFiles, saveProductPhotos } from "@/lib/uploads";
 
 vi.mock("@/lib/apiAuth", () => ({
@@ -20,12 +20,21 @@ vi.mock("@/lib/products", () => ({
   createProduct: vi.fn(),
   deleteProduct: vi.fn(),
   replaceProductPhotos: vi.fn(),
+  updateProductDescription: vi.fn(),
 }));
 
 vi.mock("@/lib/uploads", () => ({
   saveProductPhotos: vi.fn(),
   deleteProductPhotoFiles: vi.fn(),
   productPhotoUrl: (productId: number, fileName: string) => `/uploads/products/${productId}/${fileName}`,
+  // No test here submits a `descriptionImages` file, so this always resolves
+  // to an empty array — resolveDescriptionImagePlaceholders/
+  // sanitizeDescriptionHtml (both real, not mocked) then pass the raw
+  // description through unchanged, same as before issue #315's two-phase
+  // create flow existed.
+  saveDescriptionImages: vi.fn().mockResolvedValue([]),
+  descriptionImageUrl: (entityType: string, entityId: number, fileName: string) =>
+    `/uploads/${entityType}/${entityId}/description/${fileName}`,
 }));
 
 const adminAuth = { user: { id: 1, email: "admin@example.com", role: "admin" as const } };
@@ -201,17 +210,21 @@ describe("POST /api/admin/products", () => {
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json).toEqual({ ok: true, id: 42 });
+    // description is inserted empty and backfilled afterward (issue #315's
+    // two-phase create — see the route's own comment) so the product's own
+    // id exists before saveDescriptionImages needs it.
     expect(createProduct).toHaveBeenCalledWith({
       title: "限量特惠鴿",
       price: 12000,
       stockQuantity: 5,
-      description: "簡介內容",
+      description: "",
       sortOrder: undefined,
       isActive: undefined,
       youtubeUrl: null,
     });
     expect(saveProductPhotos).toHaveBeenCalledWith(42, expect.any(Array));
     expect(replaceProductPhotos).toHaveBeenCalledWith(42, [{ fileName: "a.webp", isCover: true }]);
+    expect(updateProductDescription).toHaveBeenCalledWith(42, "簡介內容");
   });
 
   it("rolls back (deletes the product and any saved files) when order resolution fails", async () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CONTENT_MAX, TITLE_MAX } from "@/lib/newsValidation";
 import { BROADCAST_STATUS_LABEL } from "@/lib/broadcastStatusLabel";
@@ -9,7 +9,7 @@ import { MODAL_TRIGGER_CLASS } from "../components/adminButtonClasses";
 import AdminModal from "../components/AdminModal";
 import ImageUploadField from "../components/ImageUploadField";
 import ModalFormActions from "../components/ModalFormActions";
-import SimpleRichTextEditor from "../components/SimpleRichTextEditor";
+import SimpleRichTextEditor, { type SimpleRichTextEditorHandle } from "../components/SimpleRichTextEditor";
 import { useSuccessBanner } from "../components/SuccessBanner";
 import { useImageUploadPreview } from "../components/useImageUploadPreview";
 
@@ -57,6 +57,7 @@ export default function NewsFormModal(props: Props) {
   const isEdit = props.mode === "edit";
   const broadcast = isEdit ? props.item.broadcast : null;
   const locked = broadcast?.status === "sent";
+  const contentEditorRef = useRef<SimpleRichTextEditorHandle>(null);
 
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(isEdit ? props.item.title : "");
@@ -102,10 +103,14 @@ export default function NewsFormModal(props: Props) {
     }
 
     setSubmitting(true);
+    const { html: contentHtml, images: descriptionImages } = contentEditorRef.current!.extractForSubmit();
     const formData = new FormData();
     formData.set("title", title);
-    formData.set("content", content);
+    formData.set("content", contentHtml);
     formData.set("image", file);
+    for (const descriptionImage of descriptionImages) {
+      formData.append("descriptionImages", descriptionImage);
+    }
     // Sent unconditionally (both modes, whatever the checkbox currently
     // reads) — the API route is the authority on what's actually still
     // editable, so this is just "what the admin asked for", not a guarantee.
@@ -164,7 +169,7 @@ export default function NewsFormModal(props: Props) {
 
             <div className="flex flex-col gap-1 text-sm font-medium text-ink-light">
               內容
-              <SimpleRichTextEditor value={content} onChange={setContent} maxLength={CONTENT_MAX} />
+              <SimpleRichTextEditor ref={contentEditorRef} value={content} onChange={setContent} maxLength={CONTENT_MAX} />
             </div>
 
             <div className="rounded-md border border-border p-3">

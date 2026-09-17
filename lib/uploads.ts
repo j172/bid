@@ -99,19 +99,35 @@ export function listingPhotoUrl(listingId: number, fileName: string): string {
   return `/uploads/listings/${listingId}/${fileName}`;
 }
 
-// Images inserted inline into a listing's rich-text description (see
-// DescriptionEditor) — stored under their own subdirectory, separate from
-// the main photo gallery, since the two have independent count/size limits
-// (lib/descriptionImageLimits.ts) and aren't part of listing_photos.
-export async function saveDescriptionImages(listingId: number, images: File[]): Promise<string[]> {
-  return saveImages(join(UPLOADS_ROOT, "listings", String(listingId), "description"), images, {
+// Every content type whose rich-text editor supports inline image insert
+// (issue #315 added products/news/pigeon-showcase/homepage-sections to
+// listings' original set) — the directory name under uploads/ for each,
+// matching the name each type's own single/gallery-photo saver below already
+// uses (saveProductPhotos's "products", saveNewsImage's "news", etc.), so a
+// glance at uploads/ shows one consistent naming scheme.
+export type DescriptionImageEntityType = "listings" | "products" | "news" | "pigeon-showcase" | "homepage-sections";
+
+// Images inserted inline into a rich-text description/content/bio field (see
+// DescriptionEditor / SimpleRichTextEditor) — stored under their own
+// description/ subdirectory, separate from any main photo(s) the same
+// content type has, since the two have independent count/size limits
+// (lib/descriptionImageLimits.ts) and aren't tracked in any *_photos table.
+// Generalized from a listings-only helper (issue #315) — entityId is
+// whatever numeric id the content type itself already uses (listingId,
+// productId, newsId, pigeon_showcase id, homepage_sections id).
+export async function saveDescriptionImages(
+  entityType: DescriptionImageEntityType,
+  entityId: number,
+  images: File[],
+): Promise<string[]> {
+  return saveImages(join(UPLOADS_ROOT, entityType, String(entityId), "description"), images, {
     maxBytes: DESCRIPTION_IMAGE_MAX_BYTES,
     tooLargeError: (limitMb) => `描述圖片過大（上限 ${limitMb}MB）`,
   });
 }
 
-export function descriptionImageUrl(listingId: number, fileName: string): string {
-  return `/uploads/listings/${listingId}/description/${fileName}`;
+export function descriptionImageUrl(entityType: DescriptionImageEntityType, entityId: number, fileName: string): string {
+  return `/uploads/${entityType}/${entityId}/description/${fileName}`;
 }
 
 // Used when editing a listing's photos — removes files no longer kept in

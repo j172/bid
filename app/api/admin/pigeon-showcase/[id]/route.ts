@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/apiAuth";
+import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
+import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
 import { deletePigeonShowcase, getPigeonShowcaseById, updatePigeonShowcase, type PigeonShowcaseInput } from "@/lib/pigeonShowcase";
 import {
   isPigeonShowcaseCategory,
@@ -9,6 +11,8 @@ import {
 import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
 import {
   deletePigeonShowcaseImageFile,
+  descriptionImageUrl,
+  saveDescriptionImages,
   saveImageOrError,
   savePigeonShowcaseImage,
   withImageRollback,
@@ -41,6 +45,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const description = String(form.get("description") ?? "").trim();
   const loftId = Number(form.get("loftId"));
   const image = form.get("image");
+  const descriptionImages = form
+    .getAll("descriptionImages")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
 
   if (!isPigeonShowcaseCategory(category)) {
     return NextResponse.json({ ok: false, error: "請選擇鴿種" }, { status: 400 });
@@ -59,6 +66,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!(image instanceof File) || image.size === 0) {
     return NextResponse.json({ ok: false, error: "請上傳主圖" }, { status: 400 });
   }
+  if (descriptionImages.length > DESCRIPTION_IMAGE_MAX_COUNT) {
+    return NextResponse.json({ ok: false, error: `描述圖片最多 ${DESCRIPTION_IMAGE_MAX_COUNT} 張` }, { status: 400 });
+  }
 
   const saved = await saveImageOrError(() => savePigeonShowcaseImage(image));
   if (!saved.ok) {
@@ -66,11 +76,24 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
   const imageFileName = saved.fileName;
 
+  let finalDescription: string;
+  try {
+    const descriptionImageFileNames = await saveDescriptionImages("pigeon-showcase", showcaseId, descriptionImages);
+    const descriptionImageUrls = descriptionImageFileNames.map((fileName) =>
+      descriptionImageUrl("pigeon-showcase", showcaseId, fileName),
+    );
+    finalDescription = sanitizeDescriptionHtml(resolveDescriptionImagePlaceholders(description, descriptionImageUrls));
+  } catch (error) {
+    await deletePigeonShowcaseImageFile(imageFileName);
+    const message = error instanceof Error ? error.message : "圖片上傳失敗";
+    return NextResponse.json({ ok: false, error: message }, { status: 400 });
+  }
+
   const input: PigeonShowcaseInput = {
     category,
     name,
     loftId,
-    description: sanitizeDescriptionHtml(description),
+    description: finalDescription,
     imageFileName,
   };
   const result = await withImageRollback(

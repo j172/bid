@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DESCRIPTION_MAX, NAME_MAX, type PigeonShowcaseCategory } from "@/lib/pigeonShowcaseValidation";
 import { MODAL_TRIGGER_CLASS } from "../components/adminButtonClasses";
 import AdminModal from "../components/AdminModal";
 import ImageUploadField from "../components/ImageUploadField";
 import ModalFormActions from "../components/ModalFormActions";
-import SimpleRichTextEditor from "../components/SimpleRichTextEditor";
+import SimpleRichTextEditor, { type SimpleRichTextEditorHandle } from "../components/SimpleRichTextEditor";
 import { useSuccessBanner } from "../components/SuccessBanner";
 import { useImageUploadPreview } from "../components/useImageUploadPreview";
 
@@ -49,6 +49,7 @@ export default function PigeonShowcaseFormModal(props: Props) {
   const router = useRouter();
   const showBanner = useSuccessBanner();
   const isEdit = props.mode === "edit";
+  const descriptionEditorRef = useRef<SimpleRichTextEditorHandle>(null);
 
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<PigeonShowcaseCategory>(isEdit ? props.item.category : "award");
@@ -83,12 +84,16 @@ export default function PigeonShowcaseFormModal(props: Props) {
     }
 
     setSubmitting(true);
+    const { html: descriptionHtml, images: descriptionImages } = descriptionEditorRef.current!.extractForSubmit();
     const formData = new FormData();
     formData.set("category", category);
     formData.set("name", name);
     formData.set("loftId", loftId);
-    formData.set("description", description);
+    formData.set("description", descriptionHtml);
     formData.set("image", file);
+    for (const descriptionImage of descriptionImages) {
+      formData.append("descriptionImages", descriptionImage);
+    }
 
     const response = await fetch(isEdit ? `/api/admin/pigeon-showcase/${props.item.id}` : "/api/admin/pigeon-showcase", {
       method: isEdit ? "PATCH" : "POST",
@@ -166,7 +171,12 @@ export default function PigeonShowcaseFormModal(props: Props) {
 
             <div className="flex flex-col gap-1 text-sm font-medium text-ink-light">
               簡介
-              <SimpleRichTextEditor value={description} onChange={setDescription} maxLength={DESCRIPTION_MAX} />
+              <SimpleRichTextEditor
+                ref={descriptionEditorRef}
+                value={description}
+                onChange={setDescription}
+                maxLength={DESCRIPTION_MAX}
+              />
             </div>
 
             {error && <p className="text-sm text-ended">{error}</p>}

@@ -20,6 +20,13 @@ vi.mock("@/lib/uploads", () => ({
   saveProductPhotos: vi.fn(),
   deleteProductPhotoFiles: vi.fn(),
   productPhotoUrl: (productId: number, fileName: string) => `/uploads/products/${productId}/${fileName}`,
+  // No test here submits a `descriptionImages` file, so this always resolves
+  // to an empty array — resolveDescriptionImagePlaceholders/
+  // sanitizeDescriptionHtml (both real, not mocked) then pass the raw
+  // description through unchanged.
+  saveDescriptionImages: vi.fn().mockResolvedValue([]),
+  descriptionImageUrl: (entityType: string, entityId: number, fileName: string) =>
+    `/uploads/${entityType}/${entityId}/description/${fileName}`,
 }));
 
 const adminAuth = { user: { id: 1, email: "admin@example.com", role: "admin" as const } };

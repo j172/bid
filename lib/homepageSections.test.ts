@@ -13,6 +13,7 @@ import {
   listHomepageSections,
   reorderHomepageSections,
   updateHomepageSection,
+  updateHomepageSectionBio,
 } from "./homepageSections";
 
 // lib/homepageSections.ts is raw-SQL CRUD (no ORM, see its own header
@@ -208,6 +209,21 @@ describe("createHomepageSection", () => {
     queryMock.mockResolvedValueOnce([{ insertId: 11 }]);
     await createHomepageSection({ sectionType: "partner_loft", title: "t", imageFileName: "f.webp", sortOrder: 0 });
     expect(queryMock.mock.calls[0][1][4]).toBeNull();
+  });
+});
+
+describe("updateHomepageSectionBio", () => {
+  it("writes the bio column for the given id, including null (no bio)", async () => {
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+    await updateHomepageSectionBio(1, "<p>已解析圖片網址</p>");
+    expect(queryMock).toHaveBeenCalledWith("UPDATE homepage_sections SET bio = ? WHERE id = ?", [
+      "<p>已解析圖片網址</p>",
+      1,
+    ]);
+
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+    await updateHomepageSectionBio(1, null);
+    expect(queryMock).toHaveBeenCalledWith("UPDATE homepage_sections SET bio = ? WHERE id = ?", [null, 1]);
   });
 });
 

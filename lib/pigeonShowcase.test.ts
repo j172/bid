@@ -11,6 +11,7 @@ import {
   listLatestPigeonShowcase,
   listPigeonShowcase,
   updatePigeonShowcase,
+  updatePigeonShowcaseDescription,
 } from "./pigeonShowcase";
 
 const { queryMock } = vi.hoisted(() => ({ queryMock: vi.fn() }));
@@ -160,6 +161,17 @@ describe("updatePigeonShowcase", () => {
     queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
     const result = await updatePigeonShowcase(1, { category: "award", name: "n", loftId: 5, description: "d", imageFileName: "img.jpg" });
     expect(result).toEqual({ ok: true });
+  });
+});
+
+describe("updatePigeonShowcaseDescription", () => {
+  it("writes the description column for the given id", async () => {
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+    await updatePigeonShowcaseDescription(1, "<p>已解析圖片網址</p>");
+    expect(queryMock).toHaveBeenCalledWith("UPDATE pigeon_showcase SET description = ? WHERE id = ?", [
+      "<p>已解析圖片網址</p>",
+      1,
+    ]);
   });
 });
 

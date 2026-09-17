@@ -1,9 +1,18 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/apiAuth";
-import { createNews, isNewsPageSize, listNews, type NewsPostInput } from "@/lib/news";
+import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
+import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
+import { createNews, deleteNews, isNewsPageSize, listNews, updateNewsContent, type NewsPostInput } from "@/lib/news";
 import { validateNewsContent, validateNewsTitle } from "@/lib/newsValidation";
 import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
-import { deleteNewsImageFile, saveImageOrError, saveNewsImage, withImageRollback } from "@/lib/uploads";
+import {
+  deleteNewsImageFile,
+  descriptionImageUrl,
+  saveDescriptionImages,
+  saveImageOrError,
+  saveNewsImage,
+  withImageRollback,
+} from "@/lib/uploads";
 import { createAndSendNewsBroadcast, resolveOrigin } from "@/lib/newsNewsletterSync";
 import { submitToIndexNow } from "@/lib/indexnow";
 import { localizedUrls } from "@/lib/seo";
@@ -37,6 +46,9 @@ export async function POST(request: Request) {
   const title = String(form.get("title") ?? "").trim();
   const content = String(form.get("content") ?? "").trim();
   const image = form.get("image");
+  const descriptionImages = form
+    .getAll("descriptionImages")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
   // Sent as FormData strings ("true"/ISO datetime) rather than JSON since
   // issue #70 switched this endpoint to multipart submission for the image
   // field. scheduledAt is only meaningful when sendNewsletter is set —
@@ -55,6 +67,9 @@ export async function POST(request: Request) {
   if (!(image instanceof File) || image.size === 0) {
     return NextResponse.json({ ok: false, error: "請上傳主圖" }, { status: 400 });
   }
+  if (descriptionImages.length > DESCRIPTION_IMAGE_MAX_COUNT) {
+    return NextResponse.json({ ok: false, error: `描述圖片最多 ${DESCRIPTION_IMAGE_MAX_COUNT} 張` }, { status: 400 });
+  }
 
   const saved = await saveImageOrError(() => saveNewsImage(image));
   if (!saved.ok) {
@@ -62,7 +77,14 @@ export async function POST(request: Request) {
   }
   const imageFileName = saved.fileName;
 
-  const input: NewsPostInput = { title, content: sanitizeDescriptionHtml(content), imageFileName };
+  // content is inserted empty and only backfilled (sanitized, with its
+  // `cid:N` image placeholders resolved to real URLs) once the row's id
+  // exists — its description images are stored under
+  // uploads/news/<id>/description/ (see lib/uploads.ts's
+  // saveDescriptionImages), same two-phase sequencing as
+  // app/api/admin/listings/route.ts (issue #315 gave news its own
+  // description-image upload path).
+  const input: NewsPostInput = { title, content: "", imageFileName };
   // Rollback: if the row was never created, don't leave the just-uploaded
   // file orphaned (issue #139 M2 — the same pairing as the edit route below
   // and both pigeon-showcase routes).
@@ -77,6 +99,21 @@ export async function POST(request: Request) {
   // typed optional only because the ok:false branch above never has one.
   const newsId = result.id as number;
 
+  let finalContent: string;
+  try {
+    const descriptionImageFileNames = await saveDescriptionImages("news", newsId, descriptionImages);
+    const descriptionImageUrls = descriptionImageFileNames.map((fileName) =>
+      descriptionImageUrl("news", newsId, fileName),
+    );
+    finalContent = sanitizeDescriptionHtml(resolveDescriptionImagePlaceholders(content, descriptionImageUrls));
+    await updateNewsContent(newsId, finalContent);
+  } catch (error) {
+    await deleteNews(newsId);
+    await deleteNewsImageFile(imageFileName);
+    const message = error instanceof Error ? error.message : "圖片上傳失敗";
+    return NextResponse.json({ ok: false, error: message }, { status: 400 });
+  }
+
   // The news post and the newsletter broadcast are deliberately independent
   // (issue #73, extended by #80): the post is already committed at this
   // point, so a broadcast failure (e.g. Resend not configured, bad schedule)
@@ -89,7 +126,7 @@ export async function POST(request: Request) {
     const outcome = await createAndSendNewsBroadcast({
       newsId,
       title,
-      content: input.content,
+      content: finalContent,
       detailUrl,
       scheduledAtRaw,
       invalidScheduleError: "排程時間必須是有效的未來時間，電子報未寄送。",

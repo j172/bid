@@ -110,8 +110,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   let finalDescription: string;
   try {
     savedFileNames = await saveListingPhotos(listingId, newPhotos);
-    const descriptionImageFileNames = await saveDescriptionImages(listingId, descriptionImages);
-    const descriptionImageUrls = descriptionImageFileNames.map((fileName) => descriptionImageUrl(listingId, fileName));
+    const descriptionImageFileNames = await saveDescriptionImages("listings", listingId, descriptionImages);
+    const descriptionImageUrls = descriptionImageFileNames.map((fileName) =>
+      descriptionImageUrl("listings", listingId, fileName),
+    );
     finalDescription = sanitizeDescriptionHtml(resolveDescriptionImagePlaceholders(description, descriptionImageUrls));
   } catch (error) {
     const message = error instanceof Error ? error.message : "圖片上傳失敗";

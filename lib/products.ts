@@ -239,6 +239,21 @@ export async function createProduct(input: NewProductInput): Promise<number> {
   return (result as { insertId: number }).insertId;
 }
 
+// Used only by the create route (issue #315): a product's id has to exist
+// before its description images can be saved under
+// uploads/products/<id>/description/ (see lib/uploads.ts's
+// saveDescriptionImages), so createProduct is called first with a
+// placeholder description and this backfills the real one — sanitized, with
+// its `cid:N` image placeholders already resolved to real URLs — once that's
+// done. Same "insert first, backfill description after" two-phase sequencing
+// as lib/listings.ts's updateListingDescription. The edit route doesn't need
+// this: productId is already known from the URL, so updateProduct's regular
+// full update can carry the final description directly.
+export async function updateProductDescription(id: number, description: string): Promise<void> {
+  const db = await getDb();
+  await db.query("UPDATE products SET description = ? WHERE id = ?", [description, id]);
+}
+
 // stock_quantity is recomputed from actual order history + the new
 // stock_remaining (rather than taken as separate input) so the "剩餘 X / Y"
 // display never goes inconsistent regardless of how many times a product
