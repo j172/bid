@@ -64,10 +64,18 @@ function roleForEmail(email: string): Role {
   return adminEmail !== "" && email.trim().toLowerCase() === adminEmail ? "admin" : "user";
 }
 
+// Issue #304: registration now also requires a LINE ID and acceptance of the
+// 拍賣規則/隱私權政策 checkbox. terms_accepted_at is stamped with the current
+// time unconditionally here (not passed in) — createUser is only ever called
+// from the point in POST /api/auth/register right after its own
+// termsAccepted request-body check has already passed (see that route), so
+// by the time this INSERT runs consent is a given; this keeps the "when was
+// consent given" timestamp exactly the moment the account row is created,
+// as the legal-proof record the issue asks for.
 export async function createUser(
   email: string,
   password: string,
-  profile: { displayName: string; phone: string; address: string },
+  profile: { displayName: string; phone: string; address: string; lineId: string },
   locale: string,
 ): Promise<CurrentUser> {
   const db = await getDb();
@@ -76,8 +84,8 @@ export async function createUser(
   const role = roleForEmail(normalizedEmail);
 
   const [result] = await db.query(
-    `INSERT INTO users (email, password_hash, password_salt, role, display_name, phone, address, locale, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+    `INSERT INTO users (email, password_hash, password_salt, role, display_name, phone, address, line_id, locale, terms_accepted_at, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
     [
       normalizedEmail,
       hash,
@@ -86,6 +94,7 @@ export async function createUser(
       profile.displayName.trim(),
       profile.phone.trim(),
       profile.address.trim(),
+      profile.lineId.trim(),
       locale,
     ],
   );
@@ -410,6 +419,11 @@ export interface AccountProfile {
   displayName: string;
   phone: string;
   address: string;
+  // LINE ID (issue #304) — nullable at the DB level so accounts created
+  // before this ticket (no line_id at registration) don't need a synthetic
+  // backfill value; app/[locale]/account/ProfileForm.tsx lets those users
+  // fill it in for the first time.
+  lineId: string | null;
   // Feeds app/[locale]/account/page.tsx's TwoFactorSection (issue #93) so it
   // can render the toggle's current on/off state on load.
   twoFactorMethod: TwoFactorMethod;
@@ -420,7 +434,7 @@ export interface AccountProfile {
 export async function getAccountProfile(userId: number): Promise<AccountProfile | null> {
   const db = await getDb();
   const [rows] = await db.query(
-    `SELECT email, display_name AS displayName, phone, address, two_factor_method AS twoFactorMethod,
+    `SELECT email, display_name AS displayName, phone, address, line_id AS lineId, two_factor_method AS twoFactorMethod,
             (password_hash IS NOT NULL) AS hasPassword,
             (google_id IS NOT NULL) AS googleLinked
      FROM users WHERE id = ? LIMIT 1`,
@@ -441,13 +455,14 @@ export async function getAccountProfile(userId: number): Promise<AccountProfile 
 
 export async function updateProfile(
   userId: number,
-  profile: { displayName: string; phone: string; address: string },
+  profile: { displayName: string; phone: string; address: string; lineId: string },
 ): Promise<void> {
   const db = await getDb();
-  await db.query("UPDATE users SET display_name = ?, phone = ?, address = ? WHERE id = ?", [
+  await db.query("UPDATE users SET display_name = ?, phone = ?, address = ?, line_id = ? WHERE id = ?", [
     profile.displayName.trim(),
     profile.phone.trim(),
     profile.address.trim(),
+    profile.lineId.trim(),
     userId,
   ]);
 }

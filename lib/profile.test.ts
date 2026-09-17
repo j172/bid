@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { validateProfile } from "./profile";
 
-const valid = { displayName: "王小明", phone: "0912-345-678", address: "台北市信義區信義路一段1號" };
+const valid = { displayName: "王小明", phone: "0912-345-678", address: "台北市信義區信義路一段1號", lineId: "pigeon_lover01" };
 
 describe("validateProfile", () => {
   it("accepts a well-formed profile", () => {
@@ -51,5 +51,38 @@ describe("validateProfile", () => {
 
   it("accepts an address at exactly 200 characters", () => {
     expect(validateProfile({ ...valid, address: "a".repeat(200) })).toEqual({ ok: true });
+  });
+
+  // Issue #304: LINE ID is required at registration and editable later via
+  // /account — same official LINE ID rules (letters, digits, '.', '_', '-',
+  // 4-20 characters) enforced on both sides.
+  it("rejects an empty or whitespace-only LINE ID", () => {
+    expect(validateProfile({ ...valid, lineId: "" }).ok).toBe(false);
+    expect(validateProfile({ ...valid, lineId: "   " }).ok).toBe(false);
+  });
+
+  it("rejects a LINE ID shorter than 4 characters", () => {
+    const result = validateProfile({ ...valid, lineId: "abc" });
+    expect(result).toEqual({ ok: false, errorCode: "LINE_ID_INVALID_FORMAT" });
+  });
+
+  it("rejects a LINE ID longer than 20 characters", () => {
+    const result = validateProfile({ ...valid, lineId: "a".repeat(21) });
+    expect(result).toEqual({ ok: false, errorCode: "LINE_ID_INVALID_FORMAT" });
+  });
+
+  it("rejects a LINE ID containing characters outside letters/digits/./_/-", () => {
+    expect(validateProfile({ ...valid, lineId: "hello world" }).ok).toBe(false);
+    expect(validateProfile({ ...valid, lineId: "line@id!" }).ok).toBe(false);
+    expect(validateProfile({ ...valid, lineId: "使用者名稱" }).ok).toBe(false);
+  });
+
+  it("accepts LINE IDs at the 4 and 20 character boundaries", () => {
+    expect(validateProfile({ ...valid, lineId: "abcd" })).toEqual({ ok: true });
+    expect(validateProfile({ ...valid, lineId: "a".repeat(20) })).toEqual({ ok: true });
+  });
+
+  it("accepts a LINE ID using dots, underscores, and hyphens", () => {
+    expect(validateProfile({ ...valid, lineId: "a.b_c-D9" })).toEqual({ ok: true });
   });
 });

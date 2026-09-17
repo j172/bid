@@ -11,16 +11,19 @@ export default function ProfileForm({
   initialDisplayName,
   initialPhone,
   initialAddress,
+  initialLineId,
 }: {
   initialDisplayName: string;
   initialPhone: string;
   initialAddress: string;
+  initialLineId: string;
 }) {
   const router = useRouter();
   const t = useTranslations("profileForm");
   const [displayName, setDisplayName] = useState(initialDisplayName);
   const [phone, setPhone] = useState(initialPhone);
   const [address, setAddress] = useState(initialAddress);
+  const [lineId, setLineId] = useState(initialLineId);
   const [notice, setNotice] = useState<string | null>(null);
   const { post, submitting, error } = usePostJson(t("defaultError"));
 
@@ -28,7 +31,7 @@ export default function ProfileForm({
     event.preventDefault();
     setNotice(null);
 
-    const data = await post("/api/account/profile", { displayName, phone, address });
+    const data = await post("/api/account/profile", { displayName, phone, address, lineId });
     if (!data) return;
 
     setNotice(t("saved"));
@@ -45,6 +48,18 @@ export default function ProfileForm({
           maxLength={50}
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
+          className={inputClass}
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+        {t("lineId")}
+        <input
+          type="text"
+          required
+          maxLength={20}
+          pattern="[a-zA-Z0-9._-]{4,20}"
+          value={lineId}
+          onChange={(e) => setLineId(e.target.value)}
           className={inputClass}
         />
       </label>

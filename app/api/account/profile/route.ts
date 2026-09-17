@@ -11,12 +11,13 @@ export async function POST(request: Request) {
   const displayName = typeof body?.displayName === "string" ? body.displayName : "";
   const phone = typeof body?.phone === "string" ? body.phone : "";
   const address = typeof body?.address === "string" ? body.address : "";
+  const lineId = typeof body?.lineId === "string" ? body.lineId : "";
 
-  const result = validateProfile({ displayName, phone, address });
+  const result = validateProfile({ displayName, phone, address, lineId });
   if (!result.ok) {
     return NextResponse.json({ ok: false, errorCode: result.errorCode }, { status: 400 });
   }
 
-  await updateProfile(auth.user.id, { displayName, phone, address });
+  await updateProfile(auth.user.id, { displayName, phone, address, lineId });
   return NextResponse.json({ ok: true });
 }

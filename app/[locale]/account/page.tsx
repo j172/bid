@@ -31,6 +31,7 @@ export default async function AccountPage() {
             initialDisplayName={profile?.displayName ?? ""}
             initialPhone={profile?.phone ?? ""}
             initialAddress={profile?.address ?? ""}
+            initialLineId={profile?.lineId ?? ""}
           />
         </div>
       </section>

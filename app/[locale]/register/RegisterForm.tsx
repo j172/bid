@@ -17,6 +17,8 @@ export default function RegisterForm() {
   const [displayName, setDisplayName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [lineId, setLineId] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   // Issue #118 (strict mode): registration no longer auto-logs-in, so a
   // successful submit has nothing to navigate to — instead this switches to
   // an inline "check your email" state, same single-state-flag step switch
@@ -27,7 +29,16 @@ export default function RegisterForm() {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
 
-    const data = await post("/api/auth/register", { email, password, displayName, phone, address, locale });
+    const data = await post("/api/auth/register", {
+      email,
+      password,
+      displayName,
+      phone,
+      address,
+      lineId,
+      termsAccepted,
+      locale,
+    });
     if (!data) return;
 
     setRegistered(true);
@@ -95,11 +106,23 @@ export default function RegisterForm() {
         {t("displayName")}
         <input
           type="text"
+          required
           maxLength={50}
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
           className={inputClass}
-          placeholder={t("displayNameOptionalHint")}
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+        {t("lineId")}
+        <input
+          type="text"
+          required
+          maxLength={20}
+          pattern="[a-zA-Z0-9._-]{4,20}"
+          value={lineId}
+          onChange={(e) => setLineId(e.target.value)}
+          className={inputClass}
         />
       </label>
       <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
@@ -124,6 +147,39 @@ export default function RegisterForm() {
           onChange={(e) => setAddress(e.target.value)}
           className={inputClass}
         />
+      </label>
+      <label className="flex items-start gap-2 text-sm font-medium text-ink-light">
+        <input
+          type="checkbox"
+          required
+          checked={termsAccepted}
+          onChange={(e) => setTermsAccepted(e.target.checked)}
+          className="mt-0.5"
+        />
+        <span className="font-normal">
+          {t.rich("termsLabel", {
+            auctionTermsLink: (chunks) => (
+              <Link
+                href="/auction-terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-interactive-primary hover:underline"
+              >
+                {chunks}
+              </Link>
+            ),
+            privacyLink: (chunks) => (
+              <Link
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-interactive-primary hover:underline"
+              >
+                {chunks}
+              </Link>
+            ),
+          })}
+        </span>
       </label>
     </AuthFormShell>
   );
