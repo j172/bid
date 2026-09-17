@@ -8,23 +8,20 @@ import { getClientIpFromHeaders } from "@/lib/clientIp";
 import { resolveOrigin } from "@/lib/newsNewsletterSync";
 import { resolveRequestLocale } from "@/lib/requestLocale";
 
-// Display name is optional at registration (issue #101): a blank/whitespace
-// value gets a generated placeholder before validation/insert, so the shared
-// validateProfile() rule (display name required) stays satisfied without
-// weakening it for other callers (e.g. account profile edits).
-function generateDefaultDisplayName(): string {
-  const digits = Math.floor(Math.random() * 90000 + 10000);
-  return `user${digits}`;
-}
-
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const email = typeof body?.email === "string" ? body.email.trim() : "";
   const password = typeof body?.password === "string" ? body.password : "";
-  const rawDisplayName = typeof body?.displayName === "string" ? body.displayName : "";
-  const displayName = rawDisplayName.trim() ? rawDisplayName : generateDefaultDisplayName();
+  // Issue #304: display name is now required (the auto-generated
+  // `user12345`-style placeholder previously produced here for a blank value
+  // — generateDefaultDisplayName() — is gone; validateProfile() below rejects
+  // a blank display name the same way it already rejects a blank phone or
+  // address).
+  const displayName = typeof body?.displayName === "string" ? body.displayName : "";
   const phone = typeof body?.phone === "string" ? body.phone : "";
   const address = typeof body?.address === "string" ? body.address : "";
+  const lineId = typeof body?.lineId === "string" ? body.lineId : "";
+  const termsAccepted = body?.termsAccepted === true;
   const locale = resolveRequestLocale(body);
 
   if (!isValidEmail(email)) {
@@ -34,9 +31,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, errorCode: "PASSWORD_TOO_SHORT" }, { status: 400 });
   }
 
-  const profileResult = validateProfile({ displayName, phone, address });
+  const profileResult = validateProfile({ displayName, phone, address, lineId });
   if (!profileResult.ok) {
     return NextResponse.json({ ok: false, errorCode: profileResult.errorCode }, { status: 400 });
+  }
+
+  // Issue #304: a single "我已閱讀並同意『拍賣規則』與『隱私權政策』" checkbox
+  // must be checked before an account can be created — the browser-side
+  // `required` checkbox (RegisterForm.tsx) is a UX nicety only, this is the
+  // actual enforcement. createUser() below stamps terms_accepted_at with the
+  // current time as the legal-proof record once this check passes.
+  if (!termsAccepted) {
+    return NextResponse.json({ ok: false, errorCode: "TERMS_NOT_ACCEPTED" }, { status: 400 });
   }
 
   const existing = await findUserByEmail(email);
@@ -44,7 +50,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, errorCode: "EMAIL_ALREADY_REGISTERED" }, { status: 409 });
   }
 
-  const user = await createUser(email, password, { displayName, phone, address }, locale);
+  const user = await createUser(email, password, { displayName, phone, address, lineId }, locale);
 
   // Issue #118 (strict mode): registration no longer auto-logs-in. The new
   // account starts out email_verified = FALSE (see db/init.sql) and must

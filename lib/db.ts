@@ -811,6 +811,32 @@ async function ensureProductOrderColumns(db: mysql.Pool): Promise<void> {
   await ensureColumn(db, "products", "stock_remaining", "BIGINT NULL");
 }
 
+// Issue #304: registration gains a required LINE ID field and a single
+// "我已閱讀並同意『拍賣規則』與『隱私權政策』" consent checkbox. Same
+// "NOT NULL is only enforced at the application layer (lib/profile.ts's
+// validateProfile), the DB column itself stays NULL-able so already-deployed
+// rows don't need a synthetic backfill value" story as ensureAccountColumns'
+// display_name/phone/address above — line_id is NULL-able here for that
+// reason even though db/init.sql's CREATE TABLE (a brand-new, empty
+// database) declares it NOT NULL. terms_accepted_at is stamped by
+// lib/auth.ts's createUser at registration time and is NULL for every
+// pre-#304 account (no backfill — there's no real "when did they agree"
+// timestamp to invent for them).
+//
+// This is the automatic, boot-time equivalent of
+// scripts/migrate-users-line-id-terms.mjs's standalone ALTER TABLE — same
+// "already applied automatically, the standalone script is a redundant,
+// independently-auditable equivalent" relationship as
+// ensurePigeonShowcaseCategories has with
+// scripts/migrate-pigeon-showcase-world-famous-category.mjs (see that
+// function's header comment). Production does NOT need the standalone
+// script run by hand: the very next deploy/restart after this change ships
+// adds both columns via this function.
+async function ensureLineIdAndTermsColumns(db: mysql.Pool): Promise<void> {
+  await ensureColumn(db, "users", "line_id", "VARCHAR(20) NULL");
+  await ensureColumn(db, "users", "terms_accepted_at", "DATETIME NULL");
+}
+
 function createPool(): mysql.Pool {
   return mysql.createPool({
     host: process.env.MYSQL_HOST,
@@ -873,6 +899,7 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensureFeaturedLoftSectionColumn(db);
   await ensureYoutubeUrlColumns(db);
   await ensureProductOrderColumns(db);
+  await ensureLineIdAndTermsColumns(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {

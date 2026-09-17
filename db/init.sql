@@ -10,6 +10,25 @@ CREATE TABLE IF NOT EXISTS users (
   display_name VARCHAR(50) NULL,
   phone VARCHAR(20) NULL,
   address VARCHAR(200) NULL,
+  -- LINE ID (issue #304) — required at registration (RegisterForm.tsx /
+  -- POST /api/auth/register) so a seller always has a direct contact channel
+  -- for every buyer; follows LINE's own official ID rules (letters, digits,
+  -- '.', '_', '-', 4-20 characters — see lib/profile.ts's validateProfile).
+  -- NOT NULL here since this CREATE TABLE only ever runs against a brand-new,
+  -- empty database — an already-deployed database gets the column added
+  -- nullable instead, via lib/db.ts's ensureLineIdAndTermsColumns (same
+  -- "NOT NULL only makes sense on a table with zero existing rows" reasoning
+  -- as every other NOT NULL column below that also has an ensureColumn
+  -- counterpart) and scripts/migrate-users-line-id-terms.mjs's standalone
+  -- production ALTER.
+  line_id VARCHAR(20) NOT NULL,
+  -- Timestamp of the moment a visitor checked "我已閱讀並同意『拍賣規則』與
+  -- 『隱私權政策』" at registration and the account was created (issue #304)
+  -- — kept as legal-proof-of-consent evidence, never updated afterwards.
+  -- NULL on every account created before this ticket (no backfill: there is
+  -- no way to know when, or whether, an existing user actually agreed to
+  -- terms that may not have existed yet at their registration time).
+  terms_accepted_at DATETIME NULL,
   deleted_at DATETIME NULL,
   suspended_at DATETIME NULL,
   locale VARCHAR(10) NOT NULL DEFAULT 'zh-TW',
