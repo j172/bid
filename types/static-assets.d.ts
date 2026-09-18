@@ -1,6 +1,5 @@
 // Ambient module declarations for directly importing static image files as
-// ES modules (e.g. `import icon from "leaflet/dist/images/marker-icon.png"`
-// in app/[locale]/pigeon-stations/PigeonStationsMap.tsx).
+// ES modules (e.g. `import logo from "@/public/images/logo.png"`).
 //
 // Next.js normally supplies these via next-env.d.ts, which references
 // node_modules/next/image-types/global.d.ts — but next-env.d.ts is

@@ -5,21 +5,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { GEOLOCATION_ZOOM } from "@/lib/useMapGeolocation";
 import type { MapGeolocationResult } from "@/lib/useMapGeolocation";
-
-// Leaflet's default marker icon references image paths relative to the
-// package itself, which breaks once bundled by webpack/Turbopack (a common,
-// well-documented Leaflet+bundler gap — see leaflet/leaflet#4968). Pointing
-// at the same version's images on a CDN sidesteps needing an asset-loader
-// rule for a handful of tiny PNGs. Mirrors PigeonShopsMap.tsx exactly.
-const groupIcon = L.icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
+import { getPigeonMapIcon } from "@/lib/pigeonMapIcon";
 
 const SELECTED_ZOOM = 15;
 
@@ -102,7 +88,7 @@ export default function PigeonGroupsMap({ groups, selectedId, geolocation, userL
 
     for (const group of groups) {
       if (markers.has(group.id)) continue;
-      const marker = L.marker([group.lat, group.lng], { icon: groupIcon }).addTo(map);
+      const marker = L.marker([group.lat, group.lng], { icon: getPigeonMapIcon() }).addTo(map);
       const chairmanLine = group.chairmanName ? `<div>會長：${group.chairmanName}</div>` : "";
       const addressLine = group.address ? `<div>${group.address}</div>` : "";
       marker.bindPopup(`<strong>${group.name}</strong>${chairmanLine}${addressLine}`);
