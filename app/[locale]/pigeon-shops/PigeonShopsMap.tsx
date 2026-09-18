@@ -4,21 +4,7 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { MapGeolocationResult } from "@/lib/useMapGeolocation";
-
-// Leaflet's default marker icon references image paths relative to the
-// package itself, which breaks once bundled by webpack/Turbopack (a common,
-// well-documented Leaflet+bundler gap — see leaflet/leaflet#4968). Pointing
-// at the same version's images on a CDN sidesteps needing an asset-loader
-// rule for a handful of tiny PNGs.
-const shopIcon = L.icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
+import { getPigeonMapIcon } from "@/lib/pigeonMapIcon";
 
 const SELECTED_ZOOM = 15;
 // Issue #259: the zoom "使用目前位置" flies to — close enough to distinguish
@@ -101,7 +87,7 @@ export default function PigeonShopsMap({ shops, selectedId, geolocation, userLoc
 
     for (const shop of shops) {
       if (markers.has(shop.id)) continue;
-      const marker = L.marker([shop.lat, shop.lng], { icon: shopIcon }).addTo(map);
+      const marker = L.marker([shop.lat, shop.lng], { icon: getPigeonMapIcon() }).addTo(map);
       const phoneLine = shop.phone ? `<div>${shop.phone}</div>` : "";
       const addressLine = shop.address ? `<div>${shop.address}</div>` : "";
       marker.bindPopup(`<strong>${shop.name}</strong>${phoneLine}${addressLine}`);

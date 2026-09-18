@@ -15,27 +15,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useTranslations } from "next-intl";
 import type { MapGeolocationResult } from "@/lib/useMapGeolocation";
-// Leaflet's default marker icon references image URLs that assume being
-// served from leaflet's own dist/ directory — broken once bundled by
-// webpack/Turbopack. Re-pointing at the bundled copies of the same PNGs
-// (imported so Next.js's static-asset pipeline fingerprints/serves them) is
-// the standard fix; see https://github.com/Leaflet/Leaflet/issues/4968.
-import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
-import markerIcon from "leaflet/dist/images/marker-icon.png";
-import markerShadow from "leaflet/dist/images/marker-shadow.png";
-
-let defaultIconConfigured = false;
-function configureDefaultIcon() {
-  if (defaultIconConfigured) return;
-  defaultIconConfigured = true;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Leaflet's own documented workaround deletes an internal method
-  delete (L.Icon.Default.prototype as any)._getIconUrl;
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl: markerIcon2x.src,
-    iconUrl: markerIcon.src,
-    shadowUrl: markerShadow.src,
-  });
-}
+import { getPigeonMapIcon } from "@/lib/pigeonMapIcon";
 
 export interface PigeonStationMapPoint {
   id: number;
@@ -88,7 +68,6 @@ export default function PigeonStationsMap({
   // Mount/unmount the map exactly once, as soon as geolocation resolves.
   useEffect(() => {
     if (!geolocation || !containerRef.current || mapRef.current) return;
-    configureDefaultIcon();
 
     const map = L.map(containerRef.current).setView(geolocation.center, geolocation.zoom);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -129,7 +108,7 @@ export default function PigeonStationsMap({
 
     for (const station of stations) {
       if (markers.has(station.id)) continue;
-      const marker = L.marker([station.lat, station.lng])
+      const marker = L.marker([station.lat, station.lng], { icon: getPigeonMapIcon() })
         .addTo(map)
         .bindPopup(
           `<strong>${escapeHtml(station.name)}</strong><br/>${escapeHtml(station.phone)}<br/>${escapeHtml(station.address)}`,
