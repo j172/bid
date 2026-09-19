@@ -27,12 +27,10 @@ function PlatformIcon({ platform, className = "h-4 w-4" }: { platform: SocialPla
   );
 }
 
-function FacebookPageEmbed({ item, isVisible }: { item?: SocialItem; isVisible: boolean }) {
+function FacebookPageEmbed({ item }: { item?: SocialItem; isVisible?: boolean }) {
   const fbUrl = item?.url || SOCIAL_LINKS.facebook;
   const title = item?.title || "翔水鴿舍官方粉絲專頁 - 最新舍內賽鴿競翔動態與血統解析";
   const author = item?.authorName || "翔水鴿舍";
-  const encodedUrl = encodeURIComponent(fbUrl);
-  const iframeSrc = `https://www.facebook.com/plugins/page.php?href=${encodedUrl}&tabs=timeline&width=500&height=500&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true&appId`;
 
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition hover:shadow-md">
@@ -56,35 +54,89 @@ function FacebookPageEmbed({ item, isVisible }: { item?: SocialItem; isVisible: 
         </a>
       </div>
 
-      {/* Title */}
-      <div className="p-4 pb-2">
-        <h3 className="line-clamp-2 text-sm font-bold leading-snug text-ink transition group-hover:text-interactive-primary">
-          {title}
-        </h3>
+      {/* Hero Cover Banner with Avatar */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#1877F2] via-[#0d65d9] to-slate-900 p-5 text-white">
+        <div className="flex items-center gap-3.5">
+          <div className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl border-2 border-white/80 bg-white shadow-md overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/logo.png" alt={author} className="h-full w-full object-cover" />
+            <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#1877F2] text-white ring-2 ring-white">
+              <svg className="h-2.5 w-2.5 fill-current" viewBox="0 0 20 20">
+                <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" />
+              </svg>
+            </span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <h4 className="truncate text-base font-black text-white">{author}</h4>
+              <span className="rounded bg-white/20 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-xs">
+                官方交流
+              </span>
+            </div>
+            <p className="truncate text-xs text-blue-100">@xiang.shui.ge.she</p>
+          </div>
+        </div>
       </div>
 
-      {/* Embed frame */}
-      <div className="flex flex-1 items-center justify-center p-3 pt-0 sm:p-4 sm:pt-0">
-        <div className="relative flex h-[500px] w-full max-w-[500px] justify-center overflow-hidden rounded-xl border border-border/80 bg-slate-50 shadow-inner">
-          {isVisible ? (
-            <iframe
-              src={iframeSrc}
-              width="100%"
-              height="500"
-              style={{ border: "none", overflow: "hidden" }}
-              scrolling="no"
-              frameBorder="0"
-              allowFullScreen={true}
-              allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-              loading="lazy"
-              title={`Facebook - ${title}`}
-              className="h-[500px] w-full max-w-[500px]"
-            />
-          ) : (
-            <div className="flex h-[500px] w-full items-center justify-center text-xs text-ink-light">
-              載入 Facebook 動態中...
+      {/* Main Content Body */}
+      <div className="flex flex-1 flex-col justify-between p-5">
+        <div>
+          <h3 className="text-base font-bold leading-snug text-ink transition group-hover:text-interactive-primary">
+            {title}
+          </h3>
+
+          <div className="mt-2.5 flex flex-wrap gap-1.5">
+            <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-[#1877F2]">
+              #海翔實戰
+            </span>
+            <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+              #舍內名鴿培育
+            </span>
+            <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+              #即時競拍交流
+            </span>
+          </div>
+
+          <p className="mt-3 text-xs leading-relaxed text-ink-light">
+            專注海翔頂級名血引進、舍內名鴿培育與賽績成果分享。歡迎賽鴿同好交流探討最新競翔動態！
+          </p>
+
+          <div className="mt-4 space-y-2 rounded-xl bg-slate-50 p-3 text-xs text-ink">
+            <div className="flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-[#1877F2] text-[11px] font-bold">
+                ✓
+              </span>
+              <span>舍內代表名鴿與入賞配對第一手實況紀錄</span>
             </div>
-          )}
+            <div className="flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-[#1877F2] text-[11px] font-bold">
+                ✓
+              </span>
+              <span>頂尖速度與長距離耐翔血統深入解析</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-[#1877F2] text-[11px] font-bold">
+                ✓
+              </span>
+              <span>勝利方程式及各大聯合拍賣即時資訊發布</span>
+            </div>
+          </div>
+        </div>
+
+        {/* CTA Button */}
+        <div className="mt-5 pt-3 border-t border-border/60">
+          <a
+            href={fbUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1877F2] px-4 py-3 text-sm font-bold text-white shadow-md transition hover:bg-blue-600 hover:shadow-lg active:scale-98"
+          >
+            <PlatformIcon platform="facebook" className="h-4 w-4" />
+            <span>前往 Facebook 查看最新舍內貼文動態 →</span>
+          </a>
+          <p className="mt-2 text-center text-[11px] text-ink-light">
+            點擊開啟 Facebook 官方頁面瀏覽完整舍內圖文與留言互動
+          </p>
         </div>
       </div>
     </article>
