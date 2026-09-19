@@ -10,6 +10,7 @@ import {
   getPigeonShowcaseById,
   listLatestPigeonShowcase,
   listPigeonShowcase,
+  listPigeonShowcaseByPhotoSource,
   updatePigeonShowcase,
   updatePigeonShowcaseDescription,
 } from "./pigeonShowcase";
@@ -30,6 +31,7 @@ const ROW = {
   name: "石君01",
   loft_id: 5,
   loft_title: "石君鴿舍",
+  photo_source: null,
   description: "<p>血統優良</p>",
   image_file_name: "abc123.jpg",
   created_at: new Date("2026-01-01T00:00:00Z"),
@@ -54,6 +56,7 @@ describe("listPigeonShowcase", () => {
         name: "石君01",
         loftId: 5,
         loftTitle: "石君鴿舍",
+        photoSource: null,
         description: "<p>血統優良</p>",
         imageFileName: "abc123.jpg",
         createdAt: ROW.created_at,
@@ -106,6 +109,21 @@ describe("listLatestPigeonShowcase", () => {
   });
 });
 
+describe("listPigeonShowcaseByPhotoSource", () => {
+  it("queries by photo_source with a LIMIT param, newest-first", async () => {
+    queryMock.mockResolvedValueOnce([[ROW]]);
+
+    const items = await listPigeonShowcaseByPhotoSource("三豐攝影", 6);
+
+    expect(queryMock).toHaveBeenCalledWith(
+      expect.stringContaining("WHERE ps.photo_source = ? ORDER BY ps.created_at DESC, ps.id DESC LIMIT ?"),
+      ["三豐攝影", 6],
+    );
+    expect(items).toHaveLength(1);
+    expect(items[0].name).toBe("石君01");
+  });
+});
+
 describe("getPigeonShowcaseById", () => {
   it("returns null when no row matches", async () => {
     queryMock.mockResolvedValueOnce([[]]);
@@ -134,10 +152,34 @@ describe("createPigeonShowcase", () => {
     queryMock.mockResolvedValueOnce([[{ 1: 1 }]]); // isPartnerLoft check succeeds
     queryMock.mockResolvedValueOnce([{ insertId: 42 }]);
 
-    const result = await createPigeonShowcase({ category: "imported", name: "n", loftId: 5, description: "d", imageFileName: "img.jpg" });
+    const result = await createPigeonShowcase({
+      category: "imported",
+      name: "n",
+      loftId: 5,
+      photoSource: "三豐攝影",
+      description: "d",
+      imageFileName: "img.jpg",
+    });
 
     expect(result).toEqual({ ok: true, id: 42 });
-    expect(queryMock.mock.calls[1][1]).toEqual(["imported", "n", 5, "img.jpg", "d"]);
+    expect(queryMock.mock.calls[1][1]).toEqual(["imported", "n", 5, "三豐攝影", "img.jpg", "d"]);
+  });
+
+  it("allows null loftId when category is world_famous", async () => {
+    queryMock.mockResolvedValueOnce([{ insertId: 43 }]);
+
+    const result = await createPigeonShowcase({
+      category: "world_famous",
+      name: "世界名鴿01",
+      loftId: null,
+      photoSource: "三豐攝影",
+      description: "名鴿簡介",
+      imageFileName: "famous.jpg",
+    });
+
+    expect(result).toEqual({ ok: true, id: 43 });
+    expect(queryMock).toHaveBeenCalledTimes(1); // no isPartnerLoft check
+    expect(queryMock.mock.calls[0][1]).toEqual(["world_famous", "世界名鴿01", null, "三豐攝影", "famous.jpg", "名鴿簡介"]);
   });
 });
 

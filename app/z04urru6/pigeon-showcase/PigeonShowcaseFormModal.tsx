@@ -22,7 +22,8 @@ type EditItem = {
   id: number;
   category: PigeonShowcaseCategory;
   name: string;
-  loftId: number;
+  loftId: number | null;
+  photoSource: string | null;
   description: string;
   /** Resolved to the site placeholder when the row has no image yet (pre-issue-#70 data) — see pigeonShowcaseImageUrl/logo.png in the caller. */
   imageUrl: string;
@@ -54,7 +55,10 @@ export default function PigeonShowcaseFormModal(props: Props) {
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<PigeonShowcaseCategory>(isEdit ? props.item.category : "award");
   const [name, setName] = useState(isEdit ? props.item.name : "");
-  const [loftId, setLoftId] = useState(isEdit ? String(props.item.loftId) : (props.lofts[0] ? String(props.lofts[0].id) : ""));
+  const [loftId, setLoftId] = useState(
+    isEdit ? (props.item.loftId != null ? String(props.item.loftId) : "") : (props.lofts[0] ? String(props.lofts[0].id) : ""),
+  );
+  const [photoSource, setPhotoSource] = useState(isEdit ? (props.item.photoSource ?? "") : "");
   const [description, setDescription] = useState(isEdit ? props.item.description : "");
   const image = useImageUploadPreview(isEdit ? props.item.imageUrl : null);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +67,10 @@ export default function PigeonShowcaseFormModal(props: Props) {
   function resetForm() {
     setCategory(isEdit ? props.item.category : "award");
     setName(isEdit ? props.item.name : "");
-    setLoftId(isEdit ? String(props.item.loftId) : (props.lofts[0] ? String(props.lofts[0].id) : ""));
+    setLoftId(
+      isEdit ? (props.item.loftId != null ? String(props.item.loftId) : "") : (props.lofts[0] ? String(props.lofts[0].id) : ""),
+    );
+    setPhotoSource(isEdit ? (props.item.photoSource ?? "") : "");
     setDescription(isEdit ? props.item.description : "");
     setError(null);
     image.reset();
@@ -73,7 +80,7 @@ export default function PigeonShowcaseFormModal(props: Props) {
     event.preventDefault();
     setError(null);
 
-    if (!loftId) {
+    if (category !== "world_famous" && !loftId) {
       setError("請選擇鴿舍");
       return;
     }
@@ -88,7 +95,12 @@ export default function PigeonShowcaseFormModal(props: Props) {
     const formData = new FormData();
     formData.set("category", category);
     formData.set("name", name);
-    formData.set("loftId", loftId);
+    if (loftId) {
+      formData.set("loftId", loftId);
+    }
+    if (photoSource) {
+      formData.set("photoSource", photoSource);
+    }
     formData.set("description", descriptionHtml);
     formData.set("image", file);
     for (const descriptionImage of descriptionImages) {
@@ -146,10 +158,15 @@ export default function PigeonShowcaseFormModal(props: Props) {
             </label>
 
             <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
-              鴿舍
-              <select value={loftId} onChange={(e) => setLoftId(e.target.value)} required className={inputClass}>
-                <option value="" disabled>
-                  請選擇鴿舍
+              鴿舍 {category === "world_famous" && <span className="text-xs text-ink-light font-normal">（世界名鴿可不填）</span>}
+              <select
+                value={loftId}
+                onChange={(e) => setLoftId(e.target.value)}
+                required={category !== "world_famous"}
+                className={inputClass}
+              >
+                <option value="">
+                  {category === "world_famous" ? "未指定鴿舍" : "請選擇鴿舍"}
                 </option>
                 {props.lofts.map((loft) => (
                   <option key={loft.id} value={loft.id}>
@@ -157,9 +174,23 @@ export default function PigeonShowcaseFormModal(props: Props) {
                   </option>
                 ))}
               </select>
-              {props.lofts.length === 0 && (
+              {category !== "world_famous" && props.lofts.length === 0 && (
                 <span className="text-xs text-ended">目前沒有任何合作鴿舍，請先於「合作鴿舍管理」新增。</span>
               )}
+            </label>
+
+            <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+              照片來源
+              <select
+                value={photoSource}
+                onChange={(e) => setPhotoSource(e.target.value)}
+                className={inputClass}
+              >
+                <option value="">未指定</option>
+                <option value="三豐攝影">三豐攝影</option>
+                <option value="舍內自拍">舍內自拍</option>
+                <option value="其他">其他</option>
+              </select>
             </label>
 
             <ImageUploadField
@@ -188,7 +219,7 @@ export default function PigeonShowcaseFormModal(props: Props) {
               submitting={submitting}
               submitLabel="儲存"
               pendingLabel="儲存中..."
-              submitDisabled={props.lofts.length === 0}
+              submitDisabled={category !== "world_famous" && props.lofts.length === 0}
             />
           </form>
         </AdminModal>

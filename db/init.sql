@@ -425,7 +425,8 @@ CREATE TABLE IF NOT EXISTS pigeon_showcase (
   id BIGINT NOT NULL AUTO_INCREMENT,
   category ENUM('award','imported','representative','world_famous') NOT NULL,  -- 'award' 入賞鴿 | 'imported' 進口鴿 | 'representative' 代表種鴿 | 'world_famous' 世界名鴿 (issue #307)
   name VARCHAR(100) NOT NULL,
-  loft_id BIGINT NOT NULL,
+  loft_id BIGINT NULL,
+  photo_source VARCHAR(100) NULL,
   image_file_name VARCHAR(255) NULL,            -- 主圖 (issue #70); NULL only on pre-#70 rows
   description TEXT NOT NULL,                   -- sanitizeDescriptionHtml'd TinyMCE HTML, 2000-char plain-text cap
   created_at DATETIME NOT NULL,

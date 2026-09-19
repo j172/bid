@@ -138,7 +138,7 @@ export default async function PigeonShowcaseListPage({ searchParams }: { searchP
           href: `/pigeon-showcase/${item.id}`,
           imageUrl: item.imageFileName ? pigeonShowcaseImageUrl(item.imageFileName) : IMAGE_FALLBACK_SRC,
           title: item.name,
-          badgeLabel: item.loftTitle,
+          badgeLabel: item.loftTitle ?? undefined,
           excerpt: excerptHtml(item.description, LIST_EXCERPT_LENGTH),
         }))}
         emptyLabel={t("noItems")}

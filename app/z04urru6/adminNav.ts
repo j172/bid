@@ -33,11 +33,8 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   // card admin (issue #176's independent featured_loft_posts article CMS is
   // removed), same "nested under /homepage/" placement as 合作鴿舍管理 above.
   { label: "名家專區管理", href: "/z04urru6/homepage/featured-lofts", section: "content" },
-  // 入賞鴿／進口鴿管理 (issue #54) — deliberately NOT a revival of the
-  // pigeon_gallery_* admin UI removed by #52; a brand-new, simpler CRUD on
-  // top of the new pigeon_showcase table (two fixed categories, no
-  // custom-category management).
-  { label: "入賞鴿／進口鴿管理", href: "/z04urru6/pigeon-showcase", section: "content" },
+  // 鴿種介紹專區 (issue #54) — 包含入賞鴿／進口鴿／代表種鴿／世界名鴿
+  { label: "鴿種介紹專區", href: "/z04urru6/pigeon-showcase", section: "content" },
   // 最新訊息管理 (issue #56) — public announcement CRUD. Issue #80 folded the
   // standalone "電子報" (Newsletter) nav item into this one: sending a
   // newsletter is now an option on this form, not a separate admin section.

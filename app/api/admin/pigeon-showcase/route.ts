@@ -59,7 +59,11 @@ export async function POST(request: Request) {
   const category = form.get("category");
   const name = String(form.get("name") ?? "").trim();
   const description = String(form.get("description") ?? "").trim();
-  const loftId = Number(form.get("loftId"));
+  const loftIdRaw = form.get("loftId");
+  const loftIdNum = Number(loftIdRaw);
+  const loftId = Number.isFinite(loftIdNum) && Number.isInteger(loftIdNum) && loftIdNum > 0 ? loftIdNum : null;
+  const photoSourceRaw = form.get("photoSource");
+  const photoSource = typeof photoSourceRaw === "string" ? photoSourceRaw.trim() || null : null;
   const image = form.get("image");
   const descriptionImages = form
     .getAll("descriptionImages")
@@ -76,7 +80,7 @@ export async function POST(request: Request) {
   if (!descriptionResult.ok) {
     return NextResponse.json({ ok: false, error: descriptionResult.error }, { status: 400 });
   }
-  if (!Number.isFinite(loftId) || !Number.isInteger(loftId) || loftId <= 0) {
+  if (category !== "world_famous" && loftId === null) {
     return NextResponse.json({ ok: false, error: "請選擇鴿舍" }, { status: 400 });
   }
   if (!(image instanceof File) || image.size === 0) {
@@ -102,6 +106,7 @@ export async function POST(request: Request) {
     category,
     name,
     loftId,
+    photoSource,
     description: "",
     imageFileName,
   };

@@ -100,7 +100,7 @@ export default async function PigeonShowcaseDetailPage({ params }: { params: Pro
   const categoryHref = `/pigeon-showcase?category=${item.category}`;
   // Unified loft storefront entrance (issue #200): links directly to that loft's
   // showcase tab on the listings page.
-  const loftHref = buildLoftShowcaseUrl(item.loftId, { tab: "showcase" });
+  const loftHref = item.loftId != null ? buildLoftShowcaseUrl(item.loftId, { tab: "showcase" }) : null;
 
   const breadcrumbJsonLd = buildBreadcrumbListJsonLd([
     { name: t("breadcrumbHome"), pathname: "/" },
@@ -127,7 +127,7 @@ export default async function PigeonShowcaseDetailPage({ params }: { params: Pro
         id: sidebarItem.id,
         href: `/pigeon-showcase/${sidebarItem.id}`,
         primary: sidebarItem.name,
-        secondary: sidebarItem.loftTitle,
+        secondary: sidebarItem.loftTitle ?? "",
       }))}
       sidebarEmptyLabel={t("noItems")}
       backHref={categoryHref}
@@ -149,12 +149,19 @@ export default async function PigeonShowcaseDetailPage({ params }: { params: Pro
         {t(CATEGORY_LABEL_KEY[item.category])}
       </span>
       <h1 className="mt-4 text-3xl font-black text-ink">{item.name}</h1>
-      <Link
-        href={loftHref}
-        className="mt-2 inline-block text-sm font-semibold text-ink-light hover:text-interactive-primary"
-      >
-        {t("loftLine", { loft: item.loftTitle })}
-      </Link>
+      {loftHref && item.loftTitle && (
+        <Link
+          href={loftHref}
+          className="mt-2 inline-block text-sm font-semibold text-ink-light hover:text-interactive-primary"
+        >
+          {t("loftLine", { loft: item.loftTitle })}
+        </Link>
+      )}
+      {item.photoSource && (
+        <p className="mt-1 text-sm font-semibold text-ink-light">
+          {t("photoSourceLine", { source: item.photoSource })}
+        </p>
+      )}
       <RichTextContent html={item.description} className="mt-6 border-t border-border pt-6 leading-7 text-ink-light" />
     </DetailWithSidebar>
   );

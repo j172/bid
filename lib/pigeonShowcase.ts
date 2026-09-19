@@ -20,8 +20,9 @@ export interface PigeonShowcase {
   id: number;
   category: PigeonShowcaseCategory;
   name: string;
-  loftId: number;
-  loftTitle: string;
+  loftId: number | null;
+  loftTitle: string | null;
+  photoSource: string | null;
   /** Sanitized HTML (see lib/sanitizeDescriptionHtml.ts) — sanitizing is the caller's (API route's) responsibility, not this module's. */
   description: string;
   /** 主圖 file name under uploads/pigeon-showcase/ (see lib/uploads.ts); NULL only on rows created before issue #70 — every create/edit after #70 requires one. */
@@ -33,7 +34,8 @@ export interface PigeonShowcase {
 export interface PigeonShowcaseInput {
   category: PigeonShowcaseCategory;
   name: string;
-  loftId: number;
+  loftId: number | null;
+  photoSource?: string | null;
   description: string;
   /** Required — the admin form/API route enforce an upload on every create/edit (issue #70). */
   imageFileName: string;
@@ -62,8 +64,9 @@ interface PigeonShowcaseRow {
   id: number;
   category: PigeonShowcaseCategory;
   name: string;
-  loft_id: number;
-  loft_title: string;
+  loft_id: number | null;
+  loft_title: string | null;
+  photo_source: string | null;
   description: string;
   image_file_name: string | null;
   created_at: Date;
@@ -76,7 +79,8 @@ function mapRow(row: PigeonShowcaseRow): PigeonShowcase {
     category: row.category,
     name: row.name,
     loftId: row.loft_id,
-    loftTitle: row.loft_title,
+    loftTitle: row.loft_title ?? null,
+    photoSource: row.photo_source ?? null,
     description: row.description,
     imageFileName: row.image_file_name,
     createdAt: row.created_at,
@@ -85,9 +89,9 @@ function mapRow(row: PigeonShowcaseRow): PigeonShowcase {
 }
 
 const SELECT_WITH_LOFT = `
-  SELECT ps.id, ps.category, ps.name, ps.loft_id, hs.title AS loft_title, ps.description, ps.image_file_name, ps.created_at, ps.updated_at
+  SELECT ps.id, ps.category, ps.name, ps.loft_id, hs.title AS loft_title, ps.photo_source, ps.description, ps.image_file_name, ps.created_at, ps.updated_at
   FROM pigeon_showcase ps
-  JOIN homepage_sections hs ON hs.id = ps.loft_id
+  LEFT JOIN homepage_sections hs ON hs.id = ps.loft_id
 `;
 
 // Powers the admin list (all filters available), the public category list
@@ -161,27 +165,44 @@ async function isPartnerLoft(loftId: number): Promise<boolean> {
   return (rows as unknown[]).length > 0;
 }
 
+export async function listPigeonShowcaseByPhotoSource(photoSource: string, limit: number): Promise<PigeonShowcase[]> {
+  const db = await getDb();
+  const [rows] = await db.query(
+    `${SELECT_WITH_LOFT} WHERE ps.photo_source = ? ORDER BY ps.created_at DESC, ps.id DESC LIMIT ?`,
+    [photoSource, limit],
+  );
+  return (rows as PigeonShowcaseRow[]).map(mapRow);
+}
+
 export async function createPigeonShowcase(input: PigeonShowcaseInput): Promise<PigeonShowcaseOutcome & { id?: number }> {
-  if (!(await isPartnerLoft(input.loftId))) {
-    return { ok: false, error: "找不到這個合作鴿舍" };
+  if (input.loftId != null) {
+    if (!(await isPartnerLoft(input.loftId))) {
+      return { ok: false, error: "找不到這個合作鴿舍" };
+    }
+  } else if (input.category !== "world_famous") {
+    return { ok: false, error: "請選擇合作鴿舍" };
   }
   const db = await getDb();
   const [result] = await db.query(
-    `INSERT INTO pigeon_showcase (category, name, loft_id, image_file_name, description, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
-    [input.category, input.name, input.loftId, input.imageFileName, input.description],
+    `INSERT INTO pigeon_showcase (category, name, loft_id, photo_source, image_file_name, description, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+    [input.category, input.name, input.loftId ?? null, input.photoSource ?? null, input.imageFileName, input.description],
   );
   return { ok: true, id: (result as { insertId: number }).insertId };
 }
 
 export async function updatePigeonShowcase(id: number, input: PigeonShowcaseInput): Promise<PigeonShowcaseOutcome> {
-  if (!(await isPartnerLoft(input.loftId))) {
-    return { ok: false, error: "找不到這個合作鴿舍" };
+  if (input.loftId != null) {
+    if (!(await isPartnerLoft(input.loftId))) {
+      return { ok: false, error: "找不到這個合作鴿舍" };
+    }
+  } else if (input.category !== "world_famous") {
+    return { ok: false, error: "請選擇合作鴿舍" };
   }
   const db = await getDb();
   const [result] = await db.query(
-    `UPDATE pigeon_showcase SET category = ?, name = ?, loft_id = ?, image_file_name = ?, description = ?, updated_at = NOW() WHERE id = ?`,
-    [input.category, input.name, input.loftId, input.imageFileName, input.description, id],
+    `UPDATE pigeon_showcase SET category = ?, name = ?, loft_id = ?, photo_source = ?, image_file_name = ?, description = ?, updated_at = NOW() WHERE id = ?`,
+    [input.category, input.name, input.loftId ?? null, input.photoSource ?? null, input.imageFileName, input.description, id],
   );
   if ((result as { affectedRows: number }).affectedRows === 0) {
     return { ok: false, error: "找不到這筆鴿況資料" };

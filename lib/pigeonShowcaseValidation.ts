@@ -41,3 +41,15 @@ export function validatePigeonShowcaseDescription(description: string): FieldVal
     textMax: DESCRIPTION_MAX,
   });
 }
+
+export const PHOTO_SOURCE_OPTIONS = ["三豐攝影", "舍內自拍", "其他"] as const;
+export type PhotoSourceOption = (typeof PHOTO_SOURCE_OPTIONS)[number];
+
+export function validatePigeonShowcasePhotoSource(photoSource: string): FieldValidationResult {
+  const trimmed = photoSource.trim();
+  if (!trimmed) return { ok: true };
+  if (trimmed.length > 100) {
+    return { ok: false, error: "照片來源長度不能超過 100 個字" };
+  }
+  return { ok: true };
+}

@@ -103,7 +103,7 @@ export default async function PigeonShowcaseAdminPage({ searchParams }: { search
       {items.length === 0 ? (
         <p className="mt-6 text-ink-light">找不到符合條件的鴿況資料。</p>
       ) : (
-        <AdminTable headers={["主圖", "鴿種", "名稱", "鴿舍", "簡介", ""]}>
+        <AdminTable headers={["主圖", "鴿種", "名稱", "鴿舍", "照片來源", "簡介", ""]}>
           {items.map((item) => {
             const imageUrl = item.imageFileName ? pigeonShowcaseImageUrl(item.imageFileName) : "/images/logo.png";
             return (
@@ -114,7 +114,8 @@ export default async function PigeonShowcaseAdminPage({ searchParams }: { search
                 </AdminTableCell>
                 <AdminTableCell>{CATEGORY_LABEL[item.category]}</AdminTableCell>
                 <AdminTableCell className="font-medium">{item.name}</AdminTableCell>
-                <AdminTableCell>{item.loftTitle}</AdminTableCell>
+                <AdminTableCell>{item.loftTitle ?? "—"}</AdminTableCell>
+                <AdminTableCell>{item.photoSource ?? "—"}</AdminTableCell>
                 <AdminTableCell className="max-w-xs truncate text-ink-light">
                   {item.description.replace(/<[^>]*>/g, " ").trim()}
                 </AdminTableCell>
@@ -128,6 +129,7 @@ export default async function PigeonShowcaseAdminPage({ searchParams }: { search
                         category: item.category,
                         name: item.name,
                         loftId: item.loftId,
+                        photoSource: item.photoSource,
                         description: item.description,
                         imageUrl,
                       }}
