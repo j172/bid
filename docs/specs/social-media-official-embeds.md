@@ -7,7 +7,7 @@
 - **UI 組件**：`app/[locale]/components/SocialMediaSection.tsx`
   - 實作 Facebook 官方品牌互動名片卡：鑑於 Meta 官方 `plugins/page.php` 僅支援「公開粉絲專頁（Page）」，而 `xiang.shui.ge.she` 為個人檔案（User Profile）會回傳空白內容，故升級為官方品牌互動名片卡，完整露出頭像、品牌標章、舍內動態介紹與直通 Facebook 的互動按鈕。
   - 引入 TikTok 官方 Creator Profile 嵌入（`blockquote` + `embed.js`，展示官方創作者名片與最新短影音）。
-  - 實作版面分流：上方維持 YouTube 16:9 賽鴿影音網格，下方左右雙欄呈現 Facebook 與 TikTok 官方即時動態牆。
+  - 實作版面分流：上方維持 YouTube 16:9 賽鴿影音網格，在大螢幕呈現 4 欄一列（lg:grid-cols-4），下方左右雙欄呈現 Facebook 與 TikTok 官方即時動態牆。
   - 實作智慧聯動 Tab 切換（全部 / YouTube / Facebook / TikTok）。
   - 實作 Intersection Observer 滾動延遲載入（Lazy Loading）與防跳動骨架佔位。
 - **多語系 (i18n)**：`messages/zh-TW.json`, `messages/zh-CN.json`, `messages/en.json`
