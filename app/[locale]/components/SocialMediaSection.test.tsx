@@ -108,15 +108,13 @@ describe("SocialMediaSection", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("renders official Facebook Page Plugin iframe and TikTok Creator embed", () => {
+  it("renders official Facebook brand card and TikTok Creator embed", () => {
     renderSection();
 
-    // Verify Facebook iframe
-    const fbIframe = document.querySelector("iframe[title*='Facebook']");
-    expect(fbIframe).toBeTruthy();
-    expect(fbIframe?.getAttribute("src")).toContain("facebook.com/plugins/page.php");
-    expect(fbIframe?.getAttribute("src")).toContain("timeline");
-    expect(fbIframe?.getAttribute("loading")).toBe("lazy");
+    // Verify Facebook brand card
+    const fbCardLink = screen.getByRole("link", { name: /前往 Facebook 查看最新舍內貼文動態/i });
+    expect(fbCardLink).toBeTruthy();
+    expect(fbCardLink.getAttribute("href")).toBe(SOCIAL_LINKS.facebook);
 
     // Verify TikTok Creator Embed blockquote
     const tiktokEmbed = document.querySelector("blockquote.tiktok-embed");
