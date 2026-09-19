@@ -1300,7 +1300,11 @@
     "followTiktok": "Follow TikTok",
     "watchVideo": "Watch Video",
     "viewPost": "View Post",
-    "closePlayer": "Close Player"
+    "closePlayer": "Close Player",
+    "liveFeedsTitle": "Live Social Feeds",
+    "liveFeedsSubtitle": "Real-time updates from Facebook loft timeline & TikTok shorts",
+    "goToFacebook": "Visit Facebook Page",
+    "goToTiktok": "Visit TikTok Profile"
   },
   "productDetail": {
     "breadcrumbHome": "Home",

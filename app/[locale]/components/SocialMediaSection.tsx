@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import type { SocialItem, SocialPlatform } from "@/lib/socialMediaConstants";
 import { SOCIAL_LINKS } from "@/lib/socialMediaConstants";
-
 
 function PlatformIcon({ platform, className = "h-4 w-4" }: { platform: SocialPlatform; className?: string }) {
   if (platform === "youtube") {
@@ -28,18 +27,202 @@ function PlatformIcon({ platform, className = "h-4 w-4" }: { platform: SocialPla
   );
 }
 
+function FacebookPageEmbed({ item, isVisible }: { item?: SocialItem; isVisible: boolean }) {
+  const fbUrl = item?.url || SOCIAL_LINKS.facebook;
+  const title = item?.title || "翔水鴿舍官方粉絲專頁 - 最新舍內賽鴿競翔動態與血統解析";
+  const author = item?.authorName || "翔水鴿舍";
+  const encodedUrl = encodeURIComponent(fbUrl);
+  const iframeSrc = `https://www.facebook.com/plugins/page.php?href=${encodedUrl}&tabs=timeline&width=500&height=500&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true&appId`;
+
+  return (
+    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition hover:shadow-md">
+      {/* Top Header */}
+      <div className="flex items-center justify-between border-b border-border/60 bg-slate-50/80 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1 rounded-md bg-[#1877F2] px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
+            <PlatformIcon platform="facebook" className="h-3 w-3" />
+            Facebook
+          </span>
+          <span className="text-xs font-bold text-ink">{author}</span>
+        </div>
+        <a
+          href={fbUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs font-bold text-interactive-primary hover:underline"
+          aria-label={`前往查看動態: ${title}`}
+        >
+          前往粉絲專頁 →
+        </a>
+      </div>
+
+      {/* Title */}
+      <div className="p-4 pb-2">
+        <h3 className="line-clamp-2 text-sm font-bold leading-snug text-ink transition group-hover:text-interactive-primary">
+          {title}
+        </h3>
+      </div>
+
+      {/* Embed frame */}
+      <div className="flex flex-1 items-center justify-center p-3 pt-0 sm:p-4 sm:pt-0">
+        <div className="relative flex h-[500px] w-full max-w-[500px] justify-center overflow-hidden rounded-xl border border-border/80 bg-slate-50 shadow-inner">
+          {isVisible ? (
+            <iframe
+              src={iframeSrc}
+              width="100%"
+              height="500"
+              style={{ border: "none", overflow: "hidden" }}
+              scrolling="no"
+              frameBorder="0"
+              allowFullScreen={true}
+              allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+              loading="lazy"
+              title={`Facebook - ${title}`}
+              className="h-[500px] w-full max-w-[500px]"
+            />
+          ) : (
+            <div className="flex h-[500px] w-full items-center justify-center text-xs text-ink-light">
+              載入 Facebook 動態中...
+            </div>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function TikTokProfileEmbed({ item, isVisible }: { item?: SocialItem; isVisible: boolean }) {
+  const tiktokUrl = item?.url || SOCIAL_LINKS.tiktok;
+  const title = item?.title || "翔水賽鴿 TikTok 官方精選短影音 - 名家鴿舍實況與近距離賞鴿";
+  const author = item?.authorName || "翔水賽鴿";
+  const uniqueId = tiktokUrl.match(/@([^/?#]+)/)?.[1] || "user2151480077563";
+
+  useEffect(() => {
+    if (!isVisible) return;
+    const scriptSrc = "https://www.tiktok.com/embed.js";
+    let script = document.querySelector<HTMLScriptElement>(`script[src="${scriptSrc}"]`);
+    if (!script) {
+      script = document.createElement("script");
+      script.src = scriptSrc;
+      script.async = true;
+      document.body.appendChild(script);
+    } else {
+      try {
+        (window as unknown as { tiktokEmbed?: () => void }).tiktokEmbed?.();
+      } catch {
+        // ignore
+      }
+    }
+  }, [isVisible]);
+
+  return (
+    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition hover:shadow-md">
+      {/* Top Header */}
+      <div className="flex items-center justify-between border-b border-border/60 bg-slate-50/80 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1 rounded-md bg-black px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
+            <PlatformIcon platform="tiktok" className="h-3 w-3" />
+            TikTok
+          </span>
+          <span className="text-xs font-bold text-ink">{author}</span>
+        </div>
+        <a
+          href={tiktokUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs font-bold text-interactive-primary hover:underline"
+          aria-label={`前往查看動態: ${title}`}
+        >
+          前往 TikTok 主頁 →
+        </a>
+      </div>
+
+      {/* Title */}
+      <div className="p-4 pb-2">
+        <h3 className="line-clamp-2 text-sm font-bold leading-snug text-ink transition group-hover:text-interactive-primary">
+          {title}
+        </h3>
+      </div>
+
+      {/* Embed frame */}
+      <div className="flex flex-1 items-start justify-center p-3 pt-0 sm:p-4 sm:pt-0">
+        <div className="relative min-h-[500px] w-full max-w-[500px] overflow-hidden rounded-xl border border-border/80 bg-slate-50 p-2 shadow-inner">
+          {isVisible ? (
+            <blockquote
+              className="tiktok-embed"
+              cite={tiktokUrl}
+              data-unique-id={uniqueId}
+              data-embed-type="creator"
+              style={{ maxWidth: "100%", minWidth: "288px" }}
+            >
+              <section className="p-4 text-center">
+                <a
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  href={`${tiktokUrl}?refer=creator_embed`}
+                  className="font-bold text-interactive-primary hover:underline"
+                >
+                  @{uniqueId}
+                </a>
+              </section>
+            </blockquote>
+          ) : (
+            <div className="flex h-[500px] w-full items-center justify-center text-xs text-ink-light">
+              載入 TikTok 動態中...
+            </div>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
+
 export default function SocialMediaSection({ items }: { items: SocialItem[] }) {
   const t = useTranslations("socialMedia");
   const [activeTab, setActiveTab] = useState<"all" | SocialPlatform>("all");
   const [selectedVideo, setSelectedVideo] = useState<SocialItem | null>(null);
+  const [isLazyLoaded, setIsLazyLoaded] = useState(false);
+  const sectionRef = useRef<HTMLElement | null>(null);
 
-  const filteredItems = items.filter((item) => {
-    if (activeTab === "all") return true;
-    return item.platform === activeTab;
-  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (typeof IntersectionObserver === "undefined") {
+      setIsLazyLoaded(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setIsLazyLoaded(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "250px" }
+    );
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+    return () => observer.disconnect();
+  }, []);
+
+  const handleTabChange = (tab: "all" | SocialPlatform) => {
+    setActiveTab(tab);
+    if (tab === "facebook" || tab === "tiktok") {
+      setIsLazyLoaded(true);
+    }
+  };
+
+  const youtubeItems = items.filter((item) => item.platform === "youtube");
+  const fbItem = items.find((item) => item.platform === "facebook");
+  const tiktokItem = items.find((item) => item.platform === "tiktok");
+
+  const showYoutube = activeTab === "all" || activeTab === "youtube";
+  const showFacebookOnly = activeTab === "facebook";
+  const showTikTokOnly = activeTab === "tiktok";
+  const showDualFeeds = activeTab === "all" && (fbItem || tiktokItem);
 
   return (
-    <section className="mx-auto mt-12 max-w-7xl px-4 sm:px-6">
+    <section ref={sectionRef} className="mx-auto mt-12 max-w-7xl px-4 sm:px-6">
       <div className="rounded-3xl border border-border bg-white p-6 shadow-sm sm:p-8">
         {/* Header and Quick Follow buttons */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -86,7 +269,7 @@ export default function SocialMediaSection({ items }: { items: SocialItem[] }) {
         <div className="mt-6 flex flex-wrap gap-2 border-b border-border pb-4">
           <button
             type="button"
-            onClick={() => setActiveTab("all")}
+            onClick={() => handleTabChange("all")}
             className={`rounded-full px-4 py-1.5 text-xs font-bold transition ${
               activeTab === "all"
                 ? "bg-interactive-primary text-white shadow"
@@ -97,7 +280,7 @@ export default function SocialMediaSection({ items }: { items: SocialItem[] }) {
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab("youtube")}
+            onClick={() => handleTabChange("youtube")}
             className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold transition ${
               activeTab === "youtube"
                 ? "bg-red-600 text-white shadow"
@@ -109,7 +292,7 @@ export default function SocialMediaSection({ items }: { items: SocialItem[] }) {
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab("facebook")}
+            onClick={() => handleTabChange("facebook")}
             className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold transition ${
               activeTab === "facebook"
                 ? "bg-[#1877F2] text-white shadow"
@@ -121,7 +304,7 @@ export default function SocialMediaSection({ items }: { items: SocialItem[] }) {
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab("tiktok")}
+            onClick={() => handleTabChange("tiktok")}
             className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold transition ${
               activeTab === "tiktok"
                 ? "bg-black text-white shadow"
@@ -133,105 +316,126 @@ export default function SocialMediaSection({ items }: { items: SocialItem[] }) {
           </button>
         </div>
 
-        {/* Content Cards Grid */}
-        <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredItems.map((item) => {
-            const isVideo = item.platform === "youtube" && item.embedUrl;
-            return (
-              <article
-                key={item.id}
-                className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-              >
-                {/* Thumbnail facade */}
-                <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={item.thumbnailUrl}
-                    alt={item.title}
-                    loading="lazy"
-                    className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-                  />
-                  {/* Platform Badge */}
-                  <div className="absolute left-3 top-3">
-                    {item.platform === "youtube" && (
+        {/* YouTube Video Grid */}
+        {showYoutube && youtubeItems.length > 0 && (
+          <div className="mt-6">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {youtubeItems.map((item) => (
+                <article
+                  key={item.id}
+                  className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+                >
+                  {/* Thumbnail facade */}
+                  <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={item.thumbnailUrl}
+                      alt={item.title}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                    />
+                    <div className="absolute left-3 top-3">
                       <span className="inline-flex items-center gap-1 rounded-md bg-red-600/90 px-2 py-0.5 text-[11px] font-bold text-white shadow backdrop-blur-sm">
                         <PlatformIcon platform="youtube" className="h-3 w-3" />
                         YouTube
                       </span>
-                    )}
-                    {item.platform === "facebook" && (
-                      <span className="inline-flex items-center gap-1 rounded-md bg-[#1877F2]/90 px-2 py-0.5 text-[11px] font-bold text-white shadow backdrop-blur-sm">
-                        <PlatformIcon platform="facebook" className="h-3 w-3" />
-                        Facebook
-                      </span>
-                    )}
-                    {item.platform === "tiktok" && (
-                      <span className="inline-flex items-center gap-1 rounded-md bg-black/90 px-2 py-0.5 text-[11px] font-bold text-white shadow backdrop-blur-sm">
-                        <PlatformIcon platform="tiktok" className="h-3 w-3" />
-                        TikTok
-                      </span>
-                    )}
-                  </div>
+                    </div>
 
-                  {/* Play overlay button */}
-                  {isVideo ? (
-                    <button
-                      type="button"
-                      onClick={() => setSelectedVideo(item)}
-                      aria-label={`${t("watchVideo")}: ${item.title}`}
-                      className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-90 transition group-hover:bg-black/40 group-hover:opacity-100"
-                    >
-                      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-red-600 text-white shadow-lg transition duration-200 group-hover:scale-110">
-                        <svg className="h-6 w-6 fill-current pl-0.5" viewBox="0 0 24 24" aria-hidden="true">
-                          <path d="M8 5v14l11-7z" />
-                        </svg>
-                      </span>
-                    </button>
-                  ) : (
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="absolute inset-0"
-                      aria-label={`${t("viewPost")}: ${item.title}`}
-                    />
-                  )}
-                </div>
-
-                {/* Content body */}
-                <div className="flex flex-1 flex-col justify-between p-4">
-                  <div>
-                    <h3 className="line-clamp-2 text-sm font-bold leading-snug text-ink transition group-hover:text-interactive-primary">
-                      {item.title}
-                    </h3>
-                  </div>
-
-                  <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3 text-xs text-ink-light">
-                    <span>{item.authorName || "翔水賽鴿"}</span>
-                    {isVideo ? (
+                    {/* Play overlay button */}
+                    {item.embedUrl ? (
                       <button
                         type="button"
                         onClick={() => setSelectedVideo(item)}
-                        className="font-bold text-red-600 hover:underline"
+                        aria-label={`${t("watchVideo")}: ${item.title}`}
+                        className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-90 transition group-hover:bg-black/40 group-hover:opacity-100"
                       >
-                        {t("watchVideo")} →
+                        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-red-600 text-white shadow-lg transition duration-200 group-hover:scale-110">
+                          <svg className="h-6 w-6 fill-current pl-0.5" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        </span>
                       </button>
                     ) : (
                       <a
                         href={item.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-bold text-interactive-primary hover:underline"
-                      >
-                        {t("viewPost")} →
-                      </a>
+                        className="absolute inset-0"
+                        aria-label={`${t("viewPost")}: ${item.title}`}
+                      />
                     )}
                   </div>
+
+                  {/* Content body */}
+                  <div className="flex flex-1 flex-col justify-between p-4">
+                    <div>
+                      <h3 className="line-clamp-2 text-sm font-bold leading-snug text-ink transition group-hover:text-interactive-primary">
+                        {item.title}
+                      </h3>
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3 text-xs text-ink-light">
+                      <span>{item.authorName || "翔水賽鴿"}</span>
+                      {item.embedUrl ? (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedVideo(item)}
+                          className="font-bold text-red-600 hover:underline"
+                        >
+                          {t("watchVideo")} →
+                        </button>
+                      ) : (
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-bold text-interactive-primary hover:underline"
+                        >
+                          {t("viewPost")} →
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Dual Feeds when activeTab is "all" */}
+        {showDualFeeds && (
+          <div className="mt-10 border-t border-border/80 pt-8">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-ink">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>LIVE FEEDS</span>
                 </div>
-              </article>
-            );
-          })}
-        </div>
+                <h3 className="mt-1.5 text-xl font-black text-ink">{t("liveFeedsTitle")}</h3>
+                <p className="text-xs text-ink-light">{t("liveFeedsSubtitle")}</p>
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {fbItem && <FacebookPageEmbed item={fbItem} isVisible={isLazyLoaded} />}
+              {tiktokItem && <TikTokProfileEmbed item={tiktokItem} isVisible={isLazyLoaded} />}
+            </div>
+          </div>
+        )}
+
+        {/* Dedicated Single Platform Feed when Facebook Tab is selected */}
+        {showFacebookOnly && fbItem && (
+          <div className="mx-auto mt-6 max-w-2xl">
+            <FacebookPageEmbed item={fbItem} isVisible={true} />
+          </div>
+        )}
+
+        {/* Dedicated Single Platform Feed when TikTok Tab is selected */}
+        {showTikTokOnly && tiktokItem && (
+          <div className="mx-auto mt-6 max-w-2xl">
+            <TikTokProfileEmbed item={tiktokItem} isVisible={true} />
+          </div>
+        )}
       </div>
 
       {/* Video Player Modal */}
