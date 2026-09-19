@@ -13,6 +13,7 @@ import BackToTopButton from "./components/BackToTopButton";
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import GoogleAnalytics from "./components/GoogleAnalytics";
 import GoogleOneTap from "./components/GoogleOneTap";
+import InAppBrowserBanner from "./components/InAppBrowserBanner";
 import LineContactButton from "./components/LineContactButton";
 import MicrosoftClarity from "./components/MicrosoftClarity";
 import SiteHeader from "./components/SiteHeader";
@@ -122,6 +123,12 @@ export default async function LocaleLayout({
   return (
     <html lang={locale}>
       <head>
+        <link rel="preconnect" href="https://accounts.google.com" />
+        <link rel="dns-prefetch" href="https://accounts.google.com" />
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        <link rel="preconnect" href="https://www.clarity.ms" />
+        <link rel="dns-prefetch" href="https://www.clarity.ms" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: safeJsonLdString(websiteJsonLd) }}
@@ -133,6 +140,7 @@ export default async function LocaleLayout({
       </head>
       <body className="min-h-screen font-sans text-ink">
         <NextIntlClientProvider>
+          <InAppBrowserBanner />
           {!user && (
             <GoogleOneTap
               clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}

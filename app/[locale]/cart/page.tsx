@@ -17,6 +17,10 @@ export async function generateMetadata({
       canonical: canonicalUrl(locale, "/cart"),
       languages: hreflangAlternates("/cart"),
     },
+    robots: {
+      index: false,
+      follow: true,
+    },
   };
 }
 

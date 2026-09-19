@@ -14,6 +14,7 @@ import { getLatestStoredRate } from "@/lib/exchangeRates";
 import {
   absoluteUrl,
   buildBreadcrumbListJsonLd,
+  buildLoftBusinessJsonLd,
   canonicalUrl,
   hreflangAlternates,
   stripHtmlToPlainText,
@@ -131,11 +132,22 @@ export default async function FeaturedLoftDetailPage({ params }: { params: Promi
     { name: section.title, pathname: `/featured-lofts/${section.id}` },
   ]);
 
+  const loftJsonLd = buildLoftBusinessJsonLd({
+    title: section.title,
+    description: section.bio,
+    pathname: `/featured-lofts/${section.id}`,
+    imageFileName: section.imageFileName ? homepageSectionImageUrl(section.imageFileName) : null,
+  });
+
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLdString(breadcrumbJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLdString(loftJsonLd) }}
       />
       <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">
         <Link href="/" className="hover:text-interactive-primary">

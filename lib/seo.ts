@@ -17,6 +17,8 @@ import sanitizeHtml from "sanitize-html";
 import { routing } from "@/i18n/routing";
 import { SITE_URL } from "@/lib/siteUrl";
 import { listingPhotoUrl } from "@/lib/uploads";
+import { SOCIAL_LINKS } from "@/lib/socialMediaConstants";
+import { LINE_CONTACT_HREF } from "@/lib/lineContact";
 
 /** Query params that survive canonicalization because they change the actual
  * content set shown (much like a real category page would), as opposed to
@@ -190,6 +192,12 @@ export function buildListingProductJsonLd(listing: ListingJsonLdInput, pathname:
     description: truncateForMetaDescription(stripHtmlToPlainText(listing.description), 300),
     image: images,
     url,
+    sku: `listing-${listing.id}`,
+    category: "Racing Pigeons",
+    brand: {
+      "@type": "Brand",
+      name: "翔水賽鴿",
+    },
     offers: {
       "@type": "Offer",
       url,
@@ -266,6 +274,12 @@ export function buildOrganizationJsonLd(): Record<string, unknown> {
     url: SITE_URL,
     logo: absoluteUrl("/images/logo.png"),
     description: "專業賽鴿拍賣、銘鴿結標與種鴿直購平台",
+    sameAs: [
+      SOCIAL_LINKS.facebook,
+      SOCIAL_LINKS.youtube,
+      SOCIAL_LINKS.tiktok,
+      LINE_CONTACT_HREF,
+    ],
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "customer support",
@@ -318,6 +332,52 @@ export function buildNewsArticleJsonLd(article: {
         url: absoluteUrl("/images/logo.png"),
       },
     },
+  };
+}
+
+// Builds schema.org ItemList JSON-LD for listings catalog and collection pages.
+// Helps search engines and crawlers understand catalog rankings and listings.
+export function buildItemListJsonLd(
+  items: { name: string; pathname: string }[],
+  listName: string = "拍賣商品列表",
+): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: listName,
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      url: absoluteUrl(item.pathname),
+    })),
+  };
+}
+
+// Builds schema.org SportsClub / LocalBusiness JSON-LD for featured partner lofts.
+export function buildLoftBusinessJsonLd(loft: {
+  title: string;
+  description?: string | null;
+  pathname: string;
+  imageFileName?: string | null;
+  address?: string | null;
+}): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "SportsClub",
+    name: loft.title,
+    url: absoluteUrl(loft.pathname),
+    ...(loft.description ? { description: truncateForMetaDescription(stripHtmlToPlainText(loft.description), 300) } : {}),
+    ...(loft.imageFileName ? { image: [absoluteUrl(loft.imageFileName.startsWith("/") ? loft.imageFileName : `/uploads/${loft.imageFileName}`)] } : {}),
+    ...(loft.address
+      ? {
+          address: {
+            "@type": "PostalAddress",
+            streetAddress: loft.address,
+            addressCountry: "TW",
+          },
+        }
+      : {}),
   };
 }
 

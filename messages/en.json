@@ -1343,5 +1343,15 @@
   },
   "backToTop": {
     "ariaLabel": "Back to top"
+  },
+  "inAppBrowser": {
+    "ariaLabel": "External browser recommendation notice",
+    "badge": "Open in External Browser",
+    "message": "You are currently viewing this site in an in-app browser. Google Sign-In, Passkeys, and live bidding may not work properly. We recommend opening this page in your default browser.",
+    "iosGuide": "Tap the '...' or share icon and select 'Open in Safari'",
+    "androidGuide": "Tap the '...' menu in the top-right corner and select 'Open in Chrome' or 'Open in browser'",
+    "copyLink": "Copy Link",
+    "copied": "Link Copied!",
+    "dismiss": "Dismiss"
   }
 }

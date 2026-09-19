@@ -16,6 +16,10 @@ export async function generateMetadata({
       canonical: canonicalUrl(locale, "/login"),
       languages: hreflangAlternates("/login"),
     },
+    robots: {
+      index: false,
+      follow: true,
+    },
   };
 }
 

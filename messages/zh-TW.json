@@ -1346,5 +1346,15 @@
   },
   "backToTop": {
     "ariaLabel": "回到頂部"
+  },
+  "inAppBrowser": {
+    "ariaLabel": "外部瀏覽器建議通知",
+    "badge": "建議改用外部瀏覽器",
+    "message": "偵測到您目前正在 App 內建瀏覽器中開啟本站。Google 登入、Passkey 及即時競標等功能可能受到限制，建議使用系統外部瀏覽器瀏覽。",
+    "iosGuide": "請點擊右上角或右下角的「…」或分享圖示，選擇「以 Safari 開啟」",
+    "androidGuide": "請點擊右上角的「…」選單，選擇「在 Chrome 中開啟」或「以瀏覽器開啟」",
+    "copyLink": "複製網址",
+    "copied": "網址已複製！",
+    "dismiss": "關閉通知"
   }
 }

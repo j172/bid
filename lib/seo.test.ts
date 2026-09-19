@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   absoluteUrl,
   buildBreadcrumbListJsonLd,
+  buildItemListJsonLd,
   buildListingProductJsonLd,
   buildLlmsFullTxt,
   buildLlmsTxt,
+  buildLoftBusinessJsonLd,
   buildNewsArticleJsonLd,
   buildOrganizationJsonLd,
   buildWebSiteJsonLd,
@@ -250,6 +252,16 @@ describe("buildListingProductJsonLd", () => {
     expect(offers.hasMerchantReturnPolicy).toBeDefined();
     expect(offers.shippingDetails).toBeDefined();
   });
+
+  it("includes brand, sku, and category fields for rich results", () => {
+    const jsonLd = buildListingProductJsonLd(baseListing, "/listings/42");
+    expect(jsonLd.sku).toBe("listing-42");
+    expect(jsonLd.category).toBe("Racing Pigeons");
+    expect(jsonLd.brand).toEqual({
+      "@type": "Brand",
+      name: "翔水賽鴿",
+    });
+  });
 });
 
 describe("buildWebSiteJsonLd", () => {
@@ -262,12 +274,15 @@ describe("buildWebSiteJsonLd", () => {
 });
 
 describe("buildOrganizationJsonLd", () => {
-  it("builds Organization schema with logo and contactPoint", () => {
+  it("builds Organization schema with logo, contactPoint, and sameAs social links", () => {
     const jsonLd = buildOrganizationJsonLd();
     expect(jsonLd["@type"]).toBe("Organization");
     expect(jsonLd.name).toBe("翔水賽鴿網");
     expect(jsonLd.logo).toBe("https://xiangshuicn.cc/images/logo.png");
     expect(jsonLd.contactPoint).toBeDefined();
+    expect(jsonLd.sameAs).toBeInstanceOf(Array);
+    expect(jsonLd.sameAs).toContain("https://www.facebook.com/xiang.shui.ge.she/");
+    expect(jsonLd.sameAs).toContain("https://line.me/ti/p/~0909156829");
   });
 });
 
@@ -307,6 +322,47 @@ describe("buildNewsArticleJsonLd", () => {
     expect(jsonLd["@type"]).toBe("NewsArticle");
     expect(jsonLd.headline).toBe("春季拍賣會公告");
     expect(jsonLd.url).toBe("https://xiangshuicn.cc/news/1");
+  });
+});
+
+describe("buildItemListJsonLd", () => {
+  it("builds ItemList schema with position and item urls", () => {
+    const jsonLd = buildItemListJsonLd([
+      { name: "商品 1", pathname: "/listings/1" },
+      { name: "商品 2", pathname: "/listings/2" },
+    ]);
+    expect(jsonLd["@type"]).toBe("ItemList");
+    expect(jsonLd.name).toBe("拍賣商品列表");
+    const items = jsonLd.itemListElement as Array<{ position: number; name: string; url: string }>;
+    expect(items).toHaveLength(2);
+    expect(items[0]).toEqual({
+      "@type": "ListItem",
+      position: 1,
+      name: "商品 1",
+      url: "https://xiangshuicn.cc/listings/1",
+    });
+  });
+});
+
+describe("buildLoftBusinessJsonLd", () => {
+  it("builds SportsClub schema for partner lofts with address and description", () => {
+    const jsonLd = buildLoftBusinessJsonLd({
+      title: "三豐鴿舍",
+      description: "台灣知名冠軍種鴿舍",
+      pathname: "/featured-lofts/1",
+      imageFileName: "loft1.jpg",
+      address: "台南市麻豆區",
+    });
+    expect(jsonLd["@type"]).toBe("SportsClub");
+    expect(jsonLd.name).toBe("三豐鴿舍");
+    expect(jsonLd.url).toBe("https://xiangshuicn.cc/featured-lofts/1");
+    expect(jsonLd.description).toBe("台灣知名冠軍種鴿舍");
+    expect(jsonLd.image).toEqual(["https://xiangshuicn.cc/uploads/loft1.jpg"]);
+    expect(jsonLd.address).toEqual({
+      "@type": "PostalAddress",
+      streetAddress: "台南市麻豆區",
+      addressCountry: "TW",
+    });
   });
 });
 

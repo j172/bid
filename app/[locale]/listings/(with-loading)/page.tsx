@@ -8,7 +8,8 @@ import { excerptHtml } from "@/lib/htmlText";
 import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
 import { getLatestStoredRate } from "@/lib/exchangeRates";
 import { buildListingCardView } from "@/lib/listingCardView";
-import { absoluteUrl, canonicalListingsUrl, hreflangAlternates } from "@/lib/seo";
+import { absoluteUrl, buildItemListJsonLd, canonicalListingsUrl, hreflangAlternates } from "@/lib/seo";
+import { safeJsonLdString } from "@/lib/jsonLdScript";
 import {
   countByCategory,
   filterListings,
@@ -288,8 +289,20 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
     })),
   ];
 
+  const itemListJsonLd = buildItemListJsonLd(
+    sortedListings.slice(0, 30).map((l) => ({
+      name: l.title,
+      pathname: `/listings/${l.id}`,
+    })),
+    selectedLoft ? `${selectedLoft.title} - ${t("title")}` : t("title"),
+  );
+
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLdString(itemListJsonLd) }}
+      />
       <div className="rounded-xl bg-white p-4 shadow-sm sm:p-6">
         <p className="text-xs font-semibold uppercase tracking-wide text-ink-light">
           <Link href="/" className="hover:text-interactive-primary">
