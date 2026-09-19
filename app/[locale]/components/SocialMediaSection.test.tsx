@@ -107,4 +107,22 @@ describe("SocialMediaSection", () => {
     fireEvent.click(closeBtn);
     expect(screen.queryByRole("dialog")).toBeNull();
   });
+
+  it("renders official Facebook Page Plugin iframe and TikTok Creator embed", () => {
+    renderSection();
+
+    // Verify Facebook iframe
+    const fbIframe = document.querySelector("iframe[title*='Facebook']");
+    expect(fbIframe).toBeTruthy();
+    expect(fbIframe?.getAttribute("src")).toContain("facebook.com/plugins/page.php");
+    expect(fbIframe?.getAttribute("src")).toContain("timeline");
+    expect(fbIframe?.getAttribute("loading")).toBe("lazy");
+
+    // Verify TikTok Creator Embed blockquote
+    const tiktokEmbed = document.querySelector("blockquote.tiktok-embed");
+    expect(tiktokEmbed).toBeTruthy();
+    expect(tiktokEmbed?.getAttribute("data-embed-type")).toBe("creator");
+    expect(tiktokEmbed?.getAttribute("cite")).toContain("tiktok.com/@user2151480077563");
+  });
 });
+

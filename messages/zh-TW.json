@@ -1303,7 +1303,11 @@
     "followTiktok": "關注 TikTok",
     "watchVideo": "點擊播放影片",
     "viewPost": "前往查看動態",
-    "closePlayer": "關閉播放器"
+    "closePlayer": "關閉播放器",
+    "liveFeedsTitle": "即時社群動態牆",
+    "liveFeedsSubtitle": "即時掌握 Facebook 舍內最新賽鴿動態與 TikTok 短影音",
+    "goToFacebook": "前往粉絲專頁",
+    "goToTiktok": "前往 TikTok 主頁"
   },
   "productDetail": {
     "breadcrumbHome": "首頁",

@@ -1303,7 +1303,11 @@
     "followTiktok": "关注 TikTok",
     "watchVideo": "点击播放视频",
     "viewPost": "前往查看动态",
-    "closePlayer": "关闭播放器"
+    "closePlayer": "关闭播放器",
+    "liveFeedsTitle": "即时社群动态墙",
+    "liveFeedsSubtitle": "即时掌握 Facebook 舍内最新赛鸽动态与 TikTok 短影音",
+    "goToFacebook": "前往粉丝专页",
+    "goToTiktok": "前往 TikTok 主页"
   },
   "productDetail": {
     "breadcrumbHome": "首页",
