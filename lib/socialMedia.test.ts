@@ -48,7 +48,7 @@ describe("socialMedia", () => {
     expect(items[0].thumbnailUrl).toBe("https://i.ytimg.com/vi/sample12345/hqdefault.jpg");
   });
 
-  it("deduplicates repeated RSS video IDs and caps the result at six", async () => {
+  it("deduplicates repeated RSS video IDs and caps the result at four", async () => {
     const entries = Array.from({ length: 7 }, (_, index) => `
       <entry><yt:videoId>video${index}12345</yt:videoId><title>影片 ${index}</title></entry>
     `).join("");
@@ -60,8 +60,8 @@ describe("socialMedia", () => {
 
     const items = await fetchYouTubeFeed();
 
-    expect(items).toHaveLength(6);
-    expect(new Set(items.map((item) => item.id)).size).toBe(6);
+    expect(items).toHaveLength(4);
+    expect(new Set(items.map((item) => item.id)).size).toBe(4);
   });
 
   it("falls back to fallback items if fetch fails", async () => {

@@ -4,11 +4,11 @@ import { listOpenListings } from "@/lib/listings";
 import { listingPhotoUrl, homepageSectionImageUrl, pigeonShowcaseImageUrl, newsImageUrl, productPhotoUrl } from "@/lib/uploads";
 import { listProducts } from "@/lib/products";
 import { listHomepageSections } from "@/lib/homepageSections";
-import { listLatestPigeonShowcase } from "@/lib/pigeonShowcase";
+import { listLatestPigeonShowcase, listPigeonShowcaseByPhotoSource } from "@/lib/pigeonShowcase";
 import { listHomepageNewsCarousel } from "@/lib/news";
 import { excerptHtml } from "@/lib/htmlText";
 import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
-import { currencyForLocale, formatDualPrice, formatNtd } from "@/lib/currency";
+import { currencyForLocale, formatDualPrice } from "@/lib/currency";
 import { getLatestStoredRate } from "@/lib/exchangeRates";
 import { cachedQuery } from "@/lib/cache";
 import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
@@ -17,12 +17,10 @@ import {
   QUICK_CLOSE_WINDOW_HOURS,
   filterByListingType,
   selectEndingSoonAuctions,
-  selectNewestFixedPrice,
   selectQuickCloseAuctions,
 } from "@/lib/homepageListings";
 import { Link } from "@/i18n/navigation";
 import HeroSection from "../components/HeroSection";
-import HomeListingRow from "../components/HomeListingRow";
 import HomeProductCard from "../components/HomeProductCard";
 import PartnerLoftImage from "../components/PartnerLoftImage";
 import PigeonShowcaseCarouselCard from "../components/PigeonShowcaseCarouselCard";
@@ -39,12 +37,11 @@ export const dynamic = "force-dynamic";
 const EAGER_COUNTS = { balanced: 1, aggressive: 2 } as const;
 
 const ENDING_SOON_LIMIT = 5;
-const QUICK_DEALS_LIMIT = 3;
 const NEW_ARRIVALS_LIMIT = 8;
-const FIXED_PRICE_SECTION_LIMIT = 6;
+const SANFONG_PIGEONS_LIMIT = 6;
 // 世界名鴿介紹專區 (issue #307, replacing the old "熱門成交排行" section) —
 // caps the homepage grid at 6 cards, same cap convention as
-// FIXED_PRICE_SECTION_LIMIT above.
+// SANFONG_PIGEONS_LIMIT above.
 const WORLD_FAMOUS_PIGEONS_LIMIT = 6;
 
 // Homepage-specific alternates (issue #107 items 6-7) — deliberately not
@@ -235,11 +232,10 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   // Every curated section below is a named rule in lib/homepageListings.ts
   // (issue #139 item 3) — see there for what each ordering means and why.
   const endingSoonAuctions = selectEndingSoonAuctions(listings, ENDING_SOON_LIMIT);
-  const quickDeals = listings.slice(0, QUICK_DEALS_LIMIT);
   const newArrivals = listings.slice(0, NEW_ARRIVALS_LIMIT);
-  // Independent "定價種鴿" homepage section (issue #36) — renders nothing
-  // when there are none (see JSX below).
-  const fixedPriceListings = selectNewestFixedPrice(listings, FIXED_PRICE_SECTION_LIMIT);
+  const sanfongShowcaseItems = await cachedQuery("home:pigeonShowcase:sanfong", 20, () =>
+    listPigeonShowcaseByPhotoSource("三豐攝影", SANFONG_PIGEONS_LIMIT),
+  );
 
   // "分類瀏覽" 卡片：維持「依商品狀態／熱度」瀏覽入口的定位（不是合作鴿舍
   // 那套 CMS 分類系統），但每張卡片都改成對 listings 真實計算
@@ -522,101 +518,61 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         )}
       </section>
 
+      {/* 三豐攝影名鴿特輯專區 */}
       <section className="mx-auto mt-8 max-w-7xl px-4 sm:px-6">
         <div className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-rose-600">{t("dailyPicksEyebrow")}</p>
-              <h3 className="mt-1 text-xl font-black text-ink">{t("dailyPicksTitle")}</h3>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-600">{t("sanfongSectionEyebrow")}</p>
+              <h3 className="mt-1 text-xl font-black text-ink">{t("sanfongSectionTitle")}</h3>
             </div>
-            <Link href="/listings" className="text-sm font-semibold text-interactive-primary hover:text-header">
-              {t("viewAll")} →
+            <Link href="/pigeon-showcase" className="text-sm font-semibold text-interactive-primary hover:text-header">
+              {t("sanfongSectionCta")} →
             </Link>
           </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-            {quickDeals.map((item, index) => (
-              <HomeListingRow
-                key={`deal-${item.id}`}
-                id={item.id}
-                title={item.title}
-                imageSrc={photoUrlFor(item)}
-                hasPhoto={Boolean(item.photos[0])}
-                eager={index === 0}
-              >
-                <div className="flex items-center gap-1.5">
-                  <span className="shrink-0 rounded bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                    {item.listing_type === "auction" ? t("badgeHotBidding") : t("badgeBestPrice")}
-                  </span>
-                  <p className="truncate text-sm font-bold text-ink">{item.title}</p>
-                </div>
-                <p className="mt-1 text-xs text-ink-light">{item.listing_type === "auction" ? t("statusBidding") : t("statusFixedDeal")}</p>
-                <div className="mt-2 flex items-end gap-2">
-                  <p className="text-base font-black text-ink">
-                    {item.listing_type === "fixed_price" && item.price === null
-                      ? tListings("callForPrice")
-                      : formatDualPrice(
-                          item.listing_type === "auction" ? item.current_price : item.price!,
-                          currencyRates,
-                        )}
-                  </p>
-                  {/* M-15 (issue #139): this struck-through "original price" is
-                      computed as current_price × 1.15, not read from any real
-                      original-price column. Left exactly as-is — whether that
-                      is intentional marketing is a product/legal call, not a
-                      refactoring one. */}
-                  {item.listing_type === "auction" && (
-                    <p className="text-[11px] text-ink-light line-through">
-                      {formatNtd(Math.ceil(Number(item.current_price) * 1.15))}
-                    </p>
-                  )}
-                </div>
-              </HomeListingRow>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {fixedPriceListings.length > 0 && (
-        <section className="mx-auto mt-6 max-w-7xl px-4 sm:px-6">
-          <div className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-600">{t("fixedPriceSectionEyebrow")}</p>
-                <h3 className="mt-1 text-xl font-black text-ink">{t("fixedPriceSectionTitle")}</h3>
-              </div>
-              <Link href="/listings?type=fixed_price" className="text-sm font-semibold text-interactive-primary hover:text-header">
-                {t("fixedPriceSectionCta")} →
-              </Link>
+          {sanfongShowcaseItems.length === 0 ? (
+            <div className="mt-5 flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-slate-50 p-8 text-center">
+              <p className="text-sm font-bold text-ink-light">{t("sanfongSectionEmptyTitle")}</p>
+              <p className="mt-1 max-w-md text-xs text-ink-light">{t("sanfongSectionEmptyDesc")}</p>
             </div>
-
+          ) : (
             <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-              {fixedPriceListings.map((item, index) => (
-                <HomeListingRow
-                  key={`fixed-price-${item.id}`}
-                  id={item.id}
-                  title={item.title}
-                  imageSrc={photoUrlFor(item)}
-                  hasPhoto={Boolean(item.photos[0])}
-                  eager={index === 0}
+              {sanfongShowcaseItems.map((item, index) => (
+                <Link
+                  key={`sanfong-${item.id}`}
+                  href={`/pigeon-showcase/${item.id}`}
+                  className="group flex items-center gap-3 rounded-xl border border-border bg-slate-50 p-3 transition hover:-translate-y-0.5 hover:border-interactive-primary/50 hover:bg-white"
                 >
-                  <p className="truncate text-sm font-bold text-ink">{item.title}</p>
-                  <p className="mt-1 text-xs text-ink-light">
-                    {item.stock_remaining != null
-                      ? tListings("remainingUnits", { count: item.stock_remaining })
-                      : t("fixedPriceSectionItemLabel")}
-                  </p>
-                  <div className="mt-2 flex items-end gap-2">
-                    <p className="text-base font-black text-ink">
-                      {item.price === null ? tListings("callForPrice") : formatDualPrice(item.price, currencyRates)}
-                    </p>
+                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={item.imageFileName ? pigeonShowcaseImageUrl(item.imageFileName) : "/images/logo.png"}
+                      alt={item.name}
+                      loading={index === 0 ? "eager" : "lazy"}
+                      className="h-full w-full object-contain p-2 transition duration-300"
+                    />
                   </div>
-                </HomeListingRow>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="shrink-0 rounded bg-emerald-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                        三豐攝影
+                      </span>
+                      <p className="truncate text-sm font-bold text-ink">{item.name}</p>
+                    </div>
+                    <p className="mt-1 truncate text-xs text-ink-light">
+                      {item.loftTitle ? `鴿舍：${item.loftTitle}` : "世界名鴿"}
+                    </p>
+                    <div className="mt-2 flex items-center gap-1 text-xs font-semibold text-interactive-primary">
+                      <span>查看名鴿介紹 →</span>
+                    </div>
+                  </div>
+                </Link>
               ))}
             </div>
-          </div>
-        </section>
-      )}
+          )}
+        </div>
+      </section>
 
       <SocialMediaSection items={socialItems} />
 

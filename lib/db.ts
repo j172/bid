@@ -249,7 +249,8 @@ CREATE TABLE IF NOT EXISTS pigeon_showcase (
   id BIGINT NOT NULL AUTO_INCREMENT,
   category ENUM('award','imported','representative') NOT NULL,  -- 'award' 入賞鴿 | 'imported' 進口鴿 | 'representative' 代表種鴿
   name VARCHAR(100) NOT NULL,
-  loft_id BIGINT NOT NULL,
+  loft_id BIGINT NULL,
+  photo_source VARCHAR(100) NULL,
   image_file_name VARCHAR(255) NULL,            -- 主圖 (issue #70); NULL only on pre-#70 rows
   description TEXT NOT NULL,                   -- sanitizeDescriptionHtml'd TinyMCE HTML, 2000-char plain-text cap
   created_at DATETIME NOT NULL,
@@ -837,6 +838,11 @@ async function ensureLineIdAndTermsColumns(db: mysql.Pool): Promise<void> {
   await ensureColumn(db, "users", "terms_accepted_at", "DATETIME NULL");
 }
 
+async function ensurePigeonShowcasePhotoSource(db: mysql.Pool): Promise<void> {
+  await db.query("ALTER TABLE pigeon_showcase MODIFY COLUMN loft_id BIGINT NULL");
+  await ensureColumn(db, "pigeon_showcase", "photo_source", "VARCHAR(100) NULL");
+}
+
 function createPool(): mysql.Pool {
   return mysql.createPool({
     host: process.env.MYSQL_HOST,
@@ -900,6 +906,7 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensureYoutubeUrlColumns(db);
   await ensureProductOrderColumns(db);
   await ensureLineIdAndTermsColumns(db);
+  await ensurePigeonShowcasePhotoSource(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {

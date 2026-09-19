@@ -118,7 +118,7 @@ function uniqueYouTubeItems(items: SocialItem[]): SocialItem[] {
       seen.add(item.id);
       return true;
     })
-    .slice(0, 6);
+    .slice(0, 4);
 }
 
 function fallbackYouTubeItems(): SocialItem[] {
@@ -152,7 +152,7 @@ export async function getSocialMediaFeed(): Promise<SocialItem[]> {
     const youtubeItems = await cachedQuery("socialMedia:youtubeFeed", 600, async () => {
       try {
         const specifiedVideos = await listHomepageVideos({ activeOnly: true });
-        const specifiedItems = specifiedVideos.slice(0, 6).map((v) => ({
+        const specifiedItems = specifiedVideos.slice(0, 4).map((v) => ({
             id: `yt-${v.videoId}`,
             platform: "youtube" as const,
             title: v.title,

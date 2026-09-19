@@ -167,6 +167,16 @@ export default async function SiteFooter() {
                 {t("pigeonGroups")}
               </Link>
             </li>
+            <li>
+              <a
+                href="https://www.facebook.com/3FongPhoto/?locale=zh_TW&utm_source=xiangshuicn.cc&utm_medium=referral&utm_campaign=footer"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-interactive-primary"
+              >
+                {t("sanfongPhoto")}
+              </a>
+            </li>
           </ul>
         </section>
 
