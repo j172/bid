@@ -16,6 +16,10 @@ export async function generateMetadata({
       canonical: canonicalUrl(locale, "/forgot-password"),
       languages: hreflangAlternates("/forgot-password"),
     },
+    robots: {
+      index: false,
+      follow: true,
+    },
   };
 }
 

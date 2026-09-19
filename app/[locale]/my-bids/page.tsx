@@ -1,5 +1,7 @@
+import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { getCurrentUser } from "@/lib/auth";
+import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
 import { currencyForLocale, formatDualPrice } from "@/lib/currency";
 import { getLatestStoredRate } from "@/lib/exchangeRates";
 import { getBidHistoryForUser } from "@/lib/listings";
@@ -7,6 +9,26 @@ import { Link, redirect } from "@/i18n/navigation";
 import StatusBadge from "../components/StatusBadge";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "myBids" });
+  return {
+    title: t("title"),
+    alternates: {
+      canonical: canonicalUrl(locale, "/my-bids"),
+      languages: hreflangAlternates("/my-bids"),
+    },
+    robots: {
+      index: false,
+      follow: true,
+    },
+  };
+}
 
 const th = "border-b border-border px-4 py-3 text-left text-sm font-semibold text-ink-light";
 const td = "border-b border-border px-4 py-3 text-sm";

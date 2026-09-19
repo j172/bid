@@ -1,8 +1,9 @@
 "use client";
 
 import Script from "next/script";
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { usePathname, useRouter } from "@/i18n/navigation";
+import { isInAppBrowser } from "@/lib/inAppBrowser";
 
 interface GoogleOneTapProps {
   clientId?: string | null;
@@ -28,6 +29,7 @@ export default function GoogleOneTap({ clientId, locale }: GoogleOneTapProps) {
   const router = useRouter();
   const pathname = usePathname();
   const initializedRef = useRef(false);
+  const [disabledInApp, setDisabledInApp] = useState(false);
 
   const handleCredentialResponse = useCallback(
     async (response: { credential?: string }) => {
@@ -73,6 +75,10 @@ export default function GoogleOneTap({ clientId, locale }: GoogleOneTapProps) {
     if (!clientId || typeof window === "undefined" || !window.google?.accounts?.id) {
       return;
     }
+    if (isInAppBrowser(window.navigator.userAgent)) {
+      setDisabledInApp(true);
+      return;
+    }
     if (initializedRef.current) return;
     initializedRef.current = true;
 
@@ -87,19 +93,25 @@ export default function GoogleOneTap({ clientId, locale }: GoogleOneTapProps) {
   }, [clientId, handleCredentialResponse]);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && window.google?.accounts?.id) {
-      initGsi();
+    if (typeof window !== "undefined") {
+      if (isInAppBrowser(window.navigator.userAgent)) {
+        setDisabledInApp(true);
+        return;
+      }
+      if (window.google?.accounts?.id) {
+        initGsi();
+      }
     }
   }, [initGsi]);
 
-  if (!clientId) {
+  if (!clientId || disabledInApp) {
     return null;
   }
 
   return (
     <Script
       src={`https://accounts.google.com/gsi/client?hl=${locale}`}
-      strategy="afterInteractive"
+      strategy="lazyOnload"
       onLoad={initGsi}
     />
   );

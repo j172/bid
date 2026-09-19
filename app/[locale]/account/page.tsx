@@ -1,6 +1,8 @@
+import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { getAccountProfile, getCurrentUser } from "@/lib/auth";
 import { redirect } from "@/i18n/navigation";
+import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
 import { listPasskeysForUser } from "@/lib/webauthnCredentials";
 import ChangePasswordForm from "./ChangePasswordForm";
 import PasskeySection from "./PasskeySection";
@@ -9,6 +11,26 @@ import TotpSection from "./TotpSection";
 import TwoFactorSection from "./TwoFactorSection";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "account" });
+  return {
+    title: t("title"),
+    alternates: {
+      canonical: canonicalUrl(locale, "/account"),
+      languages: hreflangAlternates("/account"),
+    },
+    robots: {
+      index: false,
+      follow: true,
+    },
+  };
+}
 
 export default async function AccountPage() {
   const user = await getCurrentUser();
