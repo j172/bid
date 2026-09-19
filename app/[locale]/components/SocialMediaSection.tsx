@@ -371,7 +371,7 @@ export default function SocialMediaSection({ items }: { items: SocialItem[] }) {
         {/* YouTube Video Grid */}
         {showYoutube && youtubeItems.length > 0 && (
           <div className="mt-6">
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {youtubeItems.map((item) => (
                 <article
                   key={item.id}
@@ -419,14 +419,14 @@ export default function SocialMediaSection({ items }: { items: SocialItem[] }) {
                   </div>
 
                   {/* Content body */}
-                  <div className="flex flex-1 flex-col justify-between p-4">
+                  <div className="flex flex-1 flex-col justify-between p-3.5 sm:p-4">
                     <div>
-                      <h3 className="line-clamp-2 text-sm font-bold leading-snug text-ink transition group-hover:text-interactive-primary">
+                      <h3 className="line-clamp-2 text-xs sm:text-sm font-bold leading-snug text-ink transition group-hover:text-interactive-primary">
                         {item.title}
                       </h3>
                     </div>
 
-                    <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3 text-xs text-ink-light">
+                    <div className="mt-2.5 flex items-center justify-between border-t border-border/60 pt-2.5 text-[11px] sm:text-xs text-ink-light">
                       <span>{item.authorName || "翔水賽鴿"}</span>
                       {item.embedUrl ? (
                         <button
