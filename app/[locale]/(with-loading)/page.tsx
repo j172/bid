@@ -17,6 +17,7 @@ import {
   QUICK_CLOSE_WINDOW_HOURS,
   filterByListingType,
   selectEndingSoonAuctions,
+  selectNewArrivals,
   selectQuickCloseAuctions,
 } from "@/lib/homepageListings";
 import { Link } from "@/i18n/navigation";
@@ -232,7 +233,9 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   // Every curated section below is a named rule in lib/homepageListings.ts
   // (issue #139 item 3) — see there for what each ordering means and why.
   const endingSoonAuctions = selectEndingSoonAuctions(listings, ENDING_SOON_LIMIT);
-  const newArrivals = listings.slice(0, NEW_ARRIVALS_LIMIT);
+  // 依 created_at 新到舊排序 (issue #334) — listOpenListings 本身是依 ends_at
+  // 排序給「即將結標」等區塊使用，這裡需要獨立的「最新上架」排序規則。
+  const newArrivals = selectNewArrivals(listings, NEW_ARRIVALS_LIMIT);
   const sanfongShowcaseItems = await cachedQuery("home:pigeonShowcase:sanfong", 20, () =>
     listPigeonShowcaseByPhotoSource("三豐攝影", SANFONG_PIGEONS_LIMIT),
   );
