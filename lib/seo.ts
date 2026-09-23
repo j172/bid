@@ -263,6 +263,47 @@ export function buildWebSiteJsonLd(): Record<string, unknown> {
   };
 }
 
+// The site's real primary navigation destinations — kept as one list so
+// buildSiteNavigationJsonLd below has a single source of truth. Sourced from
+// what's actually linked as top-level navigation, not invented: "/" and
+// "/listings" are in SiteHeader's persistent desktop nav bar; "/pigeon-showcase"
+// is the header's "all categories" dropdown showcase section (both mobile and
+// desktop variants) as well as Key Pages in buildLlmsFullTxt below; "/news",
+// "/faq", and "/contact" are real linked pages (news list, SiteFooter's FAQ
+// link, SiteFooter's/header's contact link) already treated as this site's
+// key pages by buildLlmsFullTxt/buildLlmsTxt above. Legal/footer boilerplate
+// (terms, privacy, refund, gdpr) is deliberately excluded — SiteNavigationElement
+// is for primary navigation, not legal links, matching common Sitelinks practice.
+const PRIMARY_NAVIGATION_LINKS: { name: string; pathname: string }[] = [
+  { name: "首頁", pathname: "/" },
+  { name: "瀏覽鴿子", pathname: "/listings" },
+  { name: "舍內名鴿名鑑", pathname: "/pigeon-showcase" },
+  { name: "最新訊息", pathname: "/news" },
+  { name: "常見問題", pathname: "/faq" },
+  { name: "聯絡我們", pathname: "/contact" },
+];
+
+// Builds schema.org SiteNavigationElement JSON-LD (issue #348, following #337's
+// audit item B-3) — one node per primary navigation link, giving Google a
+// structured, unambiguous list of the site's top-level destinations to draw
+// Sitelinks from. This is a different schema.org mechanism from
+// WebSite.potentialAction/SearchAction (the Sitelinks *Searchbox*, which
+// buildWebSiteJsonLd above deliberately omits because Google retired it in
+// 2024/11) — SiteNavigationElement (Sitelinks themselves) is still supported
+// and simply hadn't been added yet. Locale-aware like canonicalUrl/canonicalListingsUrl
+// above: each link's URL is localized via canonicalUrl so /en and /zh-CN pages
+// emit their own locale-prefixed Sitelink URLs, even though (matching
+// buildWebSiteJsonLd/buildOrganizationJsonLd's existing convention) the name
+// text itself stays the site's canonical Traditional Chinese copy.
+export function buildSiteNavigationJsonLd(locale: string): Record<string, unknown>[] {
+  return PRIMARY_NAVIGATION_LINKS.map((link) => ({
+    "@context": "https://schema.org",
+    "@type": "SiteNavigationElement",
+    name: link.name,
+    url: canonicalUrl(locale, link.pathname),
+  }));
+}
+
 // Builds schema.org Organization JSON-LD for Xiangshui Racing Pigeon Network
 export function buildOrganizationJsonLd(): Record<string, unknown> {
   return {
