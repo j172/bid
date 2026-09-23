@@ -8,7 +8,14 @@ import { generateRayId } from "@/lib/rayId";
 
 // The Ray ID / client IP / timestamp trio shown on both error pages
 // (issue #139 item 14) — app/[locale]/error.tsx and app/global-error.tsx had
-// grown two near-identical ~15-line useEffects.
+// grown two near-identical ~15-line useEffects. app/[locale]/not-found.tsx
+// also uses this (issue #354) for the same reason: it used to call
+// next/headers' headers() directly during server render (fine for a plain
+// Server Component, unlike error.tsx/global-error.tsx which are required to
+// be Client Components) but that forced the entire [locale] route tree
+// dynamic, overriding every other page's `revalidate`. Moving it onto this
+// same client-side hook removes that direct headers() read without changing
+// what's displayed.
 //
 // Deliberately free of any next-intl dependency: global-error.tsx renders
 // *instead of* the root layout, so nothing above it survives, including
@@ -29,16 +36,21 @@ export interface CloudflareErrorMeta {
   timestamp: string | null;
 }
 
-export function useCloudflareErrorMeta(error: Error): CloudflareErrorMeta {
+// `error` is optional: not-found.tsx has no thrown Error to report (a 404 is
+// not an exception) but still wants the same rayId/clientIp/timestamp
+// fetching behavior as the two real error boundaries.
+export function useCloudflareErrorMeta(error?: Error): CloudflareErrorMeta {
   const [rayId, setRayId] = useState<string | null>(null);
   const [clientIp, setClientIp] = useState<string | null>(null);
   const [timestamp, setTimestamp] = useState<string | null>(null);
 
   useEffect(() => {
-    // Logged client-side so the underlying error is still visible during
-    // development / in the browser console — the pages themselves only ever
-    // show the visitor a generic message, never `error.message`.
-    console.error(error);
+    if (error) {
+      // Logged client-side so the underlying error is still visible during
+      // development / in the browser console — the pages themselves only
+      // ever show the visitor a generic message, never `error.message`.
+      console.error(error);
+    }
 
     getRayIdAction()
       .then((id) => setRayId(id))

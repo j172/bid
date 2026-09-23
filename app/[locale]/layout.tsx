@@ -8,9 +8,9 @@ import { routing } from "@/i18n/routing";
 import { SITE_URL } from "@/lib/siteUrl";
 import { absoluteUrl, buildOrganizationJsonLd, buildWebSiteJsonLd } from "@/lib/seo";
 import { safeJsonLdString } from "@/lib/jsonLdScript";
-import { getCurrentUser } from "@/lib/auth";
 import BackToTopButton from "./components/BackToTopButton";
 import CookieConsentBanner from "./components/CookieConsentBanner";
+import CurrentUserProvider from "./components/CurrentUserProvider";
 import GoogleAnalytics from "./components/GoogleAnalytics";
 import GoogleOneTap from "./components/GoogleOneTap";
 import InAppBrowserBanner from "./components/InAppBrowserBanner";
@@ -118,7 +118,6 @@ export default async function LocaleLayout({
 
   const websiteJsonLd = buildWebSiteJsonLd();
   const organizationJsonLd = buildOrganizationJsonLd();
-  const user = await getCurrentUser();
 
   return (
     <html lang={locale}>
@@ -140,24 +139,31 @@ export default async function LocaleLayout({
       </head>
       <body className="min-h-screen font-sans text-ink">
         <NextIntlClientProvider>
-          <InAppBrowserBanner />
-          {!user && (
+          {/* Issue #354: auth state (used here to gate GoogleOneTap, and by
+              SiteHeader for its account/login UI) used to come from a
+              server-side getCurrentUser() call in this layout, which read
+              cookies() and forced the entire [locale] route tree dynamic.
+              CurrentUserProvider fetches it client-side once instead, so no
+              page under this layout needs a dynamic API read just for auth
+              UI. */}
+          <CurrentUserProvider>
+            <InAppBrowserBanner />
             <GoogleOneTap
               clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
               locale={locale}
             />
-          )}
-          <GoogleAnalytics />
-          <MicrosoftClarity />
-          <Suspense fallback={null}>
-            <WebVitalsReporter />
-          </Suspense>
-          <SiteHeader />
-          {children}
-          <SiteFooter />
-          <CookieConsentBanner />
-          <LineContactButton />
-          <BackToTopButton />
+            <GoogleAnalytics />
+            <MicrosoftClarity />
+            <Suspense fallback={null}>
+              <WebVitalsReporter />
+            </Suspense>
+            <SiteHeader />
+            {children}
+            <SiteFooter />
+            <CookieConsentBanner />
+            <LineContactButton />
+            <BackToTopButton />
+          </CurrentUserProvider>
         </NextIntlClientProvider>
       </body>
     </html>

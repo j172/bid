@@ -1,29 +1,35 @@
-import { headers } from "next/headers";
-import { getLocale, getTranslations } from "next-intl/server";
+"use client";
+
+import { useLocale, useTranslations } from "next-intl";
 import { routing } from "@/i18n/routing";
-import { getClientIpFromHeaders } from "@/lib/clientIp";
-import { formatUtcTimestamp } from "@/lib/formatUtcTimestamp";
-import { resolveRayId } from "@/lib/rayId";
+import { useCloudflareErrorMeta } from "@/lib/useCloudflareErrorMeta";
 import CloudflareErrorPage from "../components/CloudflareErrorPage";
 
 // Rendered whenever a route under [locale] doesn't match anything, or a
-// page explicitly calls next/navigation's notFound(). This is a plain
-// (async) Server Component — it's nested inside app/[locale]/layout.tsx's
-// already-rendered <NextIntlClientProvider>, and that layout already called
-// setRequestLocale(locale) for this request, so getLocale()/getTranslations()
-// resolve the current locale here without needing params. See
-// app/components/CloudflareErrorPage.tsx for the shared visual shell,
-// issue #65 for why this deliberately looks like a Cloudflare error page
-// instead of using the site's own brand colors, and issue #127 for how
-// rayId below can now be a real, verified Cloudflare Ray ID.
-export default async function NotFound() {
-  const locale = await getLocale();
-  const t = await getTranslations("errorPage");
+// page explicitly calls next/navigation's notFound(). It's nested inside
+// app/[locale]/layout.tsx's already-rendered <NextIntlClientProvider>, so
+// useLocale()/useTranslations() resolve the current locale here without
+// needing params — same reasoning as app/[locale]/error.tsx.
+//
+// Issue #354: this used to be a plain async Server Component that called
+// next/headers' headers() directly to derive rayId/clientIp. That's a
+// Next.js "dynamic API" — even though only this not-found boundary used it,
+// its presence forced the *entire* [locale] route tree to render dynamically
+// on every request, silently overriding every other page's own
+// `revalidate`/static output (verified empirically: with this call removed,
+// pages with no dynamic API of their own started prerendering as static/ISR
+// again). It's now a Client Component using the same
+// useCloudflareErrorMeta() hook error.tsx/global-error.tsx already use for
+// exactly this constraint — rayId/clientIp are fetched once after mount via
+// Server Actions (lib/actions/getRayId.ts, lib/actions/getClientIp.ts)
+// instead of being read during the server render pass. See that hook's
+// comment for why the values are filled in post-mount rather than awaited
+// here (hydration-mismatch avoidance).
+export default function NotFound() {
+  const locale = useLocale();
+  const t = useTranslations("errorPage");
+  const { rayId, clientIp, timestamp } = useCloudflareErrorMeta();
 
-  const headersList = await headers();
-  const clientIp = getClientIpFromHeaders(headersList);
-  const rayId = resolveRayId(headersList);
-  const timestamp = formatUtcTimestamp(new Date());
   const homeHref = locale === routing.defaultLocale ? "/" : `/${locale}`;
 
   return (
@@ -42,9 +48,9 @@ export default async function NotFound() {
       whatCanIDoTitle={t("labels.whatCanIDoTitle")}
       whatCanIDo={t("notFound.whatCanIDo")}
       rayIdLabel={t("labels.rayId")}
-      rayId={rayId}
+      rayId={rayId ?? "…"}
       timestampLabel={t("labels.timestamp")}
-      timestamp={timestamp}
+      timestamp={timestamp ?? "…"}
       yourIpLabel={t("labels.yourIp")}
       clientIp={clientIp}
       ipUnknownText={t("labels.ipUnknown")}
