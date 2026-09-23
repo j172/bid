@@ -1,15 +1,10 @@
 import type { Metadata } from "next";
-import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import { getTranslations } from "next-intl/server";
 import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
 import { listPigeonShops } from "@/lib/pigeonShops";
 import PigeonShopsExplorer from "./PigeonShopsExplorer";
 
-// Issue #346: 鴿店地圖目錄 — per the comment below, one-time-imported
-// contact data (nicepigeon.com import script), same days/weeks update
-// cadence as the 取鴿站 directory above, so the same 1-hour ISR window
-// applies.
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -36,14 +31,6 @@ export async function generateMetadata({
 // Leaflet/OpenStreetMap map shape (see that issue's "不合併成同一個地圖
 // 目錄頁" decision).
 export default async function PigeonShopsPage() {
-  // Issue #346 follow-up — same NEXT_PHASE build guard as the homepage and
-  // app/sitemap.ts (#347): CI's `next build` has no DB access, and
-  // `revalidate` above makes Next eagerly prerender this route per locale
-  // at build time. ISR regenerates the real directory on first real request.
-  if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) {
-    return <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6" />;
-  }
-
   const t = await getTranslations("pigeonShopsPage");
   const shops = await listPigeonShops();
 

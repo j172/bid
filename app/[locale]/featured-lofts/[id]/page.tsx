@@ -26,12 +26,7 @@ import ProductCard from "../../components/ProductCard";
 import ContentCardGrid from "../../components/ContentCardGrid";
 import RichTextContent from "../../components/RichTextContent";
 
-// Issue #346: 名家專區 article page — admin-curated content (homepage_
-// sections('featured_loft'), issue #314), edited occasionally through the
-// admin UI. The embedded listings/showcase sections below refresh with the
-// same window; visitors needing live bid state click through to the actual
-// listing detail page, which stays force-dynamic.
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 // The 名家專區 blog-style article page (issue #314 — reverts issue #270's
 // "card links straight to /listings?loft=<id>" shortcut). `id` here is the

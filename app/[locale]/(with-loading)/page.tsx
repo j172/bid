@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import { getLocale, getTranslations } from "next-intl/server";
 import { listOpenListings } from "@/lib/listings";
 import { listingPhotoUrl, homepageSectionImageUrl, pigeonShowcaseImageUrl, newsImageUrl, productPhotoUrl } from "@/lib/uploads";
@@ -33,15 +32,7 @@ import ExchangeRateStrip from "../components/ExchangeRateStrip";
 import SocialMediaSection from "../components/SocialMediaSection";
 import { getSocialMediaFeed } from "@/lib/socialMedia";
 
-// Issue #346: curated promotional homepage, not the live-bidding page itself
-// (that's /listings/[id]) — every section here already sits behind an
-// in-memory 20s TTL cache at the data layer (lib/cache.ts's cachedQuery, see
-// the many `cachedQuery("home:...", 20, ...)` calls below, issue #189).
-// ISR just caches the *rendered HTML* on top of that existing data cache,
-// cutting TTFB further; 60s keeps the homepage visibly fresh (roughly 3x the
-// underlying data TTL) without forcing full Node SSR + a DB round trip on
-// every single visit/crawl.
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 /** Number of hero/grid images that load eagerly, per perf mode. */
 const EAGER_COUNTS = { balanced: 1, aggressive: 2 } as const;
@@ -86,18 +77,6 @@ function perfModeFromSearchParams(params: SearchParams): "balanced" | "aggressiv
 }
 
 export default async function HomePage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  // Issue #346 follow-up (same pattern as app/sitemap.ts's #347 fix):
-  // `revalidate` above makes Next eagerly try to prerender this route during
-  // `next build`, but this repo's CI build step
-  // (.github/workflows/deploy-ftps.yml) runs on a GitHub Actions runner with
-  // no access to the production DB. Returning a minimal shell during the
-  // build phase means `next build` never needs any of the DB-backed
-  // sections below; ISR regenerates the real homepage with live data on the
-  // first real production request within `revalidate` seconds of deploy.
-  if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) {
-    return <main className="pb-8" />;
-  }
-
   const params = await searchParams;
   const perfMode = perfModeFromSearchParams(params);
   const t = await getTranslations("home");

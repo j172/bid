@@ -18,10 +18,7 @@ import { buildLoftShowcaseUrl } from "@/lib/loftStorefront";
 import DetailWithSidebar from "../../../components/DetailWithSidebar";
 import RichTextContent from "../../../components/RichTextContent";
 
-// Issue #346: 名鴿展示詳情 — same admin-curated, no-live-data reasoning as
-// the list page above; an individual entry is effectively static once
-// published.
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,

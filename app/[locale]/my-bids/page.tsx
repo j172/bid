@@ -8,9 +8,6 @@ import { getBidHistoryForUser } from "@/lib/listings";
 import { Link, redirect } from "@/i18n/navigation";
 import StatusBadge from "../components/StatusBadge";
 
-// Issue #346: kept force-dynamic — per-user bid history
-// (getCurrentUser()-gated, redirect() when logged out), same personalized-
-// data reasoning as /account. Not eligible for ISR.
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({

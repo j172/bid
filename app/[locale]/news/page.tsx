@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import { getTranslations } from "next-intl/server";
 import { DEFAULT_NEWS_PAGE_SIZE, NEWS_PAGE_SIZES, isNewsPageSize, listNews } from "@/lib/news";
 import { newsImageUrl } from "@/lib/uploads";
@@ -10,11 +9,7 @@ import { buildQuery, firstParam, type SearchParams } from "@/lib/searchParams";
 import ContentCardGrid from "../components/ContentCardGrid";
 import PaginationFooter from "../components/PaginationFooter";
 
-// Issue #346: 最新訊息列表 — new posts land a few times a day (manual
-// announcements + herbots.be import), not second-by-second, so a short ISR
-// window trades a couple minutes of staleness for skipping full Node SSR +
-// DB query on every visitor/crawler hit.
-export const revalidate = 120;
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -41,14 +36,6 @@ const QUERY_KEYS = ["search", "pageSize", "page"] as const;
 // app/[locale]/pigeon-showcase/page.tsx (issue #139 item 8); the search form
 // is this page's own, since that list filters by category tabs instead.
 export default async function NewsListPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  // Issue #346 follow-up — same NEXT_PHASE build guard as the homepage and
-  // app/sitemap.ts (#347): CI's `next build` has no DB access, and
-  // `revalidate` above makes Next eagerly prerender this route per locale
-  // at build time. ISR regenerates the real list on first real request.
-  if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) {
-    return <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6" />;
-  }
-
   const params = await searchParams;
   const t = await getTranslations("news");
 

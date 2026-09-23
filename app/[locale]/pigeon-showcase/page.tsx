@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import { getTranslations } from "next-intl/server";
 import {
   DEFAULT_PIGEON_SHOWCASE_PAGE_SIZE,
@@ -18,11 +17,7 @@ import { Link } from "@/i18n/navigation";
 import ContentCardGrid from "../components/ContentCardGrid";
 import PaginationFooter from "../components/PaginationFooter";
 
-// Issue #346: 名鴿展示列表 — admin-curated pigeon_showcase entries (入賞鴿/
-// 進口鴿/代表種鴿/世界名鴿), only added/edited through the admin CRUD, no
-// live/session-specific data. Longer ISR window than news since this content
-// changes even less often.
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -70,14 +65,6 @@ const CATEGORY_LOFT_TITLE_KEY: Record<
 // Shares its card grid and pagination footer with app/[locale]/news/page.tsx
 // (issue #139 item 8); the category tabs are this page's own.
 export default async function PigeonShowcaseListPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  // Issue #346 follow-up — same NEXT_PHASE build guard as the homepage and
-  // app/sitemap.ts (#347): CI's `next build` has no DB access, and
-  // `revalidate` above makes Next eagerly prerender this route per locale
-  // at build time. ISR regenerates the real list on first real request.
-  if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) {
-    return <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6" />;
-  }
-
   const params = await searchParams;
   const t = await getTranslations("pigeonShowcase");
 

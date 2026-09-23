@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import { getLocale, getTranslations } from "next-intl/server";
 import { listProducts } from "@/lib/products";
 import { productPhotoUrl } from "@/lib/uploads";
@@ -11,12 +10,7 @@ import { paginate } from "@/lib/pagination";
 import ProductGridCard from "../components/ProductGridCard";
 import PaginationFooter from "../components/PaginationFooter";
 
-// Issue #346: small admin-curated catalog grid (see the PRODUCT_PAGE_SIZES
-// comment below — listProducts({ activeOnly: true }) has no DB-level
-// pagination of its own, unlike listings/news), only changed by the admin
-// CRUD at app/z04urru6/products/. Stock/price aren't shown on this list (only
-// on the detail page's purchase form), so a longer ISR window is safe here.
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 // Same excerpt length as the homepage carousel (issue #295) — keep the
 // catalog grid's snippet consistent with the carousel card it's modeled on.
@@ -62,14 +56,6 @@ export async function generateMetadata({
 // Deliberately minimal per the issue: no filtering, search, or sort-order
 // toggle, just the grid + required pagination.
 export default async function ProductsListPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  // Issue #346 follow-up — same NEXT_PHASE build guard as the homepage and
-  // app/sitemap.ts (#347): CI's `next build` has no DB access, and
-  // `revalidate` above makes Next eagerly prerender this route per locale
-  // at build time. ISR regenerates the real catalog on first real request.
-  if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) {
-    return <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6" />;
-  }
-
   const params = await searchParams;
   const locale = await getLocale();
   const t = await getTranslations("productsList");
