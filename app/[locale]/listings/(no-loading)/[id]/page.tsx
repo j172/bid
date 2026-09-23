@@ -434,11 +434,11 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
       <ListingDetailTabs
         descriptionLabel={t("descriptionTab")}
-        additionalLabel={t("additionalTab")}
-        activityLabel={t("activityTab")}
+        additionalLabel={isFixedPrice ? t("additionalTabGeneral") : t("additionalTab")}
+        activityLabel={isFixedPrice ? t("activityTabGeneral") : t("activityTab")}
         descriptionTitle={t("descriptionHeading")}
-        additionalTitle={t("additionalHeading")}
-        activityTitle={t("activityHeading")}
+        additionalTitle={isFixedPrice ? t("additionalHeadingGeneral") : t("additionalHeading")}
+        activityTitle={isFixedPrice ? t("activityHeadingGeneral") : t("activityHeading")}
         description={listing.description}
         youtubeUrl={listing.youtube_url}
         listingTitle={listing.title}
