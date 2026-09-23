@@ -1,16 +1,21 @@
 import { getLocale, getTranslations } from "next-intl/server";
-import { getCurrentUser } from "@/lib/auth";
 import { Link } from "@/i18n/navigation";
-import NextLink from "next/link";
 import Image from "next/image";
 import LanguageSwitcher from "./LanguageSwitcher";
-import LogoutButton from "./LogoutButton";
 import CategoryDropdown, { type PartnerLoftSummary } from "./CategoryDropdown";
 import { listHomepageSections } from "@/lib/homepageSections";
+import { HeaderMobileAuthLinks, HeaderDesktopAuthActions, HeaderBottomAuthLinks } from "./HeaderAuthLinks";
 
+// Issue #354: this component used to call getCurrentUser() directly (a
+// cookies() read) to decide logged-in/out UI, which forced the entire
+// [locale] route tree dynamic regardless of any child page's `revalidate`.
+// The auth-dependent fragments now live in client components
+// (./HeaderAuthLinks) that read auth state from CurrentUserProvider's
+// client-side /api/auth/me fetch instead — see that provider's comment for
+// the full rationale. SiteHeader itself stays a plain server component with
+// no dynamic API reads of its own.
 export default async function SiteHeader() {
   const locale = await getLocale();
-  const user = await getCurrentUser();
   const t = await getTranslations("nav");
   const searchAction = locale === "zh-TW" ? "/listings" : `/${locale}/listings`;
   let partnerLofts: PartnerLoftSummary[] = [];
@@ -123,26 +128,7 @@ export default async function SiteHeader() {
               <Link href="/contact" className="rounded-md px-3 py-2 hover:bg-slate-100">
                 {t("contact")}
               </Link>
-              {user && (
-                <Link href="/my-bids" className="rounded-md px-3 py-2 hover:bg-slate-100">
-                  {t("myBids")}
-                </Link>
-              )}
-              {user?.role === "admin" && (
-                <NextLink href="/z04urru6" className="rounded-md px-3 py-2 hover:bg-slate-100">
-                  {t("admin")}
-                </NextLink>
-              )}
-              {!user && (
-                <>
-                  <Link href="/login" className="rounded-md px-3 py-2 hover:bg-slate-100">
-                    {t("login")}
-                  </Link>
-                  <Link href="/register" className="rounded-md px-3 py-2 hover:bg-slate-100">
-                    {t("register")}
-                  </Link>
-                </>
-              )}
+              <HeaderMobileAuthLinks />
             </nav>
           </div>
         </details>
@@ -188,23 +174,7 @@ export default async function SiteHeader() {
             <span aria-hidden>🛒</span>
           </Link>
 
-          {user ? (
-            <>
-              <Link href="/account" className="hidden max-w-44 truncate rounded-md border border-border px-3 py-2 text-sm font-medium hover:border-interactive-primary sm:inline">
-                {user.email}
-              </Link>
-              <LogoutButton />
-            </>
-          ) : (
-            <>
-              <Link href="/login" className="rounded-md border border-border px-3 py-2 text-sm font-medium hover:border-interactive-primary">
-                {t("login")}
-              </Link>
-              <Link href="/register" className="rounded-md bg-header px-3 py-2 text-sm font-semibold text-white hover:bg-header-soft">
-                {t("register")}
-              </Link>
-            </>
-          )}
+          <HeaderDesktopAuthActions />
         </div>
       </div>
 
@@ -223,16 +193,7 @@ export default async function SiteHeader() {
             <Link href="/contact" className="font-medium hover:text-interactive-primary">
               {t("contact")}
             </Link>
-            {user && (
-              <Link href="/my-bids" className="font-medium hover:text-interactive-primary">
-                {t("myBids")}
-              </Link>
-            )}
-            {user?.role === "admin" && (
-              <NextLink href="/z04urru6" className="font-medium hover:text-interactive-primary">
-                {t("admin")}
-              </NextLink>
-            )}
+            <HeaderBottomAuthLinks />
           </nav>
         </div>
       </div>

@@ -4,6 +4,7 @@ import Script from "next/script";
 import { useEffect, useRef, useCallback, useState } from "react";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { isInAppBrowser } from "@/lib/inAppBrowser";
+import { useCurrentUser } from "./CurrentUserProvider";
 
 interface GoogleOneTapProps {
   clientId?: string | null;
@@ -30,6 +31,16 @@ export default function GoogleOneTap({ clientId, locale }: GoogleOneTapProps) {
   const pathname = usePathname();
   const initializedRef = useRef(false);
   const [disabledInApp, setDisabledInApp] = useState(false);
+  // Issue #354: this component used to be conditionally rendered by
+  // app/[locale]/layout.tsx based on a server-side getCurrentUser() call
+  // (`{!user && <GoogleOneTap ... />}`), which read cookies() and forced the
+  // whole [locale] route tree dynamic. layout.tsx now always renders this
+  // component and it decides its own visibility from the shared client-side
+  // auth state instead — see CurrentUserProvider. While that state is still
+  // loading, treat it as "unknown" and don't render the prompt yet, rather
+  // than assuming logged-out and briefly showing Google's One Tap prompt to
+  // an already-authenticated visitor.
+  const { user, loading } = useCurrentUser();
 
   const handleCredentialResponse = useCallback(
     async (response: { credential?: string }) => {
@@ -75,6 +86,12 @@ export default function GoogleOneTap({ clientId, locale }: GoogleOneTapProps) {
     if (!clientId || typeof window === "undefined" || !window.google?.accounts?.id) {
       return;
     }
+    // Defence in depth alongside the `loading || user` render guard below:
+    // never initialize/prompt for a visitor we already know is signed in,
+    // or before we know either way.
+    if (loading || user) {
+      return;
+    }
     if (isInAppBrowser(window.navigator.userAgent)) {
       setDisabledInApp(true);
       return;
@@ -90,7 +107,7 @@ export default function GoogleOneTap({ clientId, locale }: GoogleOneTapProps) {
     });
 
     window.google.accounts.id.prompt();
-  }, [clientId, handleCredentialResponse]);
+  }, [clientId, handleCredentialResponse, loading, user]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -104,7 +121,7 @@ export default function GoogleOneTap({ clientId, locale }: GoogleOneTapProps) {
     }
   }, [initGsi]);
 
-  if (!clientId || disabledInApp) {
+  if (!clientId || disabledInApp || loading || user) {
     return null;
   }
 
