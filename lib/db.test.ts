@@ -6,7 +6,7 @@
 // { query } stand-in rather than going through getDb()/vi.mock("@/lib/db")
 // like the rest of this project's DB-touching tests do — there is no
 // module to mock here, this *is* the module under test.
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ensureEmailVerificationColumns,
   ensureGoogleAuthColumns,
@@ -19,6 +19,76 @@ import {
 function fakePool(queryImpl: (sql: string, params?: unknown[]) => unknown) {
   return { query: vi.fn(queryImpl) } as unknown as Parameters<typeof ensureEmailVerificationColumns>[0];
 }
+
+// getDb() caches its pool and its in-flight schema-init promise in
+// module-level `pool`/`ready` variables (see lib/db.ts), so — like
+// lib/scheduler.test.ts's `started` flag — each test here needs a fresh
+// module instance via vi.resetModules() + a fresh dynamic import. mysql2 is
+// mocked so ensureSchema's DDL/information_schema checks run against a
+// stub `query` this suite controls directly, rather than a real connection.
+const { queryMock, createPoolMock } = vi.hoisted(() => ({
+  queryMock: vi.fn(),
+  createPoolMock: vi.fn(),
+}));
+
+vi.mock("mysql2/promise", () => ({
+  default: { createPool: createPoolMock },
+}));
+
+describe("getDb", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    queryMock.mockReset();
+    createPoolMock.mockReset();
+    createPoolMock.mockReturnValue({ query: queryMock });
+  });
+
+  it("retries ensureSchema on the next call after a failed attempt, instead of permanently caching the rejection (issue #345)", async () => {
+    let calls = 0;
+    queryMock.mockImplementation(async () => {
+      calls += 1;
+      if (calls === 1) {
+        // Simulate a transient failure on the very first query of the
+        // first ensureSchema() attempt (e.g. a cold-start connection drop).
+        throw new Error("ECONNREFUSED");
+      }
+      return [[{ cnt: 1 }]];
+    });
+
+    const { getDb } = await import("./db");
+
+    await expect(getDb()).rejects.toThrow("ECONNREFUSED");
+    // Without the reset-on-failure fix, this second call would just replay
+    // the same cached rejection forever instead of retrying.
+    await expect(getDb()).resolves.toBeDefined();
+
+    // The pool itself is reused across both attempts (createPool runs
+    // once) — only the cached schema-init promise gets reset and retried.
+    expect(createPoolMock).toHaveBeenCalledTimes(1);
+    expect(calls).toBeGreaterThan(1);
+  });
+
+  it("still shares a single ensureSchema run across concurrent callers on a successful init", async () => {
+    queryMock.mockResolvedValue([[{ cnt: 1 }]]);
+
+    const { getDb } = await import("./db");
+
+    const [a, b, c] = await Promise.all([getDb(), getDb(), getDb()]);
+
+    expect(a).toBe(b);
+    expect(b).toBe(c);
+    // Concurrent callers during a successful init share one in-flight
+    // ensureSchema()/createPool() run rather than each starting their own.
+    expect(createPoolMock).toHaveBeenCalledTimes(1);
+
+    const callsAfterInit = queryMock.mock.calls.length;
+    await getDb();
+
+    // Once ensureSchema has already succeeded, `ready` stays cached — a
+    // later call must not re-run the schema DDL/checks again.
+    expect(queryMock.mock.calls.length).toBe(callsAfterInit);
+  });
+});
 
 describe("ensureEmailVerificationColumns", () => {
   it("adds the column and backfills every existing user to verified when the column is missing", async () => {
