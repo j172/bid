@@ -1339,7 +1339,8 @@
     "pageInfo": "Page {page} of {totalPages} ({total} total)"
   },
   "lineContact": {
-    "ariaLabel": "Contact us on LINE"
+    "ariaLabel": "Contact us on LINE",
+    "qrCodeAlt": "LINE add-friend QR code"
   },
   "backToTop": {
     "ariaLabel": "Back to top"

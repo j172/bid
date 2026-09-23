@@ -540,7 +540,7 @@
     "helpSupportTitle": "客服与支持",
     "supportPhone": "客服热线：(+886) 0909-256-829",
     "supportEmail": "service@xiangshuicn.cc",
-    "supportLine": "LINE 客服：{phone}（点击复制）",
+    "supportLine": "LINE 客服：加好友",
     "accountTitle": "账户",
     "loginRegister": "登录 / 注册",
     "accountSettings": "账户设置",
@@ -1343,8 +1343,7 @@
   },
   "lineContact": {
     "ariaLabel": "通过 LINE 联系客服",
-    "instruction": "请于 LINE App 内搜索此电话号码加好友",
-    "copied": "电话号码已复制！"
+    "qrCodeAlt": "LINE 加好友 QR code"
   },
   "backToTop": {
     "ariaLabel": "回到顶部"
