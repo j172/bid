@@ -19,7 +19,10 @@ import DetailWithSidebar from "../../../components/DetailWithSidebar";
 import RichTextContent from "../../../components/RichTextContent";
 import GooglePreferenceButton from "../../../components/GooglePreferenceButton";
 
-export const dynamic = "force-dynamic";
+// Issue #346: 最新訊息詳情 — an individual article is essentially immutable
+// once published (no logged-in-only content, no getCurrentUser() call), same
+// "hours" update cadence as the list page above.
+export const revalidate = 120;
 
 export async function generateMetadata({
   params,

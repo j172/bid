@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
+import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import { getTranslations } from "next-intl/server";
 import { listPigeonStations } from "@/lib/pigeonStations";
 import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
 import PigeonStationsExplorer from "./PigeonStationsExplorer";
 
-export const dynamic = "force-dynamic";
+// Issue #346: 取鴿站地圖目錄 — per the comment below, this was one-time
+// seeded by an import script and is only maintained afterward through the
+// admin CRUD, so it moves on a days/weeks cadence at most. A 1-hour ISR
+// window is plenty fresh for reference/contact data like this.
+export const revalidate = 3600;
 
 export async function generateMetadata({
   params,
@@ -28,6 +33,14 @@ export async function generateMetadata({
 // seeded once by scripts/import-pigeon-stations.mjs and maintained
 // thereafter through the admin CRUD at app/z04urru6/pigeon-stations.
 export default async function PigeonStationsPage() {
+  // Issue #346 follow-up — same NEXT_PHASE build guard as the homepage and
+  // app/sitemap.ts (#347): CI's `next build` has no DB access, and
+  // `revalidate` above makes Next eagerly prerender this route per locale
+  // at build time. ISR regenerates the real directory on first real request.
+  if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) {
+    return <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6" />;
+  }
+
   const t = await getTranslations("pigeonStations");
   const stations = await listPigeonStations();
   const sourceUrl = stations.find((station) => station.sourceUrl)?.sourceUrl;

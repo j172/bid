@@ -37,6 +37,16 @@ import ListingGallery from "./ListingGallery";
 import LiveListingStatus from "./LiveListingStatus";
 import PurchaseForm from "./PurchaseForm";
 
+// Issue #346: kept force-dynamic, for two independent reasons. (1) Technical:
+// this page calls getCurrentUser() (line below), which reads cookies() to
+// resolve the logged-in bidder for BidForm/BuyNowButton/PurchaseForm — a
+// Next.js dynamic API, so the route is forced to per-request rendering
+// regardless of any `revalidate` value; setting one here would be a no-op.
+// (2) Risk: even setting that aside, a just-placed bid or just-closed
+// auction needs an accurate first SSR paint — useListingCountdown
+// (lib/useListingCountdown.ts) only starts polling /api/listings/[id]/status
+// client-side every 4s AFTER hydration, so a stale ISR snapshot could
+// briefly show a stale price/status before the first poll lands.
 export const dynamic = "force-dynamic";
 
 // Per-listing <title>/<meta description> (issue #107 item 1) — built from

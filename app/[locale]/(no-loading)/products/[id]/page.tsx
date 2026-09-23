@@ -21,6 +21,13 @@ import YoutubeEmbed from "@/app/[locale]/components/YoutubeEmbed";
 import ProductGallery from "./ProductGallery";
 import PurchaseForm from "./PurchaseForm";
 
+// Issue #346: kept force-dynamic — this page calls getCurrentUser() (line
+// below) to resolve the logged-in buyer for PurchaseForm's login-gated
+// checkout flow, which reads cookies(), a Next.js dynamic API. That forces
+// per-request rendering regardless of any `revalidate` value (setting one
+// would be a no-op), and it also means stock_remaining is read fresh on
+// every view right before a purchase — the same login/stock-accuracy
+// concern that keeps the listing detail page dynamic.
 export const dynamic = "force-dynamic";
 
 // activeOnly: true (issue #277's acceptance criteria: "下架商品不會出現在
