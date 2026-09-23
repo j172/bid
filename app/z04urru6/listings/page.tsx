@@ -23,7 +23,7 @@ export default async function AdminOpenListingsPage({ searchParams }: { searchPa
 
   const search = parseFirstParam(params.search) ?? "";
   const type = parseFirstParam(params.type) as ListOpenListingsForAdminOptions["type"] | undefined;
-  const sort = (parseFirstParam(params.sort) as ListOpenListingsForAdminOptions["sort"] | undefined) ?? "ends_asc";
+  const sort = (parseFirstParam(params.sort) as ListOpenListingsForAdminOptions["sort"] | undefined) ?? "created_desc";
   const requestedPage = parsePageParam(params.page);
 
   const { listings, total } = await getOpenListingsForAdmin({ search, type, sort, page: requestedPage });
