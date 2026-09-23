@@ -1,3 +1,4 @@
+import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
@@ -18,14 +19,21 @@ export default async function SiteHeader() {
   const locale = await getLocale();
   const t = await getTranslations("nav");
   const searchAction = locale === "zh-TW" ? "/listings" : `/${locale}/listings`;
+  // Issue #346 follow-up — same NEXT_PHASE build guard as ExchangeRateStrip
+  // above and app/sitemap.ts (#347): this header renders on every public
+  // page, so `next build`'s trial-render for each route hits this DB call
+  // with no DB in CI. Already had a try/catch fallback, but skipping the
+  // attempt outright during the build phase avoids the wasted round trip.
   let partnerLofts: PartnerLoftSummary[] = [];
-  try {
-    const rawLofts = await listHomepageSections("partner_loft");
-    partnerLofts = rawLofts
-      .filter((loft) => loft.isActive)
-      .map((loft) => ({ id: loft.id, title: loft.title }));
-  } catch {
-    partnerLofts = [];
+  if (process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD) {
+    try {
+      const rawLofts = await listHomepageSections("partner_loft");
+      partnerLofts = rawLofts
+        .filter((loft) => loft.isActive)
+        .map((loft) => ({ id: loft.id, title: loft.title }));
+    } catch {
+      partnerLofts = [];
+    }
   }
 
   return (

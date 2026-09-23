@@ -1,3 +1,4 @@
+import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import { getTranslations } from "next-intl/server";
 import { getAllLatestStoredRates } from "@/lib/exchangeRates";
 
@@ -26,7 +27,19 @@ interface ExchangeRateStripProps {
 }
 
 export default async function ExchangeRateStrip({ className }: ExchangeRateStripProps = {}) {
-  const [t, rates] = await Promise.all([getTranslations("footer"), getAllLatestStoredRates()]);
+  // Issue #346 follow-up (same NEXT_PHASE pattern as app/sitemap.ts's #347
+  // fix): this component is rendered on every single public page (via
+  // SiteFooter, plus directly on the homepage), so during `next build` Next
+  // trial-renders it to decide whether each route can be prerendered — which
+  // hit this DB call with no DB available in CI, every single time. Skipping
+  // it during the build phase keeps `next build` clean; real rates load
+  // normally for every actual request.
+  const [t, rates] = await Promise.all([
+    getTranslations("footer"),
+    process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD
+      ? Promise.resolve({ USD: null, CNY: null, EUR: null })
+      : getAllLatestStoredRates(),
+  ]);
 
   return (
     <section

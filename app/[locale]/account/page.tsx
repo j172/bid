@@ -10,6 +10,11 @@ import ProfileForm from "./ProfileForm";
 import TotpSection from "./TotpSection";
 import TwoFactorSection from "./TwoFactorSection";
 
+// Issue #346: kept force-dynamic — this page is entirely per-user
+// (getCurrentUser()-gated profile/password/2FA/passkey management, plus a
+// redirect() when logged out), so ISR/static caching would leak one user's
+// account page to another. Not eligible for the ISR conversion this ticket
+// applies to the rest of the public site.
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({

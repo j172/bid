@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import { getLocale, getTranslations } from "next-intl/server";
 import { listOpenListings, type ListingType } from "@/lib/listings";
 import { listHomepageSections, getHomepageSectionById } from "@/lib/homepageSections";
@@ -34,7 +35,13 @@ import {
   type LoftActiveTab,
 } from "@/lib/loftStorefront";
 
-export const dynamic = "force-dynamic";
+// Issue #346: browse/filter grid, not the bid page itself — no
+// getCurrentUser()/cookies() dependency here (login is only required on the
+// listing detail page to actually place a bid/purchase), and per-card price
+// staleness is bounded by this short ISR window rather than by any
+// client-side polling on this page. 30s keeps prices/counts close to live
+// while sparing every visitor/crawler hit a full Node SSR + DB round trip.
+export const revalidate = 30;
 
 // Separate from lib/listingCardView.ts's LISTING_DESCRIPTION_SNIPPET_LENGTH
 // (which happens to share the same value) — this one trims the 名家專區
@@ -123,6 +130,14 @@ export async function generateMetadata({
 }
 
 export default async function ListingsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  // Issue #346 follow-up — same NEXT_PHASE build guard as the homepage and
+  // app/sitemap.ts (#347): CI's `next build` has no DB access, and
+  // `revalidate` above makes Next eagerly prerender this route per locale
+  // at build time. ISR regenerates the real grid on first real request.
+  if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) {
+    return <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6" />;
+  }
+
   const params = await searchParams;
   const selectedCategory = firstParam(params.category) as ListingCategory | undefined;
   const minPrice = numberParam(params.minPrice);
