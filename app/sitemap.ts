@@ -1,15 +1,18 @@
 import type { MetadataRoute } from "next";
+import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import { routing } from "@/i18n/routing";
 import { listOpenListings } from "@/lib/listings";
 import { listNewsForSitemap } from "@/lib/news";
 import { listHomepageSections } from "@/lib/homepageSections";
 import { hreflangAlternates, localizedUrls } from "@/lib/seo";
 
-// Dynamic sitemap.xml (issue #107) — DB-backed (open listings change all the
-// time), so this must never be statically frozen at build time. Matches this
-// codebase's existing "force-dynamic" convention for every other DB-backed
-// route (see app/z04urru6/**/page.tsx).
-export const dynamic = "force-dynamic";
+// ISR sitemap.xml (issue #347, revisiting issue #107's force-dynamic) —
+// DB-backed (open listings/news change often), but this only needs to be
+// fresh to within a few minutes, not per-request live: crawlers (Google and
+// every other SEO tool/scanner hitting /sitemap.xml) don't need second-level
+// accuracy, and force-dynamic meant every single hit ran 3 live DB queries
+// with zero caching. 10 minutes balances index freshness against DB load.
+export const revalidate = 600;
 
 // Every locale's URL for one logical page, each carrying the full
 // alternates.languages map so search engines get hreflang cross-references
@@ -53,6 +56,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...localeEntries("/news", { changeFrequency: "daily", priority: 0.5 }),
     ...localeEntries("/pigeon-showcase", { changeFrequency: "weekly", priority: 0.4 }),
   ];
+
+  // Skip the DB-backed sections during `next build`: with revalidate set
+  // (instead of force-dynamic), Next eagerly prerenders this route as part
+  // of the production build (see the bundled Next docs — sitemap routes are
+  // "cached by default unless it uses a Request-time API or dynamic config
+  // option"). This repo's CI build step (.github/workflows/deploy-ftps.yml)
+  // runs on a GitHub Actions runner with no access to the production DB, so
+  // querying here unconditionally would make every build fail. Returning
+  // just the static entries at build time is safe: ISR regenerates this
+  // route with real DB data once it's actually served in production (within
+  // `revalidate` seconds of deploy), which the build phase never does.
+  if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) {
+    return entries;
+  }
 
   // All currently-open/scheduled listings (every listing type, every partner
   // loft) — the actual product pages this whole feature exists to get
