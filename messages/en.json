@@ -260,6 +260,8 @@
     "loginPrompt": "Log in",
     "loginToBuy": " to purchase",
     "loginToBidOrBuy": " to bid or buy it now",
+    "callForPriceNoticeBefore": "This product is call-for-price — please call",
+    "callForPriceNoticeAfter": "to reach the seller for pricing and purchase details.",
     "galleryZoomLabel": "Zoom into {title}",
     "galleryImageLabel": "{title} image {index}",
     "galleryKeyboardHint": "Use ← / → to switch photos",
@@ -1322,8 +1324,7 @@
     "galleryNext": "Next photo",
     "purchaseHeading": "Buy Now",
     "soldOut": "Sold out",
-    "callForPriceNoticeBefore": "This product is call-for-price — please",
-    "callForPriceContactLink": "contact us",
+    "callForPriceNoticeBefore": "This product is call-for-price — please call",
     "callForPriceNoticeAfter": "for pricing and purchase details.",
     "loginPrompt": "Log in",
     "loginToBuy": " to purchase"

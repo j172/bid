@@ -14,6 +14,7 @@ import {
 } from "@/lib/seo";
 import { safeJsonLdString } from "@/lib/jsonLdScript";
 import { formatProductPriceText } from "@/lib/productPriceText";
+import { CALL_FOR_PRICE_PHONE_DISPLAY, CALL_FOR_PRICE_PHONE_HREF } from "@/lib/lineContact";
 import { Link } from "@/i18n/navigation";
 import RichTextContent from "@/app/[locale]/components/RichTextContent";
 import YoutubeEmbed from "@/app/[locale]/components/YoutubeEmbed";
@@ -132,9 +133,9 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
             ) : (
               <p className="mt-6 border-t border-border pt-6 text-sm text-ink-light">
                 {t("callForPriceNoticeBefore")}{" "}
-                <Link href="/contact" className="font-medium text-interactive-primary hover:underline">
-                  {t("callForPriceContactLink")}
-                </Link>{" "}
+                <a href={CALL_FOR_PRICE_PHONE_HREF} className="font-medium text-interactive-primary hover:underline">
+                  {CALL_FOR_PRICE_PHONE_DISPLAY}
+                </a>{" "}
                 {t("callForPriceNoticeAfter")}
               </p>
             )}

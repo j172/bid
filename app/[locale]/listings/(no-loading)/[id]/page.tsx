@@ -20,6 +20,7 @@ import {
   truncateForMetaDescription,
 } from "@/lib/seo";
 import { homepageSectionImageUrl, listingPhotoUrl } from "@/lib/uploads";
+import { CALL_FOR_PRICE_PHONE_DISPLAY, CALL_FOR_PRICE_PHONE_HREF } from "@/lib/lineContact";
 import { getPathname, Link } from "@/i18n/navigation";
 // Absolute imports (rather than relative "../../../components/...") because
 // this page moved into the (no-loading) route group (issue #74) — see that
@@ -390,7 +391,11 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                       </div>
                     ) : (
                       <p className="rounded-xl border border-border bg-surface p-4 text-sm text-ink-light">
-                        {t("callForPriceNotice")}
+                        {t("callForPriceNoticeBefore")}{" "}
+                        <a href={CALL_FOR_PRICE_PHONE_HREF} className="font-medium text-interactive-primary hover:underline">
+                          {CALL_FOR_PRICE_PHONE_DISPLAY}
+                        </a>{" "}
+                        {t("callForPriceNoticeAfter")}
                       </p>
                     )
                   ) : (
