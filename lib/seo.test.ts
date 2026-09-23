@@ -282,7 +282,9 @@ describe("buildOrganizationJsonLd", () => {
     expect(jsonLd.contactPoint).toBeDefined();
     expect(jsonLd.sameAs).toBeInstanceOf(Array);
     expect(jsonLd.sameAs).toContain("https://www.facebook.com/xiang.shui.ge.she/");
-    expect(jsonLd.sameAs).toContain("https://line.me/ti/p/~0909156829");
+    // LINE has no public profile URL to list here (issue #335) — it's a
+    // phone number visitors search for inside the app, not a link.
+    expect((jsonLd.sameAs as string[]).some((url) => url.includes("line.me"))).toBe(false);
   });
 });
 

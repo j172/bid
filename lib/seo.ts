@@ -18,7 +18,6 @@ import { routing } from "@/i18n/routing";
 import { SITE_URL } from "@/lib/siteUrl";
 import { listingPhotoUrl } from "@/lib/uploads";
 import { SOCIAL_LINKS } from "@/lib/socialMediaConstants";
-import { LINE_CONTACT_HREF } from "@/lib/lineContact";
 
 /** Query params that survive canonicalization because they change the actual
  * content set shown (much like a real category page would), as opposed to
@@ -274,11 +273,13 @@ export function buildOrganizationJsonLd(): Record<string, unknown> {
     url: SITE_URL,
     logo: absoluteUrl("/images/logo.png"),
     description: "專業賽鴿拍賣、銘鴿結標與種鴿直購平台",
+    // LINE isn't listed here (issue #335): schema.org `sameAs` expects
+    // profile/URL identifiers, and LINE has no public URL for this contact
+    // (it's a phone number visitors search for inside the app, not a link).
     sameAs: [
       SOCIAL_LINKS.facebook,
       SOCIAL_LINKS.youtube,
       SOCIAL_LINKS.tiktok,
-      LINE_CONTACT_HREF,
     ],
     contactPoint: {
       "@type": "ContactPoint",
