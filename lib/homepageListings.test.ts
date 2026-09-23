@@ -4,6 +4,7 @@ import {
   filterByListingType,
   selectEndingSoonAuctions,
   selectMostActive,
+  selectNewArrivals,
   selectNewestFixedPrice,
   selectQuickCloseAuctions,
   selectTopAuctionsByBids,
@@ -156,6 +157,40 @@ describe("selectNewestFixedPrice", () => {
 
   it("returns an empty list when there are none", () => {
     expect(selectNewestFixedPrice([row({ id: 1 })], 5)).toEqual([]);
+  });
+});
+
+describe("selectNewArrivals", () => {
+  it("orders listings newest created_at first, across both listing types", () => {
+    const rows = [
+      row({ id: 1, created_at: new Date("2026-01-01") }),
+      row({ id: 2, listing_type: "fixed_price", price: 1, created_at: new Date("2026-06-01") }),
+      row({ id: 3, created_at: new Date("2026-03-01") }),
+    ];
+    expect(selectNewArrivals(rows, 5).map((r) => r.id)).toEqual([2, 3, 1]);
+  });
+
+  it("ignores ends_at entirely — a soon-ending but older listing sorts behind a newer one", () => {
+    const rows = [
+      row({ id: 1, created_at: new Date("2026-01-01"), ends_at: hoursFromNow(1) }),
+      row({ id: 2, created_at: new Date("2026-06-01"), ends_at: hoursFromNow(999) }),
+    ];
+    expect(selectNewArrivals(rows, 5).map((r) => r.id)).toEqual([2, 1]);
+  });
+
+  it("respects the limit", () => {
+    const rows = [1, 2, 3, 4].map((id) => row({ id, created_at: new Date(2026, 0, id) }));
+    expect(selectNewArrivals(rows, 2).map((r) => r.id)).toEqual([4, 3]);
+  });
+
+  it("does not mutate the input", () => {
+    const rows = [
+      row({ id: 1, created_at: new Date("2026-01-01") }),
+      row({ id: 2, created_at: new Date("2026-06-01") }),
+    ];
+    const before = rows.map((r) => r.id);
+    selectNewArrivals(rows, 5);
+    expect(rows.map((r) => r.id)).toEqual(before);
   });
 });
 

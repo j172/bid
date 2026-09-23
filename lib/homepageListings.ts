@@ -104,6 +104,20 @@ export function selectNewestFixedPrice<T extends TypedListing & { created_at: Da
 }
 
 /**
+ * "最新上架" homepage section (issue #334): open listings across both types,
+ * newest by `created_at` first. listOpenListings orders its result by
+ * `ends_at` (soonest-ending first) for the "actively biddable" sections that
+ * reuse it directly, so this homepage section needs its own newest-created
+ * ordering rather than slicing that array as-is.
+ */
+export function selectNewArrivals<T extends TypedListing & { created_at: Date }>(
+  listings: readonly T[],
+  limit: number,
+): T[] {
+  return [...listings].sort((a, b) => b.created_at.getTime() - a.created_at.getTime()).slice(0, limit);
+}
+
+/**
  * "快速結標" browse card: open auctions ending inside the window — not every
  * auction, or the count would just duplicate the "拍賣商品" card's.
  */
