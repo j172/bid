@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { routing } from "@/i18n/routing";
 import { SITE_URL } from "@/lib/siteUrl";
-import { absoluteUrl, buildOrganizationJsonLd, buildWebSiteJsonLd } from "@/lib/seo";
+import { absoluteUrl, buildOrganizationJsonLd, buildSiteNavigationJsonLd, buildWebSiteJsonLd } from "@/lib/seo";
 import { safeJsonLdString } from "@/lib/jsonLdScript";
 import BackToTopButton from "./components/BackToTopButton";
 import CookieConsentBanner from "./components/CookieConsentBanner";
@@ -118,6 +118,7 @@ export default async function LocaleLayout({
 
   const websiteJsonLd = buildWebSiteJsonLd();
   const organizationJsonLd = buildOrganizationJsonLd();
+  const siteNavigationJsonLd = buildSiteNavigationJsonLd(locale);
 
   return (
     <html lang={locale}>
@@ -135,6 +136,10 @@ export default async function LocaleLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: safeJsonLdString(organizationJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLdString(siteNavigationJsonLd) }}
         />
       </head>
       <body className="min-h-screen font-sans text-ink">

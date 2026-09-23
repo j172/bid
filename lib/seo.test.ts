@@ -9,6 +9,7 @@ import {
   buildLoftBusinessJsonLd,
   buildNewsArticleJsonLd,
   buildOrganizationJsonLd,
+  buildSiteNavigationJsonLd,
   buildWebSiteJsonLd,
   canonicalListingsUrl,
   canonicalUrl,
@@ -270,6 +271,50 @@ describe("buildWebSiteJsonLd", () => {
     expect(jsonLd["@type"]).toBe("WebSite");
     expect(jsonLd.name).toBe("翔水賽鴿網");
     expect(jsonLd.potentialAction).toBeUndefined();
+  });
+});
+
+describe("buildSiteNavigationJsonLd", () => {
+  it("builds one SiteNavigationElement per primary nav link, with the default locale's unprefixed URLs", () => {
+    const jsonLd = buildSiteNavigationJsonLd("zh-TW");
+    expect(jsonLd.length).toBeGreaterThan(0);
+    for (const item of jsonLd) {
+      expect(item["@context"]).toBe("https://schema.org");
+      expect(item["@type"]).toBe("SiteNavigationElement");
+      expect(typeof item.name).toBe("string");
+      expect(typeof item.url).toBe("string");
+    }
+    expect(jsonLd.map((item) => item.url)).toContain("https://xiangshuicn.cc/");
+    expect(jsonLd.map((item) => item.url)).toContain("https://xiangshuicn.cc/listings");
+  });
+
+  it("locale-prefixes every URL for a non-default locale", () => {
+    const jsonLd = buildSiteNavigationJsonLd("en");
+    for (const item of jsonLd) {
+      expect(item.url).toMatch(/^https:\/\/xiangshuicn\.cc\/en(\/|$)/);
+    }
+    expect(jsonLd.map((item) => item.url)).toContain("https://xiangshuicn.cc/en");
+    expect(jsonLd.map((item) => item.url)).toContain("https://xiangshuicn.cc/en/listings");
+  });
+
+  it("includes the site's real top-level destinations (home, listings, pigeon showcase, news, faq, contact)", () => {
+    const jsonLd = buildSiteNavigationJsonLd("zh-TW");
+    const urls = jsonLd.map((item) => item.url);
+    expect(urls).toContain("https://xiangshuicn.cc/");
+    expect(urls).toContain("https://xiangshuicn.cc/listings");
+    expect(urls).toContain("https://xiangshuicn.cc/pigeon-showcase");
+    expect(urls).toContain("https://xiangshuicn.cc/news");
+    expect(urls).toContain("https://xiangshuicn.cc/faq");
+    expect(urls).toContain("https://xiangshuicn.cc/contact");
+  });
+
+  it("does not include legal/footer boilerplate links (terms, privacy, refund, gdpr)", () => {
+    const jsonLd = buildSiteNavigationJsonLd("zh-TW");
+    const urls = jsonLd.map((item) => item.url);
+    expect(urls).not.toContain("https://xiangshuicn.cc/terms");
+    expect(urls).not.toContain("https://xiangshuicn.cc/privacy");
+    expect(urls).not.toContain("https://xiangshuicn.cc/refund");
+    expect(urls).not.toContain("https://xiangshuicn.cc/gdpr");
   });
 });
 
