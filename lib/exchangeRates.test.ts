@@ -27,9 +27,18 @@ vi.mock("@/lib/db", () => ({
   getDb: async () => ({ query: queryMock }),
 }));
 
-// Only `request` is used by lib/exchangeRates.ts (see its `import { request }
-// from "https"`), so that's all this mock needs to provide.
-vi.mock("https", () => ({ request: requestMock }));
+// lib/exchangeRates.ts itself only calls `request` (see its `import {
+// request } from "https"`), but it goes through lib/httpsRequest.ts's
+// httpsRequest(), which is NOT mocked in this file (unlike
+// lib/translate.test.ts) — it's the real module, and since issue #344 (A-2)
+// it also does `import { Agent, request } from "https"` to build its shared
+// keep-alive Agent at module load time. This mock has to provide both.
+vi.mock("https", () => ({
+  request: requestMock,
+  Agent: vi.fn().mockImplementation(function MockAgent(this: { options: unknown }, options: unknown) {
+    this.options = options;
+  }),
+}));
 
 beforeEach(() => {
   queryMock.mockReset();

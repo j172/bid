@@ -1,3 +1,7 @@
+// issue #344: submitToIndexNow() moved from the global fetch() to
+// httpsRequest() (see lib/httpsRequest.ts for why), so the network layer
+// under test here is @/lib/httpsRequest — mocked the same way
+// lib/translate.test.ts mocks it, rather than spying on globalThis.fetch.
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   DEFAULT_INDEXNOW_KEY,
@@ -6,11 +10,18 @@ import {
   submitToIndexNow,
 } from "./indexnow";
 
+const { httpsRequestMock } = vi.hoisted(() => ({ httpsRequestMock: vi.fn() }));
+
+vi.mock("@/lib/httpsRequest", () => ({
+  httpsRequest: httpsRequestMock,
+}));
+
 describe("lib/indexnow", () => {
   const originalEnv = process.env.INDEXNOW_KEY;
 
   beforeEach(() => {
     delete process.env.INDEXNOW_KEY;
+    httpsRequestMock.mockReset();
   });
 
   afterEach(() => {
@@ -35,20 +46,15 @@ describe("lib/indexnow", () => {
     );
   });
 
-  it("handles empty URL list gracefully without calling fetch", async () => {
-    const fetchSpy = vi.spyOn(globalThis, "fetch");
+  it("handles empty URL list gracefully without calling httpsRequest", async () => {
     const result = await submitToIndexNow([]);
     expect(result.ok).toBe(true);
     expect(result.count).toBe(0);
-    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(httpsRequestMock).not.toHaveBeenCalled();
   });
 
-  it("sends valid IndexNow payload and handles 200/202 responses", async () => {
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
-      status: 200,
-      ok: true,
-      text: async () => "OK",
-    } as Response);
+  it("sends valid IndexNow payload (with an 8s timeout) and handles 200/202 responses", async () => {
+    httpsRequestMock.mockResolvedValueOnce({ status: 200, body: "OK" });
 
     const urls = [
       "https://xiangshuicn.cc/news/1",
@@ -60,12 +66,13 @@ describe("lib/indexnow", () => {
     expect(result.ok).toBe(true);
     expect(result.count).toBe(2);
 
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
-    const [calledUrl, options] = fetchSpy.mock.calls[0];
+    expect(httpsRequestMock).toHaveBeenCalledTimes(1);
+    const [calledUrl, options] = httpsRequestMock.mock.calls[0];
     expect(calledUrl).toBe("https://api.indexnow.org/indexnow");
-    expect(options?.method).toBe("POST");
+    expect(options.method).toBe("POST");
+    expect(options.timeoutMs).toBe(8000);
 
-    const body = JSON.parse(options?.body as string);
+    const body = JSON.parse(options.body as string);
     expect(body.host).toBe("xiangshuicn.cc");
     expect(body.key).toBe(DEFAULT_INDEXNOW_KEY);
     expect(body.keyLocation).toBe(`https://xiangshuicn.cc/${DEFAULT_INDEXNOW_KEY}.txt`);
@@ -76,11 +83,7 @@ describe("lib/indexnow", () => {
   });
 
   it("handles non-200 responses gracefully without throwing", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
-      status: 400,
-      ok: false,
-      text: async () => "Bad Request",
-    } as Response);
+    httpsRequestMock.mockResolvedValueOnce({ status: 400, body: "Bad Request" });
 
     const result = await submitToIndexNow(["https://xiangshuicn.cc/news/1"]);
     expect(result.ok).toBe(false);
@@ -89,7 +92,7 @@ describe("lib/indexnow", () => {
   });
 
   it("handles network failure gracefully without throwing", async () => {
-    vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("Network connection reset"));
+    httpsRequestMock.mockRejectedValueOnce(new Error("Network connection reset"));
 
     const result = await submitToIndexNow(["https://xiangshuicn.cc/news/1"]);
     expect(result.ok).toBe(false);

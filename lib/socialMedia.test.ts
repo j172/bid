@@ -1,3 +1,7 @@
+// issue #344: fetchYouTubeFeed() moved from the global fetch() to
+// httpsRequest() (see lib/httpsRequest.ts for why), so the network layer
+// under test here is @/lib/httpsRequest — mocked the same way
+// lib/translate.test.ts mocks it, rather than spying on globalThis.fetch.
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   parseYouTubeRss,
@@ -6,6 +10,12 @@ import {
   SOCIAL_LINKS,
 } from "./socialMedia";
 import { clearMemoryCache } from "./cache";
+
+const { httpsRequestMock } = vi.hoisted(() => ({ httpsRequestMock: vi.fn() }));
+
+vi.mock("@/lib/httpsRequest", () => ({
+  httpsRequest: httpsRequestMock,
+}));
 
 vi.mock("./homepageVideos", () => ({
   listHomepageVideos: vi.fn().mockResolvedValue([]),
@@ -29,6 +39,7 @@ describe("socialMedia", () => {
   beforeEach(() => {
     clearMemoryCache();
     vi.restoreAllMocks();
+    httpsRequestMock.mockReset();
   });
 
   it("contains correct official social links", () => {
@@ -53,10 +64,7 @@ describe("socialMedia", () => {
       <entry><yt:videoId>video${index}12345</yt:videoId><title>影片 ${index}</title></entry>
     `).join("");
     const duplicate = `<entry><yt:videoId>video012345</yt:videoId><title>重複</title></entry>`;
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({
-      ok: true,
-      text: async () => `<feed>${entries}${duplicate}</feed>`,
-    } as Response);
+    httpsRequestMock.mockResolvedValue({ status: 200, body: `<feed>${entries}${duplicate}</feed>` });
 
     const items = await fetchYouTubeFeed();
 
@@ -64,23 +72,23 @@ describe("socialMedia", () => {
     expect(new Set(items.map((item) => item.id)).size).toBe(4);
   });
 
-  it("falls back to fallback items if fetch fails", async () => {
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Network offline"));
+  it("falls back to fallback items if the request fails, using a 5s timeout", async () => {
+    httpsRequestMock.mockRejectedValueOnce(new Error("Network offline"));
     const items = await fetchYouTubeFeed();
     expect(items.length).toBeGreaterThan(0);
     expect(items.every((i) => i.platform === "youtube")).toBe(true);
-    expect(fetchSpy.mock.calls[0][1]).toEqual(expect.objectContaining({ signal: expect.any(AbortSignal) }));
-    const timeoutSpy = vi.spyOn(AbortSignal, "timeout");
-    fetchSpy.mockRejectedValueOnce(new Error("Network offline"));
-    await fetchYouTubeFeed();
-    expect(timeoutSpy).toHaveBeenCalledWith(5000);
+    expect(httpsRequestMock.mock.calls[0][1]).toEqual(expect.objectContaining({ timeoutMs: 5000 }));
+  });
+
+  it("falls back to fallback items on a non-2xx response", async () => {
+    httpsRequestMock.mockResolvedValueOnce({ status: 500, body: "" });
+    const items = await fetchYouTubeFeed();
+    expect(items.length).toBeGreaterThan(0);
+    expect(items.every((i) => i.platform === "youtube")).toBe(true);
   });
 
   it("getSocialMediaFeed returns combined items including YouTube, Facebook, and TikTok", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({
-      ok: true,
-      text: async () => SAMPLE_RSS,
-    } as Response);
+    httpsRequestMock.mockResolvedValue({ status: 200, body: SAMPLE_RSS });
 
     const feed = await getSocialMediaFeed();
     expect(feed.length).toBeGreaterThanOrEqual(3);
@@ -91,10 +99,7 @@ describe("socialMedia", () => {
   });
 
   it("getSocialMediaFeed prioritizes custom homepage_videos over RSS", async () => {
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
-      ok: true,
-      text: async () => SAMPLE_RSS,
-    } as Response);
+    httpsRequestMock.mockResolvedValue({ status: 200, body: SAMPLE_RSS });
     const { listHomepageVideos } = await import("./homepageVideos");
     vi.mocked(listHomepageVideos).mockResolvedValueOnce([
       {
@@ -114,7 +119,7 @@ describe("socialMedia", () => {
     expect(ytItem?.id).toBe("yt-customVid123");
     expect(ytItem?.title).toBe("後台指定的第一部影片");
     expect(ytItem?.thumbnailUrl).toBe("https://i.ytimg.com/vi/customVid123/hqdefault.jpg");
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(httpsRequestMock).toHaveBeenCalledTimes(1);
     expect(feed.find((i) => i.id === "yt-sample12345")?.platform).toBe("youtube");
     expect(feed.findIndex((i) => i.id === "yt-customVid123")).toBeLessThan(
       feed.findIndex((i) => i.id === "yt-sample12345"),
@@ -122,14 +127,10 @@ describe("socialMedia", () => {
   });
 
   it("does not use fallback videos to pad a successful but short RSS response", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({
-      ok: true,
-      text: async () => SAMPLE_RSS,
-    } as Response);
+    httpsRequestMock.mockResolvedValue({ status: 200, body: SAMPLE_RSS });
 
     const feed = await getSocialMediaFeed();
     const youtubeIds = feed.filter((item) => item.platform === "youtube").map((item) => item.id);
     expect(youtubeIds).toEqual(["yt-sample12345"]);
   });
 });
-

@@ -1,5 +1,6 @@
 import { cachedQuery } from "./cache";
 import { listHomepageVideos } from "./homepageVideos";
+import { httpsRequest } from "@/lib/httpsRequest";
 
 export const SOCIAL_LINKS = {
   facebook: "https://www.facebook.com/xiang.shui.ge.she/",
@@ -125,20 +126,27 @@ function fallbackYouTubeItems(): SocialItem[] {
   return uniqueYouTubeItems(FALLBACK_SOCIAL_ITEMS);
 }
 
+// Deliberately node:https via httpsRequest() instead of the global fetch()
+// — see lib/httpsRequest.ts for why (issue #344 A-1: this used to be one of
+// the two remaining fetch() call sites at risk of the WASM-OOM crash).
+// AbortSignal.timeout(5000) becomes timeoutMs below, node:https's
+// equivalent mechanism. fetch()'s `next: { revalidate: 600 }` Data Cache
+// hint has no node:https equivalent and is dropped here without a
+// replacement — the only caller (getSocialMediaFeed below) already wraps
+// this in its own 600s cachedQuery(), so the cache coverage is unchanged.
 export async function fetchYouTubeFeed(): Promise<SocialItem[]> {
   try {
-    const res = await fetch(YOUTUBE_RSS_URL, {
-      signal: AbortSignal.timeout(5000),
-      next: { revalidate: 600 },
+    const { status, body: xml } = await httpsRequest(YOUTUBE_RSS_URL, {
+      method: "GET",
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
       },
+      timeoutMs: 5000,
     });
-    if (!res.ok) {
-      console.warn(`[socialMedia] YouTube RSS returned status ${res.status}`);
+    if (status < 200 || status >= 300) {
+      console.warn(`[socialMedia] YouTube RSS returned status ${status}`);
       return fallbackYouTubeItems();
     }
-    const xml = await res.text();
     const items = parseYouTubeRss(xml);
     return items.length > 0 ? uniqueYouTubeItems(items) : fallbackYouTubeItems();
   } catch (err) {
