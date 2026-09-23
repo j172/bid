@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
-import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
-import { render, screen, fireEvent, cleanup, waitFor } from "@testing-library/react";
+import { describe, it, expect, afterEach } from "vitest";
+import { render, screen, cleanup } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import messages from "@/messages/zh-TW.json";
 import LineContactButton from "./LineContactButton";
-import { LINE_CONTACT_PHONE } from "@/lib/lineContact";
+import { LINE_CONTACT_HREF } from "@/lib/lineContact";
 
 function renderButton() {
   return render(
@@ -14,59 +14,24 @@ function renderButton() {
   );
 }
 
-let writeText: ReturnType<typeof vi.fn>;
-
-beforeEach(() => {
-  writeText = vi.fn().mockResolvedValue(undefined);
-  Object.defineProperty(navigator, "clipboard", {
-    configurable: true,
-    value: { writeText },
-  });
-});
-
 afterEach(() => {
   cleanup();
-  vi.restoreAllMocks();
 });
 
 describe("LineContactButton", () => {
-  it("renders a button (not a link) with the contact aria-label", () => {
+  it("renders a link (not a button) with the contact aria-label", () => {
     renderButton();
 
-    const button = screen.getByRole("button", { name: messages.lineContact.ariaLabel });
-    expect(button.tagName).toBe("BUTTON");
-    expect(button.getAttribute("href")).toBeNull();
+    const link = screen.getByRole("link", { name: messages.lineContact.ariaLabel });
+    expect(link.tagName).toBe("A");
   });
 
-  it("copies the LINE support phone number to the clipboard on click", async () => {
+  it("links directly to the LINE add-friend URL and opens it in a new tab", () => {
     renderButton();
 
-    fireEvent.click(screen.getByRole("button", { name: messages.lineContact.ariaLabel }));
-
-    await waitFor(() => expect(writeText).toHaveBeenCalledWith(LINE_CONTACT_PHONE));
-  });
-
-  it("shows the phone number and the add-friend instruction after copying", async () => {
-    renderButton();
-
-    fireEvent.click(screen.getByRole("button", { name: messages.lineContact.ariaLabel }));
-
-    expect(await screen.findByText(LINE_CONTACT_PHONE)).toBeTruthy();
-    expect(screen.getByText(messages.lineContact.instruction)).toBeTruthy();
-    expect(screen.getByText(messages.lineContact.copied)).toBeTruthy();
-  });
-
-  it("does not throw when the clipboard API is unavailable", async () => {
-    Object.defineProperty(navigator, "clipboard", {
-      configurable: true,
-      value: undefined,
-    });
-    renderButton();
-
-    expect(() =>
-      fireEvent.click(screen.getByRole("button", { name: messages.lineContact.ariaLabel })),
-    ).not.toThrow();
-
-    expect(await screen.findByText(LINE_CONTACT_PHONE)).toBeTruthy();
+    const link = screen.getByRole("link", { name: messages.lineContact.ariaLabel });
+    expect(link.getAttribute("href")).toBe(LINE_CONTACT_HREF);
+    expect(link.getAttribute("target")).toBe("_blank");
+    expect(link.getAttribute("rel")).toBe("noopener noreferrer");
   });
 });
