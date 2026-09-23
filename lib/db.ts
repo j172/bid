@@ -914,7 +914,18 @@ export async function getDb(): Promise<mysql.Pool> {
     pool = createPool();
   }
   if (!ready) {
-    ready = ensureSchema(pool);
+    // If ensureSchema() rejects (e.g. a transient connection error at cold
+    // start), reset `ready` so the *next* getDb() call retries instead of
+    // replaying this same cached rejection forever — getDb() runs on nearly
+    // every API route, so an un-reset `ready` would permanently wedge the
+    // app until a full process restart. Callers already awaiting this
+    // in-flight promise (concurrent calls sharing it) still see the
+    // rejection normally; only the next call after it settles gets a fresh
+    // attempt.
+    ready = ensureSchema(pool).catch((error) => {
+      ready = undefined;
+      throw error;
+    });
   }
   await ready;
   return pool;
