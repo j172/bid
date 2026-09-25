@@ -11,6 +11,7 @@ interface AuthFormShellProps {
   submittingLabel: string;
   error?: string | null;
   children: ReactNode;
+  headerExtras?: ReactNode;
   footer?: ReactNode;
 }
 
@@ -22,13 +23,15 @@ export default function AuthFormShell({
   submittingLabel,
   error,
   children,
+  headerExtras,
   footer,
 }: AuthFormShellProps) {
   return (
     <main className="mx-auto max-w-md px-4 py-16 sm:px-6">
       <div className="rounded-lg border border-border bg-surface p-8 shadow-sm">
         <h1 className="text-2xl font-bold">{title}</h1>
-        <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4">
+        {headerExtras && <div className="mt-6">{headerExtras}</div>}
+        <form onSubmit={onSubmit} className={headerExtras ? "mt-4 flex flex-col gap-4" : "mt-6 flex flex-col gap-4"}>
           {children}
           {error && <p className="text-sm text-ended">{error}</p>}
           <Button type="submit" disabled={submitting}>

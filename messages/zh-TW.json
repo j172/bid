@@ -374,6 +374,7 @@
     "lineLoginButton": "使用 LINE 帳號登入",
     "lineRegisterButton": "使用 LINE 帳號註冊",
     "orDivider": "或",
+    "orEmailLogin": "或使用電子信箱登入",
     "passkeySubmitting": "驗證中...",
     "passkeyBrowserError": "無法使用通行密鑰登入，請確認裝置支援並再試一次",
     "resendVerificationPrompt": "你的信箱尚未完成驗證。",
@@ -384,6 +385,7 @@
   },
   "register": {
     "title": "註冊",
+    "orEmailRegister": "或填寫資料註冊",
     "email": "Email",
     "password": "密碼（至少 8 個字元）",
     "displayName": "顯示名稱",

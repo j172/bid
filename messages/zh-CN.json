@@ -374,6 +374,7 @@
     "lineLoginButton": "使用 LINE 账号登录",
     "lineRegisterButton": "使用 LINE 账号注册",
     "orDivider": "或",
+    "orEmailLogin": "或使用电子邮箱登录",
     "passkeySubmitting": "验证中...",
     "passkeyBrowserError": "无法使用通行密钥登录，请确认设备支持并再试一次",
     "resendVerificationPrompt": "你的邮箱尚未完成验证。",
@@ -384,6 +385,7 @@
   },
   "register": {
     "title": "注册",
+    "orEmailRegister": "或填写资料注册",
     "email": "Email",
     "password": "密码（至少 8 个字符）",
     "displayName": "显示名称",

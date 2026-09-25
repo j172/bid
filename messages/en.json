@@ -372,6 +372,7 @@
     "lineLoginButton": "Sign in with LINE",
     "lineRegisterButton": "Sign up with LINE",
     "orDivider": "OR",
+    "orEmailLogin": "or sign in with email",
     "passkeySubmitting": "Verifying...",
     "passkeyBrowserError": "Couldn't log in with a passkey — check that your device supports it and try again",
     "resendVerificationPrompt": "Your email address hasn't been verified yet.",
@@ -382,6 +383,7 @@
   },
   "register": {
     "title": "Sign Up",
+    "orEmailRegister": "or register with details",
     "email": "Email",
     "password": "Password (at least 8 characters)",
     "displayName": "Display Name",

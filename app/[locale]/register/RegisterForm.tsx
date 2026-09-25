@@ -73,17 +73,27 @@ export default function RegisterForm({ googleClientId }: RegisterFormProps = {})
       submitLabel={t("submit")}
       submittingLabel={t("submitting")}
       error={error}
-      footer={
+      headerExtras={
         <div className="flex flex-col gap-3">
           <LineSignInButton mode="register" />
           <GoogleSignInButton clientId={googleClientId} />
-          <p className="text-sm text-ink-light">
-            {t("haveAccount")}{" "}
-            <Link href="/login" className="font-medium text-interactive-primary hover:underline">
-              {t("loginLink")}
-            </Link>
-          </p>
+          <div className="relative my-2 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <span className="relative bg-surface px-3 text-xs text-ink-light">
+              {t("orEmailRegister")}
+            </span>
+          </div>
         </div>
+      }
+      footer={
+        <p className="mt-4 text-sm text-ink-light">
+          {t("haveAccount")}{" "}
+          <Link href="/login" className="font-medium text-interactive-primary hover:underline">
+            {t("loginLink")}
+          </Link>
+        </p>
       }
     >
       <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
