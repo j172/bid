@@ -369,6 +369,8 @@
     "passkeyDivider": "or",
     "passkeyLoginButton": "Sign in with a passkey",
     "googleSignIn": "Sign in with Google",
+    "lineLoginButton": "Sign in with LINE",
+    "lineRegisterButton": "Sign up with LINE",
     "orDivider": "OR",
     "passkeySubmitting": "Verifying...",
     "passkeyBrowserError": "Couldn't log in with a passkey — check that your device supports it and try again",
@@ -436,7 +438,18 @@
     "passkeyTitle": "Passkeys",
     "passkeyDescription": "Add a passkey to log in with your device's biometrics or PIN instead of typing your password.",
     "deleteTitle": "Delete Account",
-    "deleteWarning": "You can't delete your account while leading any open listing, or while holding a won item the admin hasn't yet marked as settled."
+    "deleteWarning": "You can't delete your account while leading any open listing, or while holding a won item the admin hasn't yet marked as settled.",
+    "lineSectionTitle": "LINE Account Linking",
+    "lineLinkedBadge": "Linked",
+    "lineLinkedDescription": "Your LINE account is linked. You can sign in quickly using LINE.",
+    "lineUnlinkedDescription": "Not linked with LINE. Link your account for quick sign-in.",
+    "linkLineButton": "Link LINE Account",
+    "unlinkLineButton": "Unlink LINE Account",
+    "unlinkConfirmPrompt": "Are you sure you want to unlink your LINE account?",
+    "confirmUnlinkButton": "Confirm Unlink",
+    "cancelButton": "Cancel",
+    "unlinkingSubmitting": "Unlinking...",
+    "defaultError": "Operation failed, please try again later"
   },
   "profileForm": {
     "displayName": "Display Name",
@@ -717,6 +730,11 @@
     "PROFILE_INCOMPLETE": "Please complete your phone number and shipping address in account settings before bidding or purchasing",
     "GOOGLE_AUTH_FAILED": "Google authentication failed. Please try again later",
     "PASSWORD_ALREADY_SET": "A password has already been set for this account. Please use the change password function",
+    "LINE_AUTH_FAILED": "LINE authentication failed or was cancelled",
+    "LINE_NOT_CONFIGURED": "LINE login is not configured on this server",
+    "LINE_ALREADY_LINKED": "This LINE account is already linked to another user",
+    "LINE_ONBOARD_EXPIRED": "LINE authorization session expired, please try again",
+    "CANNOT_UNLINK_ONLY_LOGIN_METHOD": "Cannot unlink: this is your only login method. Please set a password or link another method first",
     "PRODUCT_NOT_ACTIVE": "This product is currently unavailable",
     "PRODUCT_CALL_FOR_PRICE": "This product is call-for-price and can't be ordered online — please contact the seller directly"
   },
@@ -1382,5 +1400,22 @@
     "copyLink": "Copy Link",
     "copied": "Link Copied!",
     "dismiss": "Dismiss"
+  },
+  "lineRegister": {
+    "pageTitle": "Complete LINE Registration",
+    "title": "Complete Your Profile",
+    "subtitle": "Please verify your details and accept auction terms to finish registering",
+    "defaultError": "Registration failed, please check your details or try again",
+    "expiredTitle": "LINE session expired",
+    "expiredDescription": "Your onboarding session has expired (15 minutes). Please return to login and try again.",
+    "retryButton": "Back to Login",
+    "submitting": "Registering...",
+    "submitButton": "Complete Registration",
+    "linkingNotice": "An account with email {email} already exists. To securely link your LINE account, please enter your existing password:",
+    "accountPassword": "Password",
+    "passwordPlaceholder": "Enter your existing account password",
+    "linkingButton": "Verify Password & Link LINE",
+    "linkingSubmitting": "Verifying...",
+    "backToNewUser": "Use a different email"
   }
 }
