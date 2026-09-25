@@ -152,6 +152,22 @@
     "trustTitle": "Real listings, real bidding activity",
     "trustDesc": "Every ranking, bid count, and sold figure on this page reflects live listing data — not static placeholder numbers.",
     "trustCta": "Browse All Listings",
+    "appPurposeEyebrow": "Platform Services & Application Information",
+    "appPurposeTitle": "About Xiangshui Racing Pigeon Network & Application Services",
+    "appPurposeBadgePublic": "Public Access · No Login Required to Browse",
+    "appPurposeBadgeSecure": "Secure Google Sign-In · Bidding & Orders Only",
+    "appPurposeIntro": "Xiangshui Racing Pigeon Network is an online marketplace for racing pigeon auctions and quality breeding stock. All visitors can openly browse all auction listings, starting prices, live bid history, pedigree showcases, and news without registering or signing in. Google Sign-In is optionally provided only when placing bids or managing orders.",
+    "appPurposeFeature1Title": "Browse Freely Without Login",
+    "appPurposeFeature1Desc": "Auction listings, starting prices, real-time bid history, ending countdowns, pigeon pedigrees, and partner loft profiles are fully public and accessible without login or payment.",
+    "appPurposeFeature2Title": "Live Auctions & Proxy Bidding",
+    "appPurposeFeature2Desc": "Transparent English auction format supporting live bidding, automated proxy bidding, and instant buy-it-now with real-time server-side price and stock validation.",
+    "appPurposeFeature3Title": "Purpose of Google Sign-In",
+    "appPurposeFeature3Desc": "Google Sign-In is used solely for secure authentication when you wish to place bids, receive auction outcome notifications, or manage orders. We only request basic profile info (name, email address, profile picture) and never access sensitive private data.",
+    "appPurposeFeature4Title": "Privacy & Data Protection",
+    "appPurposeFeature4Desc": "We adhere to privacy standards and the Google API Services User Data Policy (including Limited Use requirements). We never sell or transfer personal data to third parties, and all traffic is secured with SSL/TLS encryption.",
+    "appPurposePrivacyLink": "View Privacy Policy",
+    "appPurposeTermsLink": "View Terms of Service",
+    "appPurposeFooterNote": "Xiangshui Racing Pigeon Network · Google OAuth 2.0 adheres to the Google API Services User Data Policy",
     "metaDescription": "Xiangshui Racing Pigeon Network: an online marketplace for racing pigeon auctions and fixed-price breeding stock, with real-time bidding, auto bidding, and buy-it-now — trusted by pigeon fanciers."
   },
   "listings": {
@@ -910,13 +926,20 @@
         ]
       },
       {
-        "title": "10. Changes to this policy",
+        "title": "10. Google Sign-In & API Services User Data Policy (Limited Use Disclosure)",
+        "paragraphs": [
+          "Our site supports Google OAuth 2.0 / Google One Tap for seamless authentication. When you choose to sign in with Google, we only request basic profile information (including your name, email address, and profile picture) strictly for verifying your identity, creating your member account, verifying email ownership, and delivering auction bidding or order notifications.",
+          "Xiangshui Racing Pigeon Network's use and transfer to any other app of information received from Google APIs will adhere to the Google API Services User Data Policy, including the Limited Use requirements. We never use your Google user data for advertising, nor do we sell, rent, or transfer it to third parties or use it for AI model training. All authentication requests are processed over secure encrypted connections."
+        ]
+      },
+      {
+        "title": "11. Changes to this policy",
         "paragraphs": [
           "We may revise this policy as the law or the service changes. Revisions are published on this page with an updated \"last updated\" date. For material changes we will also notify you by email or an on-site notice."
         ]
       },
       {
-        "title": "11. Contact us",
+        "title": "12. Contact us",
         "paragraphs": [
           "If you have any question about this policy or how we handle personal data:"
         ],

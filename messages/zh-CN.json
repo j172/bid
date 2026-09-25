@@ -152,6 +152,22 @@
     "trustTitle": "依真实成交资料掌握热门鸽况",
     "trustDesc": "首页的热门排行、出价次数与成交件数，皆直接反映目前上架中的真实商品资料，而非预先写死的展示数字。",
     "trustCta": "查看全部商品",
+    "appPurposeEyebrow": "平台服务与应用程序说明",
+    "appPurposeTitle": "关于翔水赛鸽网与应用程序服务",
+    "appPurposeBadgePublic": "全站公开 · 无需登录即可浏览",
+    "appPurposeBadgeSecure": "Google 安全登录 · 仅限出价与订单",
+    "appPurposeIntro": "翔水赛鸽网（Xiangshui Racing Pigeon Network）为专业赛鸽在线竞标与优质种鸽交易平台。所有访客无需注册或登录，即可公开查阅全站拍品、起拍价、实时出价记录、血统名鉴与最新资讯。仅在您需要参与出价竞标、设置自动出价或下单购买时，提供 Google 账号安全登录服务。",
+    "appPurposeFeature1Title": "免登录公开浏览",
+    "appPurposeFeature1Desc": "全站拍品、起拍底价、出价记录、结标倒计时、名鸽血统名鉴与名家鸽舍介绍完全公开，任何人均可自由查阅，无需事先登录或付费。",
+    "appPurposeFeature2Title": "专业实时竞标与自动出价",
+    "appPurposeFeature2Desc": "采用公平公开的英式竞标机制，支持实时出价、代理自动出价与一键买断。拍品价格与库存状态由服务器实时验证，保障交易透明。",
+    "appPurposeFeature3Title": "Google 账号登录用途",
+    "appPurposeFeature3Desc": "Google 登录仅用于验证会员身份，方便您在出价竞标时记录出价身份、接收结标通知与管理个人订单。本站仅索取基本公开资料（姓名、Email 与头像），绝不存取任何敏感隐私权限。",
+    "appPurposeFeature4Title": "隐私权与安全承诺",
+    "appPurposeFeature4Desc": "本站严格遵守隐私法规与 Google API 服务用户数据政策（Limited Use 规范），绝不向第三方出租或转售个人资料，全站通讯均以 SSL/TLS 高强度加密保护。",
+    "appPurposePrivacyLink": "查看隐私政策",
+    "appPurposeTermsLink": "查看服务条款",
+    "appPurposeFooterNote": "翔水赛鸽网 (Xiangshui Racing Pigeon Network) · Google OAuth 2.0 登录机制遵循 Google API 服务用户数据政策",
     "metaDescription": "翔水赛鸽网：优质赛鸽与种鸽的线上竞标与定价交易平台，支持实时出价、自动出价与一键买断，安全可靠、鸽友信赖之选。"
   },
   "listings": {
@@ -912,13 +928,20 @@
         ]
       },
       {
-        "title": "10. 政策更新",
+        "title": "10. Google 账号登录与 API 用户数据政策（Limited Use 声明）",
+        "paragraphs": [
+          "本站提供 Google OAuth 2.0 / Google One Tap 快速登录功能。当您选择使用 Google 账号登录本站时，本站仅会读取您的基本公开资料（包含姓名、电子邮件地址及个人头像），目的仅限于识别会员身份、建立个人账号、确认电子邮件所有权以及发送竞标出价或交易相关通知。",
+          "翔水赛鸽网对自 Google API 取得之任何数据的使用与转移至其他应用程序，均严格遵守 Google API 服务用户数据政策（Google API Services User Data Policy），包含其限定使用（Limited Use）要求。我们绝不会将您的 Google 用户数据用于投放广告、向第三方转售、出租或用于模型训练，所有通讯均在安全加密通道下进行验证与处理。"
+        ]
+      },
+      {
+        "title": "11. 政策更新",
         "paragraphs": [
           "本政策可能因法律法规或服务调整而修改。修改后将于本页公告并更新「最后更新日期」；涉及重大变更时，我们会以电子邮件或站内通知另行告知。"
         ]
       },
       {
-        "title": "11. 联系我们",
+        "title": "12. 联系我们",
         "paragraphs": [
           "对本政策或个人资料处理有任何疑问，欢迎联系："
         ],

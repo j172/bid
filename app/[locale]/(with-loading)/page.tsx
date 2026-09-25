@@ -626,6 +626,84 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </div>
       </section>
 
+      {/* 平台服務與應用程式說明（Google 品牌與服務驗證透明度揭露） */}
+      <section id="about-platform" className="mx-auto mt-10 max-w-7xl px-4 sm:px-6">
+        <div className="rounded-2xl border border-border bg-gradient-to-b from-white to-slate-50 p-6 shadow-sm sm:p-8">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-interactive-primary">
+                {t("appPurposeEyebrow")}
+              </p>
+              <h2 className="mt-1 text-2xl font-black text-ink sm:text-3xl">
+                {t("appPurposeTitle")}
+              </h2>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
+                {t("appPurposeBadgePublic")}
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-800">
+                <span className="h-2 w-2 rounded-full bg-sky-500" aria-hidden="true" />
+                {t("appPurposeBadgeSecure")}
+              </span>
+            </div>
+          </div>
+
+          <p className="mt-4 max-w-4xl text-sm leading-relaxed text-ink-light sm:text-base">
+            {t("appPurposeIntro")}
+          </p>
+
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-border bg-white p-4 shadow-xs">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-steel-azure-50 text-xl" aria-hidden="true">
+                🌐
+              </div>
+              <h3 className="mt-3 text-sm font-bold text-ink">{t("appPurposeFeature1Title")}</h3>
+              <p className="mt-1 text-xs leading-5 text-ink-light">{t("appPurposeFeature1Desc")}</p>
+            </div>
+
+            <div className="rounded-xl border border-border bg-white p-4 shadow-xs">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-steel-azure-50 text-xl" aria-hidden="true">
+                ⚖️
+              </div>
+              <h3 className="mt-3 text-sm font-bold text-ink">{t("appPurposeFeature2Title")}</h3>
+              <p className="mt-1 text-xs leading-5 text-ink-light">{t("appPurposeFeature2Desc")}</p>
+            </div>
+
+            <div className="rounded-xl border border-border bg-white p-4 shadow-xs">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-steel-azure-50 text-xl" aria-hidden="true">
+                🔑
+              </div>
+              <h3 className="mt-3 text-sm font-bold text-ink">{t("appPurposeFeature3Title")}</h3>
+              <p className="mt-1 text-xs leading-5 text-ink-light">{t("appPurposeFeature3Desc")}</p>
+            </div>
+
+            <div className="rounded-xl border border-border bg-white p-4 shadow-xs">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-steel-azure-50 text-xl" aria-hidden="true">
+                🛡️
+              </div>
+              <h3 className="mt-3 text-sm font-bold text-ink">{t("appPurposeFeature4Title")}</h3>
+              <p className="mt-1 text-xs leading-5 text-ink-light">{t("appPurposeFeature4Desc")}</p>
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4">
+            <div className="flex flex-wrap items-center gap-4 text-xs font-semibold">
+              <Link href="/privacy" className="text-interactive-primary hover:underline">
+                {t("appPurposePrivacyLink")} →
+              </Link>
+              <Link href="/terms" className="text-interactive-primary hover:underline">
+                {t("appPurposeTermsLink")} →
+              </Link>
+            </div>
+            <p className="text-xs text-ink-light">
+              {t("appPurposeFooterNote")}
+            </p>
+          </div>
+        </div>
+      </section>
+
       <section className="mx-auto mt-10 max-w-7xl px-4 sm:px-6">
         <div className="rounded-2xl border border-border bg-white px-4 py-3 shadow-sm">
           <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
