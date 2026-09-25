@@ -10,7 +10,11 @@ import GoogleSignInButton from "../components/GoogleSignInButton";
 import LineSignInButton from "../components/LineSignInButton";
 import PasswordStrengthMeter from "@/app/components/PasswordStrengthMeter";
 
-export default function RegisterForm() {
+interface RegisterFormProps {
+  googleClientId?: string | null;
+}
+
+export default function RegisterForm({ googleClientId }: RegisterFormProps = {}) {
   const locale = useLocale();
   const t = useTranslations("register");
   const [email, setEmail] = useState("");
@@ -72,7 +76,7 @@ export default function RegisterForm() {
       footer={
         <div className="flex flex-col gap-3">
           <LineSignInButton mode="register" />
-          <GoogleSignInButton />
+          <GoogleSignInButton clientId={googleClientId} />
           <p className="text-sm text-ink-light">
             {t("haveAccount")}{" "}
             <Link href="/login" className="font-medium text-interactive-primary hover:underline">
