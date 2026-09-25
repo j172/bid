@@ -7,9 +7,14 @@ import { inputClass } from "@/lib/formStyles";
 import { usePostJson } from "@/lib/usePostJson";
 import AuthFormShell from "../components/AuthFormShell";
 import GoogleSignInButton from "../components/GoogleSignInButton";
+import LineSignInButton from "../components/LineSignInButton";
 import PasswordStrengthMeter from "@/app/components/PasswordStrengthMeter";
 
-export default function RegisterForm() {
+interface RegisterFormProps {
+  googleClientId?: string | null;
+}
+
+export default function RegisterForm({ googleClientId }: RegisterFormProps = {}) {
   const locale = useLocale();
   const t = useTranslations("register");
   const [email, setEmail] = useState("");
@@ -68,16 +73,27 @@ export default function RegisterForm() {
       submitLabel={t("submit")}
       submittingLabel={t("submitting")}
       error={error}
-      footer={
+      headerExtras={
         <div className="flex flex-col gap-3">
-          <GoogleSignInButton />
-          <p className="text-sm text-ink-light">
-            {t("haveAccount")}{" "}
-            <Link href="/login" className="font-medium text-interactive-primary hover:underline">
-              {t("loginLink")}
-            </Link>
-          </p>
+          <LineSignInButton mode="register" />
+          <GoogleSignInButton clientId={googleClientId} />
+          <div className="relative my-2 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <span className="relative bg-surface px-3 text-xs text-ink-light">
+              {t("orEmailRegister")}
+            </span>
+          </div>
         </div>
+      }
+      footer={
+        <p className="mt-4 text-sm text-ink-light">
+          {t("haveAccount")}{" "}
+          <Link href="/login" className="font-medium text-interactive-primary hover:underline">
+            {t("loginLink")}
+          </Link>
+        </p>
       }
     >
       <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">

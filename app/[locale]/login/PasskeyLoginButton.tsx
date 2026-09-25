@@ -16,8 +16,15 @@ type AuthenticationOptions = Parameters<typeof startAuthentication>[0]["optionsJ
 // for this site. A successful verify goes straight home — it never touches
 // the Email OTP or TOTP steps, since passkey login already calls
 // createSession server-side on its own (see
-// app/api/auth/webauthn/login-verify/route.ts).
-export default function PasskeyLoginButton() {
+interface PasskeyLoginButtonProps {
+  hideDivider?: boolean;
+  className?: string;
+}
+
+export default function PasskeyLoginButton({
+  hideDivider = false,
+  className = "",
+}: PasskeyLoginButtonProps = {}) {
   const router = useRouter();
   const t = useTranslations("login");
   const [running, setRunning] = useState(false);
@@ -47,16 +54,18 @@ export default function PasskeyLoginButton() {
 
   return (
     <>
-      <div className="flex items-center gap-3 text-xs text-ink-light">
-        <span className="h-px flex-1 bg-border" />
-        {t("passkeyDivider")}
-        <span className="h-px flex-1 bg-border" />
-      </div>
+      {!hideDivider && (
+        <div className="flex items-center gap-3 text-xs text-ink-light">
+          <span className="h-px flex-1 bg-border" />
+          {t("passkeyDivider")}
+          <span className="h-px flex-1 bg-border" />
+        </div>
+      )}
       <button
         type="button"
         onClick={handlePasskeyLogin}
         disabled={running}
-        className="w-full rounded-md border border-border px-4 py-2 font-medium text-ink hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
+        className={`w-full rounded-md border border-border px-4 py-2 font-medium text-ink hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       >
         {running ? t("passkeySubmitting") : t("passkeyLoginButton")}
       </button>

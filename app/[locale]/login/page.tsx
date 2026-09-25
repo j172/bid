@@ -34,6 +34,13 @@ export async function generateMetadata({
 // app/[locale]/contact/page.tsx.
 export default function LoginPage() {
   const turnstileSiteKey = process.env.CLOUDFLARE_TURNSTILE_SITE_KEY ?? null;
+  const googleClientId =
+    process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || null;
 
-  return <LoginForm turnstileSiteKey={turnstileSiteKey} />;
+  return (
+    <LoginForm
+      turnstileSiteKey={turnstileSiteKey}
+      googleClientId={googleClientId}
+    />
+  );
 }
