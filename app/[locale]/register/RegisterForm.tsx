@@ -7,6 +7,7 @@ import { inputClass } from "@/lib/formStyles";
 import { usePostJson } from "@/lib/usePostJson";
 import AuthFormShell from "../components/AuthFormShell";
 import GoogleSignInButton from "../components/GoogleSignInButton";
+import LineSignInButton from "../components/LineSignInButton";
 import PasswordStrengthMeter from "@/app/components/PasswordStrengthMeter";
 
 export default function RegisterForm() {
@@ -70,6 +71,7 @@ export default function RegisterForm() {
       error={error}
       footer={
         <div className="flex flex-col gap-3">
+          <LineSignInButton mode="register" />
           <GoogleSignInButton />
           <p className="text-sm text-ink-light">
             {t("haveAccount")}{" "}

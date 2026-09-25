@@ -8,6 +8,7 @@ import { inputClass } from "@/lib/formStyles";
 import { usePostJson } from "@/lib/usePostJson";
 import AuthFormShell from "../components/AuthFormShell";
 import GoogleSignInButton from "../components/GoogleSignInButton";
+import LineSignInButton from "../components/LineSignInButton";
 import EmailOtpStep from "./EmailOtpStep";
 import PasskeyLoginButton from "./PasskeyLoginButton";
 import TotpStep from "./TotpStep";
@@ -199,6 +200,7 @@ export default function LoginForm({ turnstileSiteKey }: LoginFormProps) {
             </div>
           )}
           <div className="flex flex-col gap-3">
+            <LineSignInButton mode="login" />
             <GoogleSignInButton
               onTwoFactorRequired={(data) => {
                 if (data.twoFactorMethod === "email_otp") {
