@@ -152,6 +152,22 @@
     "trustTitle": "依真實成交資料掌握熱門鴿況",
     "trustDesc": "首頁的熱門排行、出價次數與成交件數，皆直接反映目前上架中的真實商品資料，而非預先寫死的展示數字。",
     "trustCta": "查看全部商品",
+    "appPurposeEyebrow": "平台服務與應用程式說明",
+    "appPurposeTitle": "關於翔水賽鴿網與應用程式服務",
+    "appPurposeBadgePublic": "全站公開 · 無需登入即可瀏覽",
+    "appPurposeBadgeSecure": "Google 安全登入 · 僅限出價與訂單",
+    "appPurposeIntro": "翔水賽鴿網（Xiangshui Racing Pigeon Network）為專業賽鴿線上競標與優質種鴿交易平台。所有訪客無須註冊或登入，即可公開查閱全站拍品、起標價、即時出價歷程、血統名鑑與最新資訊。僅在您需要參與出價競標、設定自動出價或下單購買時，提供 Google 帳號安全登入服務。",
+    "appPurposeFeature1Title": "免登入公開瀏覽",
+    "appPurposeFeature1Desc": "全站拍品、起標底價、出價歷程、結標倒數、名鴿血統名鑑與名家鴿舍介紹完全公開，任何人皆可自由查閱，無需事先登入或付費。",
+    "appPurposeFeature2Title": "專業即時競標與自動出價",
+    "appPurposeFeature2Desc": "採用公平公開的英式競標機制，支援即時出價、代理自動出價與一鍵買斷。拍品價格與庫存狀態由伺服器即時驗證，保障交易透明。",
+    "appPurposeFeature3Title": "Google 帳號登入用途",
+    "appPurposeFeature3Desc": "Google 登入僅用於驗證會員身分，方便您在出價競標時記錄出價身分、接收結標通知與管理個人訂單。本站僅索取基本公開資料（姓名、Email 與頭像），絕不存取任何敏感隱私權限。",
+    "appPurposeFeature4Title": "隱私權與安全承諾",
+    "appPurposeFeature4Desc": "本站嚴格恪守隱私權法規與 Google API 服務使用者資料政策（Limited Use 規範），絕不向第三方出租或轉售個人資料，全站通訊皆以 SSL/TLS 高強度加密保護。",
+    "appPurposePrivacyLink": "查看隱私權政策",
+    "appPurposeTermsLink": "查看服務條款",
+    "appPurposeFooterNote": "翔水賽鴿網 (Xiangshui Racing Pigeon Network) · Google OAuth 2.0 登入機制遵循 Google API 服務使用者資料政策",
     "metaDescription": "翔水賽鴿網：優質賽鴿與種鴿的線上競標與定價交易平台，支援即時出價、自動出價與一鍵買斷，安全可靠、鴿友信賴之選。"
   },
   "listings": {
@@ -912,13 +928,20 @@
         ]
       },
       {
-        "title": "10. 政策更新",
+        "title": "10. Google 帳號登入與 API 使用者資料政策（Limited Use 聲明）",
+        "paragraphs": [
+          "本站提供 Google OAuth 2.0 / Google One Tap 快速登入功能。當您選擇使用 Google 帳號登入本站時，本站僅會讀取您的基本公開資料（包含姓名、電子郵件地址及個人頭像），目的僅限於識別會員身分、建立個人帳號、確認電子郵件所有權以及發送競標出價或交易相關通知。",
+          "翔水賽鴿網對自 Google API 取得之任何資料的使用與轉移至其他應用程式，均嚴格恪守 Google API 服務使用者資料政策（Google API Services User Data Policy），包含其限定使用（Limited Use）要求。我們絕不會將您的 Google 使用者資料用於投放廣告、向第三方轉售、出租或用於模型訓練，所有通訊均在安全加密通道下進行驗證與處理。"
+        ]
+      },
+      {
+        "title": "11. 政策更新",
         "paragraphs": [
           "本政策可能因法令或服務調整而修改。修改後將於本頁公告並更新「最後更新日期」；涉及重大變更時，我們會以電子郵件或站內通知另行告知。"
         ]
       },
       {
-        "title": "11. 聯絡我們",
+        "title": "12. 聯絡我們",
         "paragraphs": [
           "對本政策或個人資料處理有任何疑問，歡迎聯繫："
         ],
