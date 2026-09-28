@@ -56,6 +56,7 @@ jobs:
           # already knows how to extract an optional .prebuilt-public.tgz into
           # public/ (see .remote-index.php) — this is what actually feeds it one.
           if [ -d public ]; then
+            chmod -R u+w public 2>/dev/null || true
             tar -czf .prebuilt-public.tgz -C public .
           fi
 
