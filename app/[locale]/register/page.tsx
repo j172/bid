@@ -24,5 +24,8 @@ export async function generateMetadata({
 }
 
 export default function RegisterPage() {
-  return <RegisterForm />;
+  const googleClientId =
+    process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || null;
+
+  return <RegisterForm googleClientId={googleClientId} />;
 }

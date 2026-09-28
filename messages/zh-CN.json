@@ -371,6 +371,8 @@
     "passkeyDivider": "或",
     "passkeyLoginButton": "使用通行密匙登录",
     "googleSignIn": "使用 Google 账号登录",
+    "lineLoginButton": "使用 LINE 账号登录",
+    "lineRegisterButton": "使用 LINE 账号注册",
     "orDivider": "或",
     "passkeySubmitting": "验证中...",
     "passkeyBrowserError": "无法使用通行密钥登录，请确认设备支持并再试一次",
@@ -438,7 +440,18 @@
     "passkeyTitle": "通行密钥",
     "passkeyDescription": "新增通行密钥后，登录时可以直接用设备的生物识别或 PIN 码验证，不需要输入密码。",
     "deleteTitle": "删除账户",
-    "deleteWarning": "若你目前正在领先任何开放中的商品，或有已得标但尚未由管理员标记完成交易的商品，将无法删除账户。"
+    "deleteWarning": "若你目前正在领先任何开放中的商品，或有已得标但尚未由管理员标记完成交易的商品，将无法删除账户。",
+    "lineSectionTitle": "LINE 账号绑定",
+    "lineLinkedBadge": "已绑定",
+    "lineLinkedDescription": "已成功关联您的 LINE 账号，可直接使用 LINE 快捷登录。",
+    "lineUnlinkedDescription": "尚未绑定 LINE 账号。绑定后即可使用 LINE 一键快速登录本站。",
+    "linkLineButton": "立即绑定 LINE 账号",
+    "unlinkLineButton": "解除 LINE 绑定",
+    "unlinkConfirmPrompt": "确定要解除此账号的 LINE 绑定吗？",
+    "confirmUnlinkButton": "确定解除",
+    "cancelButton": "取消",
+    "unlinkingSubmitting": "解除中...",
+    "defaultError": "操作失败，请稍后再试"
   },
   "profileForm": {
     "displayName": "显示名称",
@@ -719,6 +732,11 @@
     "PROFILE_INCOMPLETE": "出价或购买前，请先至账户设置填写联络电话与收件地址",
     "GOOGLE_AUTH_FAILED": "Google 登录验证失败，请稍后再试",
     "PASSWORD_ALREADY_SET": "该账户已设置过密码，请使用修改密码功能",
+    "LINE_AUTH_FAILED": "LINE 登录失败或已取消，请稍后再试",
+    "LINE_NOT_CONFIGURED": "系统尚未配置 LINE 登录服务",
+    "LINE_ALREADY_LINKED": "此 LINE 账号已被其他会员绑定",
+    "LINE_ONBOARD_EXPIRED": "LINE 授权已过期，请重新尝试登录",
+    "CANNOT_UNLINK_ONLY_LOGIN_METHOD": "无法解除绑定：此为您唯一的登录方式，请先设置密码或绑定其他登录方式",
     "PRODUCT_NOT_ACTIVE": "这个商品目前无法购买",
     "PRODUCT_CALL_FOR_PRICE": "这个商品采电洽方式，无法在线下单，请自行洽询卖家"
   },
@@ -1384,5 +1402,22 @@
     "copyLink": "复制网址",
     "copied": "网址已复制！",
     "dismiss": "关闭通知"
+  },
+  "lineRegister": {
+    "pageTitle": "完善 LINE 注册资料",
+    "title": "完善会员资料",
+    "subtitle": "请确认您的基本资料并同意拍卖服务条款以完成注册",
+    "defaultError": "注册失败，请检查填写资料或稍后再试",
+    "expiredTitle": "LINE 授权阶段已过期",
+    "expiredDescription": "您的 LINE 授权过渡阶段已超过 15 分钟，请返回登录页面重新点击 LINE 登录。",
+    "retryButton": "重新登录",
+    "submitting": "注册中...",
+    "submitButton": "完成注册并登录",
+    "linkingNotice": "系统检测到电子邮件「{email}」已注册过本站账号。为保护账号安全，请输入原账号密码进行绑定：",
+    "accountPassword": "原账号密码",
+    "passwordPlaceholder": "请输入此邮箱原本设置的密码",
+    "linkingButton": "验证密码并绑定 LINE",
+    "linkingSubmitting": "验证绑定中...",
+    "backToNewUser": "使用其他邮箱注册"
   }
 }

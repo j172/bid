@@ -371,6 +371,8 @@
     "passkeyDivider": "或",
     "passkeyLoginButton": "使用通行密鑰登入",
     "googleSignIn": "使用 Google 帳號登入",
+    "lineLoginButton": "使用 LINE 帳號登入",
+    "lineRegisterButton": "使用 LINE 帳號註冊",
     "orDivider": "或",
     "passkeySubmitting": "驗證中...",
     "passkeyBrowserError": "無法使用通行密鑰登入，請確認裝置支援並再試一次",
@@ -438,7 +440,18 @@
     "passkeyTitle": "通行密鑰",
     "passkeyDescription": "新增通行密鑰後，登入時可以直接用裝置的生物辨識或 PIN 碼驗證，不需要輸入密碼。",
     "deleteTitle": "刪除帳戶",
-    "deleteWarning": "若你目前正在領先任何開放中的商品，或有已得標但尚未由管理員標記完成交易的商品，將無法刪除帳戶。"
+    "deleteWarning": "若你目前正在領先任何開放中的商品，或有已得標但尚未由管理員標記完成交易的商品，將無法刪除帳戶。",
+    "lineSectionTitle": "LINE 帳號綁定",
+    "lineLinkedBadge": "已綁定",
+    "lineLinkedDescription": "已成功連結您的 LINE 帳號，可直接使用 LINE 快捷登入。",
+    "lineUnlinkedDescription": "尚未綁定 LINE 帳號。綁定後即可使用 LINE 一鍵快速登入本站。",
+    "linkLineButton": "立即綁定 LINE 帳號",
+    "unlinkLineButton": "解除 LINE 綁定",
+    "unlinkConfirmPrompt": "確定要解除此帳號的 LINE 綁定嗎？",
+    "confirmUnlinkButton": "確定解除",
+    "cancelButton": "取消",
+    "unlinkingSubmitting": "解除中...",
+    "defaultError": "操作失敗，請稍後再試"
   },
   "profileForm": {
     "displayName": "顯示名稱",
@@ -719,6 +732,11 @@
     "PROFILE_INCOMPLETE": "出價或購買前，請先至帳戶設定填寫聯絡電話與收件地址",
     "GOOGLE_AUTH_FAILED": "Google 登入驗證失敗，請稍後再試",
     "PASSWORD_ALREADY_SET": "該帳戶已設定過密碼，請使用修改密碼功能",
+    "LINE_AUTH_FAILED": "LINE 登入失敗或已取消，請稍後再試",
+    "LINE_NOT_CONFIGURED": "系統尚未設定 LINE 登入服務",
+    "LINE_ALREADY_LINKED": "此 LINE 帳號已被其他會員綁定",
+    "LINE_ONBOARD_EXPIRED": "LINE 授權已過期，請重新嘗試登入",
+    "CANNOT_UNLINK_ONLY_LOGIN_METHOD": "無法解除綁定：此為您唯一的登入方式，請先設定密碼或綁定其他登入方式",
     "PRODUCT_NOT_ACTIVE": "這個商品目前無法購買",
     "PRODUCT_CALL_FOR_PRICE": "這個商品採電洽方式，無法線上下單，請自行洽詢賣家"
   },
@@ -1384,5 +1402,22 @@
     "copyLink": "複製網址",
     "copied": "網址已複製！",
     "dismiss": "關閉通知"
+  },
+  "lineRegister": {
+    "pageTitle": "完善 LINE 註冊資料",
+    "title": "完善會員資料",
+    "subtitle": "請確認您的基本資料並同意拍賣服務條款以完成註冊",
+    "defaultError": "註冊失敗，請檢查填寫資料或稍後再試",
+    "expiredTitle": "LINE 授權階段已過期",
+    "expiredDescription": "您的 LINE 授權過渡階段已超過 15 分鐘，請返回登入頁面重新點擊 LINE 登入。",
+    "retryButton": "重新登入",
+    "submitting": "註冊中...",
+    "submitButton": "完成註冊並登入",
+    "linkingNotice": "系統偵測到電子郵件「{email}」已註冊過本站帳號。為保護帳號安全，請輸入原帳號密碼進行綁定：",
+    "accountPassword": "原帳號密碼",
+    "passwordPlaceholder": "請輸入此信箱原本設定的密碼",
+    "linkingButton": "驗證密碼並綁定 LINE",
+    "linkingSubmitting": "驗證綁定中...",
+    "backToNewUser": "使用其他信箱註冊"
   }
 }

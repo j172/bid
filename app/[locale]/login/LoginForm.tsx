@@ -8,6 +8,7 @@ import { inputClass } from "@/lib/formStyles";
 import { usePostJson } from "@/lib/usePostJson";
 import AuthFormShell from "../components/AuthFormShell";
 import GoogleSignInButton from "../components/GoogleSignInButton";
+import LineSignInButton from "../components/LineSignInButton";
 import EmailOtpStep from "./EmailOtpStep";
 import PasskeyLoginButton from "./PasskeyLoginButton";
 import TotpStep from "./TotpStep";
@@ -20,6 +21,7 @@ interface LoginFormProps {
   // require a valid token whenever CLOUDFLARE_TURNSTILE_SECRET_KEY is set, so
   // this is only a real bypass in an environment that has neither key.
   turnstileSiteKey: string | null;
+  googleClientId?: string | null;
 }
 
 interface LoginResponse {
@@ -38,7 +40,7 @@ interface LoginResponse {
 // PasskeyLoginButton), so this file now only owns what the password form
 // itself needs: the credentials, the "verify your email first" branch, which
 // step is currently showing, and its own Turnstile challenge.
-export default function LoginForm({ turnstileSiteKey }: LoginFormProps) {
+export default function LoginForm({ turnstileSiteKey, googleClientId }: LoginFormProps) {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("login");
@@ -199,7 +201,9 @@ export default function LoginForm({ turnstileSiteKey }: LoginFormProps) {
             </div>
           )}
           <div className="flex flex-col gap-3">
+            <LineSignInButton mode="login" />
             <GoogleSignInButton
+              clientId={googleClientId}
               onTwoFactorRequired={(data) => {
                 if (data.twoFactorMethod === "email_otp") {
                   setChallengeToken(data.challengeToken);
