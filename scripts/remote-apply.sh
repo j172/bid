@@ -110,14 +110,15 @@ date +%s > "$LOCK_FILE"
 # Kept in lockstep with .remote-index.php's $buildApplyCommand.
 {
   echo "[START] $(date)" > "$LOG_FILE"
+  chmod -R u+w .next_stage .next_previous public_stage public_previous public_failed .next_failed 2>/dev/null || true
   rm -rf .next_stage .next_previous public_stage public_previous >>"$LOG_FILE" 2>&1 \
     && mkdir -p .next_stage >>"$LOG_FILE" 2>&1 \
     && tar --no-same-owner --no-same-permissions -xzf .prebuilt-next.tgz -C .next_stage >>"$LOG_FILE" 2>&1 \
     && test -s .next_stage/.next/BUILD_ID \
     && test -d .next_stage/.next/server \
     && mkdir -p public >>"$LOG_FILE" 2>&1 \
-    && { if [ -s .prebuilt-public.tgz ]; then mkdir -p public_stage >>"$LOG_FILE" 2>&1 && tar --no-same-owner --no-same-permissions -xzf .prebuilt-public.tgz -C public_stage >>"$LOG_FILE" 2>&1 && mv public public_previous >>"$LOG_FILE" 2>&1 && mv public_stage public >>"$LOG_FILE" 2>&1 && rm -f .prebuilt-public.tgz; fi; } \
-    && { if [ -d .next ]; then mv .next .next_previous; fi; } \
+    && { if [ -s .prebuilt-public.tgz ]; then mkdir -p public_stage >>"$LOG_FILE" 2>&1 && tar --no-same-owner --no-same-permissions -xzf .prebuilt-public.tgz -C public_stage >>"$LOG_FILE" 2>&1 && chmod -R u+w public public_previous 2>/dev/null || true && mv public public_previous >>"$LOG_FILE" 2>&1 && mv public_stage public >>"$LOG_FILE" 2>&1 && rm -f .prebuilt-public.tgz; fi; } \
+    && { if [ -d .next ]; then chmod -R u+w .next .next_previous 2>/dev/null || true && mv .next .next_previous; fi; } \
     && mv .next_stage/.next .next >>"$LOG_FILE" 2>&1 \
     && rmdir .next_stage >>"$LOG_FILE" 2>&1 \
     && echo "[BUILD_ID] $(cat .next/BUILD_ID)" >>"$LOG_FILE" \
@@ -130,6 +131,7 @@ date +%s > "$LOCK_FILE"
     && echo "[DONE] $(date)" >>"$LOG_FILE"
 } || {
   echo "[ROLLBACK] apply or health probe failed" >>"$LOG_FILE"
+  chmod -R u+w public public_failed public_previous .next .next_failed .next_previous 2>/dev/null || true
   if [ -d public_previous ]; then
     rm -rf public_failed
     mv public public_failed 2>/dev/null

@@ -55,20 +55,7 @@ $buildApplyCommand = static function () use ($appDir, $appPort, $nodeBin, $npmCl
     $script = "cd {$appDir} "
         . "&& { "
         . "echo '[START] '$(date) > .apply.log; "
-        // Both .next_previous and public_previous are cleared here, on the
-        // chain's first line, rather than just before their respective
-        // swaps below. The rollback block decides what to restore purely by
-        // asking whether those directories exist, so their existence has to
-        // mean "this run already swapped" and nothing else. Clearing
-        // .next_previous late — as this did until issue #210 — left the
-        // previous deploy's copy of .next on disk for the whole chain, one
-        // version older than the .next actually serving traffic, so a
-        // failure before the swap (a corrupt .prebuilt-next.tgz, a missing
-        // BUILD_ID) made the rollback move the perfectly healthy live .next
-        // aside and restore that stale copy — turning "the new version did
-        // not ship" into "the site got downgraded", strictly worse than
-        // doing nothing. Clearing first makes an early failure roll back
-        // nothing, which is correct: neither directory was touched.
+        . "chmod -R u+w .next_stage .next_previous public_stage public_previous public_failed .next_failed 2>/dev/null || true; "
         . "rm -rf .next_stage .next_previous public_stage public_previous >> .apply.log 2>&1 "
         . "&& mkdir -p .next_stage >> .apply.log 2>&1 "
         . "&& tar --no-same-owner --no-same-permissions -xzf .prebuilt-next.tgz -C .next_stage >> .apply.log 2>&1 "
@@ -94,8 +81,8 @@ $buildApplyCommand = static function () use ($appDir, $appPort, $nodeBin, $npmCl
         // (public/tinymce, the whole TinyMCE editor included) for the
         // seconds the extraction takes. Kept in lockstep with
         // scripts/remote-apply.sh.
-        . "&& { if [ -s .prebuilt-public.tgz ]; then mkdir -p public_stage >> .apply.log 2>&1 && tar --no-same-owner --no-same-permissions -xzf .prebuilt-public.tgz -C public_stage >> .apply.log 2>&1 && mv public public_previous >> .apply.log 2>&1 && mv public_stage public >> .apply.log 2>&1 && rm -f .prebuilt-public.tgz; fi; } "
-        . "&& { if [ -d .next ]; then mv .next .next_previous; fi; } "
+        . "&& { if [ -s .prebuilt-public.tgz ]; then mkdir -p public_stage >> .apply.log 2>&1 && tar --no-same-owner --no-same-permissions -xzf .prebuilt-public.tgz -C public_stage >> .apply.log 2>&1 && chmod -R u+w public public_previous 2>/dev/null || true && mv public public_previous >> .apply.log 2>&1 && mv public_stage public >> .apply.log 2>&1 && rm -f .prebuilt-public.tgz; fi; } "
+        . "&& { if [ -d .next ]; then chmod -R u+w .next .next_previous 2>/dev/null || true && mv .next .next_previous; fi; } "
         . "&& mv .next_stage/.next .next >> .apply.log 2>&1 "
         . "&& rmdir .next_stage >> .apply.log 2>&1 "
         . "&& echo '[BUILD_ID] '$(cat .next/BUILD_ID) >> .apply.log "
@@ -137,6 +124,7 @@ $buildApplyCommand = static function () use ($appDir, $appPort, $nodeBin, $npmCl
         . "&& echo '[DONE]' $(date) >> .apply.log; "
         . "} || { "
         . "echo '[ROLLBACK] apply or health probe failed' >> .apply.log; "
+        . "chmod -R u+w public public_failed public_previous .next .next_failed .next_previous 2>/dev/null || true; "
         . "if [ -d public_previous ]; then rm -rf public_failed; mv public public_failed 2>/dev/null; mv public_previous public; fi; "
         . "if [ -d .next_previous ]; then rm -rf .next_failed; mv .next .next_failed 2>/dev/null; mv .next_previous .next; {$nodeBin} {$pm2Bin} restart bid-web >> .apply.log 2>&1 || true; fi; "
         . "echo '[FAIL]' $(date) >> .apply.log; "
