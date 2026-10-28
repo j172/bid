@@ -40,6 +40,20 @@ export function parseTurnstileVerifyBody(body: string): boolean {
   }
 }
 
+// Pulls Cloudflare's `error-codes` (e.g. "invalid-input-secret",
+// "invalid-input-response", "timeout-or-duplicate", "hostname-mismatch") out
+// of a siteverify body so a rejected verification can be diagnosed from the
+// server log. Never throws; unparseable bodies yield an empty list.
+export function parseTurnstileErrorCodes(body: string): string[] {
+  try {
+    const parsed = JSON.parse(body) as { "error-codes"?: unknown };
+    const codes = parsed["error-codes"];
+    return Array.isArray(codes) ? codes.filter((code): code is string => typeof code === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
 // Never throws — mirrors lib/email.ts's sendEmail contract, so callers
 // don't need a try/catch of their own. A missing secret, network error,
 // non-2xx response, or success:false in the body are all just "not
@@ -59,7 +73,12 @@ export async function verifyTurnstileToken(token: string, remoteIp: string | nul
       console.error(`Turnstile siteverify failed (${status}): ${body}`);
       return false;
     }
-    return parseTurnstileVerifyBody(body);
+    const verified = parseTurnstileVerifyBody(body);
+    if (!verified) {
+      const codes = parseTurnstileErrorCodes(body);
+      console.error(`Turnstile verification rejected: ${codes.length > 0 ? codes.join(", ") : "no error-codes in response"}`);
+    }
+    return verified;
   } catch (error) {
     console.error("Turnstile siteverify request failed:", error);
     return false;
