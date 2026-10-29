@@ -48,7 +48,7 @@
 
 ## 4. 驗收條件 (Acceptance Criteria)
 
-- [ ] AC1: `scripts/cleanup-example-data.mjs` 支援 `--dry-run`（預設）與 `--confirm`，並在單一交易內清理所有 `@example.com` 使用者與上述關聯表資料，且具備完整的 `scripts/cleanup-example-data.test.mjs` 測試覆蓋。
-- [ ] AC2: 透過一次性 GitHub Actions SSH workflow 在正式站完成資料庫備份與 `@example.com` 資料刪除，確認刪除後 `--dry-run` 試算所有表皆為 `0` 筆。
-- [ ] AC3: 正式站清理完成後，移除一次性 workflow 與遠端 shell 腳本，保持倉庫整潔，且 `npm run lint`、`npm run typecheck`、`npm test` 全部通過。
+- [x] AC1: `scripts/cleanup-example-data.mjs` 支援 `--dry-run`（預設）與 `--confirm`，並在單一交易內清理所有 `@example.com` 使用者與上述關聯表資料，且具備完整的 `scripts/cleanup-example-data.test.mjs` 測試覆蓋。
+- [x] AC2: 透過一次性 GitHub Actions SSH workflow 在正式站完成資料庫備份與 `@example.com` 資料刪除，確認刪除後 `--dry-run` 試算所有表皆為 `0` 筆。
+- [x] AC3: 正式站清理完成後，移除一次性 workflow 與遠端 shell 腳本，保持倉庫整潔，且 `npm run lint`、`npm run typecheck`、`npm test` 全部通過。
 
