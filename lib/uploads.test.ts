@@ -6,7 +6,14 @@
 
 import { describe, expect, it, vi } from "vitest";
 import { join, sep } from "path";
-import { saveImageOrError, withImageRollback, resolveUploadPath, UPLOADS_ROOT } from "./uploads";
+import {
+  clubAwardPigeonImageUrl,
+  descriptionImageUrl,
+  saveImageOrError,
+  withImageRollback,
+  resolveUploadPath,
+  UPLOADS_ROOT,
+} from "./uploads";
 
 describe("saveImageOrError", () => {
   it("returns the saved file name on success", async () => {
@@ -78,6 +85,16 @@ describe("withImageRollback", () => {
 describe("resolveUploadPath", () => {
   it("resolves a normal nested upload path", () => {
     expect(resolveUploadPath(["listings", "42", "abc.webp"])).toBe(join(UPLOADS_ROOT, "listings", "42", "abc.webp"));
+    expect(resolveUploadPath(["club-award-pigeons", "abc.webp"])).toBe(
+      join(UPLOADS_ROOT, "club-award-pigeons", "abc.webp"),
+    );
+  });
+
+  it("builds club-award-pigeons main and inline description image URLs", () => {
+    expect(clubAwardPigeonImageUrl("abc.webp")).toBe("/uploads/club-award-pigeons/abc.webp");
+    expect(descriptionImageUrl("club-award-pigeons", 7, "inline.webp")).toBe(
+      "/uploads/club-award-pigeons/7/description/inline.webp",
+    );
   });
 
   it("rejects ../ traversal out of the uploads root", () => {

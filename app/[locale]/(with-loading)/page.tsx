@@ -1,7 +1,15 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { listOpenListings } from "@/lib/listings";
-import { listingPhotoUrl, homepageSectionImageUrl, pigeonShowcaseImageUrl, newsImageUrl, productPhotoUrl } from "@/lib/uploads";
+import {
+  listingPhotoUrl,
+  homepageSectionImageUrl,
+  pigeonShowcaseImageUrl,
+  clubAwardPigeonImageUrl,
+  newsImageUrl,
+  productPhotoUrl,
+} from "@/lib/uploads";
+import { listLatestClubAwardAlbums } from "@/lib/clubAwardPigeons";
 import { listProducts } from "@/lib/products";
 import { listHomepageSections } from "@/lib/homepageSections";
 import { listLatestPigeonShowcase, listPigeonShowcaseByPhotoSource } from "@/lib/pigeonShowcase";
@@ -44,6 +52,7 @@ const SANFONG_PIGEONS_LIMIT = 6;
 // caps the homepage grid at 6 cards, same cap convention as
 // SANFONG_PIGEONS_LIMIT above.
 const WORLD_FAMOUS_PIGEONS_LIMIT = 6;
+const CLUB_AWARD_ALBUMS_LIMIT = 6;
 
 // Homepage-specific alternates (issue #107 items 6-7) — deliberately not
 // hoisted into the shared root layout's generateMetadata (app/[locale]/
@@ -185,6 +194,10 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   // title+excerpt showcase (falls back to that card's original marketing
   // copy when there are currently zero news_posts rows; see
   // NewsCarouselCard's own fallback branch).
+  const clubAwardAlbums = await cachedQuery("home:clubAwardAlbums", 20, () =>
+    listLatestClubAwardAlbums(CLUB_AWARD_ALBUMS_LIMIT),
+  );
+
   const NEWS_CAROUSEL_EXCERPT_LENGTH = 30;
   const latestNews = await cachedQuery("home:latestNews", 20, () => listHomepageNewsCarousel(10));
   const newsCarouselItems = latestNews.map((post) => ({
@@ -514,6 +527,47 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                 <div className="flex flex-1 flex-col p-5">
                   <h3 className="truncate text-lg font-bold text-ink">{pigeon.name}</h3>
                   <p className="mt-3 line-clamp-3 text-sm text-ink-light">{pigeon.excerpt}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* 各地鴿會入賞鴿專區 (issue #378) — independent album-based showcase right below 世界名鴿介紹專區 */}
+      <section className="mx-auto mt-10 max-w-7xl px-4 sm:px-6">
+        <div className="flex items-end justify-between">
+          <h2 className="text-2xl font-bold">{t("clubAwardPigeonsTitle")}</h2>
+          <Link
+            href="/club-award-pigeons"
+            className="text-sm font-semibold text-interactive-primary hover:text-header"
+          >
+            {t("viewAll")}
+          </Link>
+        </div>
+
+        {clubAwardAlbums.length === 0 ? (
+          <div className="mt-5 flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-slate-50 p-10 text-center">
+            <p className="text-sm font-bold text-ink-light">{t("clubAwardPigeonsEmptyTitle")}</p>
+            <p className="mt-2 max-w-md text-xs text-ink-light">{t("clubAwardPigeonsEmptyDesc")}</p>
+          </div>
+        ) : (
+          <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {clubAwardAlbums.map((album) => (
+              <Link
+                key={album.id}
+                href={`/club-award-pigeons?albumId=${album.id}`}
+                className="group flex flex-col overflow-hidden rounded-xl border border-border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={album.coverImageFileName ? clubAwardPigeonImageUrl(album.coverImageFileName) : IMAGE_FALLBACK_SRC}
+                  alt={album.name}
+                  className="h-40 w-full bg-slate-100 object-contain"
+                />
+                <div className="flex flex-1 flex-col p-5">
+                  <h3 className="truncate text-lg font-bold text-ink">{album.name}</h3>
+                  <p className="mt-3 text-sm text-ink-light">{t("clubAwardAlbumCount", { count: album.pigeonCount })}</p>
                 </div>
               </Link>
             ))}

@@ -139,6 +139,8 @@ export default function AdminShell({ children, email }: { children: ReactNode; e
       homepage: { label: "首頁內容管理", icon: "🏡" },
       "partner-lofts": { label: "合作鴿舍管理", icon: "🕊️" },
       "pigeon-showcase": { label: "鴿種介紹專區", icon: "🏆" },
+      "club-award-albums": { label: "各地鴿會相簿管理", icon: "📁" },
+      "club-award-pigeons": { label: "各地鴿會入賞鴿", icon: "🏅" },
       news: { label: "最新訊息管理", icon: "📰" },
     };
 
