@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { usePostJson } from "@/lib/usePostJson";
+import { useCurrentUser } from "../components/CurrentUserProvider";
 
 type AuthenticationOptions = Parameters<typeof startAuthentication>[0]["optionsJSON"];
 
@@ -27,6 +28,7 @@ export default function PasskeyLoginButton({
 }: PasskeyLoginButtonProps = {}) {
   const router = useRouter();
   const t = useTranslations("login");
+  const { refresh } = useCurrentUser();
   const [running, setRunning] = useState(false);
   const { post, error, setError } = usePostJson(t("defaultError"));
 
@@ -43,6 +45,7 @@ export default function PasskeyLoginButton({
       const data = await post("/api/auth/webauthn/login-verify", { response: authResponse });
       if (!data) return;
 
+      refresh();
       router.push("/");
       router.refresh();
     } catch {

@@ -42,6 +42,7 @@ export default function GoogleOneTap({ clientId, locale }: GoogleOneTapProps) {
   // an already-authenticated visitor.
   const { user, loading, googleClientId: runtimeGoogleClientId } = useCurrentUser();
   const effectiveClientId = clientId || runtimeGoogleClientId;
+  const isAuthPage = pathname === "/login" || pathname === "/register";
 
   const handleCredentialResponse = useCallback(
     async (response: { credential?: string }) => {
@@ -87,10 +88,11 @@ export default function GoogleOneTap({ clientId, locale }: GoogleOneTapProps) {
     if (!effectiveClientId || typeof window === "undefined" || !window.google?.accounts?.id) {
       return;
     }
-    // Defence in depth alongside the `loading || user` render guard below:
-    // never initialize/prompt for a visitor we already know is signed in,
-    // or before we know either way.
-    if (loading || user) {
+    // Defence in depth alongside the `loading || user || isAuthPage` render
+    // guard below: never initialize/prompt for a visitor we already know is
+    // signed in, before we know either way, or on /login & /register where
+    // GoogleSignInButton owns GSI initialization.
+    if (loading || user || isAuthPage) {
       return;
     }
     if (isInAppBrowser(window.navigator.userAgent)) {
@@ -108,9 +110,12 @@ export default function GoogleOneTap({ clientId, locale }: GoogleOneTapProps) {
     });
 
     window.google.accounts.id.prompt();
-  }, [effectiveClientId, handleCredentialResponse, loading, user]);
+  }, [effectiveClientId, handleCredentialResponse, isAuthPage, loading, user]);
 
   useEffect(() => {
+    if (isAuthPage) {
+      return;
+    }
     if (typeof window !== "undefined") {
       if (isInAppBrowser(window.navigator.userAgent)) {
         setDisabledInApp(true);
@@ -120,9 +125,9 @@ export default function GoogleOneTap({ clientId, locale }: GoogleOneTapProps) {
         initGsi();
       }
     }
-  }, [initGsi]);
+  }, [initGsi, isAuthPage]);
 
-  if (!effectiveClientId || disabledInApp || loading || user) {
+  if (!effectiveClientId || disabledInApp || loading || user || isAuthPage) {
     return null;
   }
 

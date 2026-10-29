@@ -4,11 +4,11 @@ import Script from "next/script";
 import { useEffect, useImperativeHandle, useRef, type Ref } from "react";
 
 // Minimal shape of the global Cloudflare Turnstile API exposed by
-// https://challenges.cloudflare.com/turnstile/v0/api.js once it loads.
-// Explicit rendering (turnstile.render(...)), not the script's own implicit
-// auto-render, since the widget container only exists once this client
-// component has mounted — implicit rendering only scans the DOM once, at
-// window.onload, and would miss a container added after that.
+// https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit once
+// it loads. Explicit rendering (turnstile.render(...)), not the script's own
+// implicit auto-render, since the widget container only exists once this
+// client component has mounted — implicit rendering only scans the DOM once,
+// at window.onload, and would miss a container added after that.
 declare global {
   interface Window {
     turnstile?: {
@@ -22,6 +22,7 @@ declare global {
         },
       ) => string;
       reset: (widgetId?: string) => void;
+      remove?: (widgetId: string) => void;
     };
   }
 }
@@ -76,17 +77,30 @@ export default function TurnstileWidget({ siteKey, onToken, ref }: TurnstileWidg
   // first one already loaded it) — poll briefly for window.turnstile rather
   // than relying on onLoad alone.
   useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | undefined;
     if (window.turnstile) {
       renderWidget();
-      return;
+    } else {
+      interval = setInterval(() => {
+        if (window.turnstile) {
+          renderWidget();
+          clearInterval(interval);
+        }
+      }, 200);
     }
-    const interval = setInterval(() => {
-      if (window.turnstile) {
-        renderWidget();
+    return () => {
+      if (interval !== undefined) {
         clearInterval(interval);
       }
-    }, 200);
-    return () => clearInterval(interval);
+      if (widgetIdRef.current && window.turnstile?.remove) {
+        try {
+          window.turnstile.remove(widgetIdRef.current);
+        } catch {
+          // Ignore if Turnstile already cleaned up the widget
+        }
+      }
+      widgetIdRef.current = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [siteKey]);
 
@@ -101,7 +115,11 @@ export default function TurnstileWidget({ siteKey, onToken, ref }: TurnstileWidg
 
   return (
     <>
-      <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" onLoad={renderWidget} />
+      <Script
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+        strategy="afterInteractive"
+        onLoad={renderWidget}
+      />
       <div ref={containerRef} />
     </>
   );

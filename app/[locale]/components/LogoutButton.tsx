@@ -2,10 +2,12 @@
 
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { useCurrentUser } from "./CurrentUserProvider";
 
 export default function LogoutButton() {
   const router = useRouter();
   const t = useTranslations("nav");
+  const { refresh } = useCurrentUser();
 
   async function handleLogout() {
     try {
@@ -14,6 +16,7 @@ export default function LogoutButton() {
       // Ignore if GSI is not loaded
     }
     await fetch("/api/auth/logout", { method: "POST" });
+    refresh?.();
     router.push("/");
     router.refresh();
   }

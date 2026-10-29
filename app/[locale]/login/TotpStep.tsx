@@ -8,6 +8,7 @@ import TurnstileWidget, { type TurnstileWidgetHandle } from "@/app/components/Tu
 import { inputClass } from "@/lib/formStyles";
 import { usePostJson } from "@/lib/usePostJson";
 import AuthFormShell from "../components/AuthFormShell";
+import { useCurrentUser } from "../components/CurrentUserProvider";
 
 interface TotpStepProps {
   /** The credentials the password step already collected — POST /api/auth/verify-totp re-verifies them itself. */
@@ -52,6 +53,7 @@ interface VerifyTotpResponse {
 export default function TotpStep({ email = "", password = "", challengeToken, turnstileSiteKey, onBack }: TotpStepProps) {
   const router = useRouter();
   const t = useTranslations("login");
+  const { refresh } = useCurrentUser();
   const [code, setCode] = useState("");
   const [backupNotice, setBackupNotice] = useState<string | null>(null);
   const { post, submitting, error, setError } = usePostJson(t("defaultError"));
@@ -64,6 +66,7 @@ export default function TotpStep({ email = "", password = "", challengeToken, tu
   const turnstilePending = !challengeToken && Boolean(turnstileSiteKey) && !turnstileToken;
 
   function goHome() {
+    refresh();
     router.push("/");
     router.refresh();
   }
@@ -88,6 +91,7 @@ export default function TotpStep({ email = "", password = "", challengeToken, tu
     }
 
     if (data.usedBackupCode) {
+      refresh();
       setBackupNotice(t("totpBackupCodeUsedNotice", { count: data.remainingBackupCodes ?? 0 }));
       return;
     }

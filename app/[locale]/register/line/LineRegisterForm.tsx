@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { inputClass } from "@/lib/formStyles";
 import { usePostJson, type ApiJsonResponse } from "@/lib/usePostJson";
+import { useCurrentUser } from "../../components/CurrentUserProvider";
 
 interface OnboardData {
   displayName: string;
@@ -18,6 +19,7 @@ export default function LineRegisterForm() {
   const router = useRouter();
   const t = useTranslations("lineRegister");
   const tRegister = useTranslations("register");
+  const { refresh } = useCurrentUser();
 
   const [loading, setLoading] = useState(true);
   const [expired, setExpired] = useState(false);
@@ -88,6 +90,7 @@ export default function LineRegisterForm() {
 
     if (!data) return;
 
+    refresh();
     router.push("/");
     router.refresh();
   }
@@ -103,6 +106,7 @@ export default function LineRegisterForm() {
 
     if (!data) return;
 
+    refresh();
     router.push("/");
     router.refresh();
   }

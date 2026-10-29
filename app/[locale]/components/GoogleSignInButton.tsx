@@ -1,8 +1,10 @@
 "use client";
 
+import Script from "next/script";
 import { useEffect, useRef, useCallback } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { useCurrentUser } from "./CurrentUserProvider";
 
 interface GoogleSignInButtonProps {
   clientId?: string | null;
@@ -20,6 +22,7 @@ export default function GoogleSignInButton({
   const locale = useLocale();
   const t = useTranslations("login");
   const router = useRouter();
+  const { refresh } = useCurrentUser();
   const containerRef = useRef<HTMLDivElement>(null);
   const renderedRef = useRef(false);
 
@@ -58,6 +61,7 @@ export default function GoogleSignInButton({
           return;
         }
 
+        refresh();
         if (onSuccess) {
           onSuccess(data.user);
         } else {
@@ -68,7 +72,7 @@ export default function GoogleSignInButton({
         console.error("Failed to authenticate with Google", err);
       }
     },
-    [locale, onSuccess, onTwoFactorRequired, router],
+    [locale, onSuccess, onTwoFactorRequired, refresh, router],
   );
 
   useEffect(() => {
@@ -86,10 +90,15 @@ export default function GoogleSignInButton({
           callback: handleCredentialResponse,
         });
 
+        const pixelWidth = Math.min(
+          400,
+          Math.max(200, Math.floor(containerRef.current.getBoundingClientRect().width) || 360),
+        );
+
         window.google.accounts.id.renderButton(containerRef.current, {
           theme: "outline",
           size: "large",
-          width: "100%",
+          width: pixelWidth,
           text: "signin_with",
           locale,
           shape: "rectangular",
@@ -107,6 +116,7 @@ export default function GoogleSignInButton({
 
   return (
     <div className={`w-full ${className}`}>
+      <Script src={`https://accounts.google.com/gsi/client?hl=${locale}`} strategy="afterInteractive" />
       <div ref={containerRef} className="flex min-h-[44px] w-full justify-center">
         {/* Fallback button shown while Google GSI script loads */}
         <button

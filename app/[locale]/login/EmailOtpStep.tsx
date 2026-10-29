@@ -6,6 +6,7 @@ import { useRouter } from "@/i18n/navigation";
 import { inputClass } from "@/lib/formStyles";
 import { usePostJson } from "@/lib/usePostJson";
 import AuthFormShell from "../components/AuthFormShell";
+import { useCurrentUser } from "../components/CurrentUserProvider";
 
 interface EmailOtpStepProps {
   /** Issued by the login response instead of a session — see app/api/auth/login/route.ts. */
@@ -28,6 +29,7 @@ export default function EmailOtpStep({ challengeToken, onBack, onChallengeSpent 
   const router = useRouter();
   const t = useTranslations("login");
   const tErrors = useTranslations("errors");
+  const { refresh } = useCurrentUser();
   const [code, setCode] = useState("");
   const { post, submitting, error, setError } = usePostJson(t("defaultError"));
 
@@ -47,6 +49,7 @@ export default function EmailOtpStep({ challengeToken, onBack, onChallengeSpent 
     );
     if (!data) return;
 
+    refresh();
     router.push("/");
     router.refresh();
   }

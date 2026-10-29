@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import CurrentUserProvider, { useCurrentUser } from "./CurrentUserProvider";
 
 afterEach(cleanup);
@@ -14,12 +14,15 @@ afterEach(cleanup);
 // user, logged-out, and the network-failure fallback — via a small consumer
 // that renders the state as text.
 function Probe() {
-  const { user, loading, googleClientId } = useCurrentUser();
+  const { user, loading, googleClientId, refresh } = useCurrentUser();
   return (
     <div>
       <span data-testid="loading">{String(loading)}</span>
       <span data-testid="user">{user ? `${user.email}:${user.role}` : "none"}</span>
       <span data-testid="googleClientId">{googleClientId ?? "none"}</span>
+      <button type="button" data-testid="refresh" onClick={refresh}>
+        Refresh
+      </button>
     </div>
   );
 }
@@ -45,7 +48,7 @@ describe("CurrentUserProvider", () => {
       </CurrentUserProvider>,
     );
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/auth/me");
+    expect(fetchMock).toHaveBeenCalledWith("/api/auth/me", { cache: "no-store" });
     expect(screen.getByTestId("loading").textContent).toBe("true");
     expect(screen.getByTestId("user").textContent).toBe("none");
     expect(screen.getByTestId("googleClientId").textContent).toBe("none");
@@ -113,6 +116,43 @@ describe("CurrentUserProvider", () => {
 
     await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("false"));
     expect(screen.getByTestId("user").textContent).toBe("none");
+  });
+
+  it("re-fetches /api/auth/me and updates user state from null to logged-in and back when refresh() is called", async () => {
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ ok: true, user: null }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          ok: true,
+          user: { id: 9, email: "winner@example.com", role: "user" },
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ ok: true, user: null }),
+      });
+
+    render(
+      <CurrentUserProvider>
+        <Probe />
+      </CurrentUserProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("false"));
+    expect(screen.getByTestId("user").textContent).toBe("none");
+
+    fireEvent.click(screen.getByTestId("refresh"));
+    await waitFor(() => expect(screen.getByTestId("user").textContent).toBe("winner@example.com:user"));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenLastCalledWith("/api/auth/me", { cache: "no-store" });
+
+    fireEvent.click(screen.getByTestId("refresh"));
+    await waitFor(() => expect(screen.getByTestId("user").textContent).toBe("none"));
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it("ignores a late response after unmount instead of updating unmounted state", async () => {
