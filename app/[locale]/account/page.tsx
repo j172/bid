@@ -5,6 +5,7 @@ import { redirect } from "@/i18n/navigation";
 import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
 import { listPasskeysForUser } from "@/lib/webauthnCredentials";
 import ChangePasswordForm from "./ChangePasswordForm";
+import LineSection from "./LineSection";
 import PasskeySection from "./PasskeySection";
 import ProfileForm from "./ProfileForm";
 import TotpSection from "./TotpSection";
@@ -62,6 +63,13 @@ export default async function AccountPage() {
         <h2 className="text-lg font-semibold">{profile?.hasPassword ? t("passwordTitle") : t("setPasswordTitle")}</h2>
         <div className="mt-4">
           <ChangePasswordForm initialHasPassword={profile?.hasPassword ?? true} />
+        </div>
+      </section>
+
+      <section className="mt-6 rounded-lg border border-border bg-surface p-6 shadow-sm">
+        <h2 className="text-lg font-semibold">{t("lineSectionTitle")}</h2>
+        <div className="mt-4">
+          <LineSection initialLineLinked={profile?.lineLinked ?? false} />
         </div>
       </section>
 
