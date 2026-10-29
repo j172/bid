@@ -38,29 +38,39 @@ interface CurrentUserState {
    * true rather than assuming logged-out, to avoid a flash of the wrong
    * auth UI for already-authenticated visitors. */
   loading: boolean;
+  /** Runtime Google OAuth Client ID returned by /api/auth/me so statically
+   * prerendered pages (where layout.tsx ran in CI without .env) can still
+   * initialize GoogleOneTap. */
+  googleClientId?: string | null;
 }
 
-const CurrentUserContext = createContext<CurrentUserState>({ user: null, loading: true });
+const CurrentUserContext = createContext<CurrentUserState>({ user: null, loading: true, googleClientId: null });
 
 export function useCurrentUser(): CurrentUserState {
   return useContext(CurrentUserContext);
 }
 
 export default function CurrentUserProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<CurrentUserState>({ user: null, loading: true });
+  const [state, setState] = useState<CurrentUserState>({ user: null, loading: true, googleClientId: null });
 
   useEffect(() => {
     let cancelled = false;
 
     fetch("/api/auth/me")
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`unexpected status ${res.status}`))))
-      .then((data: { user?: CurrentUser | null }) => {
-        if (!cancelled) setState({ user: data.user ?? null, loading: false });
+      .then((data: { user?: CurrentUser | null; googleClientId?: string | null }) => {
+        if (!cancelled) {
+          setState({
+            user: data.user ?? null,
+            loading: false,
+            googleClientId: data.googleClientId ?? null,
+          });
+        }
       })
       .catch(() => {
         // Network/parse failure: fall back to "logged out" rather than
         // leaving the UI stuck in the loading/skeleton state forever.
-        if (!cancelled) setState({ user: null, loading: false });
+        if (!cancelled) setState({ user: null, loading: false, googleClientId: null });
       });
 
     return () => {

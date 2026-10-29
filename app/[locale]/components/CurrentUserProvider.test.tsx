@@ -14,11 +14,12 @@ afterEach(cleanup);
 // user, logged-out, and the network-failure fallback — via a small consumer
 // that renders the state as text.
 function Probe() {
-  const { user, loading } = useCurrentUser();
+  const { user, loading, googleClientId } = useCurrentUser();
   return (
     <div>
       <span data-testid="loading">{String(loading)}</span>
       <span data-testid="user">{user ? `${user.email}:${user.role}` : "none"}</span>
+      <span data-testid="googleClientId">{googleClientId ?? "none"}</span>
     </div>
   );
 }
@@ -47,12 +48,17 @@ describe("CurrentUserProvider", () => {
     expect(fetchMock).toHaveBeenCalledWith("/api/auth/me");
     expect(screen.getByTestId("loading").textContent).toBe("true");
     expect(screen.getByTestId("user").textContent).toBe("none");
+    expect(screen.getByTestId("googleClientId").textContent).toBe("none");
   });
 
-  it("exposes the logged-in user once /api/auth/me resolves", async () => {
+  it("exposes the logged-in user and runtime googleClientId once /api/auth/me resolves", async () => {
     fetchMock.mockResolvedValue({
       ok: true,
-      json: async () => ({ ok: true, user: { id: 7, email: "pigeon@example.com", role: "user" } }),
+      json: async () => ({
+        ok: true,
+        user: { id: 7, email: "pigeon@example.com", role: "user" },
+        googleClientId: "google-client-123.apps.googleusercontent.com",
+      }),
     });
 
     render(
@@ -63,6 +69,7 @@ describe("CurrentUserProvider", () => {
 
     await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("false"));
     expect(screen.getByTestId("user").textContent).toBe("pigeon@example.com:user");
+    expect(screen.getByTestId("googleClientId").textContent).toBe("google-client-123.apps.googleusercontent.com");
   });
 
   it("exposes null once /api/auth/me resolves with no session", async () => {
@@ -79,6 +86,7 @@ describe("CurrentUserProvider", () => {
 
     await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("false"));
     expect(screen.getByTestId("user").textContent).toBe("none");
+    expect(screen.getByTestId("googleClientId").textContent).toBe("none");
   });
 
   it("falls back to logged-out rather than staying stuck loading when the request fails", async () => {

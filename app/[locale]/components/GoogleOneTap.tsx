@@ -40,7 +40,8 @@ export default function GoogleOneTap({ clientId, locale }: GoogleOneTapProps) {
   // loading, treat it as "unknown" and don't render the prompt yet, rather
   // than assuming logged-out and briefly showing Google's One Tap prompt to
   // an already-authenticated visitor.
-  const { user, loading } = useCurrentUser();
+  const { user, loading, googleClientId: runtimeGoogleClientId } = useCurrentUser();
+  const effectiveClientId = clientId || runtimeGoogleClientId;
 
   const handleCredentialResponse = useCallback(
     async (response: { credential?: string }) => {
@@ -83,7 +84,7 @@ export default function GoogleOneTap({ clientId, locale }: GoogleOneTapProps) {
   );
 
   const initGsi = useCallback(() => {
-    if (!clientId || typeof window === "undefined" || !window.google?.accounts?.id) {
+    if (!effectiveClientId || typeof window === "undefined" || !window.google?.accounts?.id) {
       return;
     }
     // Defence in depth alongside the `loading || user` render guard below:
@@ -100,14 +101,14 @@ export default function GoogleOneTap({ clientId, locale }: GoogleOneTapProps) {
     initializedRef.current = true;
 
     window.google.accounts.id.initialize({
-      client_id: clientId,
+      client_id: effectiveClientId,
       callback: handleCredentialResponse,
       auto_select: false,
       cancel_on_tap_outside: false,
     });
 
     window.google.accounts.id.prompt();
-  }, [clientId, handleCredentialResponse, loading, user]);
+  }, [effectiveClientId, handleCredentialResponse, loading, user]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -121,7 +122,7 @@ export default function GoogleOneTap({ clientId, locale }: GoogleOneTapProps) {
     }
   }, [initGsi]);
 
-  if (!clientId || disabledInApp || loading || user) {
+  if (!effectiveClientId || disabledInApp || loading || user) {
     return null;
   }
 
