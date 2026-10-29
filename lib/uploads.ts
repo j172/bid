@@ -105,7 +105,13 @@ export function listingPhotoUrl(listingId: number, fileName: string): string {
 // matching the name each type's own single/gallery-photo saver below already
 // uses (saveProductPhotos's "products", saveNewsImage's "news", etc.), so a
 // glance at uploads/ shows one consistent naming scheme.
-export type DescriptionImageEntityType = "listings" | "products" | "news" | "pigeon-showcase" | "homepage-sections";
+export type DescriptionImageEntityType =
+  | "listings"
+  | "products"
+  | "news"
+  | "pigeon-showcase"
+  | "homepage-sections"
+  | "club-award-pigeons";
 
 // Images inserted inline into a rich-text description/content/bio field (see
 // DescriptionEditor / SimpleRichTextEditor) — stored under their own
@@ -204,6 +210,20 @@ export function pigeonShowcaseImageUrl(fileName: string): string {
 
 export async function deletePigeonShowcaseImageFile(fileName: string): Promise<void> {
   await unlink(join(UPLOADS_ROOT, "pigeon-showcase", fileName)).catch(() => {});
+}
+
+// club_award_pigeons (issue #378) — same flat single-image storage scheme as
+// savePigeonShowcaseImage above, under its own uploads/club-award-pigeons/ directory.
+export async function saveClubAwardPigeonImage(image: File): Promise<string> {
+  return saveSingleImage(join(UPLOADS_ROOT, "club-award-pigeons"), image);
+}
+
+export function clubAwardPigeonImageUrl(fileName: string): string {
+  return `/uploads/club-award-pigeons/${fileName}`;
+}
+
+export async function deleteClubAwardPigeonImageFile(fileName: string): Promise<void> {
+  await unlink(join(UPLOADS_ROOT, "club-award-pigeons", fileName)).catch(() => {});
 }
 
 // news_posts (issue #70's 主圖 addition) — same story as

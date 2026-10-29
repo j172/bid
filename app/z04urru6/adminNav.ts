@@ -35,6 +35,9 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { label: "名家專區管理", href: "/z04urru6/homepage/featured-lofts", section: "content" },
   // 鴿種介紹專區 (issue #54) — 包含入賞鴿／進口鴿／代表種鴿／世界名鴿
   { label: "鴿種介紹專區", href: "/z04urru6/pigeon-showcase", section: "content" },
+  // 各地鴿會入賞鴿專區與相簿分類管理 (issue #378) — 獨立於 pigeon_showcase 的相簿與入賞鴿管理
+  { label: "各地鴿會相簿管理", href: "/z04urru6/club-award-albums", section: "content" },
+  { label: "各地鴿會入賞鴿", href: "/z04urru6/club-award-pigeons", section: "content" },
   // 最新訊息管理 (issue #56) — public announcement CRUD. Issue #80 folded the
   // standalone "電子報" (Newsletter) nav item into this one: sending a
   // newsletter is now an option on this form, not a separate admin section.

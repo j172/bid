@@ -473,6 +473,36 @@ CREATE TABLE IF NOT EXISTS product_orders (
   KEY idx_product_orders_buyer (buyer_id),
   KEY idx_product_orders_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 各地鴿會入賞鴿相簿分類與入賞鴿 (issue #378) — see db/init.sql for comments
+CREATE TABLE IF NOT EXISTS club_award_albums (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  name VARCHAR(100) NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_club_award_albums_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS club_award_pigeons (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  album_id BIGINT NOT NULL,
+  category ENUM('award','imported','representative','world_famous') NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  loft_id BIGINT NULL,
+  photo_source VARCHAR(100) NULL,
+  image_file_name VARCHAR(255) NOT NULL,
+  description TEXT NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_club_award_pigeons_album_created (album_id, created_at),
+  KEY idx_club_award_pigeons_category_created (category, created_at),
+  KEY idx_club_award_pigeons_loft (loft_id),
+  CONSTRAINT fk_club_award_pigeons_album FOREIGN KEY (album_id) REFERENCES club_award_albums (id) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT fk_club_award_pigeons_loft FOREIGN KEY (loft_id) REFERENCES homepage_sections (id) ON DELETE RESTRICT ON UPDATE RESTRICT
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
 
 // Columns added after their table's initial CREATE TABLE IF NOT EXISTS;
