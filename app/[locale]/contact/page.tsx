@@ -3,6 +3,8 @@ import { getTranslations } from "next-intl/server";
 import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
 import ContactForm from "./ContactForm";
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({
   params,
 }: {
@@ -27,7 +29,7 @@ export default async function ContactPage() {
   // never sent to the browser). Null when unconfigured so ContactForm can
   // render the form without the widget rather than crash (e.g. local dev
   // without Turnstile keys set).
-  const turnstileSiteKey = process.env.CLOUDFLARE_TURNSTILE_SITE_KEY ?? null;
+  const turnstileSiteKey = process.env.CLOUDFLARE_TURNSTILE_SITE_KEY?.trim() || null;
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6">

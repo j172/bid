@@ -758,6 +758,18 @@ export async function ensureGoogleAuthColumns(db: mysql.Pool): Promise<void> {
   await db.query("ALTER TABLE users MODIFY COLUMN password_salt VARCHAR(255) NULL");
 }
 
+// Issue #360: LINE Login OAuth unique identifier (sub claim).
+// Distinct from the manual contact line_id column.
+export async function ensureLineUserIdColumn(db: mysql.Pool): Promise<void> {
+  await ensureColumn(db, "users", "line_user_id", "VARCHAR(255) NULL");
+  await ensureIndex(
+    db,
+    "users",
+    "uq_users_line_user_id",
+    "UNIQUE KEY uq_users_line_user_id (line_user_id)",
+  );
+}
+
 // Issue #259: cb-pigeon.com import (scripts/import-cb-pigeon-shops.mjs) adds
 // a 分類 (e.g. "賽鴿飼料-台北地區") to every shop it scrapes, which the
 // original nicepigeon.com import (#243) had no equivalent field for.
@@ -907,6 +919,7 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensureProductOrderColumns(db);
   await ensureLineIdAndTermsColumns(db);
   await ensurePigeonShowcasePhotoSource(db);
+  await ensureLineUserIdColumn(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {

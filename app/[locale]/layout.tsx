@@ -154,7 +154,7 @@ export default async function LocaleLayout({
           <CurrentUserProvider>
             <InAppBrowserBanner />
             <GoogleOneTap
-              clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+              clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID}
               locale={locale}
             />
             <GoogleAnalytics />

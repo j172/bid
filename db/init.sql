@@ -6,6 +6,9 @@ CREATE TABLE IF NOT EXISTS users (
   -- Google OAuth / Identity Services unique identifier (sub claim, issue #237)
   -- NULL for accounts registered via traditional email + password.
   google_id VARCHAR(255) NULL,
+  -- LINE Login OAuth unique identifier (sub claim, issue #360).
+  -- NULL for accounts not linked with LINE Login. Distinct from the public line_id handle below.
+  line_user_id VARCHAR(255) NULL,
   role VARCHAR(20) NOT NULL DEFAULT 'user',
   display_name VARCHAR(50) NULL,
   phone VARCHAR(20) NULL,
@@ -74,7 +77,8 @@ CREATE TABLE IF NOT EXISTS users (
   created_at DATETIME NOT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_users_email (email),
-  UNIQUE KEY uq_users_google_id (google_id)
+  UNIQUE KEY uq_users_google_id (google_id),
+  UNIQUE KEY uq_users_line_user_id (line_user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS sessions (

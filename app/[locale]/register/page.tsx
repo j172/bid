@@ -3,6 +3,8 @@ import { getTranslations } from "next-intl/server";
 import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
 import RegisterForm from "./RegisterForm";
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({
   params,
 }: {
@@ -24,5 +26,8 @@ export async function generateMetadata({
 }
 
 export default function RegisterPage() {
-  return <RegisterForm />;
+  const googleClientId =
+    process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim() || process.env.GOOGLE_CLIENT_ID?.trim() || null;
+
+  return <RegisterForm googleClientId={googleClientId} />;
 }

@@ -108,6 +108,7 @@ export interface UserRow {
   password_hash: string | null;
   password_salt: string | null;
   google_id: string | null;
+  line_user_id: string | null;
   role: Role;
   display_name: string | null;
   phone: string | null;
@@ -136,9 +137,34 @@ export async function findUserByGoogleId(googleId: string): Promise<UserRow | nu
   return list[0] ?? null;
 }
 
+export async function findUserByLineUserId(lineUserId: string): Promise<UserRow | null> {
+  const db = await getDb();
+  const [rows] = await db.query("SELECT * FROM users WHERE line_user_id = ? LIMIT 1", [lineUserId]);
+  const list = rows as UserRow[];
+  return list[0] ?? null;
+}
+
 export async function linkGoogleId(userId: number, googleId: string): Promise<void> {
   const db = await getDb();
   await db.query("UPDATE users SET google_id = ? WHERE id = ?", [googleId, userId]);
+}
+
+export async function linkLineUserId(userId: number, lineUserId: string): Promise<void> {
+  const db = await getDb();
+  await db.query("UPDATE users SET line_user_id = ? WHERE id = ?", [lineUserId, userId]);
+}
+
+export async function unlinkLineUserId(userId: number): Promise<{ ok: true } | { ok: false; errorCode: ErrorCode }> {
+  const profile = await getAccountProfile(userId);
+  if (!profile) {
+    return { ok: false, errorCode: "NOT_FOUND" };
+  }
+  if (!profile.hasPassword && !profile.googleLinked) {
+    return { ok: false, errorCode: "CANNOT_UNLINK_ONLY_LOGIN_METHOD" };
+  }
+  const db = await getDb();
+  await db.query("UPDATE users SET line_user_id = NULL WHERE id = ?", [userId]);
+  return { ok: true };
 }
 
 export async function createGoogleUser(options: {
@@ -157,6 +183,30 @@ export async function createGoogleUser(options: {
     `INSERT INTO users (email, google_id, role, display_name, email_verified, locale, created_at)
      VALUES (?, ?, ?, ?, 1, ?, NOW())`,
     [normalizedEmail, options.googleId, role, displayName, options.locale],
+  );
+  const insertId = (result as { insertId: number }).insertId;
+  return { id: insertId, email: normalizedEmail, role };
+}
+
+export async function createLineUser(options: {
+  email: string;
+  lineUserId: string;
+  displayName?: string | null;
+  phone?: string | null;
+  termsAccepted?: boolean;
+  locale: string;
+}): Promise<CurrentUser> {
+  const db = await getDb();
+  const normalizedEmail = options.email.trim().toLowerCase();
+  const role = roleForEmail(normalizedEmail);
+  const fallbackDigits = Math.floor(Math.random() * 90000 + 10000);
+  const displayName = options.displayName?.trim() || `user${fallbackDigits}`;
+  const termsAcceptedAt = options.termsAccepted ? new Date() : null;
+
+  const [result] = await db.query(
+    `INSERT INTO users (email, line_user_id, role, display_name, phone, terms_accepted_at, email_verified, locale, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, 1, ?, NOW())`,
+    [normalizedEmail, options.lineUserId, role, displayName, options.phone || null, termsAcceptedAt, options.locale],
   );
   const insertId = (result as { insertId: number }).insertId;
   return { id: insertId, email: normalizedEmail, role };
@@ -429,6 +479,7 @@ export interface AccountProfile {
   twoFactorMethod: TwoFactorMethod;
   hasPassword: boolean;
   googleLinked: boolean;
+  lineLinked: boolean;
 }
 
 export async function getAccountProfile(userId: number): Promise<AccountProfile | null> {
@@ -436,13 +487,15 @@ export async function getAccountProfile(userId: number): Promise<AccountProfile 
   const [rows] = await db.query(
     `SELECT email, display_name AS displayName, phone, address, line_id AS lineId, two_factor_method AS twoFactorMethod,
             (password_hash IS NOT NULL) AS hasPassword,
-            (google_id IS NOT NULL) AS googleLinked
+            (google_id IS NOT NULL) AS googleLinked,
+            (line_user_id IS NOT NULL) AS lineLinked
      FROM users WHERE id = ? LIMIT 1`,
     [userId],
   );
-  const list = rows as (Omit<AccountProfile, "hasPassword" | "googleLinked"> & {
+  const list = rows as (Omit<AccountProfile, "hasPassword" | "googleLinked" | "lineLinked"> & {
     hasPassword: number | boolean;
     googleLinked: number | boolean;
+    lineLinked: number | boolean;
   })[];
   const row = list[0];
   if (!row) return null;
@@ -450,6 +503,7 @@ export async function getAccountProfile(userId: number): Promise<AccountProfile 
     ...row,
     hasPassword: Boolean(row.hasPassword),
     googleLinked: Boolean(row.googleLinked),
+    lineLinked: Boolean(row.lineLinked),
   };
 }
 
