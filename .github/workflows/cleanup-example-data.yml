@@ -1,0 +1,44 @@
+name: Cleanup example.com test data (One-off Issue #375)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cleanup-example-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Upload cleanup script to server (FTPS)
+        env:
+          FTP_SERVER: ${{ secrets.NEW_FTP_SERVER || secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.NEW_FTP_USERNAME || secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.NEW_FTP_PASSWORD || secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          FTP_SERVER_CLEAN="$(printf '%s' "$FTP_SERVER" | tr -d '\r\n' | xargs)"
+          FTP_USERNAME_CLEAN="$(printf '%s' "$FTP_USERNAME" | tr -d '\r\n' | xargs)"
+          FTP_PASSWORD_CLEAN="$(printf '%s' "$FTP_PASSWORD" | tr -d '\r\n')"
+
+          if [ -z "$FTP_SERVER_CLEAN" ] || [ -z "$FTP_USERNAME_CLEAN" ] || [ -z "$FTP_PASSWORD_CLEAN" ]; then
+            echo "Missing FTP credentials"
+            exit 1
+          fi
+
+          curl --fail --show-error --ssl-reqd --ftp-pasv --ftp-create-dirs --insecure \
+            --connect-timeout 15 --max-time 120 --retry 2 --retry-delay 2 --retry-all-errors \
+            --user "${FTP_USERNAME_CLEAN}:${FTP_PASSWORD_CLEAN}" \
+            --upload-file "scripts/cleanup-example-data.mjs" \
+            --url "ftp://${FTP_SERVER_CLEAN}:21/bid_app/scripts/cleanup-example-data.mjs"
+
+      - name: Run remote cleanup over SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.NEW_DEPLOY_SSH_HOST || secrets.DEPLOY_SSH_HOST }}
+          port: ${{ secrets.NEW_DEPLOY_SSH_PORT || secrets.DEPLOY_SSH_PORT }}
+          username: ${{ secrets.NEW_DEPLOY_SSH_USER || secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.NEW_DEPLOY_SSH_PRIVATE_KEY || secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          command_timeout: 5m
+          script_path: scripts/remote-cleanup-example-data.sh
