@@ -7,6 +7,7 @@ import TurnstileWidget, { type TurnstileWidgetHandle } from "@/app/components/Tu
 import { inputClass } from "@/lib/formStyles";
 import { usePostJson } from "@/lib/usePostJson";
 import AuthFormShell from "../components/AuthFormShell";
+import { useCurrentUser } from "../components/CurrentUserProvider";
 import GoogleSignInButton from "../components/GoogleSignInButton";
 import LineSignInButton from "../components/LineSignInButton";
 import EmailOtpStep from "./EmailOtpStep";
@@ -44,6 +45,7 @@ export default function LoginForm({ turnstileSiteKey, googleClientId }: LoginFor
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("login");
+  const { refresh } = useCurrentUser();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { post, submitting, error, setError } = usePostJson(t("defaultError"));
@@ -122,6 +124,7 @@ export default function LoginForm({ turnstileSiteKey, googleClientId }: LoginFor
       }
       return;
     }
+    refresh();
     router.push("/");
     router.refresh();
   }

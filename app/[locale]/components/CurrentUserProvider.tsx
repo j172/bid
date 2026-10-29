@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 
 // Issue #354: app/[locale]/layout.tsx and SiteHeader.tsx both used to call
 // lib/auth's getCurrentUser() directly during server render to decide
@@ -42,21 +42,40 @@ interface CurrentUserState {
    * prerendered pages (where layout.tsx ran in CI without .env) can still
    * initialize GoogleOneTap. */
   googleClientId?: string | null;
+  /** Re-fetches /api/auth/me after client-side login or logout transitions
+   * where the root layout (and this provider) stays mounted. */
+  refresh: () => void;
 }
 
-const CurrentUserContext = createContext<CurrentUserState>({ user: null, loading: true, googleClientId: null });
+const noop = () => {};
+
+const CurrentUserContext = createContext<CurrentUserState>({
+  user: null,
+  loading: true,
+  googleClientId: null,
+  refresh: noop,
+});
 
 export function useCurrentUser(): CurrentUserState {
   return useContext(CurrentUserContext);
 }
 
 export default function CurrentUserProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<CurrentUserState>({ user: null, loading: true, googleClientId: null });
+  const [state, setState] = useState<Omit<CurrentUserState, "refresh">>({
+    user: null,
+    loading: true,
+    googleClientId: null,
+  });
+  const [refreshTick, setRefreshTick] = useState(0);
+
+  const refresh = useCallback(() => {
+    setRefreshTick((tick) => tick + 1);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
 
-    fetch("/api/auth/me")
+    fetch("/api/auth/me", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`unexpected status ${res.status}`))))
       .then((data: { user?: CurrentUser | null; googleClientId?: string | null }) => {
         if (!cancelled) {
@@ -76,7 +95,11 @@ export default function CurrentUserProvider({ children }: { children: ReactNode 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshTick]);
 
-  return <CurrentUserContext.Provider value={state}>{children}</CurrentUserContext.Provider>;
+  return (
+    <CurrentUserContext.Provider value={{ ...state, refresh }}>
+      {children}
+    </CurrentUserContext.Provider>
+  );
 }
