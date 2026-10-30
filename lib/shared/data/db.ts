@@ -478,15 +478,18 @@ CREATE TABLE IF NOT EXISTS product_orders (
 CREATE TABLE IF NOT EXISTS club_award_albums (
   id BIGINT NOT NULL AUTO_INCREMENT,
   name VARCHAR(100) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
   PRIMARY KEY (id),
+  KEY idx_club_award_albums_sort_order (sort_order, id),
   KEY idx_club_award_albums_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS club_award_pigeons (
   id BIGINT NOT NULL AUTO_INCREMENT,
   album_id BIGINT NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
   category ENUM('award','imported','representative','world_famous') NOT NULL,
   name VARCHAR(100) NOT NULL,
   loft_id BIGINT NULL,
@@ -496,6 +499,7 @@ CREATE TABLE IF NOT EXISTS club_award_pigeons (
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
   PRIMARY KEY (id),
+  KEY idx_club_award_pigeons_album_sort_order (album_id, sort_order, id),
   KEY idx_club_award_pigeons_album_created (album_id, created_at),
   KEY idx_club_award_pigeons_category_created (category, created_at),
   KEY idx_club_award_pigeons_loft (loft_id),
@@ -885,6 +889,107 @@ async function ensurePigeonShowcasePhotoSource(db: mysql.Pool): Promise<void> {
   await ensureColumn(db, "pigeon_showcase", "photo_source", "VARCHAR(100) NULL");
 }
 
+// Issue #380: manual album ordering and per-album pigeon ordering. Add the
+// columns nullable on upgraded databases so a failed backfill can be safely
+// retried on the next boot. Keyset-read and update at most 500 rows at a time
+// in their original display order; this avoids retaining the full legacy
+// dataset in memory and needs no window functions on older MySQL-compatible
+// servers. Once the backfill succeeds, harden the column to match the
+// fresh-install schema.
+export async function ensureClubAwardSortOrder(db: mysql.Pool): Promise<void> {
+  await ensureColumn(db, "club_award_albums", "sort_order", "INT NULL");
+  await ensureColumn(db, "club_award_pigeons", "sort_order", "INT NULL");
+
+  const backfillIfNullable = async (
+    table: "club_award_albums" | "club_award_pigeons",
+    perAlbum: boolean,
+  ) => {
+    const [rows] = await db.query(
+      `SELECT IS_NULLABLE AS is_nullable FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = 'sort_order'`,
+      [table],
+    );
+    if ((rows as { is_nullable: string }[])[0]?.is_nullable !== "YES") return;
+
+    type SortCursor = {
+      id: number | string;
+      album_id?: number | string;
+      cursor_created_at: string;
+    };
+    let cursor: SortCursor | undefined;
+    let previousAlbumId: string | undefined;
+    let sortOrder = 0;
+    const batchSize = 500;
+
+    while (true) {
+      const cursorCondition = !cursor
+        ? ""
+        : perAlbum
+          ? `WHERE (album_id > ? OR (album_id = ? AND
+              (created_at < ? OR (created_at = ? AND id < ?))))`
+          : `WHERE (created_at < ? OR (created_at = ? AND id < ?))`;
+      const cursorParams = !cursor
+        ? []
+        : perAlbum
+          ? [cursor.album_id, cursor.album_id, cursor.cursor_created_at, cursor.cursor_created_at, cursor.id]
+          : [cursor.cursor_created_at, cursor.cursor_created_at, cursor.id];
+      const [rows] = await db.query(
+        `SELECT id${perAlbum ? ", album_id" : ""}, CAST(created_at AS CHAR) AS cursor_created_at
+         FROM ${table}
+         ${cursorCondition}
+         ORDER BY ${perAlbum ? "album_id ASC, " : ""}created_at DESC, id DESC
+         LIMIT ?`,
+        [...cursorParams, batchSize],
+      );
+      const batchRows = rows as SortCursor[];
+      if (batchRows.length === 0) break;
+
+      const assignments: [number | string, number][] = [];
+      for (const row of batchRows) {
+        if (perAlbum) {
+          const albumId = String(row.album_id);
+          if (albumId !== previousAlbumId) {
+            previousAlbumId = albumId;
+            sortOrder = 0;
+          }
+        }
+        assignments.push([row.id, sortOrder]);
+        sortOrder += 1;
+      }
+
+      // Keep each statement comfortably below common SQL parameter/packet
+      // limits while avoiding one round trip per legacy row.
+      const cases = assignments.map(() => "WHEN ? THEN ?").join(" ");
+      const ids = assignments.map(() => "?").join(", ");
+      await db.query(
+        `UPDATE ${table}
+         SET sort_order = CASE id ${cases} END
+         WHERE id IN (${ids})`,
+        [...assignments.flatMap(([id, order]) => [id, order]), ...assignments.map(([id]) => id)],
+      );
+      cursor = batchRows[batchRows.length - 1];
+    }
+
+    await db.query(`ALTER TABLE ${table} MODIFY COLUMN sort_order INT NOT NULL DEFAULT 0`);
+  };
+
+  await backfillIfNullable("club_award_albums", false);
+  await backfillIfNullable("club_award_pigeons", true);
+
+  await ensureIndex(
+    db,
+    "club_award_albums",
+    "idx_club_award_albums_sort_order",
+    "KEY idx_club_award_albums_sort_order (sort_order, id)",
+  );
+  await ensureIndex(
+    db,
+    "club_award_pigeons",
+    "idx_club_award_pigeons_album_sort_order",
+    "KEY idx_club_award_pigeons_album_sort_order (album_id, sort_order, id)",
+  );
+}
+
 function createPool(): mysql.Pool {
   return mysql.createPool({
     host: process.env.MYSQL_HOST,
@@ -950,6 +1055,7 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensureLineIdAndTermsColumns(db);
   await ensurePigeonShowcasePhotoSource(db);
   await ensureLineUserIdColumn(db);
+  await ensureClubAwardSortOrder(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {

@@ -17,6 +17,7 @@ import { safeJsonLdString } from "@/lib/shared/seo/jsonLdScript";
 import { buildLoftShowcaseUrl } from "@/lib/lofts/loftStorefront";
 import DetailWithSidebar from "../../../components/DetailWithSidebar";
 import RichTextContent from "../../../components/RichTextContent";
+import RetryableImage from "@/app/components/RetryableImage";
 
 export const dynamic = "force-dynamic";
 
@@ -137,8 +138,7 @@ export default async function PigeonShowcaseDetailPage({ params }: { params: Pro
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLdString(breadcrumbJsonLd) }}
       />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <RetryableImage
         src={item.imageFileName ? pigeonShowcaseImageUrl(item.imageFileName) : IMAGE_FALLBACK_SRC}
         alt={item.name}
         loading="eager"

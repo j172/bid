@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import type { ReactNode } from "react";
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import { act, render, screen, cleanup, fireEvent } from "@testing-library/react";
 import FeaturedLoftCarouselCard from "./FeaturedLoftCarouselCard";
 
 vi.mock("@/i18n/navigation", () => ({
@@ -18,6 +18,7 @@ vi.mock("next-intl", () => ({
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
 });
 
 const baseItem = {
@@ -34,6 +35,26 @@ const baseItem = {
 // linkedLoftId). Issue #252's original fix (the image itself is a link, not
 // just decorative) still applies, just retargeted.
 describe("FeaturedLoftCarouselCard", () => {
+  it("preserves native image failure behavior for non-pigeon featured-loft covers", () => {
+    vi.useFakeTimers();
+    render(
+      <FeaturedLoftCarouselCard
+        items={[baseItem]}
+        activeBadge="名家專區"
+        ctaLabel="閱讀更多"
+        viewMoreLabel="查看全部"
+        viewMoreHref="/listings"
+        emptyStateTitle="尚無內容"
+        emptyStateDesc="敬請期待"
+      />,
+    );
+
+    const image = screen.getByAltText(baseItem.title);
+    fireEvent.error(image);
+    act(() => vi.advanceTimersByTime(800));
+    expect(image.getAttribute("src")).toBe(baseItem.imageUrl);
+  });
+
   it("wraps the image in a link to /featured-lofts/<id> (its own id, not linkedLoftId), same as the title and CTA", () => {
     render(
       <FeaturedLoftCarouselCard

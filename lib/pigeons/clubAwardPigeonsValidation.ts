@@ -34,6 +34,20 @@ export {
 };
 
 export const ALBUM_NAME_MAX = 100;
+export const CLUB_AWARD_SORT_ORDER_MAX = 2_147_483_647;
+
+export function isValidClubAwardSortOrder(value: number): boolean {
+  return Number.isInteger(value) && value >= 0 && value <= CLUB_AWARD_SORT_ORDER_MAX;
+}
+
+/** Returns undefined for an omitted value, null for invalid input. */
+export function parseOptionalClubAwardSortOrder(value: unknown): number | undefined | null {
+  if (value === undefined) return undefined;
+  if (typeof value !== "number" && typeof value !== "string") return null;
+  if (typeof value === "string" && value.trim() === "") return null;
+  const parsed = Number(value);
+  return isValidClubAwardSortOrder(parsed) ? parsed : null;
+}
 
 export function validateClubAwardAlbumName(name: string): FieldValidationResult {
   return validateRequiredTextField(name, {

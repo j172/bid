@@ -62,10 +62,11 @@ export default async function ClubAwardAlbumsAdminPage({ searchParams }: { searc
         {items.length === 0 ? (
           <p className="mt-6 text-ink-light">找不到符合條件的相簿資料。</p>
         ) : (
-          <AdminTable headers={["相簿名稱", "鴿子數量", "建立時間", ""]}>
+          <AdminTable headers={["相簿名稱", "排序值", "鴿子數量", "建立時間", ""]}>
             {items.map((album) => (
               <AdminTableRow key={album.id}>
                 <AdminTableCell className="font-medium">{album.name}</AdminTableCell>
+                <AdminTableCell>{album.sortOrder}</AdminTableCell>
                 <AdminTableCell>{album.pigeonCount} 羽</AdminTableCell>
                 <AdminTableCell className="text-ink-light">
                   {album.createdAt.toLocaleDateString("zh-TW")}
@@ -77,6 +78,7 @@ export default async function ClubAwardAlbumsAdminPage({ searchParams }: { searc
                       item={{
                         id: album.id,
                         name: album.name,
+                        sortOrder: album.sortOrder,
                       }}
                     />
                     <DeleteConfirmButton

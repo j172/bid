@@ -3,6 +3,7 @@
 
 import { getDb } from "@/lib/shared/data/db";
 import { paginate } from "@/lib/shared/data/pagination";
+import { isValidClubAwardSortOrder } from "@/lib/pigeons/clubAwardPigeonsValidation";
 import type { PigeonShowcaseCategory } from "@/lib/pigeons/pigeonShowcaseValidation";
 
 export type { PigeonShowcaseCategory };
@@ -10,6 +11,7 @@ export type { PigeonShowcaseCategory };
 export interface ClubAwardAlbum {
   id: number;
   name: string;
+  sortOrder: number;
   pigeonCount: number;
   coverImageFileName: string | null;
   createdAt: Date;
@@ -19,6 +21,7 @@ export interface ClubAwardAlbum {
 export interface ClubAwardPigeon {
   id: number;
   albumId: number;
+  sortOrder: number;
   albumTitle: string;
   category: PigeonShowcaseCategory;
   name: string;
@@ -33,6 +36,7 @@ export interface ClubAwardPigeon {
 
 export interface ClubAwardPigeonInput {
   albumId: number;
+  sortOrder?: number;
   category: PigeonShowcaseCategory;
   name: string;
   loftId: number | null;
@@ -69,6 +73,7 @@ export interface ListClubAwardPigeonsOptions {
 interface ClubAwardAlbumRow {
   id: number;
   name: string;
+  sort_order: number;
   pigeon_count: number;
   cover_image_file_name: string | null;
   created_at: Date;
@@ -78,6 +83,7 @@ interface ClubAwardAlbumRow {
 interface ClubAwardPigeonRow {
   id: number;
   album_id: number;
+  sort_order: number;
   album_title: string;
   category: PigeonShowcaseCategory;
   name: string;
@@ -94,6 +100,7 @@ function mapAlbumRow(row: ClubAwardAlbumRow): ClubAwardAlbum {
   return {
     id: row.id,
     name: row.name,
+    sortOrder: Number(row.sort_order),
     pigeonCount: Number(row.pigeon_count ?? 0),
     coverImageFileName: row.cover_image_file_name ?? null,
     createdAt: row.created_at,
@@ -105,6 +112,7 @@ function mapPigeonRow(row: ClubAwardPigeonRow): ClubAwardPigeon {
   return {
     id: row.id,
     albumId: row.album_id,
+    sortOrder: Number(row.sort_order),
     albumTitle: row.album_title,
     category: row.category,
     name: row.name,
@@ -122,8 +130,9 @@ const SELECT_ALBUM_WITH_STATS = `
   SELECT
     caa.id,
     caa.name,
+    caa.sort_order,
     (SELECT COUNT(*) FROM club_award_pigeons cap WHERE cap.album_id = caa.id) AS pigeon_count,
-    (SELECT cap.image_file_name FROM club_award_pigeons cap WHERE cap.album_id = caa.id ORDER BY cap.created_at DESC, cap.id DESC LIMIT 1) AS cover_image_file_name,
+    (SELECT cap.image_file_name FROM club_award_pigeons cap WHERE cap.album_id = caa.id ORDER BY cap.sort_order ASC, cap.id ASC LIMIT 1) AS cover_image_file_name,
     caa.created_at,
     caa.updated_at
   FROM club_award_albums caa
@@ -133,6 +142,7 @@ const SELECT_PIGEON_WITH_JOINS = `
   SELECT
     cap.id,
     cap.album_id,
+    cap.sort_order,
     caa.name AS album_title,
     cap.category,
     cap.name,
@@ -168,7 +178,7 @@ export async function listClubAwardAlbums(
   const { offset, limit } = paginate(options.page, options.pageSize ?? DEFAULT_CLUB_AWARD_PAGE_SIZE);
 
   const [rows] = await db.query(
-    `${SELECT_ALBUM_WITH_STATS} ${where} ORDER BY caa.created_at DESC, caa.id DESC LIMIT ${limit} OFFSET ${offset}`,
+    `${SELECT_ALBUM_WITH_STATS} ${where} ORDER BY caa.sort_order ASC, caa.id ASC LIMIT ${limit} OFFSET ${offset}`,
     params,
   );
   return { items: (rows as ClubAwardAlbumRow[]).map(mapAlbumRow), total };
@@ -183,9 +193,19 @@ export async function listLatestClubAwardAlbums(limit: number): Promise<ClubAwar
   return (rows as ClubAwardAlbumRow[]).map(mapAlbumRow);
 }
 
+/** Home/public curated ordering, limited to the first `limit` albums. */
+export async function listTopClubAwardAlbums(limit: number): Promise<ClubAwardAlbum[]> {
+  const db = await getDb();
+  const [rows] = await db.query(
+    `${SELECT_ALBUM_WITH_STATS} ORDER BY caa.sort_order ASC, caa.id ASC LIMIT ?`,
+    [limit],
+  );
+  return (rows as ClubAwardAlbumRow[]).map(mapAlbumRow);
+}
+
 export async function listAllClubAwardAlbums(): Promise<ClubAwardAlbum[]> {
   const db = await getDb();
-  const [rows] = await db.query(`${SELECT_ALBUM_WITH_STATS} ORDER BY caa.created_at DESC, caa.id DESC`);
+  const [rows] = await db.query(`${SELECT_ALBUM_WITH_STATS} ORDER BY caa.sort_order ASC, caa.id ASC`);
   return (rows as ClubAwardAlbumRow[]).map(mapAlbumRow);
 }
 
@@ -196,21 +216,43 @@ export async function getClubAwardAlbumById(id: number): Promise<ClubAwardAlbum 
   return row ? mapAlbumRow(row) : null;
 }
 
-export async function createClubAwardAlbum(name: string): Promise<ClubAwardOutcome & { id?: number }> {
+export async function createClubAwardAlbum(
+  name: string,
+  sortOrder?: number,
+): Promise<ClubAwardOutcome & { id?: number }> {
+  if (sortOrder !== undefined && !isValidClubAwardSortOrder(sortOrder)) {
+    return { ok: false, error: "排序值必須是大於或等於 0 的整數" };
+  }
   const db = await getDb();
+  let finalSortOrder = sortOrder;
+  if (finalSortOrder === undefined) {
+    const [rows] = await db.query("SELECT COALESCE(MAX(sort_order), -1) AS max_sort_order FROM club_award_albums");
+    finalSortOrder = Number((rows as { max_sort_order: number }[])[0].max_sort_order) + 1;
+  }
   const [result] = await db.query(
-    "INSERT INTO club_award_albums (name, created_at, updated_at) VALUES (?, NOW(), NOW())",
-    [name],
+    "INSERT INTO club_award_albums (name, sort_order, created_at, updated_at) VALUES (?, ?, NOW(), NOW())",
+    [name, finalSortOrder],
   );
   return { ok: true, id: (result as { insertId: number }).insertId };
 }
 
-export async function updateClubAwardAlbum(id: number, name: string): Promise<ClubAwardOutcome> {
+export async function updateClubAwardAlbum(
+  id: number,
+  name: string,
+  sortOrder?: number,
+): Promise<ClubAwardOutcome> {
+  if (sortOrder !== undefined && !isValidClubAwardSortOrder(sortOrder)) {
+    return { ok: false, error: "排序值必須是大於或等於 0 的整數" };
+  }
   const db = await getDb();
-  const [result] = await db.query("UPDATE club_award_albums SET name = ?, updated_at = NOW() WHERE id = ?", [
-    name,
-    id,
-  ]);
+  const [result] =
+    sortOrder === undefined
+      ? await db.query("UPDATE club_award_albums SET name = ?, updated_at = NOW() WHERE id = ?", [name, id])
+      : await db.query("UPDATE club_award_albums SET name = ?, sort_order = ?, updated_at = NOW() WHERE id = ?", [
+          name,
+          sortOrder,
+          id,
+        ]);
   if ((result as { affectedRows: number }).affectedRows === 0) {
     return { ok: false, error: "找不到這個相簿" };
   }
@@ -282,7 +324,11 @@ export async function listClubAwardPigeons(
   const { offset, limit } = paginate(options.page, options.pageSize ?? DEFAULT_CLUB_AWARD_PAGE_SIZE);
 
   const [rows] = await db.query(
-    `${SELECT_PIGEON_WITH_JOINS} ${where} ORDER BY cap.created_at DESC, cap.id DESC LIMIT ${limit} OFFSET ${offset}`,
+    `${SELECT_PIGEON_WITH_JOINS} ${where} ORDER BY ${
+      options.albumId === undefined
+        ? "caa.sort_order ASC, caa.id ASC, cap.sort_order ASC, cap.id ASC"
+        : "cap.sort_order ASC, cap.id ASC"
+    } LIMIT ${limit} OFFSET ${offset}`,
     params,
   );
   return { items: (rows as ClubAwardPigeonRow[]).map(mapPigeonRow), total };
@@ -307,6 +353,9 @@ export async function getClubAwardPigeonById(id: number): Promise<ClubAwardPigeo
 export async function createClubAwardPigeon(
   input: ClubAwardPigeonInput,
 ): Promise<ClubAwardOutcome & { id?: number }> {
+  if (input.sortOrder !== undefined && !isValidClubAwardSortOrder(input.sortOrder)) {
+    return { ok: false, error: "排序值必須是大於或等於 0 的整數" };
+  }
   if (!(await albumExists(input.albumId))) {
     return { ok: false, error: "找不到這個相簿" };
   }
@@ -316,11 +365,20 @@ export async function createClubAwardPigeon(
     }
   }
   const db = await getDb();
+  let sortOrder = input.sortOrder;
+  if (sortOrder === undefined) {
+    const [rows] = await db.query(
+      "SELECT COALESCE(MAX(sort_order), -1) AS max_sort_order FROM club_award_pigeons WHERE album_id = ?",
+      [input.albumId],
+    );
+    sortOrder = Number((rows as { max_sort_order: number }[])[0].max_sort_order) + 1;
+  }
   const [result] = await db.query(
-    `INSERT INTO club_award_pigeons (album_id, category, name, loft_id, photo_source, image_file_name, description, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+    `INSERT INTO club_award_pigeons (album_id, sort_order, category, name, loft_id, photo_source, image_file_name, description, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
     [
       input.albumId,
+      sortOrder,
       input.category,
       input.name,
       input.loftId ?? null,
@@ -333,6 +391,9 @@ export async function createClubAwardPigeon(
 }
 
 export async function updateClubAwardPigeon(id: number, input: ClubAwardPigeonInput): Promise<ClubAwardOutcome> {
+  if (input.sortOrder !== undefined && !isValidClubAwardSortOrder(input.sortOrder)) {
+    return { ok: false, error: "排序值必須是大於或等於 0 的整數" };
+  }
   if (!(await albumExists(input.albumId))) {
     return { ok: false, error: "找不到這個相簿" };
   }
@@ -342,12 +403,32 @@ export async function updateClubAwardPigeon(id: number, input: ClubAwardPigeonIn
     }
   }
   const db = await getDb();
+  const [currentRows] = await db.query(
+    "SELECT album_id, sort_order FROM club_award_pigeons WHERE id = ? LIMIT 1",
+    [id],
+  );
+  const current = (currentRows as { album_id: number; sort_order: number }[])[0];
+  if (!current) return { ok: false, error: "找不到這筆入賞鴿資料" };
+
+  let sortOrder = input.sortOrder;
+  if (sortOrder === undefined) {
+    if (Number(current.album_id) === input.albumId) {
+      sortOrder = Number(current.sort_order);
+    } else {
+      const [rows] = await db.query(
+        "SELECT COALESCE(MAX(sort_order), -1) AS max_sort_order FROM club_award_pigeons WHERE album_id = ?",
+        [input.albumId],
+      );
+      sortOrder = Number((rows as { max_sort_order: number }[])[0].max_sort_order) + 1;
+    }
+  }
   const [result] = await db.query(
     `UPDATE club_award_pigeons
-     SET album_id = ?, category = ?, name = ?, loft_id = ?, photo_source = ?, image_file_name = ?, description = ?, updated_at = NOW()
+     SET album_id = ?, sort_order = ?, category = ?, name = ?, loft_id = ?, photo_source = ?, image_file_name = ?, description = ?, updated_at = NOW()
      WHERE id = ?`,
     [
       input.albumId,
+      sortOrder,
       input.category,
       input.name,
       input.loftId ?? null,

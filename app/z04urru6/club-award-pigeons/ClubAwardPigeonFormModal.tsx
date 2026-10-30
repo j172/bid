@@ -27,6 +27,7 @@ export interface PigeonLoftOption {
 type EditItem = {
   id: number;
   albumId: number;
+  sortOrder: number;
   category: PigeonShowcaseCategory;
   name: string;
   loftId: number | null;
@@ -56,6 +57,8 @@ export default function ClubAwardPigeonFormModal(props: Props) {
   const [albumId, setAlbumId] = useState(
     isEdit ? String(props.item.albumId) : props.albums[0] ? String(props.albums[0].id) : "",
   );
+  const [sortOrder, setSortOrder] = useState(isEdit ? String(props.item.sortOrder) : "");
+  const [sortOrderTouched, setSortOrderTouched] = useState(false);
   const [category, setCategory] = useState<PigeonShowcaseCategory>(isEdit ? props.item.category : "award");
   const [name, setName] = useState(isEdit ? props.item.name : "");
   const [loftId, setLoftId] = useState(
@@ -69,6 +72,8 @@ export default function ClubAwardPigeonFormModal(props: Props) {
 
   function resetForm() {
     setAlbumId(isEdit ? String(props.item.albumId) : props.albums[0] ? String(props.albums[0].id) : "");
+    setSortOrder(isEdit ? String(props.item.sortOrder) : "");
+    setSortOrderTouched(false);
     setCategory(isEdit ? props.item.category : "award");
     setName(isEdit ? props.item.name : "");
     setLoftId(isEdit ? (props.item.loftId != null ? String(props.item.loftId) : "") : "");
@@ -96,6 +101,9 @@ export default function ClubAwardPigeonFormModal(props: Props) {
     const { html: descriptionHtml, images: descriptionImages } = descriptionEditorRef.current!.extractForSubmit();
     const formData = new FormData();
     formData.set("albumId", albumId);
+    if (sortOrder.trim() && (!isEdit || sortOrderTouched)) {
+      formData.set("sortOrder", sortOrder);
+    }
     formData.set("category", category);
     formData.set("name", name);
     if (loftId) {
@@ -164,6 +172,22 @@ export default function ClubAwardPigeonFormModal(props: Props) {
               {props.albums.length === 0 && (
                 <span className="text-xs text-ended">目前沒有任何相簿，請先於「各地鴿會相簿管理」新增。</span>
               )}
+            </label>
+
+            <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+              排序值
+              <input
+                type="number"
+                min={0}
+                step={1}
+                value={sortOrder}
+                onChange={(e) => {
+                  setSortOrder(e.target.value);
+                  setSortOrderTouched(true);
+                }}
+                placeholder="留空時排在相簿最後"
+                className={inputClass}
+              />
             </label>
 
             <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">

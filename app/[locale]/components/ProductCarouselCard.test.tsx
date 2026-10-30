@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import type { ReactNode } from "react";
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import { act, render, screen, cleanup, fireEvent } from "@testing-library/react";
 import ProductCarouselCard from "./ProductCarouselCard";
 
 vi.mock("@/i18n/navigation", () => ({
@@ -19,6 +19,7 @@ vi.mock("next-intl", () => ({
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
 });
 
 const baseItem = {
@@ -29,6 +30,26 @@ const baseItem = {
 };
 
 describe("ProductCarouselCard", () => {
+  it("preserves native image failure behavior for non-pigeon products", () => {
+    vi.useFakeTimers();
+    render(
+      <ProductCarouselCard
+        items={[baseItem]}
+        activeBadge="精選商品"
+        ctaLabel="立即購買"
+        viewMoreLabel="查看更多"
+        viewMoreHref="/products"
+        emptyStateTitle="尚無內容"
+        emptyStateDesc="敬請期待"
+      />,
+    );
+
+    const image = screen.getByAltText(baseItem.title);
+    fireEvent.error(image);
+    act(() => vi.advanceTimersByTime(800));
+    expect(image.getAttribute("src")).toBe(baseItem.imageUrl);
+  });
+
   it("shows an empty state instead of a blank block when there are no active products", () => {
     render(
       <ProductCarouselCard

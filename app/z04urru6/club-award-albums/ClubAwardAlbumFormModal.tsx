@@ -14,6 +14,7 @@ const inputClass =
 type EditAlbumItem = {
   id: number;
   name: string;
+  sortOrder: number;
 };
 
 type Props = { mode: "create" } | { mode: "edit"; item: EditAlbumItem };
@@ -25,11 +26,13 @@ export default function ClubAwardAlbumFormModal(props: Props) {
 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(isEdit ? props.item.name : "");
+  const [sortOrder, setSortOrder] = useState(isEdit ? String(props.item.sortOrder) : "");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   function resetForm() {
     setName(isEdit ? props.item.name : "");
+    setSortOrder(isEdit ? String(props.item.sortOrder) : "");
     setError(null);
   }
 
@@ -50,7 +53,10 @@ export default function ClubAwardAlbumFormModal(props: Props) {
         {
           method: isEdit ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: trimmed }),
+          body: JSON.stringify({
+            name: trimmed,
+            ...(sortOrder.trim() ? { sortOrder: Number(sortOrder) } : {}),
+          }),
         },
       );
       const data = await response.json().catch(() => ({ ok: false, error: "儲存失敗" }));
@@ -95,6 +101,19 @@ export default function ClubAwardAlbumFormModal(props: Props) {
                 maxLength={ALBUM_NAME_MAX}
                 placeholder="例如：2026 春季南海賽鴿協會"
                 required
+                className={inputClass}
+              />
+            </label>
+
+            <label className="flex flex-col gap-1 text-sm font-medium text-ink-light">
+              排序值
+              <input
+                type="number"
+                min={0}
+                step={1}
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                placeholder="留空時排在最後"
                 className={inputClass}
               />
             </label>

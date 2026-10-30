@@ -12,6 +12,7 @@ import {
   listClubAwardPigeons,
   listLatestClubAwardAlbums,
   listLatestClubAwardPigeonsByAlbum,
+  listTopClubAwardAlbums,
   updateClubAwardAlbum,
   updateClubAwardPigeon,
   updateClubAwardPigeonDescription,
@@ -30,6 +31,7 @@ beforeEach(() => {
 const ALBUM_ROW = {
   id: 10,
   name: "2026 春季北海聯合會",
+  sort_order: 2,
   pigeon_count: 3,
   cover_image_file_name: "cover1.webp",
   created_at: new Date("2026-03-01T00:00:00Z"),
@@ -39,6 +41,7 @@ const ALBUM_ROW = {
 const PIGEON_ROW = {
   id: 101,
   album_id: 10,
+  sort_order: 4,
   album_title: "2026 春季北海聯合會",
   category: "award",
   name: "北海綜合冠軍",
@@ -74,6 +77,7 @@ describe("club_award_albums CRUD", () => {
       {
         id: 10,
         name: "2026 春季北海聯合會",
+        sortOrder: 2,
         pigeonCount: 3,
         coverImageFileName: "cover1.webp",
         createdAt: ALBUM_ROW.created_at,
@@ -82,7 +86,7 @@ describe("club_award_albums CRUD", () => {
     ]);
   });
 
-  it("lists latest albums with limit and all albums newest-first", async () => {
+  it("keeps latest albums chronological and lists curated albums by sort order", async () => {
     queryMock.mockResolvedValueOnce([[ALBUM_ROW]]);
     const latest = await listLatestClubAwardAlbums(6);
     expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("ORDER BY caa.created_at DESC, caa.id DESC LIMIT ?"), [
@@ -91,7 +95,16 @@ describe("club_award_albums CRUD", () => {
     expect(latest).toHaveLength(1);
 
     queryMock.mockResolvedValueOnce([[ALBUM_ROW]]);
+    const top = await listTopClubAwardAlbums(6);
+    expect(queryMock).toHaveBeenCalledWith(
+      expect.stringContaining("ORDER BY caa.sort_order ASC, caa.id ASC LIMIT ?"),
+      [6],
+    );
+    expect(top[0].sortOrder).toBe(2);
+
+    queryMock.mockResolvedValueOnce([[ALBUM_ROW]]);
     const all = await listAllClubAwardAlbums();
+    expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("ORDER BY caa.sort_order ASC, caa.id ASC"));
     expect(all).toHaveLength(1);
   });
 
@@ -104,12 +117,38 @@ describe("club_award_albums CRUD", () => {
     expect(album?.name).toBe("2026 春季北海聯合會");
   });
 
-  it("creates and updates an album", async () => {
+  it("appends unspecified albums after the current maximum and honors explicit sort values", async () => {
+    queryMock.mockResolvedValueOnce([[{ max_sort_order: 8 }]]);
     queryMock.mockResolvedValueOnce([{ insertId: 15 }]);
     expect(await createClubAwardAlbum("新相簿")).toEqual({ ok: true, id: 15 });
+    expect(queryMock).toHaveBeenLastCalledWith(
+      "INSERT INTO club_award_albums (name, sort_order, created_at, updated_at) VALUES (?, ?, NOW(), NOW())",
+      ["新相簿", 9],
+    );
+
+    queryMock.mockResolvedValueOnce([[{ max_sort_order: -1 }]]);
+    queryMock.mockResolvedValueOnce([{ insertId: 17 }]);
+    expect(await createClubAwardAlbum("空相簿排序")).toEqual({ ok: true, id: 17 });
+    expect(queryMock).toHaveBeenLastCalledWith(
+      "INSERT INTO club_award_albums (name, sort_order, created_at, updated_at) VALUES (?, ?, NOW(), NOW())",
+      ["空相簿排序", 0],
+    );
+
+    queryMock.mockResolvedValueOnce([{ insertId: 16 }]);
+    expect(await createClubAwardAlbum("指定排序", 0)).toEqual({ ok: true, id: 16 });
+    expect(queryMock).toHaveBeenLastCalledWith(
+      "INSERT INTO club_award_albums (name, sort_order, created_at, updated_at) VALUES (?, ?, NOW(), NOW())",
+      ["指定排序", 0],
+    );
 
     queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
     expect(await updateClubAwardAlbum(15, "更新相簿")).toEqual({ ok: true });
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+    expect(await updateClubAwardAlbum(15, "移至最前", 0)).toEqual({ ok: true });
+    expect(queryMock).toHaveBeenLastCalledWith(
+      "UPDATE club_award_albums SET name = ?, sort_order = ?, updated_at = NOW() WHERE id = ?",
+      ["移至最前", 0, 15],
+    );
 
     queryMock.mockResolvedValueOnce([{ affectedRows: 0 }]);
     expect(await updateClubAwardAlbum(999, "更新相簿")).toEqual({ ok: false, error: "找不到這個相簿" });
@@ -131,6 +170,7 @@ describe("club_award_albums CRUD", () => {
     queryMock.mockResolvedValueOnce([[{ cnt: 0 }]]);
     queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
     expect(await deleteClubAwardAlbum(10)).toEqual({ ok: true });
+    expect(queryMock.mock.calls.some(([sql]) => String(sql).startsWith("UPDATE club_award_albums"))).toBe(false);
 
     queryMock.mockResolvedValueOnce([[{ cnt: 0 }]]);
     queryMock.mockResolvedValueOnce([{ affectedRows: 0 }]);
@@ -158,6 +198,7 @@ describe("club_award_pigeons CRUD", () => {
     expect(items[0]).toEqual({
       id: 101,
       albumId: 10,
+      sortOrder: 4,
       albumTitle: "2026 春季北海聯合會",
       category: "award",
       name: "北海綜合冠軍",
@@ -185,6 +226,21 @@ describe("club_award_pigeons CRUD", () => {
     expect(item?.albumTitle).toBe("2026 春季北海聯合會");
   });
 
+  it("groups cross-album results by album order and sorts within an explicitly selected album", async () => {
+    queryMock.mockResolvedValueOnce([[{ cnt: 1 }]]);
+    queryMock.mockResolvedValueOnce([[PIGEON_ROW]]);
+    await listClubAwardPigeons();
+    expect(queryMock.mock.calls[1][0]).toContain(
+      "ORDER BY caa.sort_order ASC, caa.id ASC, cap.sort_order ASC, cap.id ASC",
+    );
+
+    queryMock.mockResolvedValueOnce([[{ cnt: 1 }]]);
+    queryMock.mockResolvedValueOnce([[PIGEON_ROW]]);
+    await listClubAwardPigeons({ albumId: 10 });
+    expect(queryMock.mock.calls[3][0]).toContain("ORDER BY cap.sort_order ASC, cap.id ASC");
+    expect(queryMock.mock.calls[3][0]).not.toContain("caa.sort_order ASC");
+  });
+
   it("rejects createClubAwardPigeon when album does not exist", async () => {
     queryMock.mockResolvedValueOnce([[]]); // albumExists -> false
 
@@ -204,6 +260,7 @@ describe("club_award_pigeons CRUD", () => {
   it("allows null loftId for any category and validates partner_loft when loftId is provided", async () => {
     // null loftId for 'award' category succeeds without partner_loft query
     queryMock.mockResolvedValueOnce([[{ 1: 1 }]]); // albumExists
+    queryMock.mockResolvedValueOnce([[{ max_sort_order: 4 }]]);
     queryMock.mockResolvedValueOnce([{ insertId: 201 }]);
 
     const createdNoLoft = await createClubAwardPigeon({
@@ -215,6 +272,10 @@ describe("club_award_pigeons CRUD", () => {
       description: "<p>d</p>",
     });
     expect(createdNoLoft).toEqual({ ok: true, id: 201 });
+    expect(queryMock).toHaveBeenLastCalledWith(
+      expect.stringContaining("INSERT INTO club_award_pigeons (album_id, sort_order"),
+      [10, 5, "award", "無鴿舍入賞鴿", null, null, "a.webp", "<p>d</p>"],
+    );
 
     // non-existent partner_loft is rejected
     queryMock.mockResolvedValueOnce([[{ 1: 1 }]]); // albumExists
@@ -228,11 +289,30 @@ describe("club_award_pigeons CRUD", () => {
       description: "<p>d</p>",
     });
     expect(badLoft).toEqual({ ok: false, error: "找不到這個合作鴿舍" });
+
+    queryMock.mockResolvedValueOnce([[{ 1: 1 }]]); // albumExists
+    queryMock.mockResolvedValueOnce([[{ max_sort_order: -1 }]]);
+    queryMock.mockResolvedValueOnce([{ insertId: 202 }]);
+    expect(
+      await createClubAwardPigeon({
+        albumId: 10,
+        category: "award",
+        name: "空相簿排序",
+        loftId: null,
+        imageFileName: "empty-album.webp",
+        description: "",
+      }),
+    ).toEqual({ ok: true, id: 202 });
+    expect(queryMock).toHaveBeenLastCalledWith(
+      expect.stringContaining("INSERT INTO club_award_pigeons (album_id, sort_order"),
+      [10, 0, "award", "空相簿排序", null, null, "empty-album.webp", ""],
+    );
   });
 
   it("updates pigeon, updates description, and deletes pigeon", async () => {
     queryMock.mockResolvedValueOnce([[{ 1: 1 }]]); // albumExists
     queryMock.mockResolvedValueOnce([[{ 1: 1 }]]); // isPartnerLoft
+    queryMock.mockResolvedValueOnce([[{ album_id: 10, sort_order: 4 }]]); // current sort position
     queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
 
     const updated = await updateClubAwardPigeon(101, {
@@ -245,6 +325,18 @@ describe("club_award_pigeons CRUD", () => {
       description: "<p>updated</p>",
     });
     expect(updated).toEqual({ ok: true });
+    expect(queryMock.mock.calls[3][0]).toContain("SET album_id = ?, sort_order = ?, category = ?");
+    expect(queryMock.mock.calls[3][1]).toEqual([
+      10,
+      4,
+      "imported",
+      "更新名稱",
+      5,
+      "舍內自拍",
+      "b.webp",
+      "<p>updated</p>",
+      101,
+    ]);
 
     queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
     await updateClubAwardPigeonDescription(101, "<p>desc</p>");
@@ -258,5 +350,35 @@ describe("club_award_pigeons CRUD", () => {
 
     queryMock.mockResolvedValueOnce([{ affectedRows: 0 }]);
     expect(await deleteClubAwardPigeon(999)).toEqual({ ok: false, error: "找不到這筆入賞鴿資料" });
+  });
+
+  it("moves an unspecified pigeon to the end of the destination album", async () => {
+    queryMock.mockResolvedValueOnce([[{ 1: 1 }]]); // destination album exists
+    queryMock.mockResolvedValueOnce([[{ album_id: 10, sort_order: 4 }]]); // current album/sort
+    queryMock.mockResolvedValueOnce([[{ max_sort_order: 6 }]]); // target maximum
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+    const result = await updateClubAwardPigeon(101, {
+      albumId: 20,
+      category: "award",
+      name: "移轉到新相簿",
+      loftId: null,
+      imageFileName: "moved.webp",
+      description: "",
+    });
+
+    expect(result).toEqual({ ok: true });
+    expect(queryMock).toHaveBeenLastCalledWith(
+      expect.stringContaining("SET album_id = ?, sort_order = ?, category = ?"),
+      [20, 7, "award", "移轉到新相簿", null, null, "moved.webp", "", 101],
+    );
+  });
+
+  it("deletes a pigeon without rewriting sibling sort values", async () => {
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+    expect(await deleteClubAwardPigeon(101)).toEqual({ ok: true });
+    expect(queryMock).toHaveBeenCalledTimes(1);
+    expect(queryMock).toHaveBeenCalledWith("DELETE FROM club_award_pigeons WHERE id = ?", [101]);
   });
 });
