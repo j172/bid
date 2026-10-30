@@ -1,6 +1,6 @@
 import Link from "next/link";
-import type { PendingActionItems } from "@/lib/dashboard";
-import { formatRemainingZhHant } from "@/lib/format";
+import type { PendingActionItems } from "@/lib/account/dashboard";
+import { formatRemainingZhHant } from "@/lib/shared/formatting/format";
 
 const cardClass = "rounded-lg border border-border bg-surface p-4 shadow-sm";
 const emptyClass = "text-sm text-ink-light";

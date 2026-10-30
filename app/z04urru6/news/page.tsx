@@ -1,7 +1,7 @@
 import { DEFAULT_NEWS_PAGE_SIZE, NEWS_PAGE_SIZES, isNewsPageSize, listNews } from "@/lib/news";
-import { newsImageUrl } from "@/lib/uploads";
-import { listBroadcasts, type Broadcast } from "@/lib/newsletter";
-import { BROADCAST_STATUS_LABEL } from "@/lib/broadcastStatusLabel";
+import { newsImageUrl } from "@/lib/shared/content/uploads";
+import { listBroadcasts, type Broadcast } from "@/lib/news/newsletter";
+import { BROADCAST_STATUS_LABEL } from "@/lib/homepage/broadcastStatusLabel";
 import AdminPageIntro from "../AdminPageIntro";
 import AdminPagination from "../components/AdminPagination";
 import { parseFirstParam, parsePageParam, type SearchParams } from "../components/searchParams";
@@ -30,7 +30,7 @@ export default async function NewsAdminPage({ searchParams }: { searchParams: Pr
   const page = Math.min(requestedPage, totalPages);
 
   // 電子報狀態 column (issue #80) — status/schedule are never cached on the
-  // news_posts row, only the broadcast_id pointer is (see lib/news.ts), so
+  // news_posts row, only the broadcast_id pointer is (see lib/news/index.ts), so
   // this is resolved live against Resend every render, same "single source
   // of truth" story the old standalone /z04urru6/newsletter status page had.
   // One list call regardless of how many rows are opted in; a fetch failure

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
+import { requireAdmin } from "@/lib/auth/apiAuth";
 import { addListingPhotos, relistClosedListing } from "@/lib/listings";
-import { validateEndsAt, validatePrice, validateStartsAt } from "@/lib/listingValidation";
-import { copyListingPhotos } from "@/lib/uploads";
-import { parseIdParam } from "@/lib/routeParams";
+import { validateEndsAt, validatePrice, validateStartsAt } from "@/lib/listings/listingValidation";
+import { copyListingPhotos } from "@/lib/shared/content/uploads";
+import { parseIdParam } from "@/lib/shared/api/routeParams";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdmin();

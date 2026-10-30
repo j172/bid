@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
+import { canonicalUrl, hreflangAlternates } from "@/lib/shared/seo/seo";
 import LoginForm from "./LoginForm";
 
 // Forced dynamic (runtime SSR) because CLOUDFLARE_TURNSTILE_SITE_KEY and
@@ -36,7 +36,7 @@ export async function generateMetadata({
 // used to be one "use client" component, and was split for issue #140 H-1 so
 // the Turnstile *site* key can be read from the environment here and handed
 // down as a prop. Site key only: it is not secret and is meant to be public
-// in the rendered widget, while lib/turnstile.ts reads the *secret* key
+// in the rendered widget, while lib/auth/turnstile.ts reads the *secret* key
 // server-side and never sends it to the browser. Null when unconfigured, so
 // LoginForm renders the login flows without the widget rather than crashing
 // (e.g. local dev with no Turnstile keys) — same shape as

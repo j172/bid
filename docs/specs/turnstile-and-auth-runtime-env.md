@@ -1,6 +1,6 @@
-# SPEC: 登入／註冊／聯絡表單執行期環境變數動態渲染與 LINE／Google 登入整合 (Turnstile & OAuth Runtime Env SSR)
+# 規格：登入／註冊／聯絡表單執行期環境變數動態渲染與 LINE／Google 登入整合
 
-## 1. 背景與目標 (Outcome)
+## 1. 背景與目標
 
 ### 現況痛點
 1. **SSG 預渲染導致執行期環境變數被寫死為 `null`**：
@@ -12,7 +12,7 @@
 3. **LINE Login 與認證快捷按鈕置頂尚未合入 `master`**：
    - Issue #360（LINE Login v2.1 整合）與 Issue #362（登入／註冊快捷按鈕置頂）及 Turnstile 錯誤碼記錄（PR #370）尚未整合部署至 `master`。
 
-### 預期成果 (Outcome)
+### 預期成果
 1. **恢復正式站密碼登入與聯絡表單 Turnstile 驗證**：`/[locale]/login`、`/[locale]/register`、`/[locale]/contact` 強制於伺服器執行期動態渲染（`export const dynamic = "force-dynamic"`），直接讀取正式機 `.env` 的 `CLOUDFLARE_TURNSTILE_SITE_KEY` 與 `GOOGLE_CLIENT_ID`，正常顯示 Turnstile 勾選框並通過驗證。
 2. **恢復全站 Google One Tap 與 Google／LINE 快捷登入**：
    - `GET /api/auth/me` 一併回傳執行期 `googleClientId`，由 `CurrentUserProvider` 提供給 `GoogleOneTap` 作為執行期 fallback，無須破壞全站靜態頁面的 SSG 快取。
@@ -20,7 +20,7 @@
 
 ---
 
-## 2. 範圍 (Scope)
+## 2. 範圍
 
 - 修改與整合範圍：
   - `app/[locale]/login/page.tsx`：加上 `export const dynamic = "force-dynamic"`，並以 `.trim() || null` 讀取 `CLOUDFLARE_TURNSTILE_SITE_KEY` 與 `NEXT_PUBLIC_GOOGLE_CLIENT_ID`／`GOOGLE_CLIENT_ID`。
@@ -31,7 +31,7 @@
 
 ---
 
-## 3. 非目標 (Non-goals)
+## 3. 非目標
 
 - 不放寬 `lib/turnstile.ts` 伺服器端 `verifyTurnstileToken` 的 fail-closed 驗證邏輯。
 - 不將 `app/[locale]/layout.tsx` 改回動態渲染，確保 `/privacy`、`/terms`、`/refund`、`/gdpr` 等頁面維持 SSG。
@@ -39,7 +39,7 @@
 
 ---
 
-## 4. 驗收標準 (Acceptance Criteria)
+## 4. 驗收標準
 
 - [ ] `app/[locale]/login/page.tsx`、`app/[locale]/register/page.tsx`、`app/[locale]/contact/page.tsx` 均宣告 `export const dynamic = "force-dynamic"`，且在 `npm run build` 路由表中顯示為 `ƒ (Dynamic)`。
 - [ ] `/[locale]/privacy`、`/[locale]/terms`、`/[locale]/refund`、`/[locale]/gdpr` 等靜態頁面在 `npm run build` 中維持 `● (SSG)`。
@@ -49,17 +49,17 @@
 
 ---
 
-## 5. 風險與復原 (Risks & Rollback)
+## 5. 風險與復原
 
 - **風險評估**：
   - `/login`、`/register`、`/contact` 改為每次請求 SSR，此為 Issue #354 之前的既有行為，不影響拍賣或靜態內容頁快取。
   - LINE Login 依賴正式機資料庫 `users` 表新增欄位（已透過 `lib/db.ts` 自動遷移 `ensureAccountColumns` 處理）與 `.env` 中的 `LINE_CHANNEL_*` 設定。
-- **復原計畫 (Rollback Plan)**：
+- **復原計畫**：
   - 若部署後出現異常，可透過 `git revert` 退回本次合併 commit，重新觸發 `deploy-ftps.yml` 恢復上一版產物。
 
 ---
 
-## 6. 驗證計畫 (Verification Plan)
+## 6. 驗證計畫
 
 1. 單元測試：`npx vitest run app/[locale]/components/CurrentUserProvider.test.tsx lib/turnstile.test.ts lib/lineAuth.test.ts`
 2. 全域檢查：`npm run lint`、`npm run typecheck`、`npm test`、`npm run build`

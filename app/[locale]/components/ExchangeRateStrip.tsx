@@ -1,10 +1,10 @@
 import { getTranslations } from "next-intl/server";
-import { getAllLatestStoredRates } from "@/lib/exchangeRates";
+import { getAllLatestStoredRates } from "@/lib/shared/formatting/exchangeRates";
 
 // Footer exchange-rate card (issue #45, restyled + promoted in issue #49) —
 // shown on every locale, not just zh-CN/en, since it's informational for any
 // visitor. Reads whatever was last successfully synced by
-// lib/scheduler.ts's cron job; shows an "updating" placeholder rather than
+// lib/shared/data/scheduler.ts's cron job; shows an "updating" placeholder rather than
 // nothing if the DB has no rate yet at all (e.g. right after a first-ever
 // deploy, before the first sync completes).
 //

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
+import { requireAdmin } from "@/lib/auth/apiAuth";
 import { setUserRole } from "@/lib/auth";
-import { parseIdParam } from "@/lib/routeParams";
+import { parseIdParam } from "@/lib/shared/api/routeParams";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdmin();

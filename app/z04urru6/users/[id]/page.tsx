@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCurrentUser, getUserDetail } from "@/lib/auth";
 import { getBidHistoryForUser, getListingsCreatedByUser } from "@/lib/listings";
-import { formatAdminDateTime } from "@/lib/format";
+import { formatAdminDateTime } from "@/lib/shared/formatting/format";
 import StatusBadge from "../../../components/StatusBadge";
 import RoleToggleButton from "../RoleToggleButton";
 import SuspendToggleButton from "../SuspendToggleButton";

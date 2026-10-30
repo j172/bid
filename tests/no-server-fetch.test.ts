@@ -2,10 +2,10 @@
 // Node's global fetch() (undici) can throw an uncaught
 // `RangeError: WebAssembly.instantiate(): Out of memory` on its first lazy
 // WASM init under this host's LVE memory ceiling, crashing the whole
-// process — see the header comments in lib/httpsRequest.ts,
-// lib/exchangeRates.ts, lib/email.ts, and lib/turnstile.ts for the full
+// process — see the header comments in lib/shared/network/httpsRequest.ts,
+// lib/shared/formatting/exchangeRates.ts, lib/shared/communications/email.ts, and lib/auth/turnstile.ts for the full
 // history (issues #86, #104, #139, #344). Every server-side outbound HTTP
-// call in this codebase must go through lib/httpsRequest.ts's
+// call in this codebase must go through lib/shared/network/httpsRequest.ts's
 // httpsRequest() (node:https) instead of the global fetch().
 //
 // This test scans lib/**/*.ts and app/api/**/*.ts source text for a bare
@@ -26,13 +26,13 @@ const ROOT = join(__dirname, "..");
 // Files that legitimately call the browser's global fetch() from client
 // code (each starts with "use client" and fetches one of this app's own
 // relative API routes) — confirmed by reading each file, not guessed:
-//   - lib/useListingCountdown.ts: polls `/api/listings/${id}/status` from
+//   - lib/listings/useListingCountdown.ts: polls `/api/listings/${id}/status` from
 //     the browser to refresh a live countdown/price.
-//   - lib/usePostJson.ts: shared "POST JSON to one of our own API routes"
+//   - lib/shared/client/usePostJson.ts: shared "POST JSON to one of our own API routes"
 //     hook used by client forms (issue #139 item 1).
 // Both run in the visitor's browser, never on the server, so undici's
 // WASM-OOM failure mode (a server-process crash) does not apply to them.
-const WHITELIST = new Set<string>(["lib/useListingCountdown.ts", "lib/usePostJson.ts"]);
+const WHITELIST = new Set<string>(["lib/listings/useListingCountdown.ts", "lib/shared/client/usePostJson.ts"]);
 
 // Directories to scan, mirroring the issue's "lib/**/*.ts and
 // app/api/**/*.ts" scope.
@@ -63,7 +63,7 @@ function listTsFiles(dir: string): string[] {
 // Strips comments before matching, so the many explanatory comments in this
 // codebase that legitimately mention "fetch()" while explaining why the
 // *real* code next to them uses node:https instead (e.g.
-// lib/httpsRequest.ts's own header) don't trip this rule.
+// lib/shared/network/httpsRequest.ts's own header) don't trip this rule.
 //
 // Deliberately simple rather than a full tokenizer: block comments
 // (/* ... */, including JSDoc) are removed first, then anything from the
@@ -91,7 +91,7 @@ const BARE_FETCH_CALL = /(?<![.\w])fetch\(/;
 describe("no bare server-side fetch() (issue #344)", () => {
   const candidateFiles = SCAN_DIRS.flatMap(listTsFiles)
     // Test files exercise mocks (e.g. `vi.spyOn(globalThis, "fetch")`,
-    // `vi.mock("@/lib/httpsRequest", ...)`) rather than making real
+    // `vi.mock("@/lib/shared/network/httpsRequest", ...)`) rather than making real
     // outbound calls; they're not the production server code this rule
     // guards, so they're out of scope the same way health's equivalent
     // test excludes its own *.test.mjs files.

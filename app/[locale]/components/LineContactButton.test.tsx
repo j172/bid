@@ -4,7 +4,7 @@ import { render, screen, cleanup } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import messages from "@/messages/zh-TW.json";
 import LineContactButton from "./LineContactButton";
-import { LINE_CONTACT_HREF } from "@/lib/lineContact";
+import { LINE_CONTACT_HREF } from "@/lib/contact/lineContact";
 
 function renderButton() {
   return render(

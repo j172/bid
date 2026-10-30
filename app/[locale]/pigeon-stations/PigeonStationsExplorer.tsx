@@ -4,23 +4,23 @@
 // list-item click can tell the (also client-only, see
 // PigeonStationsMapLoader.tsx) Leaflet map to fly to + open that marker's
 // popup) plus the search + county filter state (issue #256), shared with
-// /pigeon-shops and /pigeon-groups via lib/pigeonDirectoryFilters.ts —
+// /pigeon-shops and /pigeon-groups via lib/pigeons/pigeonDirectoryFilters.ts —
 // extended by issue #275 with the same automatic distance sort + pagination
 // as those two pages. The server component (page.tsx) only fetches data and
 // renders static text around this.
 
 import { useMemo, useReducer, useState } from "react";
 import { useTranslations } from "next-intl";
-import { ALL_COUNTIES_VALUE, filterPigeonDirectoryEntries, listPresentCounties } from "@/lib/pigeonDirectoryFilters";
-import { selectDistanceSortOrigin, sortByDistanceFromOrigin } from "@/lib/pigeonDirectoryDistance";
-import { useMapGeolocation } from "@/lib/useMapGeolocation";
-import { paginateClientList } from "@/lib/clientPagination";
+import { ALL_COUNTIES_VALUE, filterPigeonDirectoryEntries, listPresentCounties } from "@/lib/pigeons/pigeonDirectoryFilters";
+import { selectDistanceSortOrigin, sortByDistanceFromOrigin } from "@/lib/pigeons/pigeonDirectoryDistance";
+import { useMapGeolocation } from "@/lib/shared/client/useMapGeolocation";
+import { paginateClientList } from "@/lib/shared/client/clientPagination";
 import {
   INITIAL_DIRECTORY_LIST_STATE,
   PIGEON_DIRECTORY_PAGE_SIZES,
   directoryListReducer,
   isPigeonDirectoryPageSize,
-} from "@/lib/pigeonDirectoryListState";
+} from "@/lib/pigeons/pigeonDirectoryListState";
 import ClientPaginationFooter from "../components/ClientPaginationFooter";
 import PigeonStationsMap from "./PigeonStationsMapLoader";
 

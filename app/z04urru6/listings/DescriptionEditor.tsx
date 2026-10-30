@@ -3,7 +3,7 @@
 import { forwardRef, useImperativeHandle, useRef } from "react";
 import { Editor } from "@tinymce/tinymce-react";
 import type { Editor as TinyMCEEditor } from "tinymce";
-import { DESCRIPTION_MAX, descriptionPlainTextLength } from "@/lib/listingValidation";
+import { DESCRIPTION_MAX, descriptionPlainTextLength } from "@/lib/listings/listingValidation";
 import { createDescriptionImagesUploadHandler, extractDescriptionImagesForSubmit } from "../components/descriptionImageUpload";
 import { registerInsertYoutubeButton } from "../components/insertYoutubeButton";
 import { TINYMCE_BASE_INIT, TINYMCE_LICENSE_KEY, TINYMCE_SCRIPT_SRC } from "../components/richTextEditorConfig";

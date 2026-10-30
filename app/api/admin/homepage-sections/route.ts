@@ -1,22 +1,22 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
-import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
-import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/shared/content/descriptionImageLimits";
+import { resolveDescriptionImagePlaceholders } from "@/lib/shared/content/descriptionImages";
 import {
   createHomepageSection,
   deleteHomepageSection,
   listHomepageSections,
   updateHomepageSectionBio,
-} from "@/lib/homepageSections";
-import { resolveBio, resolveLinkedLoftId } from "@/lib/homepageSectionApiValidation";
-import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
+} from "@/lib/homepage/homepageSections";
+import { resolveBio, resolveLinkedLoftId } from "@/lib/homepage/homepageSectionApiValidation";
+import { sanitizeDescriptionHtml } from "@/lib/shared/content/sanitizeDescriptionHtml";
 import {
   deleteHomepageSectionImageFile,
   descriptionImageUrl,
   homepageSectionImageUrl,
   saveDescriptionImages,
   saveHomepageSectionImage,
-} from "@/lib/uploads";
+} from "@/lib/shared/content/uploads";
 
 const TITLE_MAX = 255;
 const SECTION_TYPE_MAX = 30;
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
   // 'featured_loft' — see resolveBio's own comment on why sanitizing happens
   // here, after placeholder resolution, rather than inside it) once the
   // row's id exists — its inline description images are stored under
-  // uploads/homepage-sections/<id>/description/ (see lib/uploads.ts's
+  // uploads/homepage-sections/<id>/description/ (see lib/shared/content/uploads.ts's
   // saveDescriptionImages), same two-phase sequencing as
   // app/api/admin/listings/route.ts (issue #315).
   const id = await createHomepageSection({

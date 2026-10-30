@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getOrdersForAdmin, ORDERS_PAGE_SIZE, type ListOrdersOptions } from "@/lib/listings";
-import { formatAdminDateTime } from "@/lib/format";
+import { formatAdminDateTime } from "@/lib/shared/formatting/format";
 import SettlementExpand from "../listings/closed/SettlementExpand";
 import BuyerExpand from "./BuyerExpand";
 import SettlementModal from "../components/SettlementModal";

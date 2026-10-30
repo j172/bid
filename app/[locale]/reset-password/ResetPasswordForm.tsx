@@ -4,8 +4,8 @@ import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
-import { inputClass } from "@/lib/formStyles";
-import { usePostJson } from "@/lib/usePostJson";
+import { inputClass } from "@/lib/shared/ui/formStyles";
+import { usePostJson } from "@/lib/shared/client/usePostJson";
 import AuthFormShell from "../components/AuthFormShell";
 
 export default function ResetPasswordForm() {

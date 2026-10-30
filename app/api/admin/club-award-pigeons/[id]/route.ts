@@ -1,21 +1,21 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
-import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
-import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/shared/content/descriptionImageLimits";
+import { resolveDescriptionImagePlaceholders } from "@/lib/shared/content/descriptionImages";
 import {
   deleteClubAwardPigeon,
   getClubAwardPigeonById,
   updateClubAwardPigeon,
   type ClubAwardPigeonInput,
-} from "@/lib/clubAwardPigeons";
+} from "@/lib/pigeons/clubAwardPigeons";
 import {
   isPigeonShowcaseCategory,
   validatePigeonShowcaseDescription,
   validatePigeonShowcaseName,
   validatePigeonShowcasePhotoSource,
-} from "@/lib/clubAwardPigeonsValidation";
-import { parseIdParam } from "@/lib/routeParams";
-import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
+} from "@/lib/pigeons/clubAwardPigeonsValidation";
+import { parseIdParam } from "@/lib/shared/api/routeParams";
+import { sanitizeDescriptionHtml } from "@/lib/shared/content/sanitizeDescriptionHtml";
 import {
   deleteClubAwardPigeonImageFile,
   descriptionImageUrl,
@@ -23,7 +23,7 @@ import {
   saveDescriptionImages,
   saveImageOrError,
   withImageRollback,
-} from "@/lib/uploads";
+} from "@/lib/shared/content/uploads";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdmin();

@@ -4,8 +4,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 import Button from "@/app/components/Button";
 import TurnstileWidget, { type TurnstileWidgetHandle } from "@/app/components/TurnstileWidget";
-import { inputClass } from "@/lib/formStyles";
-import { usePostJson } from "@/lib/usePostJson";
+import { inputClass } from "@/lib/shared/ui/formStyles";
+import { usePostJson } from "@/lib/shared/client/usePostJson";
 
 interface ContactFormProps {
   // Turnstile *site* key (not secret) — null when CLOUDFLARE_TURNSTILE_SITE_KEY

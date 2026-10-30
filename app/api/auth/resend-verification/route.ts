@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { findUserByEmail } from "@/lib/auth";
-import { createEmailVerificationToken, isEmailVerificationRateLimited, verifyEmailPath } from "@/lib/emailVerification";
-import { sendVerificationEmail } from "@/lib/notifications";
-import { getClientIpFromHeaders } from "@/lib/clientIp";
-import { resolveOrigin } from "@/lib/newsNewsletterSync";
-import { resolveRequestLocale } from "@/lib/requestLocale";
+import { createEmailVerificationToken, isEmailVerificationRateLimited, verifyEmailPath } from "@/lib/auth/emailVerification";
+import { sendVerificationEmail } from "@/lib/shared/communications/notifications";
+import { getClientIpFromHeaders } from "@/lib/shared/client/clientIp";
+import { resolveOrigin } from "@/lib/news/newsNewsletterSync";
+import { resolveRequestLocale } from "@/lib/shared/i18n/requestLocale";
 
 // Same neutral { ok: true } response regardless of outcome — unknown email,
 // already-verified account, or rate-limited — as

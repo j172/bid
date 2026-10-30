@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
-import { validateContact } from "@/lib/contactValidation";
-import { verifyTurnstileToken } from "@/lib/turnstile";
-import { insertContactMessage } from "@/lib/contact";
-import { sendContactMessageEmails } from "@/lib/notifications";
-import { getClientIpFromHeaders } from "@/lib/clientIp";
-import { resolveRequestLocale } from "@/lib/requestLocale";
+import { validateContact } from "@/lib/contact/contactValidation";
+import { verifyTurnstileToken } from "@/lib/auth/turnstile";
+import { insertContactMessage } from "@/lib/contact/contact";
+import { sendContactMessageEmails } from "@/lib/shared/communications/notifications";
+import { getClientIpFromHeaders } from "@/lib/shared/client/clientIp";
+import { resolveRequestLocale } from "@/lib/shared/i18n/requestLocale";
 
 // Public /contact form submit (issue #104) — no login required. Order of
 // operations matters: validate fields -> verify Turnstile -> insert into
 // contact_messages -> best-effort emails. A DB insert failure is returned
 // as an error (nothing was actually recorded); an email failure after a
 // successful insert is only logged, never surfaced to the caller — see
-// lib/notifications.ts's sendContactMessageEmails.
+// lib/shared/communications/notifications.ts's sendContactMessageEmails.
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const name = typeof body?.name === "string" ? body.name : "";

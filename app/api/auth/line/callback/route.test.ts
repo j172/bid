@@ -40,8 +40,8 @@ vi.mock("@/lib/auth", () => ({
   linkLineUserId: linkLineUserIdMock,
 }));
 
-vi.mock("@/lib/lineAuth", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/lineAuth")>();
+vi.mock("@/lib/auth/lineAuth", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/auth/lineAuth")>();
   return {
     ...actual,
     issueLineAccessToken: issueLineAccessTokenMock,
@@ -71,7 +71,7 @@ describe("GET /api/auth/line/callback", () => {
   });
 
   it("redirects to returnTo when user already exists with line_user_id", async () => {
-    const { createLineAuthState } = await import("@/lib/lineAuth");
+    const { createLineAuthState } = await import("@/lib/auth/lineAuth");
     const validState = createLineAuthState("/listings/99");
     cookieGetMock.mockReturnValue({ value: validState });
 
@@ -101,7 +101,7 @@ describe("GET /api/auth/line/callback", () => {
   });
 
   it("redirects to login with error when existing user is suspended", async () => {
-    const { createLineAuthState } = await import("@/lib/lineAuth");
+    const { createLineAuthState } = await import("@/lib/auth/lineAuth");
     const validState = createLineAuthState("/account");
     cookieGetMock.mockReturnValue({ value: validState });
 
@@ -128,7 +128,7 @@ describe("GET /api/auth/line/callback", () => {
   });
 
   it("links LINE account when user is already logged in", async () => {
-    const { createLineAuthState } = await import("@/lib/lineAuth");
+    const { createLineAuthState } = await import("@/lib/auth/lineAuth");
     const validState = createLineAuthState("/account");
     cookieGetMock.mockReturnValue({ value: validState });
 
@@ -156,7 +156,7 @@ describe("GET /api/auth/line/callback", () => {
   });
 
   it("sets onboarding cookie and redirects to /register/line for new user", async () => {
-    const { createLineAuthState } = await import("@/lib/lineAuth");
+    const { createLineAuthState } = await import("@/lib/auth/lineAuth");
     const validState = createLineAuthState("/");
     cookieGetMock.mockReturnValue({ value: validState });
 

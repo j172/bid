@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
-import { createPigeonGroup, listPigeonGroups } from "@/lib/pigeonGroups";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { createPigeonGroup, listPigeonGroups } from "@/lib/pigeons/pigeonGroups";
 
 interface PigeonGroupPayload {
   name?: unknown;

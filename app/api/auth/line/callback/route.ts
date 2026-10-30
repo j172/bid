@@ -10,7 +10,7 @@ import {
   LINE_ONBOARD_TTL_MS,
   verifyLineAuthState,
   verifyLineIdToken,
-} from "@/lib/lineAuth";
+} from "@/lib/auth/lineAuth";
 import {
   createSession,
   findUserByLineUserId,

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
+import { canonicalUrl, hreflangAlternates } from "@/lib/shared/seo/seo";
 import ContactForm from "./ContactForm";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +25,7 @@ export async function generateMetadata({
 export default async function ContactPage() {
   const t = await getTranslations("contactPage");
   // Site key only — not secret, safe to hand to the client form as a prop
-  // (see lib/turnstile.ts, which reads the *secret* key server-side only,
+  // (see lib/auth/turnstile.ts, which reads the *secret* key server-side only,
   // never sent to the browser). Null when unconfigured so ContactForm can
   // render the form without the widget rather than crash (e.g. local dev
   // without Turnstile keys set).

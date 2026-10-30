@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { IMAGE_FALLBACK_SRC, useImageFallback } from "@/lib/imageFallback";
+import { IMAGE_FALLBACK_SRC, useImageFallback } from "@/lib/shared/content/imageFallback";
 
 // Static counterpart to ZoomableProductImage — same loading-skeleton /
 // failed-image-fallback behaviour, but with none of the hover

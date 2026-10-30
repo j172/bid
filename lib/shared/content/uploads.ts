@@ -1,0 +1,275 @@
+import { randomBytes } from "crypto";
+import { copyFile, mkdir, unlink, writeFile } from "fs/promises";
+import { join, normalize, sep } from "path";
+import { DESCRIPTION_IMAGE_MAX_BYTES } from "@/lib/shared/content/descriptionImageLimits";
+import { MAX_PHOTO_BYTES } from "@/lib/shared/content/photoLimits";
+
+const ALLOWED_EXTENSIONS: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
+export function isAllowedPhotoType(type: string): boolean {
+  return type in ALLOWED_EXTENSIONS;
+}
+
+// Deliberately outside public/: `next start` appears to snapshot the public
+// folder's contents at process boot, so files written there at runtime
+// 404 until the next restart. These are served instead by
+// app/uploads/[...path]/route.ts, which reads the filesystem per request.
+export const UPLOADS_ROOT = join(process.cwd(), "uploads");
+
+// Resolves the `[...path]` segments of a GET /uploads/... request to an
+// absolute path, or null when the result escapes UPLOADS_ROOT (CWE-22).
+//
+// Lives here rather than inline in the route (issue #140 L-2) so the
+// containment rule is directly unit-testable — the route's own version
+// compared with a bare `resolved.startsWith(UPLOADS_ROOT)`, which also
+// accepts any sibling directory that merely *starts with* the same
+// characters (".../uploads-backup/secrets.txt" passes a bare prefix test).
+// Appending the platform separator is what turns "same prefix" into
+// "actually inside", with the root itself allowed through separately so the
+// readFile below can reject it as a directory rather than this treating it
+// as an escape.
+export function resolveUploadPath(segments: string[]): string | null {
+  const relative = segments.join("/");
+  const resolved = normalize(join(UPLOADS_ROOT, relative));
+  if (resolved !== UPLOADS_ROOT && !resolved.startsWith(UPLOADS_ROOT + sep)) {
+    return null;
+  }
+  return resolved;
+}
+
+// Validates and stores one image, and is the single place that decides what
+// a stored file is named. Every upload in this module goes through it — the
+// single-image CMS savers below directly, the multi-image savers via
+// saveImages — so the type/size checks can't drift between the two shapes
+// (issue #139: the two multi-image loops had their own copies).
+//
+// maxBytes differs per caller: inline description images have their own,
+// smaller ceiling than gallery photos. Browser-side callers should run the
+// file through convertPhotoToWebp (lib/shared/content/convertPhotoToWebp.ts) before upload,
+// same as the listing photo picker does — this doesn't re-encode.
+async function saveSingleImage(
+  dir: string,
+  image: File,
+  options: { maxBytes?: number; tooLargeError?: (limitMb: number) => string } = {},
+): Promise<string> {
+  const maxBytes = options.maxBytes ?? MAX_PHOTO_BYTES;
+  if (!isAllowedPhotoType(image.type)) {
+    throw new Error(`不支援的圖片格式：${image.type || "unknown"}`);
+  }
+  if (image.size > maxBytes) {
+    const limitMb = maxBytes / 1024 / 1024;
+    throw new Error(options.tooLargeError?.(limitMb) ?? `圖片檔案過大（上限 ${limitMb}MB）`);
+  }
+
+  await mkdir(dir, { recursive: true });
+  const extension = ALLOWED_EXTENSIONS[image.type];
+  const fileName = `${randomBytes(16).toString("hex")}.${extension}`;
+  const buffer = Buffer.from(await image.arrayBuffer());
+  await writeFile(join(dir, fileName), buffer);
+  return fileName;
+}
+
+// Sequential on purpose: these run inside a request handler, and the file
+// count is already capped upstream (lib/shared/content/photoLimits.ts,
+// lib/shared/content/descriptionImageLimits.ts), so bounded memory beats parallel writes.
+// A rejected file aborts the whole batch — the route treats a partial upload
+// as a failed one.
+async function saveImages(
+  dir: string,
+  images: File[],
+  options?: { maxBytes?: number; tooLargeError?: (limitMb: number) => string },
+): Promise<string[]> {
+  const fileNames: string[] = [];
+  for (const image of images) {
+    fileNames.push(await saveSingleImage(dir, image, options));
+  }
+  return fileNames;
+}
+
+export async function saveListingPhotos(listingId: number, photos: File[]): Promise<string[]> {
+  return saveImages(join(UPLOADS_ROOT, "listings", String(listingId)), photos);
+}
+
+export function listingPhotoUrl(listingId: number, fileName: string): string {
+  return `/uploads/listings/${listingId}/${fileName}`;
+}
+
+// Every content type whose rich-text editor supports inline image insert
+// (issue #315 added products/news/pigeon-showcase/homepage-sections to
+// listings' original set) — the directory name under uploads/ for each,
+// matching the name each type's own single/gallery-photo saver below already
+// uses (saveProductPhotos's "products", saveNewsImage's "news", etc.), so a
+// glance at uploads/ shows one consistent naming scheme.
+export type DescriptionImageEntityType =
+  | "listings"
+  | "products"
+  | "news"
+  | "pigeon-showcase"
+  | "homepage-sections"
+  | "club-award-pigeons";
+
+// Images inserted inline into a rich-text description/content/bio field (see
+// DescriptionEditor / SimpleRichTextEditor) — stored under their own
+// description/ subdirectory, separate from any main photo(s) the same
+// content type has, since the two have independent count/size limits
+// (lib/shared/content/descriptionImageLimits.ts) and aren't tracked in any *_photos table.
+// Generalized from a listings-only helper (issue #315) — entityId is
+// whatever numeric id the content type itself already uses (listingId,
+// productId, newsId, pigeon_showcase id, homepage_sections id).
+export async function saveDescriptionImages(
+  entityType: DescriptionImageEntityType,
+  entityId: number,
+  images: File[],
+): Promise<string[]> {
+  return saveImages(join(UPLOADS_ROOT, entityType, String(entityId), "description"), images, {
+    maxBytes: DESCRIPTION_IMAGE_MAX_BYTES,
+    tooLargeError: (limitMb) => `描述圖片過大（上限 ${limitMb}MB）`,
+  });
+}
+
+export function descriptionImageUrl(entityType: DescriptionImageEntityType, entityId: number, fileName: string): string {
+  return `/uploads/${entityType}/${entityId}/description/${fileName}`;
+}
+
+// Used when editing a listing's photos — removes files no longer kept in
+// the new photo order. Best-effort: a file that's already gone (or never
+// existed) is not an error worth failing the edit over.
+export async function deleteListingPhotoFiles(listingId: number, fileNames: string[]): Promise<void> {
+  const dir = join(UPLOADS_ROOT, "listings", String(listingId));
+  for (const fileName of fileNames) {
+    await unlink(join(dir, fileName)).catch(() => {});
+  }
+}
+
+// Used by relistClosedListing (lib/listings/index.ts) so a re-listed auction
+// doesn't force the admin to re-upload photos that already exist on disk
+// under the original listing's own directory — same file names, copied
+// into the new listing's directory.
+export async function copyListingPhotos(fromListingId: number, toListingId: number, fileNames: string[]): Promise<void> {
+  const fromDir = join(UPLOADS_ROOT, "listings", String(fromListingId));
+  const toDir = join(UPLOADS_ROOT, "listings", String(toListingId));
+  await mkdir(toDir, { recursive: true });
+  for (const fileName of fileNames) {
+    await copyFile(join(fromDir, fileName), join(toDir, fileName));
+  }
+}
+
+// products gallery (issue #277) — same per-parent-id multi-photo storage
+// scheme as saveListingPhotos/listingPhotoUrl/deleteListingPhotoFiles above,
+// just its own uploads/products/<id>/ directory. Which file is the 封面圖
+// (cover photo) is tracked in product_photos.is_cover (see lib/products/index.ts),
+// not by anything in the file name or path here.
+export async function saveProductPhotos(productId: number, photos: File[]): Promise<string[]> {
+  return saveImages(join(UPLOADS_ROOT, "products", String(productId)), photos);
+}
+
+export function productPhotoUrl(productId: number, fileName: string): string {
+  return `/uploads/products/${productId}/${fileName}`;
+}
+
+export async function deleteProductPhotoFiles(productId: number, fileNames: string[]): Promise<void> {
+  const dir = join(UPLOADS_ROOT, "products", String(productId));
+  for (const fileName of fileNames) {
+    await unlink(join(dir, fileName)).catch(() => {});
+  }
+}
+
+// homepage_sections (合作鴿舍 etc. — see lib/homepage/homepageSections.ts) — one
+// image per row, flat directory since there's no per-row id yet at upload
+// time (unlike listing photos, which are keyed by an already-inserted
+// listing id).
+export async function saveHomepageSectionImage(image: File): Promise<string> {
+  return saveSingleImage(join(UPLOADS_ROOT, "homepage-sections"), image);
+}
+
+export function homepageSectionImageUrl(fileName: string): string {
+  return `/uploads/homepage-sections/${fileName}`;
+}
+
+export async function deleteHomepageSectionImageFile(fileName: string): Promise<void> {
+  await unlink(join(UPLOADS_ROOT, "homepage-sections", fileName)).catch(() => {});
+}
+
+// pigeon_showcase (issue #70's 主圖 addition) — same flat single-image
+// storage scheme as saveHomepageSectionImage above. Unlike homepage
+// sections' image (optional to replace on edit), the admin form requires an
+// upload on every create/edit (PigeonShowcaseFormModal.tsx), so callers never
+// need to fall back to an existing file name mid-request.
+export async function savePigeonShowcaseImage(image: File): Promise<string> {
+  return saveSingleImage(join(UPLOADS_ROOT, "pigeon-showcase"), image);
+}
+
+export function pigeonShowcaseImageUrl(fileName: string): string {
+  return `/uploads/pigeon-showcase/${fileName}`;
+}
+
+export async function deletePigeonShowcaseImageFile(fileName: string): Promise<void> {
+  await unlink(join(UPLOADS_ROOT, "pigeon-showcase", fileName)).catch(() => {});
+}
+
+// club_award_pigeons (issue #378) — same flat single-image storage scheme as
+// savePigeonShowcaseImage above, under its own uploads/club-award-pigeons/ directory.
+export async function saveClubAwardPigeonImage(image: File): Promise<string> {
+  return saveSingleImage(join(UPLOADS_ROOT, "club-award-pigeons"), image);
+}
+
+export function clubAwardPigeonImageUrl(fileName: string): string {
+  return `/uploads/club-award-pigeons/${fileName}`;
+}
+
+export async function deleteClubAwardPigeonImageFile(fileName: string): Promise<void> {
+  await unlink(join(UPLOADS_ROOT, "club-award-pigeons", fileName)).catch(() => {});
+}
+
+// news_posts (issue #70's 主圖 addition) — same story as
+// savePigeonShowcaseImage above, just its own subdirectory.
+export async function saveNewsImage(image: File): Promise<string> {
+  return saveSingleImage(join(UPLOADS_ROOT, "news"), image);
+}
+
+export function newsImageUrl(fileName: string): string {
+  return `/uploads/news/${fileName}`;
+}
+
+export async function deleteNewsImageFile(fileName: string): Promise<void> {
+  await unlink(join(UPLOADS_ROOT, "news", fileName)).catch(() => {});
+}
+
+// The two halves of the "upload a 主圖, then write the row" dance that the
+// news and pigeon-showcase create/edit routes each spelled out identically
+// (issue #139 M2). Kept as two small helpers rather than one do-everything
+// wrapper because the four call sites differ in between the two steps (input
+// building, sanitizing, retiring the previous image).
+
+export type SaveImageOutcome = { ok: true; fileName: string } | { ok: false; error: string };
+
+// saveSingleImage rejects an unsupported type / oversized file by throwing,
+// and every caller turns that into the same 400 — so the message extraction
+// lives here instead of in four separate catch blocks.
+export async function saveImageOrError(save: () => Promise<string>): Promise<SaveImageOutcome> {
+  try {
+    return { ok: true, fileName: await save() };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "圖片上傳失敗" };
+  }
+}
+
+// Runs the create/update and, if the row was never written, deletes the file
+// that was just uploaded for it — otherwise a rejected write leaves an
+// orphaned image behind forever. Returns the write's own outcome untouched
+// so the caller still owns the response.
+export async function withImageRollback<T extends { ok: boolean }>(
+  write: () => Promise<T>,
+  rollback: () => Promise<void>,
+): Promise<T> {
+  const result = await write();
+  if (!result.ok) {
+    await rollback();
+  }
+  return result;
+}

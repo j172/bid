@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
-import { updateProductOrderStatus, type ProductOrderStatus } from "@/lib/productOrders";
-import { parseIdParam } from "@/lib/routeParams";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { updateProductOrderStatus, type ProductOrderStatus } from "@/lib/products/productOrders";
+import { parseIdParam } from "@/lib/shared/api/routeParams";
 
 const VALID_STATUSES: ProductOrderStatus[] = ["pending", "shipped", "completed", "cancelled", "refunded"];
 
@@ -12,7 +12,7 @@ function isProductOrderStatus(value: unknown): value is ProductOrderStatus {
 // Admin status-transition endpoint (issue #298) — 標記出貨／完成／取消／退款，
 // with an optional free-text tracking number. Validity of the transition
 // itself (e.g. rejecting completed -> shipped) is enforced by
-// lib/productOrders.ts's resolveProductOrderStatusTransition inside
+// lib/products/productOrders.ts's resolveProductOrderStatusTransition inside
 // updateProductOrderStatus, not here.
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdmin();

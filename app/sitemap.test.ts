@@ -22,7 +22,7 @@ vi.mock("@/lib/news", () => ({
   ]),
 }));
 
-vi.mock("@/lib/homepageSections", () => ({
+vi.mock("@/lib/homepage/homepageSections", () => ({
   listHomepageSections: vi.fn().mockResolvedValue([
     {
       id: 7,

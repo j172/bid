@@ -8,7 +8,7 @@ import ModalFormActions from "../components/ModalFormActions";
 import { useSuccessBanner } from "../components/SuccessBanner";
 import DescriptionEditor, { type DescriptionEditorHandle } from "../listings/DescriptionEditor";
 import ProductPhotoGalleryEditor, { type ProductPhotoItem } from "./ProductPhotoGalleryEditor";
-import { PRODUCT_PRICE_MAX, PRODUCT_TITLE_MAX } from "@/lib/productValidation";
+import { PRODUCT_PRICE_MAX, PRODUCT_TITLE_MAX } from "@/lib/products/productValidation";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 text-sm focus:border-interactive-primary focus:outline-none";
 const counterClass = (current: number, max: number) => `text-xs ${current > max ? "text-ended" : "text-ink-light"}`;
@@ -50,7 +50,7 @@ export default function ProductFormModal(props: Props) {
   const [price, setPrice] = useState(isEdit && props.product.price !== null ? String(props.product.price) : "");
   // Create mode collects the initial stock *quantity*; edit mode collects
   // the remaining stock directly (stock_quantity is then recomputed server-
-  // side from sold + this value — see lib/products.ts's updateProduct) —
+  // side from sold + this value — see lib/products/index.ts's updateProduct) —
   // same "quantity at creation, remaining thereafter" split as
   // NewListingForm.tsx vs EditListingModal.tsx.
   const [stockValue, setStockValue] = useState(

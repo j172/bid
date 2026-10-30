@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/apiAuth";
-import { deleteCredential } from "@/lib/webauthnCredentials";
+import { requireUser } from "@/lib/auth/apiAuth";
+import { deleteCredential } from "@/lib/auth/webauthnCredentials";
 
 // Removes one of the logged-in visitor's own passkeys (issue #95). No
-// password re-entry required — see lib/webauthnCredentials.ts's
+// password re-entry required — see lib/auth/webauthnCredentials.ts's
 // deleteCredential header comment for why this deliberately doesn't mirror
 // app/api/account/two-factor/route.ts's currentPassword requirement.
 export async function POST(request: Request) {

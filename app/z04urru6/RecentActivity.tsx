@@ -1,7 +1,7 @@
 import Link from "next/link";
-import type { RecentActivity as RecentActivityData } from "@/lib/dashboard";
-import { formatAdminDateTime } from "@/lib/format";
-import { LISTING_TYPE_LABEL } from "@/lib/listingTypeLabel";
+import type { RecentActivity as RecentActivityData } from "@/lib/account/dashboard";
+import { formatAdminDateTime } from "@/lib/shared/formatting/format";
+import { LISTING_TYPE_LABEL } from "@/lib/listings/listingTypeLabel";
 
 const cardClass = "rounded-lg border border-border bg-surface p-4 shadow-sm";
 

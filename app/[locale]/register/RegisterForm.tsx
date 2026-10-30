@@ -3,8 +3,8 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link } from "@/i18n/navigation";
-import { inputClass } from "@/lib/formStyles";
-import { usePostJson } from "@/lib/usePostJson";
+import { inputClass } from "@/lib/shared/ui/formStyles";
+import { usePostJson } from "@/lib/shared/client/usePostJson";
 import AuthFormShell from "../components/AuthFormShell";
 import GoogleSignInButton from "../components/GoogleSignInButton";
 import LineSignInButton from "../components/LineSignInButton";

@@ -1,10 +1,10 @@
 // Issue #118's other explicitly-requested test: an unverified account must
 // be rejected before a session is ever created, and before any 2FA branch
 // even runs. Every import the route pulls in gets mocked (not just
-// @/lib/db) so this never touches lib/auth.ts's real createSession — which
+// @/lib/shared/data/db) so this never touches lib/auth/index.ts's real createSession — which
 // calls next/headers' cookies(), unavailable outside a real request scope —
 // and instead asserts directly on whether the mocked createSession was
-// invoked, same "assert on the mock's calls" style lib/passwordReset.test.ts
+// invoked, same "assert on the mock's calls" style lib/auth/passwordReset.test.ts
 // uses for its own DB layer. mocks are created via vi.hoisted so they exist
 // before vi.mock's factories below run.
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -26,12 +26,12 @@ const { isEmailOtpRateLimitedMock, createEmailOtpChallengeMock } = vi.hoisted(()
   createEmailOtpChallengeMock: vi.fn(),
 }));
 
-vi.mock("@/lib/emailOtp", () => ({
+vi.mock("@/lib/auth/emailOtp", () => ({
   isEmailOtpRateLimited: isEmailOtpRateLimitedMock,
   createEmailOtpChallenge: createEmailOtpChallengeMock,
 }));
 
-vi.mock("@/lib/notifications", () => ({
+vi.mock("@/lib/shared/communications/notifications", () => ({
   sendEmailOtpEmail: vi.fn(),
 }));
 
@@ -41,26 +41,26 @@ const { isLoginRateLimitedMock, recordLoginFailureMock, clearLoginFailuresMock }
   clearLoginFailuresMock: vi.fn(),
 }));
 
-vi.mock("@/lib/loginRateLimit", () => ({
+vi.mock("@/lib/auth/loginRateLimit", () => ({
   isLoginRateLimited: isLoginRateLimitedMock,
   recordLoginFailure: recordLoginFailureMock,
   clearLoginFailures: clearLoginFailuresMock,
 }));
 
-vi.mock("@/lib/clientIp", () => ({
+vi.mock("@/lib/shared/client/clientIp", () => ({
   getClientIpFromHeaders: () => "203.0.113.7",
 }));
 
-// lib/turnstile.ts talks to challenges.cloudflare.com over node:https, so it
+// lib/auth/turnstile.ts talks to challenges.cloudflare.com over node:https, so it
 // is mocked here the same way every other dependency of this route is — the
 // module's own behaviour (fail-closed parsing, missing secret, non-2xx) is
-// covered by lib/turnstile.test.ts. Defaults to "verified" in beforeEach so
+// covered by lib/auth/turnstile.test.ts. Defaults to "verified" in beforeEach so
 // the pre-existing cases below stay about what they were written for.
 const { verifyTurnstileTokenMock } = vi.hoisted(() => ({
   verifyTurnstileTokenMock: vi.fn(),
 }));
 
-vi.mock("@/lib/turnstile", () => ({
+vi.mock("@/lib/auth/turnstile", () => ({
   verifyTurnstileToken: verifyTurnstileTokenMock,
 }));
 
@@ -147,7 +147,7 @@ describe("POST /api/auth/login — email verification gate (issue #118)", () => 
 });
 
 // Issue #140 H-1: the password check itself is now rate limited. The
-// counting/expiry rules live in lib/loginRateLimit.ts (and are tested there
+// counting/expiry rules live in lib/auth/loginRateLimit.ts (and are tested there
 // against an in-memory login_attempts table); these cover only what the
 // route itself is responsible for — consulting the guard before touching the
 // password, recording a failure, and clearing the strikes on success.
@@ -216,8 +216,8 @@ describe("POST /api/auth/login — brute-force guard (issue #140 H-1)", () => {
 // Issue #140 H-1, second layer: every login attempt must carry a valid
 // Cloudflare Turnstile token, always — not only after some number of
 // failures. These cover the route's own responsibility only (consult the
-// verifier, block everything downstream when it says no); lib/turnstile.ts's
-// own fail-closed behaviour is tested in lib/turnstile.test.ts.
+// verifier, block everything downstream when it says no); lib/auth/turnstile.ts's
+// own fail-closed behaviour is tested in lib/auth/turnstile.test.ts.
 describe("POST /api/auth/login — Turnstile (issue #140 H-1)", () => {
   it("rejects a request whose Turnstile token fails verification, before the password is ever checked", async () => {
     verifyTurnstileTokenMock.mockResolvedValue(false);

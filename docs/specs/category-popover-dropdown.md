@@ -1,6 +1,6 @@
-# SPEC: 全站頂部導覽列所有分類 Popover 下拉選單 (Category Popover Dropdown)
+# 規格：全站頂部導覽列所有分類 Popover 下拉選單
 
-## 1. 背景與目標 (Outcome)
+## 1. 背景與目標（預期成果）
 目前全站頂部導覽列 [SiteHeader.tsx](file:///d:/GoogleDrive/bid/app/[locale]/components/SiteHeader.tsx#L114-L117) 內存在一顆視覺上為漸層膠囊外觀的「所有分類 ▾」按鈕：
 ```html
 <button type="button" class="inline-flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-steel-azure-500 to-steel-azure-700 px-4 py-2.5 text-xs font-semibold text-white shadow-sm">
@@ -12,9 +12,9 @@
 
 ---
 
-## 2. 範圍與非目標 (Scope & Non-goals)
+## 2. 範圍與非目標
 
-### Scope
+### 範圍
 - **新增客戶端微組件**：`app/[locale]/components/CategoryDropdown.tsx`
   - 封裝 Popover 開合狀態、點擊外部自動關閉、鍵盤 Esc 關閉與無障礙屬性（`aria-expanded`, `aria-haspopup`）。
   - 箭頭圖示 `▾` 伴隨開合提供 180 度平滑旋轉動畫。
@@ -27,14 +27,14 @@
 - **單元測試**：`app/[locale]/components/CategoryDropdown.test.tsx`
   - 驗證按鈕渲染、點擊開合、Esc 關閉、Click outside 及導覽連結正確性。
 
-### Non-goals
+### 非目標
 - 不更動右側搜尋列內部現有的 `<select name="type">` 搜尋類型選擇機制。
 - 不引入重型第三方 UI 庫（如 Headless UI 或 Radix），維持純 React + Tailwind CSS 的輕量依賴。
 - 不更動資料庫 Schema。
 
 ---
 
-## 3. 欄位架構與內容規劃 (Content Architecture)
+## 3. 欄位架構與內容規劃
 
 ### 3 欄式複合選單架構：
 1. **第 1 欄【拍賣與交易專區】**
@@ -54,7 +54,7 @@
 
 ---
 
-## 4. 驗收標準 (Acceptance Criteria)
+## 4. 驗收標準
 - [ ] 桌面版點擊「所有分類 ▾」按鈕能流暢展開／收合 3 欄式導覽面板。
 - [ ] 面板展開時，箭頭圖示旋轉 180 度；點擊選單外部或按下 `Esc` 鍵能正確關閉選單。
 - [ ] 點擊選單內的任一連結後，選單自動收合並正確導航至目標 URL。
@@ -66,7 +66,7 @@
 
 ---
 
-## 5. 風險與部署 (Risks & Rollout)
+## 5. 風險與部署
 - **風險**：無資料庫異動，無 breaking change，純前端介面與路由導覽優化，風險低。
 - **部署**：PR 合併至 `master` 後自動觸發 `.github/workflows/deploy-ftps.yml`，經由 FTPS 上傳並通過線上 health check。
 - **回滾**：若發生異常，可直接 revert PR 或手動重跑前次成功之 CI 工作流程。

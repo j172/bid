@@ -8,26 +8,26 @@ import {
   clubAwardPigeonImageUrl,
   newsImageUrl,
   productPhotoUrl,
-} from "@/lib/uploads";
-import { listLatestClubAwardAlbums } from "@/lib/clubAwardPigeons";
+} from "@/lib/shared/content/uploads";
+import { listLatestClubAwardAlbums } from "@/lib/pigeons/clubAwardPigeons";
 import { listProducts } from "@/lib/products";
-import { listHomepageSections } from "@/lib/homepageSections";
-import { listLatestPigeonShowcase, listPigeonShowcaseByPhotoSource } from "@/lib/pigeonShowcase";
+import { listHomepageSections } from "@/lib/homepage/homepageSections";
+import { listLatestPigeonShowcase, listPigeonShowcaseByPhotoSource } from "@/lib/pigeons/pigeonShowcase";
 import { listHomepageNewsCarousel } from "@/lib/news";
-import { excerptHtml } from "@/lib/htmlText";
-import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
-import { currencyForLocale, formatDualPrice } from "@/lib/currency";
-import { getLatestStoredRate } from "@/lib/exchangeRates";
-import { cachedQuery } from "@/lib/cache";
-import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
-import { firstParam, type SearchParams } from "@/lib/searchParams";
+import { excerptHtml } from "@/lib/shared/content/htmlText";
+import { canonicalUrl, hreflangAlternates } from "@/lib/shared/seo/seo";
+import { currencyForLocale, formatDualPrice } from "@/lib/shared/formatting/currency";
+import { getLatestStoredRate } from "@/lib/shared/formatting/exchangeRates";
+import { cachedQuery } from "@/lib/shared/data/cache";
+import { IMAGE_FALLBACK_SRC } from "@/lib/shared/content/imageFallback";
+import { firstParam, type SearchParams } from "@/lib/shared/api/searchParams";
 import {
   QUICK_CLOSE_WINDOW_HOURS,
   filterByListingType,
   selectEndingSoonAuctions,
   selectNewArrivals,
   selectQuickCloseAuctions,
-} from "@/lib/homepageListings";
+} from "@/lib/homepage/homepageListings";
 import { Link } from "@/i18n/navigation";
 import HeroSection from "../components/HeroSection";
 import HomeProductCard from "../components/HomeProductCard";
@@ -38,7 +38,7 @@ import NewsCarouselCard from "../components/NewsCarouselCard";
 import FeaturedLoftCarouselCard from "../components/FeaturedLoftCarouselCard";
 import ExchangeRateStrip from "../components/ExchangeRateStrip";
 import SocialMediaSection from "../components/SocialMediaSection";
-import { getSocialMediaFeed } from "@/lib/socialMedia";
+import { getSocialMediaFeed } from "@/lib/social/socialMedia";
 
 export const dynamic = "force-dynamic";
 
@@ -189,7 +189,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
   // 最新訊息首頁輪播 (issue #56, capped list logic extended by #240) — latest
   // 10 posts, manual announcements prioritized ahead of herbots.be imports
-  // (see lib/news.ts's listHomepageNewsCarousel) — replacing the large
+  // (see lib/news/index.ts's listHomepageNewsCarousel) — replacing the large
   // "現正競標／熱門競標正在進行" promo card below with a rotating
   // title+excerpt showcase (falls back to that card's original marketing
   // copy when there are currently zero news_posts rows; see
@@ -217,7 +217,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
 
   // Hero 側欄商品輪播 (issue #278) — admin-managed `products` rows
-  // (is_active = 1, ordered by sort_order; see lib/products.ts's
+  // (is_active = 1, ordered by sort_order; see lib/products/index.ts's
   // listProducts), replacing the old topPriceCards static list of
   // highest-priced open auctions. Cover photo falls back to the first photo
   // by sort_order when no row has is_cover set, same fallback the public
@@ -243,7 +243,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const heroRenderedAt = new Date().toISOString();
   const nowMs = new Date().getTime();
 
-  // Every curated section below is a named rule in lib/homepageListings.ts
+  // Every curated section below is a named rule in lib/homepage/homepageListings.ts
   // (issue #139 item 3) — see there for what each ordering means and why.
   const endingSoonAuctions = selectEndingSoonAuctions(listings, ENDING_SOON_LIMIT);
   // 依 created_at 新到舊排序 (issue #334) — listOpenListings 本身是依 ends_at
@@ -470,7 +470,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             {partnerLofts.map((loft) => (
               // Clicking a loft card now goes to that loft's own listings
               // (issue #45 — link_url is gone; listings.loft_id is the new
-              // FK used by the /listings?loft=<id> filter, see lib/listings.ts).
+              // FK used by the /listings?loft=<id> filter, see lib/listings/index.ts).
               <Link
                 key={loft.id}
                 href={`/listings?loft=${loft.id}`}

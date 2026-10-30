@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { resetPassword } from "@/lib/passwordReset";
+import { resetPassword } from "@/lib/auth/passwordReset";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);

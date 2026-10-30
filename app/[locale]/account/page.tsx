@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { getAccountProfile, getCurrentUser } from "@/lib/auth";
 import { redirect } from "@/i18n/navigation";
-import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
-import { listPasskeysForUser } from "@/lib/webauthnCredentials";
+import { canonicalUrl, hreflangAlternates } from "@/lib/shared/seo/seo";
+import { listPasskeysForUser } from "@/lib/auth/webauthnCredentials";
 import ChangePasswordForm from "./ChangePasswordForm";
 import LineSection from "./LineSection";
 import PasskeySection from "./PasskeySection";
@@ -106,7 +106,7 @@ export default async function AccountPage() {
 
       {/* "刪除帳戶" section intentionally hidden from the front-end only
           (issue #155 item 2) — the backend (DeleteAccountButton, the
-          /api/account/delete route, lib/auth.ts's deleteAccount, and the
+          /api/account/delete route, lib/auth/index.ts's deleteAccount, and the
           deleteTitle/deleteWarning/deleteAccountButton.* i18n keys) is left
           untouched so this can be restored by adding the JSX back. */}
     </main>

@@ -1,0 +1,34 @@
+// Pure validation for news_posts fields (issue #56) — no HTTP/DB involved,
+// directly unit-testable, same split as lib/pigeons/pigeonShowcaseValidation.ts /
+// lib/listings/listingValidation.ts.
+
+import { validateRequiredTextField, validateRichTextField, type FieldValidationResult } from "@/lib/shared/content/richTextValidation";
+
+export const TITLE_MAX = 100;
+// Measured against plain text (HTML tags stripped) since content is
+// authored as rich text (TinyMCE) — same reasoning as
+// lib/pigeons/pigeonShowcaseValidation.ts's DESCRIPTION_MAX.
+export const CONTENT_MAX = 2000;
+// Generous raw-HTML ceiling purely against pathological markup, mirroring
+// lib/pigeons/pigeonShowcaseValidation.ts's DESCRIPTION_HTML_MAX.
+export const CONTENT_HTML_MAX = 20_000;
+
+export type { FieldValidationResult };
+
+export function validateNewsTitle(title: string): FieldValidationResult {
+  return validateRequiredTextField(title, {
+    requiredError: "請輸入標題",
+    tooLongError: `標題不能超過 ${TITLE_MAX} 個字`,
+    max: TITLE_MAX,
+  });
+}
+
+export function validateNewsContent(content: string): FieldValidationResult {
+  return validateRichTextField(content, {
+    emptyError: "請輸入內容",
+    tooLongHtmlError: "內容過長",
+    tooLongTextError: `內容不能超過 ${CONTENT_MAX} 個字`,
+    htmlMax: CONTENT_HTML_MAX,
+    textMax: CONTENT_MAX,
+  });
+}

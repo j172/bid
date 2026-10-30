@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { convertPhotoToWebp } from "@/lib/convertPhotoToWebp";
-import { MAX_PHOTO_BYTES, MAX_PHOTO_COUNT } from "@/lib/photoLimits";
+import { convertPhotoToWebp } from "@/lib/shared/content/convertPhotoToWebp";
+import { MAX_PHOTO_BYTES, MAX_PHOTO_COUNT } from "@/lib/shared/content/photoLimits";
 
 // Own copy of ../listings/PhotoGalleryEditor.tsx's item shape plus one
 // addition: `isCover`, tracked directly on each item rather than inferred

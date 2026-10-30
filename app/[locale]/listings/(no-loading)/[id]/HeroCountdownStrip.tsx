@@ -1,8 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { breakdownRemainingMs } from "@/lib/format";
-import { useListingCountdown } from "@/lib/useListingCountdown";
+import { breakdownRemainingMs } from "@/lib/shared/formatting/format";
+import { useListingCountdown } from "@/lib/listings/useListingCountdown";
 import CountdownTiles from "../../../components/CountdownTiles";
 
 interface HeroCountdownStripProps {

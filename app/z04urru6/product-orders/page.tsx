@@ -4,8 +4,8 @@ import {
   getProductOrdersForAdmin,
   PRODUCT_ORDERS_PAGE_SIZE,
   type ListProductOrdersOptions,
-} from "@/lib/productOrders";
-import { formatAdminDateTime } from "@/lib/format";
+} from "@/lib/products/productOrders";
+import { formatAdminDateTime } from "@/lib/shared/formatting/format";
 import BuyerExpand from "./BuyerExpand";
 import ProductOrderStatusControl from "./ProductOrderStatusControl";
 import AdminPageIntro from "../AdminPageIntro";
@@ -20,7 +20,7 @@ const QUERY_KEYS = ["search", "buyerEmail", "status", "sort", "page"] as const;
 
 // products 專屬訂單管理頁（issue #298）——比照 ../orders/page.tsx（listings
 // fixed_price 訂單）的列表＋搜尋＋篩選＋分頁 UX，但狀態欄位換成
-// lib/productOrders.ts 的五態狀態機（標記出貨／完成／取消／退款），而不是
+// lib/products/productOrders.ts 的五態狀態機（標記出貨／完成／取消／退款），而不是
 // listings 那邊的已結算／未結算二態。刻意獨立於 ../orders/ 之外，避免混淆
 // 這兩條各自獨立的訂單流程。
 export default async function ProductOrdersPage({ searchParams }: { searchParams: Promise<SearchParams> }) {

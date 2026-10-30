@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { buildLlmsTxt } from "@/lib/seo";
+import { buildLlmsTxt } from "@/lib/shared/seo/seo";
 
 // /llms.txt (issue #107 item 8) — Next.js has no built-in convention for
 // this file (unlike robots.ts/sitemap.ts), so a route handler under a

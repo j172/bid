@@ -1,6 +1,6 @@
-# SPEC: 全面移除「賽事資訊」所有功能 (Decommission Races Feature & Clean up Subsystems)
+# 規格：全面移除「賽事資訊」所有功能
 
-## 1. 背景與問題 (Background & Context)
+## 1. 背景與問題
 
 在先前 Issue #239 / #241 中，系統加入了「賽事資訊」（Races）功能，包含定時自外部來源（龍馬賽鴿網 loing-ma.com 與比利時赫伯特 herbots.be）爬取賽事資訊，並透過 Cloudflare Workers AI 自動翻譯為正體中文，匯入資料庫 `races` 表，並在前台提供首頁展示區塊、獨立賽事清單頁面（`/races`），以及後台管理與手動同步功能。
 
@@ -11,9 +11,9 @@
 
 ---
 
-## 2. 解決方案與規格 (Solution & Specifications)
+## 2. 解決方案與規格
 
-### 2.1 資料庫與綱要定義 (Database & Schema)
+### 2.1 資料庫與綱要定義
 - **`lib/db.ts`** 與 **`db/init.sql`**：
   - 從 `SCHEMA_SQL` 與初始結構中徹底移除 `CREATE TABLE IF NOT EXISTS races (...)` 定義。
   - 更新 `sync_runs` 註解，`job_name` 僅保留 `'news'`。
@@ -23,7 +23,7 @@
   DELETE FROM sync_runs WHERE job_name = 'races';
   ```
 
-### 2.2 前台頁面與組件 (Public Frontend & Components)
+### 2.2 前台頁面與元件
 - **`app/[locale]/races/page.tsx`**：徹底刪除此頁面，存取 `/races` 與各語系 `/races` 自然回傳 404 Not Found。
 - **`app/[locale]/components/RaceCard.tsx`**：徹底刪除賽事卡片組件。
 - **`app/[locale]/(with-loading)/page.tsx`**（首頁）：
@@ -31,13 +31,13 @@
   - 移除首頁賽事區塊，由官方社群影音動態順接即時氣象區塊。
 - **`app/sitemap.ts`**：移除 `/races` 的 sitemap 條目。
 
-### 2.3 後台管理與手動同步 (Admin UI & APIs)
+### 2.3 後台管理與手動同步
 - **`app/z04urru6/races/page.tsx`** & **`RacesSyncButton.tsx`**：徹底刪除後台賽事管理頁面與組件。
 - **`app/z04urru6/adminNav.ts`**：從導覽項目中移除 `{ label: "賽事管理", href: "/z04urru6/races", section: "content" }`。
 - **`app/api/admin/races/sync/route.ts`**：徹底刪除手動同步 API 端點。
 - **`app/z04urru6/components/parseSyncApiResponse.ts`**：更新註解，移除 `RacesSyncButton` 引用。
 
-### 2.4 背景排程、爬蟲模組與資料存取層 (Background Jobs & Scrapers)
+### 2.4 背景排程、爬蟲模組與資料存取層
 - **`lib/scheduler.ts`** & **`lib/scheduler.test.ts`**：
   - 移除每日 08:40 賽事同步 cron 排程。
   - 移除開機後的賽事 catch-up 檢查。
@@ -54,27 +54,27 @@
   - `lib/loingMaRaces.ts` & `lib/loingMaRaces.test.ts`
   - `lib/herbotsRaces.ts` & `lib/herbotsRaces.test.ts`
 
-### 2.5 多國語言辭典 (i18n Messages)
+### 2.5 多國語系字典
 - **`messages/zh-TW.json`**, **`messages/zh-CN.json`**, **`messages/en.json`**：
   - 移除首頁 4 個翻譯鍵：`racesEyebrow`, `racesTitle`, `racesCta`, `racesEmptyDesc`。
   - 移除整個 `"races": { ... }` 命名空間。
 
 ---
 
-## 3. 非目標 (Non-goals)
+## 3. 非目標
 
 - 不針對 `/races` 做 301 轉址（依據決策共識，直接 404 讓搜尋引擎自然除名）。
 - 不保留任何爬蟲客戶端或歷史賽事資料。
 
 ---
 
-## 4. 驗證計劃與標準 (Verification Plan & Standards)
+## 4. 驗證計劃與標準
 
-1. **單元測試 (Unit Tests)**：
+1. **單元測試**：
    - 執行 `npm test -- --run`，全專案測試無任何失敗，所有受影響之排程與同步測試皆正常通過。
-2. **型別檢查 (Typecheck)**：
+2. **型別檢查**：
    - 執行 `npm run typecheck`，全專案 0 TypeScript 錯誤。
-3. **代碼規範 (Lint)**：
+3. **程式碼規範**：
    - 執行 `npm run lint`，0 ESLint 錯誤。
-4. **生產環境建置 (Production Build)**：
+4. **正式環境建置**：
    - 執行 `npm run build`，所有靜態頁面順利打包，無 `/races` 路由殘留。

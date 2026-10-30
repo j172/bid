@@ -5,7 +5,7 @@ import { useState } from "react";
 import AdminModal from "../../components/AdminModal";
 import ModalFormActions from "../../components/ModalFormActions";
 import { useSuccessBanner } from "../../components/SuccessBanner";
-import { ENDS_AT_MAX_DAYS, PRICE_MAX } from "@/lib/listingValidation";
+import { ENDS_AT_MAX_DAYS, PRICE_MAX } from "@/lib/listings/listingValidation";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
 

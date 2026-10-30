@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import Image from "next/image";
-import { LINE_CONTACT_HREF } from "@/lib/lineContact";
+import { LINE_CONTACT_HREF } from "@/lib/contact/lineContact";
 
 // SiteFooter's "help & support" LINE row. #335 replaced a broken `~ID` link
 // with a copy-phone-number flow because it believed LINE had no public

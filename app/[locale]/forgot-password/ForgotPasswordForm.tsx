@@ -3,7 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link } from "@/i18n/navigation";
-import { inputClass } from "@/lib/formStyles";
+import { inputClass } from "@/lib/shared/ui/formStyles";
 import AuthFormShell from "../components/AuthFormShell";
 
 export default function ForgotPasswordForm() {

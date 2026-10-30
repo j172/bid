@@ -1,5 +1,5 @@
-import { listHomepageSections } from "@/lib/homepageSections";
-import { homepageSectionImageUrl } from "@/lib/uploads";
+import { listHomepageSections } from "@/lib/homepage/homepageSections";
+import { homepageSectionImageUrl } from "@/lib/shared/content/uploads";
 import AdminPageIntro from "../../AdminPageIntro";
 import { AdminTable, AdminTableCell, AdminTableRow } from "../../components/AdminTable";
 import { SuccessBannerProvider } from "../../components/SuccessBanner";

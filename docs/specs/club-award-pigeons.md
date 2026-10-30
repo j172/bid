@@ -1,6 +1,6 @@
-# Spec: 新增「各地鴿會入賞鴿」專區與相簿分類管理
+# 規格：新增「各地鴿會入賞鴿」專區與相簿分類管理
 
-## 1. Outcome
+## 1. 預期成果
 
 提供獨立於既有「世界名鴿介紹專區」與「鴿種介紹專區」的 **「各地鴿會入賞鴿」** 專區與相簿分類管理體系：
 - 管理員可於後台獨立管理「各地鴿會相簿名稱」與「各地鴿會入賞鴿」資料。
@@ -8,9 +8,9 @@
 
 ---
 
-## 2. Scope
+## 2. 範圍
 
-### 2.1 資料庫 Schema (`db/init.sql` & `lib/db.ts`)
+### 2.1 資料庫綱要 (`db/init.sql` & `lib/db.ts`)
 
 新增兩張與 `pigeon_showcase` 完全獨立的資料表（使用 `CREATE TABLE IF NOT EXISTS`）：
 
@@ -36,7 +36,7 @@
    - `KEY idx_club_award_pigeons_category_created (category, created_at)`
    - `KEY idx_club_award_pigeons_loft (loft_id)`
 
-### 2.2 後端模組與上傳 (`lib/`)
+### 2.2 後端模組與上傳（`lib/`）
 
 - **`lib/clubAwardPigeonsValidation.ts` & `lib/clubAwardPigeonsValidation.test.ts`**：
   - `ALBUM_NAME_MAX = 100`，`validateClubAwardAlbumName(name)` 驗證相簿名稱必填且不超過 100 字。
@@ -55,7 +55,7 @@
   - `DescriptionImageEntityType` 新增 `"club-award-pigeons"`。
   - 新增 `saveClubAwardPigeonImage`、`clubAwardPigeonImageUrl`、`deleteClubAwardPigeonImageFile`（目錄：`uploads/club-award-pigeons`）。
 
-### 2.3 後台管理功能 (`app/z04urru6/` & `app/api/admin/`)
+### 2.3 後台管理功能（`app/z04urru6/` 與 `app/api/admin/`）
 
 1. **導覽選單（`app/z04urru6/adminNav.ts` & `app/z04urru6/AdminShell.tsx`）**：
    - 在「鴿種介紹專區」下方依序加入：
@@ -77,7 +77,7 @@
      - 主圖（必填）
      - 簡介（TinyMCE 富文本，支援內嵌圖片，必填）
 
-### 2.4 前台頁面與多語系 (`app/[locale]/` & `messages/`)
+### 2.4 前台頁面與多語系（`app/[locale]/` 與 `messages/`）
 
 1. **首頁「各地鴿會入賞鴿」區塊（`app/[locale]/(with-loading)/page.tsx`）**：
    - 位於「世界名鴿介紹專區」正下方，版型與「世界名鴿介紹專區」完全一致（最多 6 張卡片、3 欄網格、空狀態顯示「即將推出」）。
@@ -94,7 +94,7 @@
 
 ---
 
-## 3. Non-goals
+## 3. 非目標
 
 - 不修改或影響既有的「世界名鴿介紹專區」與「鴿種介紹專區」（`pigeon_showcase` 資料表與其前後台路由維持原狀）。
 - 不將「各地鴿會入賞鴿」的資料混入首頁上方的入賞鴿／進口鴿／代表種鴿輪播或三豐攝影名鴿特輯。
@@ -102,7 +102,7 @@
 
 ---
 
-## 4. Acceptance Criteria
+## 4. 驗收標準
 
 - [ ] AC1: `db/init.sql` 與 `lib/db.ts` 定義 `club_award_albums` 與 `club_award_pigeons` 資料表，與 `pigeon_showcase` 完全獨立。
 - [ ] AC2: 後台「各地鴿會相簿管理」（`/z04urru6/club-award-albums`）支援新增、編輯、搜尋、分頁與刪除相簿，且當相簿內仍有鴿子時禁止刪除並回傳明確錯誤提示。
@@ -112,15 +112,15 @@
 
 ---
 
-## 5. Risks & Rollout
+## 5. 風險與發布
 
-- **Migration / Compatibility**: 僅新增 `club_award_albums` 與 `club_award_pigeons` 兩張表（`CREATE TABLE IF NOT EXISTS`），不修改任何既有資料表結構，對現有功能與資料零破壞性。
-- **Deployment**: 合併至 `master` 後由 `.github/workflows/deploy-ftps.yml` 自動部署，應用程式啟動時 `getDb()` 會自動執行 `CREATE TABLE IF NOT EXISTS` 建立新資料表。
-- **Rollback**: 若需回滾，直接透過 PR revert 程式碼並重新部署即可；新建立的兩張資料表留在資料庫中不會影響舊版程式運作。
+- **遷移／相容性**：僅新增 `club_award_albums` 與 `club_award_pigeons` 兩張表（`CREATE TABLE IF NOT EXISTS`），不修改任何既有資料表結構，對現有功能與資料零破壞性。
+- **部署**：合併至 `master` 後由 `.github/workflows/deploy-ftps.yml` 自動部署，應用程式啟動時 `getDb()` 會自動執行 `CREATE TABLE IF NOT EXISTS` 建立新資料表。
+- **回滾**：若需回滾，直接透過 PR revert 程式碼並重新部署即可；新建立的兩張資料表留在資料庫中不會影響舊版程式運作。
 
 ---
 
-## 6. Verification
+## 6. 驗證
 
 - 單元測試：`npx vitest run lib/clubAwardPigeonsValidation.test.ts lib/clubAwardPigeons.test.ts lib/uploads.test.ts`
 - 全域檢查：`npm run lint`、`npm run typecheck`、`npm test`、`npm run build`

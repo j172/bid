@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
+import { requireAdmin } from "@/lib/auth/apiAuth";
 import { getListingById, updateListingStartsAt } from "@/lib/listings";
-import { validateStartsAt } from "@/lib/listingValidation";
-import { parseIdParam } from "@/lib/routeParams";
+import { validateStartsAt } from "@/lib/listings/listingValidation";
+import { parseIdParam } from "@/lib/shared/api/routeParams";
 
 // Admin-only: corrects a still-'scheduled' auction's start time (or clears
 // it to open the listing immediately) — see updateListingStartsAt's comment

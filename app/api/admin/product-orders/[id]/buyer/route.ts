@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
-import { getBuyerProfileForProductOrder } from "@/lib/productOrders";
-import { parseIdParam } from "@/lib/routeParams";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { getBuyerProfileForProductOrder } from "@/lib/products/productOrders";
+import { parseIdParam } from "@/lib/shared/api/routeParams";
 
 // Powers the admin product-orders page's expandable "買家資料" section —
 // mirrors app/api/admin/orders/[id]/buyer/route.ts, against products'

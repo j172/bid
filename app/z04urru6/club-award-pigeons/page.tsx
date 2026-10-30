@@ -1,4 +1,4 @@
-import { listHomepageSections } from "@/lib/homepageSections";
+import { listHomepageSections } from "@/lib/homepage/homepageSections";
 import {
   CLUB_AWARD_PAGE_SIZES,
   DEFAULT_CLUB_AWARD_PAGE_SIZE,
@@ -6,9 +6,9 @@ import {
   listAllClubAwardAlbums,
   listClubAwardPigeons,
   type PigeonShowcaseCategory,
-} from "@/lib/clubAwardPigeons";
-import { isPigeonShowcaseCategory } from "@/lib/clubAwardPigeonsValidation";
-import { clubAwardPigeonImageUrl } from "@/lib/uploads";
+} from "@/lib/pigeons/clubAwardPigeons";
+import { isPigeonShowcaseCategory } from "@/lib/pigeons/clubAwardPigeonsValidation";
+import { clubAwardPigeonImageUrl } from "@/lib/shared/content/uploads";
 import AdminPageIntro from "../AdminPageIntro";
 import AdminPagination from "../components/AdminPagination";
 import { AdminTable, AdminTableCell, AdminTableRow } from "../components/AdminTable";

@@ -9,7 +9,7 @@ export async function register() {
   // register() also runs once for the Edge runtime (middleware); node-cron
   // needs real Node APIs, so only start it for the Node.js server runtime.
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const { startScheduler } = await import("@/lib/scheduler");
+    const { startScheduler } = await import("@/lib/shared/data/scheduler");
     startScheduler();
   }
 }

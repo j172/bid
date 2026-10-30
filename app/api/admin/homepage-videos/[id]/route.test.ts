@@ -1,18 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DELETE, GET, PUT } from "./route";
 
-import { requireAdmin } from "@/lib/apiAuth";
+import { requireAdmin } from "@/lib/auth/apiAuth";
 import {
   deleteHomepageVideo,
   getHomepageVideo,
   updateHomepageVideo,
-} from "@/lib/homepageVideos";
+} from "@/lib/homepage/homepageVideos";
 
-vi.mock("@/lib/apiAuth", () => ({
+vi.mock("@/lib/auth/apiAuth", () => ({
   requireAdmin: vi.fn(),
 }));
 
-vi.mock("@/lib/homepageVideos", () => ({
+vi.mock("@/lib/homepage/homepageVideos", () => ({
   getHomepageVideo: vi.fn(),
   updateHomepageVideo: vi.fn(),
   deleteHomepageVideo: vi.fn(),

@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextResponse } from "next/server";
 import { DELETE, GET, PATCH } from "./route";
-import { requireAdmin } from "@/lib/apiAuth";
+import { requireAdmin } from "@/lib/auth/apiAuth";
 import { deleteProduct, getProductById, replaceProductPhotos, updateProduct } from "@/lib/products";
-import { deleteProductPhotoFiles, saveProductPhotos } from "@/lib/uploads";
+import { deleteProductPhotoFiles, saveProductPhotos } from "@/lib/shared/content/uploads";
 
-vi.mock("@/lib/apiAuth", () => ({
+vi.mock("@/lib/auth/apiAuth", () => ({
   requireAdmin: vi.fn(),
 }));
 
@@ -16,7 +16,7 @@ vi.mock("@/lib/products", () => ({
   replaceProductPhotos: vi.fn(),
 }));
 
-vi.mock("@/lib/uploads", () => ({
+vi.mock("@/lib/shared/content/uploads", () => ({
   saveProductPhotos: vi.fn(),
   deleteProductPhotoFiles: vi.fn(),
   productPhotoUrl: (productId: number, fileName: string) => `/uploads/products/${productId}/${fileName}`,

@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { isValidEmail } from "@/lib/emailValidation";
-import { usePostJson } from "@/lib/usePostJson";
+import { isValidEmail } from "@/lib/shared/validation/emailValidation";
+import { usePostJson } from "@/lib/shared/client/usePostJson";
 
 // Footer newsletter opt-in. Issue #139 item 19: this used to be the one
 // public form that ignored the site-wide `{ ok, errorCode }` convention —
@@ -24,7 +24,7 @@ export default function NewsletterForm() {
 
     // Local pre-check, kept ahead of the request so an obviously malformed
     // address gets the more specific copy without a round trip. Deliberately
-    // the very rule the subscribe endpoint enforces (lib/emailValidation.ts,
+    // the very rule the subscribe endpoint enforces (lib/shared/validation/emailValidation.ts,
     // issue #140 M-2) rather than a looser approximation, so this never waves
     // through an address the server will reject.
     if (!isValidEmail(email)) {

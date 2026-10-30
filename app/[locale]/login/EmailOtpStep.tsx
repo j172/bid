@@ -3,8 +3,8 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useRouter } from "@/i18n/navigation";
-import { inputClass } from "@/lib/formStyles";
-import { usePostJson } from "@/lib/usePostJson";
+import { inputClass } from "@/lib/shared/ui/formStyles";
+import { usePostJson } from "@/lib/shared/client/usePostJson";
 import AuthFormShell from "../components/AuthFormShell";
 import { useCurrentUser } from "../components/CurrentUserProvider";
 

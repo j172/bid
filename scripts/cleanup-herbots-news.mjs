@@ -22,7 +22,7 @@
 // a dry-run/--confirm harness. Run it by hand, separately, after this
 // script (order doesn't actually matter, but doing the data cleanup first
 // keeps the two steps independently reviewable). It is intentionally not run
-// automatically by lib/db.ts's ensureSchema() either — this project has no
+// automatically by lib/shared/data/db.ts's ensureSchema() either — this project has no
 // migration framework/history, and dropping a table on every boot is a
 // destructive operation this codebase reserves for hand-run commands.
 //

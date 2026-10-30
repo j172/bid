@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
-import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
-import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/shared/content/descriptionImageLimits";
+import { resolveDescriptionImagePlaceholders } from "@/lib/shared/content/descriptionImages";
 import { deleteNews, getNewsById, updateNews, type NewsPostInput } from "@/lib/news";
-import { validateNewsContent, validateNewsTitle } from "@/lib/newsValidation";
-import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
+import { validateNewsContent, validateNewsTitle } from "@/lib/news/newsValidation";
+import { sanitizeDescriptionHtml } from "@/lib/shared/content/sanitizeDescriptionHtml";
 import {
   deleteNewsImageFile,
   descriptionImageUrl,
@@ -12,10 +12,10 @@ import {
   saveImageOrError,
   saveNewsImage,
   withImageRollback,
-} from "@/lib/uploads";
-import { cancelBroadcast } from "@/lib/newsletter";
-import { createAndSendNewsBroadcast, resolveBroadcastLock, resolveOrigin } from "@/lib/newsNewsletterSync";
-import { parseIdParam } from "@/lib/routeParams";
+} from "@/lib/shared/content/uploads";
+import { cancelBroadcast } from "@/lib/news/newsletter";
+import { createAndSendNewsBroadcast, resolveBroadcastLock, resolveOrigin } from "@/lib/news/newsNewsletterSync";
+import { parseIdParam } from "@/lib/shared/api/routeParams";
 
 // Submits FormData (not JSON) as of issue #70 — unlike homepage_sections'
 // PATCH route (image replacement optional, keeps the existing file when
@@ -128,7 +128,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           detailUrl,
           scheduledAtRaw,
           invalidScheduleError: "排程時間必須是有效的未來時間，電子報未更新。",
-          // lib/newsletter.ts has no "update broadcast" call, only
+          // lib/news/newsletter.ts has no "update broadcast" call, only
           // create/send/cancel (issue #80 keeps that surface as-is) — so a
           // content/schedule change replaces the old broadcast with a fresh
           // one instead of editing it in place. Best-effort: an

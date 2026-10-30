@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextResponse } from "next/server";
 import { GET, POST } from "./route";
-import { requireAdmin } from "@/lib/apiAuth";
-import { createHomepageVideo, listHomepageVideos } from "@/lib/homepageVideos";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { createHomepageVideo, listHomepageVideos } from "@/lib/homepage/homepageVideos";
 
-vi.mock("@/lib/apiAuth", () => ({
+vi.mock("@/lib/auth/apiAuth", () => ({
   requireAdmin: vi.fn(),
 }));
 
-vi.mock("@/lib/homepageVideos", () => ({
+vi.mock("@/lib/homepage/homepageVideos", () => ({
   listHomepageVideos: vi.fn(),
   createHomepageVideo: vi.fn(),
 }));

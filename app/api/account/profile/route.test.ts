@@ -2,7 +2,7 @@
 // fill in / correct the one now required at registration. These tests cover
 // only the route's own responsibility (auth gate, validation via the shared
 // validateProfile(), passing lineId through to updateProfile) — the field
-// rules themselves are covered by lib/profile.test.ts. @/lib/auth is mocked
+// rules themselves are covered by lib/account/profile.test.ts. @/lib/auth is mocked
 // wholesale (both getCurrentUser, consumed indirectly via lib/apiAuth's
 // requireUser, and updateProfile) so this never touches next/headers'
 // cookies() or a real database — same pattern as

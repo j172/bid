@@ -1,4 +1,4 @@
-# 502 Origin Recovery Runbook（xiangshuicn.cc）
+# 502 來源主機復原操作手冊（xiangshuicn.cc）
 
 適用症狀：Cloudflare 顯示 `Error 502` / `origin_bad_gateway`，且站點間歇性 `502/503`。
 
@@ -34,7 +34,7 @@
 - `https://xiangshuicn.cc/` 回 `200`
 - 不再出現 Cloudflare 502/503 錯誤頁
 
-## 已知背景（本 repo）
+## 已知背景（本儲存庫）
 
 - 反向代理入口：`.remote-index.php`
 - App 目標：`127.0.0.1:3001`
@@ -55,4 +55,3 @@
 1. 設定外部 cron 每 1~2 分鐘呼叫 `/__ops/pm2-ensure-running?key=...` 作為二級保障
 2. 監控規則加入「連續 3 次 health 非 200 即告警」
 3. 告警訊息附上「先跑 pm2-ensure-running，再看 status」操作提示
-

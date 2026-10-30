@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
-import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
-import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
-import { parsePhotoOrder, resolvePhotoOrder, type PhotoOrderEntry } from "@/lib/listingPhotoOrder";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/shared/content/descriptionImageLimits";
+import { resolveDescriptionImagePlaceholders } from "@/lib/shared/content/descriptionImages";
+import { parsePhotoOrder, resolvePhotoOrder, type PhotoOrderEntry } from "@/lib/listings/listingPhotoOrder";
 import {
   getListingById,
   getPhotoFileNames,
@@ -15,12 +15,12 @@ import {
   validatePriceOrCallForPrice,
   validateStockRemaining,
   validateTitle,
-} from "@/lib/listingValidation";
-import { MAX_PHOTO_COUNT } from "@/lib/photoLimits";
-import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
-import { deleteListingPhotoFiles, descriptionImageUrl, saveDescriptionImages, saveListingPhotos } from "@/lib/uploads";
-import { validateYoutubeUrl } from "@/lib/youtubeEmbed";
-import { parseIdParam } from "@/lib/routeParams";
+} from "@/lib/listings/listingValidation";
+import { MAX_PHOTO_COUNT } from "@/lib/shared/content/photoLimits";
+import { sanitizeDescriptionHtml } from "@/lib/shared/content/sanitizeDescriptionHtml";
+import { deleteListingPhotoFiles, descriptionImageUrl, saveDescriptionImages, saveListingPhotos } from "@/lib/shared/content/uploads";
+import { validateYoutubeUrl } from "@/lib/social/youtubeEmbed";
+import { parseIdParam } from "@/lib/shared/api/routeParams";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdmin();

@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import CarouselControls from "./CarouselControls";
-import { useRotatingIndex } from "@/lib/useRotatingIndex";
+import { useRotatingIndex } from "@/lib/shared/client/useRotatingIndex";
 
 // Homepage carousel card for 名家專區 (issue #270; reverted back to a blog-style
 // flow by issue #314) — rotating showcase of curated

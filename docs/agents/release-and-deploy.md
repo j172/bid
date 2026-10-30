@@ -1,23 +1,23 @@
-# Release and Deploy
+# 發布與部署
 
-## Merge gate
+## 合併門檻
 
-Before merge, the PR must include the issue number, acceptance-criteria mapping, test results, migration notes, and rollback notes. Required repository checks are lint, typecheck, tests, and production build when the change can affect runtime behavior.
+合併前，PR 必須包含 Issue 編號、驗收條件對照、測試結果、遷移說明及回滾說明。若變更可能影響執行期行為，儲存庫必須通過 lint、typecheck、測試及正式環境建置檢查。
 
-The target branch is `master`. Merging to `master` triggers `.github/workflows/deploy-ftps.yml`; the workflow also remains manually runnable for recovery.
+目標分支為 `master`。合併至 `master` 會觸發 `.github/workflows/deploy-ftps.yml`；發生復原需求時，也可手動執行此 workflow。
 
-## Production deployment
+## 正式環境部署
 
-The workflow builds a fresh artifact in GitHub Actions, uploads it over FTPS, applies it over SSH, and runs the remote verification script. Credentials remain GitHub Actions Secrets and must never be copied into the repository, `.env`, logs, or issue comments.
+此 workflow 會在 GitHub Actions 中建置新的產物，透過 FTPS 上傳、透過 SSH 套用，並執行遠端驗證腳本。憑證應保留於 GitHub Actions Secrets 中，絕不可複製到儲存庫、`.env`、記錄檔或 Issue 留言。
 
-Deployments are serialized with GitHub Actions concurrency. A failed build, upload, apply, or verification step fails the workflow and must not be reported as successful.
+部署作業透過 GitHub Actions concurrency 依序執行。若建置、上傳、套用或驗證任一步驟失敗，workflow 即視為失敗，不得回報為成功。
 
-## Recovery
+## 復原
 
-1. Stop further deploys by resolving the failing run before retrying.
-2. Inspect the failed step and the remote apply/verify output; do not paste secrets into tickets.
-3. Re-run the last known-good workflow or revert the offending merge through a normal PR.
-4. Verify the live site from the remote verification path.
-5. Record the incident and corrective action in the related Issue or PR.
+1. 在重試前先處理失敗的執行作業，避免繼續進行其他部署。
+2. 檢查失敗步驟及遠端套用／驗證輸出；不要將機密貼入工作票。
+3. 重新執行最後一個已知正常的 workflow，或透過一般 PR 還原造成問題的合併。
+4. 透過遠端驗證路徑確認正式站點。
+5. 在相關 Issue 或 PR 中記錄事故與修正措施。
 
-Production deployment is not considered complete until the workflow is green and the remote health check succeeds.
+只有 workflow 成功且遠端健康檢查通過，才算完成正式環境部署。

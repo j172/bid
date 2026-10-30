@@ -6,7 +6,7 @@ import Button from "../../../components/Button";
 import DescriptionEditor, { type DescriptionEditorHandle } from "../DescriptionEditor";
 import PhotoGalleryEditor, { type PhotoItem } from "../PhotoGalleryEditor";
 import { usePartnerLofts } from "../usePartnerLofts";
-import { ENDS_AT_MAX_DAYS, PRICE_MAX, TITLE_MAX } from "@/lib/listingValidation";
+import { ENDS_AT_MAX_DAYS, PRICE_MAX, TITLE_MAX } from "@/lib/listings/listingValidation";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
 const counterClass = (current: number, max: number) => `text-xs ${current > max ? "text-ended" : "text-ink-light"}`;

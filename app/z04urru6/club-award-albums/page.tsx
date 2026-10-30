@@ -3,7 +3,7 @@ import {
   DEFAULT_CLUB_AWARD_PAGE_SIZE,
   isClubAwardPageSize,
   listClubAwardAlbums,
-} from "@/lib/clubAwardPigeons";
+} from "@/lib/pigeons/clubAwardPigeons";
 import AdminPageIntro from "../AdminPageIntro";
 import AdminPagination from "../components/AdminPagination";
 import { AdminTable, AdminTableCell, AdminTableRow } from "../components/AdminTable";

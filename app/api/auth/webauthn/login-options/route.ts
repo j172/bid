@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateAuthenticationOptions } from "@simplewebauthn/server";
-import { createWebauthnChallenge, resolveWebauthnRp, setWebauthnChallengeCookie } from "@/lib/webauthn";
+import { createWebauthnChallenge, resolveWebauthnRp, setWebauthnChallengeCookie } from "@/lib/auth/webauthn";
 
 // Step 1 of "使用通行密鑰登入" (issue #95) — deliberately usernameless: no
 // email is collected before this call, and allowCredentials is left

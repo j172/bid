@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ALBUM_NAME_MAX } from "@/lib/clubAwardPigeonsValidation";
+import { ALBUM_NAME_MAX } from "@/lib/pigeons/clubAwardPigeonsValidation";
 import { MODAL_TRIGGER_CLASS } from "../components/adminButtonClasses";
 import AdminModal from "../components/AdminModal";
 import ModalFormActions from "../components/ModalFormActions";

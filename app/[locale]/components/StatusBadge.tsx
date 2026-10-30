@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import { resolveStatusBadgeVariant } from "@/lib/statusBadge";
+import { resolveStatusBadgeVariant } from "@/lib/shared/ui/statusBadge";
 
 // Translated duplicate of app/components/StatusBadge.tsx — that original
 // copy stays in place, untranslated, for the admin backend (see
@@ -8,7 +8,7 @@ import { resolveStatusBadgeVariant } from "@/lib/statusBadge";
 // app/[locale]/ tree).
 //
 // Only the label lookup differs between the two: the status → variant
-// decision itself lives in lib/statusBadge.ts (issue #139 item 6), and the
+// decision itself lives in lib/shared/ui/statusBadge.ts (issue #139 item 6), and the
 // variant's `key` doubles as the `statusBadge` message key.
 export default function StatusBadge({
   status,

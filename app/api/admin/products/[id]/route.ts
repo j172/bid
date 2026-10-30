@@ -1,27 +1,27 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
-import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
-import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
-import { MAX_PHOTO_COUNT } from "@/lib/photoLimits";
-import { parseProductPhotoOrder, resolveProductPhotoOrder } from "@/lib/productPhotoOrder";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/shared/content/descriptionImageLimits";
+import { resolveDescriptionImagePlaceholders } from "@/lib/shared/content/descriptionImages";
+import { MAX_PHOTO_COUNT } from "@/lib/shared/content/photoLimits";
+import { parseProductPhotoOrder, resolveProductPhotoOrder } from "@/lib/products/productPhotoOrder";
 import {
   validateProductDescription,
   validateProductPriceOrCallForPrice,
   validateProductSortOrder,
   validateProductStockRemaining,
   validateProductTitle,
-} from "@/lib/productValidation";
+} from "@/lib/products/productValidation";
 import { deleteProduct, getProductById, replaceProductPhotos, updateProduct } from "@/lib/products";
-import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
+import { sanitizeDescriptionHtml } from "@/lib/shared/content/sanitizeDescriptionHtml";
 import {
   deleteProductPhotoFiles,
   descriptionImageUrl,
   productPhotoUrl,
   saveDescriptionImages,
   saveProductPhotos,
-} from "@/lib/uploads";
-import { validateYoutubeUrl } from "@/lib/youtubeEmbed";
-import { parseIdParam } from "@/lib/routeParams";
+} from "@/lib/shared/content/uploads";
+import { validateYoutubeUrl } from "@/lib/social/youtubeEmbed";
+import { parseIdParam } from "@/lib/shared/api/routeParams";
 
 // Powers the admin edit modal's prefill (ProductFormModal.tsx) — always
 // fetched without activeOnly so an admin can open and re-publish a

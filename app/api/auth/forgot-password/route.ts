@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { findUserByEmail } from "@/lib/auth";
-import { createPasswordResetToken, isPasswordResetRateLimited, resetPasswordPath } from "@/lib/passwordReset";
-import { sendPasswordResetEmail } from "@/lib/notifications";
-import { getClientIpFromHeaders } from "@/lib/clientIp";
-import { resolveOrigin } from "@/lib/newsNewsletterSync";
-import { resolveRequestLocale } from "@/lib/requestLocale";
+import { createPasswordResetToken, isPasswordResetRateLimited, resetPasswordPath } from "@/lib/auth/passwordReset";
+import { sendPasswordResetEmail } from "@/lib/shared/communications/notifications";
+import { getClientIpFromHeaders } from "@/lib/shared/client/clientIp";
+import { resolveOrigin } from "@/lib/news/newsNewsletterSync";
+import { resolveRequestLocale } from "@/lib/shared/i18n/requestLocale";
 
 // Always responds with the same { ok: true } neutral outcome — whether the
 // email doesn't belong to any account, belongs to a suspended account, or

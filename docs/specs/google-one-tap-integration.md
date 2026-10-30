@@ -1,4 +1,4 @@
-# SPEC: 整合 Google One Tap 與 Google 一鍵登入
+# 規格：整合 Google One Tap 與 Google 一鍵登入
 
 ## 1. 背景與目標
 為降低訪客進入門檻、提升會員註冊與登入轉換率，本專案將整合 Google Identity Services (GSI) 之 **Google One Tap** 與 **Sign in with Google** 按鈕。
@@ -16,13 +16,13 @@
 
 ## 2. 規格細節
 
-### 2.1 資料庫層 (`db/init.sql` & `lib/db.ts`)
+### 2.1 資料庫層 (`db/init.sql` 與 `lib/db.ts`)
 - `users` 資料表調整：
   - 新增 `google_id VARCHAR(255) NULL UNIQUE` 欄位（儲存 Google OIDC `sub`）。
   - 將 `password_hash` 與 `password_salt` 改為允許 `NULL`（支援純 Google / OAuth 註冊之無密碼帳號）。
 - 在 `lib/db.ts` 實作自動遷移輔助函式 `ensureGoogleAuthColumns(db)`，啟動時確保欄位存在且型別正確。
 
-### 2.2 後端驗證與認證層 (`app/api/auth/google/route.ts` & `lib/auth.ts`)
+### 2.2 後端驗證與認證層 (`app/api/auth/google/route.ts` 與 `lib/auth.ts`)
 - 提供 `POST /api/auth/google`：
   - 接收 `{ credential: string }`（Google ID Token JWT）。
   - 驗證 Token 簽章、發行者（`accounts.google.com` 或 `https://accounts.google.com`）、受眾（`GOOGLE_CLIENT_ID` / `NEXT_PUBLIC_GOOGLE_CLIENT_ID`）與過期時間。
@@ -43,7 +43,7 @@
     - 若 `two_factor_method === 'totp'`，回傳 `{ ok: true, twoFactorRequired: true, twoFactorMethod: 'totp', challengeToken }`。
   - 無 2FA 或驗證通過：呼叫 `createSession(userId)` 建立 Session Cookie 並回傳會員資訊。
 
-### 2.3 拍賣競標風控攔截 (`lib/listings.ts` & `app/api/listings/[id]/bids/route.ts` & `buy-now`)
+### 2.3 拍賣競標風控攔截 (`lib/listings.ts`、`app/api/listings/[id]/bids/route.ts` 與 `buy-now`)
 - 在 `placeBid` 與 `buyNow` 執行前，檢查該投標/購買會員之 `phone` 與 `address`。
 - 若任一為空或空白，回傳 `{ ok: false, errorCode: "PROFILE_INCOMPLETE" }`。
 - 前端出價與直購彈窗攔截此錯誤代碼，引導使用者至 `/account` 補填聯絡電話與寄送地址。

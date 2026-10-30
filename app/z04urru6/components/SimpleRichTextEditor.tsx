@@ -5,12 +5,12 @@
 // （issue #139 H3），issue #315 再補上插入影片／插入圖片，跟
 // app/z04urru6/listings/DescriptionEditor.tsx 的完整版看齊——四種內容類型都
 // 各自有自己的 uploads/<entityType>/<id>/description/ 端點了（見
-// lib/uploads.ts 的 saveDescriptionImages），當初拿掉 image plugin 的理由已不成立。
+// lib/shared/content/uploads.ts 的 saveDescriptionImages），當初拿掉 image plugin 的理由已不成立。
 
 import { forwardRef, useImperativeHandle, useRef } from "react";
 import { Editor } from "@tinymce/tinymce-react";
 import type { Editor as TinyMCEEditor } from "tinymce";
-import { descriptionPlainTextLength } from "@/lib/listingValidation";
+import { descriptionPlainTextLength } from "@/lib/listings/listingValidation";
 import { createDescriptionImagesUploadHandler, extractDescriptionImagesForSubmit } from "./descriptionImageUpload";
 import { registerInsertYoutubeButton } from "./insertYoutubeButton";
 import { TINYMCE_BASE_INIT, TINYMCE_LICENSE_KEY, TINYMCE_SCRIPT_SRC } from "./richTextEditorConfig";

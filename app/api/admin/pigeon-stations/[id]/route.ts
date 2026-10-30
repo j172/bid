@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
+import { requireAdmin } from "@/lib/auth/apiAuth";
 import {
   deletePigeonStation,
   getPigeonStationById,
   updatePigeonStation,
-} from "@/lib/pigeonStations";
-import { parseIdParam } from "@/lib/routeParams";
+} from "@/lib/pigeons/pigeonStations";
+import { parseIdParam } from "@/lib/shared/api/routeParams";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdmin();

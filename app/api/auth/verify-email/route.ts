@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyEmailVerificationToken } from "@/lib/emailVerification";
+import { verifyEmailVerificationToken } from "@/lib/auth/emailVerification";
 
 // Mirrors app/api/auth/reset-password/route.ts's shape exactly, including
 // not auto-logging-in on success (see verifyEmailVerificationToken's header

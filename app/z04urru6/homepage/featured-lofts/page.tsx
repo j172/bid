@@ -1,5 +1,5 @@
-import { listHomepageSections } from "@/lib/homepageSections";
-import { homepageSectionImageUrl } from "@/lib/uploads";
+import { listHomepageSections } from "@/lib/homepage/homepageSections";
+import { homepageSectionImageUrl } from "@/lib/shared/content/uploads";
 import AdminPageIntro from "../../AdminPageIntro";
 import { AdminTable, AdminTableCell, AdminTableRow } from "../../components/AdminTable";
 import { SuccessBannerProvider } from "../../components/SuccessBanner";
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 // with a lightweight curated-card admin built on the same generic
 // homepage_sections CRUD as ../partner-lofts/page.tsx, plus a required
 // linkedLoftId pointing at a 合作鴿舍. Kept to a single section_type constant
-// here rather than importing one from lib/homepageSections.ts because that
+// here rather than importing one from lib/homepage/homepageSections.ts because that
 // module deliberately stays section-type-agnostic (see its header comment)
 // — this string is this page's concern, not the library's.
 const SECTION_TYPE = "featured_loft";

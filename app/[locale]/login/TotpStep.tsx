@@ -5,8 +5,8 @@ import { useRef, useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import Button from "@/app/components/Button";
 import TurnstileWidget, { type TurnstileWidgetHandle } from "@/app/components/TurnstileWidget";
-import { inputClass } from "@/lib/formStyles";
-import { usePostJson } from "@/lib/usePostJson";
+import { inputClass } from "@/lib/shared/ui/formStyles";
+import { usePostJson } from "@/lib/shared/client/usePostJson";
 import AuthFormShell from "../components/AuthFormShell";
 import { useCurrentUser } from "../components/CurrentUserProvider";
 

@@ -7,12 +7,12 @@ import {
   listAllClubAwardAlbums,
   listClubAwardAlbums,
   listClubAwardPigeons,
-} from "@/lib/clubAwardPigeons";
-import { clubAwardPigeonImageUrl } from "@/lib/uploads";
-import { excerptHtml } from "@/lib/htmlText";
-import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
-import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
-import { buildQuery, firstParam, type SearchParams } from "@/lib/searchParams";
+} from "@/lib/pigeons/clubAwardPigeons";
+import { clubAwardPigeonImageUrl } from "@/lib/shared/content/uploads";
+import { excerptHtml } from "@/lib/shared/content/htmlText";
+import { IMAGE_FALLBACK_SRC } from "@/lib/shared/content/imageFallback";
+import { canonicalUrl, hreflangAlternates } from "@/lib/shared/seo/seo";
+import { buildQuery, firstParam, type SearchParams } from "@/lib/shared/api/searchParams";
 import { Link } from "@/i18n/navigation";
 import ContentCardGrid from "../components/ContentCardGrid";
 import PaginationFooter from "../components/PaginationFooter";

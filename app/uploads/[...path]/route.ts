@@ -1,6 +1,6 @@
 import { readFile } from "fs/promises";
 import { NextResponse } from "next/server";
-import { resolveUploadPath } from "@/lib/uploads";
+import { resolveUploadPath } from "@/lib/shared/content/uploads";
 
 const CONTENT_TYPES: Record<string, string> = {
   jpg: "image/jpeg",
@@ -12,7 +12,7 @@ const CONTENT_TYPES: Record<string, string> = {
 
 export async function GET(_request: Request, { params }: { params: Promise<{ path: string[] }> }) {
   const { path: segments } = await params;
-  // Path-traversal containment lives in lib/uploads.ts's resolveUploadPath
+  // Path-traversal containment lives in lib/shared/content/uploads.ts's resolveUploadPath
   // (issue #140 L-2) — null means the request escaped UPLOADS_ROOT.
   const resolved = resolveUploadPath(segments);
 

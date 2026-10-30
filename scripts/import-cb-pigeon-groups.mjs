@@ -8,7 +8,7 @@
 // Sibling script to scripts/import-pigeon-shops.mjs — same
 // dry-run-by-default / --apply shape, same "run once by hand, then maintain
 // through the admin CRUD" lifecycle (app/z04urru6/pigeon-groups), same
-// deliberate exclusion from lib/scheduler.ts's daily cron.
+// deliberate exclusion from lib/shared/data/scheduler.ts's daily cron.
 //
 // One deliberate difference from import-pigeon-shops.mjs: THIS script's dry
 // run still crawls the network and resolves coordinates (Google Maps embed

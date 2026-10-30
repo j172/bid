@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ProductOrderStatus } from "@/lib/productOrders";
+import type { ProductOrderStatus } from "@/lib/products/productOrders";
 
 const STATUS_LABELS: Record<ProductOrderStatus, string> = {
   pending: "待處理",
@@ -30,7 +30,7 @@ const DANGER_BUTTON_CLASS =
 
 /**
  * products 訂單狀態變更控制項（issue #298）——availableStatuses 是
- * lib/productOrders.ts's getAvailableProductOrderStatuses 依目前狀態算出的
+ * lib/products/productOrders.ts's getAvailableProductOrderStatuses 依目前狀態算出的
  * 合法轉換清單（server component 算好才傳進來，這個 client component 本身
  * 不重複那份規則，避免兩邊規則drift）。'shipped' 額外多一步輸入物流單號
  * （選填），其餘狀態點擊後直接送出（並用 window.confirm 二次確認，同其他

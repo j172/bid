@@ -49,7 +49,7 @@ describe("POST /api/auth/line/link-existing", () => {
   });
 
   it("returns 400 when password is wrong", async () => {
-    const { createLineOnboardToken } = await import("@/lib/lineAuth");
+    const { createLineOnboardToken } = await import("@/lib/auth/lineAuth");
     const validToken = createLineOnboardToken({ lineUserId: "U12345" });
     cookieGetMock.mockReturnValue({ value: validToken });
 
@@ -69,7 +69,7 @@ describe("POST /api/auth/line/link-existing", () => {
   });
 
   it("links line_user_id and logs in when password is correct", async () => {
-    const { createLineOnboardToken } = await import("@/lib/lineAuth");
+    const { createLineOnboardToken } = await import("@/lib/auth/lineAuth");
     const validToken = createLineOnboardToken({ lineUserId: "U-link-target" });
     cookieGetMock.mockReturnValue({ value: validToken });
 

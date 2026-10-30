@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/apiAuth";
+import { requireUser } from "@/lib/auth/apiAuth";
 import { changePassword, setPassword } from "@/lib/auth";
 
 export async function POST(request: Request) {

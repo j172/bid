@@ -31,7 +31,7 @@ export interface TurnstileWidgetHandle {
   // Discards the token this widget last handed out and asks Cloudflare for a
   // fresh challenge. Callers must do this after every submit attempt: a
   // Turnstile token is single-use, so a retry with the same token would be
-  // rejected server-side (see lib/turnstile.ts).
+  // rejected server-side (see lib/auth/turnstile.ts).
   reset: () => void;
 }
 

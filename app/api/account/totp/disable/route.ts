@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/apiAuth";
-import { disableTotp } from "@/lib/totp";
+import { requireUser } from "@/lib/auth/apiAuth";
+import { disableTotp } from "@/lib/auth/totp";
 
 // Turns TOTP back off (issue #97) — mirrors
 // app/api/account/two-factor/route.ts's shape exactly (same currentPassword
 // re-entry requirement, same errorCode passthrough). disableTotp also clears
 // totp_secret/totp_backup_codes on top of the two_factor_method flip; see
-// its header comment in lib/totp.ts.
+// its header comment in lib/auth/totp.ts.
 export async function POST(request: Request) {
   const auth = await requireUser();
   if (auth.response) return auth.response;

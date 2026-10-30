@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DEFAULT_GLOBAL_ERROR_LOCALE, GLOBAL_ERROR_COPY, detectGlobalErrorLocale } from "@/lib/globalErrorCopy";
-import { useCloudflareErrorMeta } from "@/lib/useCloudflareErrorMeta";
+import { DEFAULT_GLOBAL_ERROR_LOCALE, GLOBAL_ERROR_COPY, detectGlobalErrorLocale } from "@/lib/shared/ui/globalErrorCopy";
+import { useCloudflareErrorMeta } from "@/lib/shared/client/useCloudflareErrorMeta";
 import CloudflareErrorPage from "./components/CloudflareErrorPage";
 import "./globals.css";
 
@@ -15,7 +15,7 @@ import "./globals.css";
 //   - import its own stylesheet (no parent layout's <head> is available to
 //     have already loaded app/globals.css)
 //   - avoid any layout/provider dependency, which rules out next-intl's
-//     <NextIntlClientProvider> — see lib/globalErrorCopy.ts for the small
+//     <NextIntlClientProvider> — see lib/shared/ui/globalErrorCopy.ts for the small
 //     hand-maintained copy + browser-language guess used here instead of
 //     messages/*.json.
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {

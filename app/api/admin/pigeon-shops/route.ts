@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
-import { createPigeonShop, listPigeonShops } from "@/lib/pigeonShops";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { createPigeonShop, listPigeonShops } from "@/lib/pigeons/pigeonShops";
 
 export async function GET() {
   const auth = await requireAdmin();

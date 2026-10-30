@@ -3,8 +3,8 @@ import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import { routing } from "@/i18n/routing";
 import { listOpenListings } from "@/lib/listings";
 import { listNewsForSitemap } from "@/lib/news";
-import { listHomepageSections } from "@/lib/homepageSections";
-import { hreflangAlternates, localizedUrls } from "@/lib/seo";
+import { listHomepageSections } from "@/lib/homepage/homepageSections";
+import { hreflangAlternates, localizedUrls } from "@/lib/shared/seo/seo";
 
 // ISR sitemap.xml (issue #347, revisiting issue #107's force-dynamic) —
 // DB-backed (open listings/news change often), but this only needs to be
@@ -75,7 +75,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // loft) — the actual product pages this whole feature exists to get
   // indexed. Closed/cancelled listings are deliberately excluded: they're no
   // longer purchasable, so indexing them would just send search traffic to
-  // dead ends (contrast lib/listings.ts's admin views, which do need
+  // dead ends (contrast lib/listings/index.ts's admin views, which do need
   // closed listings for settlement bookkeeping).
   const listings = await listOpenListings();
   for (const listing of listings) {

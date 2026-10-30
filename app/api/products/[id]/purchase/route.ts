@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/apiAuth";
-import { purchaseProduct } from "@/lib/productOrders";
-import { parseIdParam } from "@/lib/routeParams";
+import { requireUser } from "@/lib/auth/apiAuth";
+import { purchaseProduct } from "@/lib/products/productOrders";
+import { parseIdParam } from "@/lib/shared/api/routeParams";
 
 // Buyer-facing purchase endpoint for `products` (issue #298) — mirrors
 // app/api/listings/[id]/purchase/route.ts exactly, just against
-// lib/productOrders.ts's purchaseProduct instead of purchaseListing.
+// lib/products/productOrders.ts's purchaseProduct instead of purchaseListing.
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireUser();
   if (auth.response) return auth.response;

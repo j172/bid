@@ -6,7 +6,7 @@
 // table (see db/init.sql).
 //
 // Deliberately standalone, run once by hand (same pattern as
-// scripts/migrate-description-html.mjs) — NOT wired into lib/scheduler.ts's
+// scripts/migrate-description-html.mjs) — NOT wired into lib/shared/data/scheduler.ts's
 // daily cron. After this runs, station data is maintained by hand through
 // the admin CRUD at app/z04urru6/pigeon-stations instead of by re-running
 // this script.

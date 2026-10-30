@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextResponse } from "next/server";
 import { DELETE, GET, PUT } from "./route";
-import { requireAdmin } from "@/lib/apiAuth";
-import { deletePigeonStation, getPigeonStationById, updatePigeonStation } from "@/lib/pigeonStations";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { deletePigeonStation, getPigeonStationById, updatePigeonStation } from "@/lib/pigeons/pigeonStations";
 
-vi.mock("@/lib/apiAuth", () => ({
+vi.mock("@/lib/auth/apiAuth", () => ({
   requireAdmin: vi.fn(),
 }));
 
-vi.mock("@/lib/pigeonStations", () => ({
+vi.mock("@/lib/pigeons/pigeonStations", () => ({
   getPigeonStationById: vi.fn(),
   updatePigeonStation: vi.fn(),
   deletePigeonStation: vi.fn(),

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { LINE_ONBOARD_COOKIE, verifyLineOnboardToken } from "@/lib/lineAuth";
+import { LINE_ONBOARD_COOKIE, verifyLineOnboardToken } from "@/lib/auth/lineAuth";
 import { findUserByEmail } from "@/lib/auth";
 
 export async function GET() {

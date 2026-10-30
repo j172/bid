@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { formatAdminDateTime } from "@/lib/format";
+import { formatAdminDateTime } from "@/lib/shared/formatting/format";
 import { useLazyExpand } from "../../components/useLazyExpand";
 
 interface Winner {
@@ -17,7 +17,7 @@ export default function WinnerExpand({
 }: {
   listingId: number;
   email: string;
-  /** Null: never sent, or the last attempt failed — see lib/listings.ts's ClosedListingSummary. */
+  /** Null: never sent, or the last attempt failed — see lib/listings/index.ts's ClosedListingSummary. */
   winnerNotifiedAt: Date | null;
 }) {
   const {

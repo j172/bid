@@ -1,17 +1,17 @@
-// Mocks the auth guard, the DB-backed lib/products.ts and the filesystem-
-// backed lib/uploads.ts (same split as app/api/admin/homepage-videos/
-// route.test.ts), but NOT lib/productPhotoOrder.ts / lib/productValidation.ts
+// Mocks the auth guard, the DB-backed lib/products/index.ts and the filesystem-
+// backed lib/shared/content/uploads.ts (same split as app/api/admin/homepage-videos/
+// route.test.ts), but NOT lib/products/productPhotoOrder.ts / lib/products/productValidation.ts
 // — those are pure and exercised for real here, so these tests also cover
 // real request parsing/validation, not just error propagation.
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextResponse } from "next/server";
 import { GET, POST } from "./route";
-import { requireAdmin } from "@/lib/apiAuth";
+import { requireAdmin } from "@/lib/auth/apiAuth";
 import { createProduct, deleteProduct, listProducts, replaceProductPhotos, updateProductDescription } from "@/lib/products";
-import { deleteProductPhotoFiles, saveProductPhotos } from "@/lib/uploads";
+import { deleteProductPhotoFiles, saveProductPhotos } from "@/lib/shared/content/uploads";
 
-vi.mock("@/lib/apiAuth", () => ({
+vi.mock("@/lib/auth/apiAuth", () => ({
   requireAdmin: vi.fn(),
 }));
 
@@ -23,7 +23,7 @@ vi.mock("@/lib/products", () => ({
   updateProductDescription: vi.fn(),
 }));
 
-vi.mock("@/lib/uploads", () => ({
+vi.mock("@/lib/shared/content/uploads", () => ({
   saveProductPhotos: vi.fn(),
   deleteProductPhotoFiles: vi.fn(),
   productPhotoUrl: (productId: number, fileName: string) => `/uploads/products/${productId}/${fileName}`,

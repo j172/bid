@@ -1,4 +1,4 @@
-# Hotfix Scope — 2026-08-02
+# 緊急修補範圍 — 2026-08-02
 
 目的：只針對 502 / `starts_at` schema drift 事故進行最小風險上線。
 
@@ -9,7 +9,7 @@
 - `lib/db.ts`
   - 啟動時自動補 `listings.starts_at` 與 `idx_listings_status_starts`。
 
-## 建議納入（本次分支為了通過 build 的相依修補）
+## 建議納入（本次分支為了通過建置的相依修補）
 
 - `app/[locale]/dev-preview-hero-countdown/page.tsx`
   - 補上 `renderedAt` props，修正本分支現有型別要求造成的 build fail。
@@ -19,7 +19,7 @@
 - `docs/agents/502-origin-recovery-runbook.md`
   - 事故應變手冊，不影響執行邏輯。
 
-## 不建議與本 hotfix 同批上線
+## 不建議與本次緊急修補同批上線
 
 - 大量 UI 色彩與樣式調整（多個 `app/[locale]/*`、`app/z04urru6/*`、`messages/*`、`design-tokens.css` 等）
 - 倒數條/共用 countdown hook 功能性新增（`HeroCountdownStrip.tsx`、`useListingCountdown.ts`、多頁 props 串接）

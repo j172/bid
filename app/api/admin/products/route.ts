@@ -1,26 +1,26 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
-import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
-import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
-import { MAX_PHOTO_COUNT } from "@/lib/photoLimits";
-import { parseProductPhotoOrder, resolveProductPhotoOrder } from "@/lib/productPhotoOrder";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/shared/content/descriptionImageLimits";
+import { resolveDescriptionImagePlaceholders } from "@/lib/shared/content/descriptionImages";
+import { MAX_PHOTO_COUNT } from "@/lib/shared/content/photoLimits";
+import { parseProductPhotoOrder, resolveProductPhotoOrder } from "@/lib/products/productPhotoOrder";
 import {
   validateProductDescription,
   validateProductPriceOrCallForPrice,
   validateProductSortOrder,
   validateProductStockQuantity,
   validateProductTitle,
-} from "@/lib/productValidation";
+} from "@/lib/products/productValidation";
 import { createProduct, deleteProduct, listProducts, replaceProductPhotos, updateProductDescription } from "@/lib/products";
-import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
+import { sanitizeDescriptionHtml } from "@/lib/shared/content/sanitizeDescriptionHtml";
 import {
   deleteProductPhotoFiles,
   descriptionImageUrl,
   productPhotoUrl,
   saveDescriptionImages,
   saveProductPhotos,
-} from "@/lib/uploads";
-import { validateYoutubeUrl } from "@/lib/youtubeEmbed";
+} from "@/lib/shared/content/uploads";
+import { validateYoutubeUrl } from "@/lib/social/youtubeEmbed";
 
 // Admin list view (issue #277) — includes inactive (已下架) rows, same
 // "admin sees everything, activeOnly is only for public-facing reads"

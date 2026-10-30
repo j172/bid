@@ -1,6 +1,6 @@
-# SPEC: 登入／登出後前端認證狀態即時同步與 Google GSI／Cloudflare Turnstile 主控台錯誤修復 (Issue #373)
+# 規格：登入／登出後前端認證狀態即時同步與 Google GSI／Cloudflare Turnstile 主控台錯誤修復（Issue #373）
 
-## 1. 背景與目標 (Outcome)
+## 1. 背景與目標（預期成果）
 
 ### 現況痛點
 1. **登入與登出後頂部導覽列認證狀態未更新**：
@@ -13,7 +13,7 @@
 3. **Cloudflare Turnstile 在路由切換卸載時殘留 Widget**：
    - `TurnstileWidget` 載入 `https://challenges.cloudflare.com/turnstile/v0/api.js` 未指定 `?render=explicit`，且在元件 unmount 時未呼叫 `window.turnstile.remove(widgetId)`，導致登入成功跳轉首頁後 Turnstile 內部背景重試找不到已卸載的容器，報錯 `[Cloudflare Turnstile] Cannot find Widget ...`。
 
-### 預期成果 (Outcome)
+### 預期成果
 1. **登入／登出後導覽列狀態立即同步**：`CurrentUserProvider` 提供 `refresh()` 方法並使用 `fetch("/api/auth/me", { cache: "no-store" })`，所有登入與登出成功路徑皆呼叫 `refresh()`，無須手動重新整理瀏覽器即可立即反映最新登入狀態。
 2. **消除 Google GSI 主控台錯誤**：
    - `GoogleOneTap` 在 `/login` 與 `/register` 路由不初始化亦不渲染 One Tap prompt。
@@ -22,7 +22,7 @@
 
 ---
 
-## 2. 範圍 (Scope)
+## 2. 範圍
 
 - `app/[locale]/components/CurrentUserProvider.tsx`：
   - 在 `CurrentUserState` 與 `CurrentUserContext` 新增 `refresh: () => void`（預設值為 no-op `() => {}`），並於 `fetch("/api/auth/me", { cache: "no-store" })` 停用快取。
@@ -48,14 +48,14 @@
 
 ---
 
-## 3. 非目標 (Non-goals)
+## 3. 非目標
 
 - 不變更後端 `/api/auth/*` 各端點的 session 與回應契約。
 - 不將 `app/[locale]/layout.tsx` 改回伺服器端動態渲染（維持 SSG 相容架構）。
 
 ---
 
-## 4. 驗收標準 (Acceptance Criteria)
+## 4. 驗收標準
 
 - [x] `CurrentUserContext` 暴露 `refresh: () => void`（預設 no-op `() => {}`），且 `CurrentUserProvider` 使用 `fetch("/api/auth/me", { cache: "no-store" })`。
 - [x] `LoginForm`、`TotpStep`、`EmailOtpStep`、`PasskeyLoginButton`、`GoogleSignInButton`、`LineRegisterForm`、`LogoutButton` 在登入或登出成功時皆呼叫 `refresh()`。
@@ -67,17 +67,17 @@
 
 ---
 
-## 5. 風險與復原 (Risks & Rollback)
+## 5. 風險與復原
 
 - **風險評估**：
   - `CurrentUserContext` 預設 `refresh: () => {}` 為無副作用的 no-op，現有未包裹 `CurrentUserProvider` 的元件單元測試（如 `LineRegisterForm.test.tsx`）不需額外 mock 即可正常運作。
   - `GoogleOneTap` 在 `/login` 與 `/register` 停用後，這兩個頁面的 Google 登入由頁面上的 `GoogleSignInButton` 獨立載入 GSI script 並負責初始化，避免雙重 `initialize()` 衝突。
-- **復原計畫 (Rollback Plan)**：
+- **復原計畫**：
   - 若部署後發現異常，可單獨 `git revert` 本次 commit 並重新部署。
 
 ---
 
-## 6. 驗證計畫 (Verification Plan)
+## 6. 驗證計畫
 
 1. 單元測試：執行 `CurrentUserProvider.test.tsx` 與 `LineRegisterForm.test.tsx`。
 2. 靜態檢查：執行 `npm run typecheck` 與 `npm run lint`。

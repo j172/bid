@@ -1,18 +1,18 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
-import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
-import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
-import { deleteHomepageSection, getHomepageSectionById, updateHomepageSection } from "@/lib/homepageSections";
-import { resolveBio, resolveLinkedLoftId } from "@/lib/homepageSectionApiValidation";
-import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/shared/content/descriptionImageLimits";
+import { resolveDescriptionImagePlaceholders } from "@/lib/shared/content/descriptionImages";
+import { deleteHomepageSection, getHomepageSectionById, updateHomepageSection } from "@/lib/homepage/homepageSections";
+import { resolveBio, resolveLinkedLoftId } from "@/lib/homepage/homepageSectionApiValidation";
+import { sanitizeDescriptionHtml } from "@/lib/shared/content/sanitizeDescriptionHtml";
 import {
   deleteHomepageSectionImageFile,
   descriptionImageUrl,
   homepageSectionImageUrl,
   saveDescriptionImages,
   saveHomepageSectionImage,
-} from "@/lib/uploads";
-import { parseIdParam } from "@/lib/routeParams";
+} from "@/lib/shared/content/uploads";
+import { parseIdParam } from "@/lib/shared/api/routeParams";
 
 const TITLE_MAX = 255;
 

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { IMAGE_FALLBACK_SRC, useImageFallback } from "@/lib/imageFallback";
+import { IMAGE_FALLBACK_SRC, useImageFallback } from "@/lib/shared/content/imageFallback";
 
 // Safety net for the intermittent case where neither `onLoad` nor `onError`
 // ever fires on the <Image> (observed in production; the file itself loads

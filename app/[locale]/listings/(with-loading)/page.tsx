@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { listOpenListings, type ListingType } from "@/lib/listings";
-import { listHomepageSections, getHomepageSectionById } from "@/lib/homepageSections";
-import { currencyForLocale } from "@/lib/currency";
-import { homepageSectionImageUrl } from "@/lib/uploads";
-import { excerptHtml } from "@/lib/htmlText";
-import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
-import { getLatestStoredRate } from "@/lib/exchangeRates";
-import { buildListingCardView } from "@/lib/listingCardView";
-import { absoluteUrl, buildItemListJsonLd, canonicalListingsUrl, hreflangAlternates } from "@/lib/seo";
-import { safeJsonLdString } from "@/lib/jsonLdScript";
+import { listHomepageSections, getHomepageSectionById } from "@/lib/homepage/homepageSections";
+import { currencyForLocale } from "@/lib/shared/formatting/currency";
+import { homepageSectionImageUrl } from "@/lib/shared/content/uploads";
+import { excerptHtml } from "@/lib/shared/content/htmlText";
+import { IMAGE_FALLBACK_SRC } from "@/lib/shared/content/imageFallback";
+import { getLatestStoredRate } from "@/lib/shared/formatting/exchangeRates";
+import { buildListingCardView } from "@/lib/listings/listingCardView";
+import { absoluteUrl, buildItemListJsonLd, canonicalListingsUrl, hreflangAlternates } from "@/lib/shared/seo/seo";
+import { safeJsonLdString } from "@/lib/shared/seo/jsonLdScript";
 import {
   countByCategory,
   filterListings,
@@ -17,26 +17,26 @@ import {
   parseSortKey,
   sortListings,
   type ListingCategory,
-} from "@/lib/listingFilters";
-import { firstParam, numberParam, type SearchParams } from "@/lib/searchParams";
+} from "@/lib/listings/listingFilters";
+import { firstParam, numberParam, type SearchParams } from "@/lib/shared/api/searchParams";
 import { Link } from "@/i18n/navigation";
 import CategorySelect, { type CategorySelectOption } from "../../components/CategorySelect";
 import ProductCard from "../../components/ProductCard";
 import PartnerLoftImage from "../../components/PartnerLoftImage";
 import ContentCardGrid from "../../components/ContentCardGrid";
-import { listPigeonShowcase } from "@/lib/pigeonShowcase";
-import { isPigeonShowcaseCategory, type PigeonShowcaseCategory } from "@/lib/pigeonShowcaseValidation";
-import { pigeonShowcaseImageUrl } from "@/lib/uploads";
+import { listPigeonShowcase } from "@/lib/pigeons/pigeonShowcase";
+import { isPigeonShowcaseCategory, type PigeonShowcaseCategory } from "@/lib/pigeons/pigeonShowcaseValidation";
+import { pigeonShowcaseImageUrl } from "@/lib/shared/content/uploads";
 import {
   countShowcaseByCategory,
   resolveLoftActiveTab,
   resolveLoftStatusScope,
   type LoftActiveTab,
-} from "@/lib/loftStorefront";
+} from "@/lib/lofts/loftStorefront";
 
 export const dynamic = "force-dynamic";
 
-// Separate from lib/listingCardView.ts's LISTING_DESCRIPTION_SNIPPET_LENGTH
+// Separate from lib/listings/listingCardView.ts's LISTING_DESCRIPTION_SNIPPET_LENGTH
 // (which happens to share the same value) — this one trims the 名家專區
 // card's bio excerpt further down this page, an unrelated field.
 const FEATURED_LOFT_BIO_EXCERPT_LENGTH = 30;
@@ -55,7 +55,7 @@ function perfModeFromSearchParams(params: SearchParams): "balanced" | "aggressiv
 // cosmetic view), but every other query param (sort, q, minPrice/maxPrice,
 // withinHours, loft, perf, page) is stripped from the canonical URL so
 // those views all collapse onto the same canonical page instead of each
-// looking like a distinct duplicate — see lib/seo.ts's canonicalListingsUrl.
+// looking like a distinct duplicate — see lib/shared/seo/seo.ts's canonicalListingsUrl.
 export async function generateMetadata({
   params,
   searchParams,

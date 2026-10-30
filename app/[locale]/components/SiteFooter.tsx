@@ -4,7 +4,7 @@ import ExchangeRateStrip from "./ExchangeRateStrip";
 import HideOnHomepage from "./HideOnHomepage";
 import NewsletterForm from "./NewsletterForm";
 import FooterLineContact from "./FooterLineContact";
-import { SOCIAL_LINKS } from "@/lib/socialMediaConstants";
+import { SOCIAL_LINKS } from "@/lib/social/socialMediaConstants";
 
 
 export default async function SiteFooter() {

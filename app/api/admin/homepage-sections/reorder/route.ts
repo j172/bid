@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
-import { reorderHomepageSections } from "@/lib/homepageSections";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { reorderHomepageSections } from "@/lib/homepage/homepageSections";
 
 // Bulk re-sequence: body is { sectionType, orderedIds: number[] } — see
 // reorderHomepageSections' comment for why this is a single atomic call

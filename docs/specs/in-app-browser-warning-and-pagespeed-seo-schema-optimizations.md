@@ -1,6 +1,6 @@
-# SPEC: 外部瀏覽器警告提示與 PageSpeed / Google Search / Schema.org 全站優化
+# 規格：外部瀏覽器警告提示與 PageSpeed／Google Search／Schema.org 全站優化
 
-## 1. Outcome (預期成果)
+## 1. 預期成果
 針對正式營運站點（`https://xiangshuicn.cc/`）落實社群 App 外部瀏覽器警告與全站 PageSpeed / SEO / Schema.org 深層優化：
 1. **社群 App In-App Browser 友善提示與引導**：當使用者在 LINE、Facebook、Instagram、WeChat、TikTok 等內建 WebView 中開啟網站時，頂部顯示醒目警告橫幅，防止 Google 登入 403 報錯與 Passkey 失效；動態提供 iOS（Safari）或 Android（Chrome）對應操作指引、一鍵複製網址功能，並支援使用者暫時關閉通知。
 2. **PageSpeed 核心網頁指標 (Core Web Vitals) 升級**：
@@ -15,11 +15,11 @@
    - `ItemList`：拍賣列表頁（`/listings`）導入 Schema.org `ItemList` 集合結構。
    - `SportsClub` / `LocalBusiness`：精選名家鴿舍專題頁（`/featured-lofts/[id]`）導入實體機構結構化資料。
 
-## 2. Source and Ownership (來源與負責人)
+## 2. 來源與負責人
 - **來源**：使用者需求訪談（Grill Me 共識）與全站 PageSpeed / Google Search Central / Schema.org 最佳實踐標準。
 - **負責人**：AI Agent / Jay FC。
 
-## 3. Scope (涵蓋範圍)
+## 3. 涵蓋範圍
 - **核心工具函式與設定**：
   - `lib/inAppBrowser.ts`：In-App WebView 偵測與裝置平台判斷。
   - `lib/inAppBrowser.test.ts`：偵測邏輯全覆蓋單元測試。
@@ -43,12 +43,12 @@
 - **多國語系翻譯**：
   - `messages/zh-TW.json`、`messages/zh-CN.json`、`messages/en.json`：新增 `inAppBrowser` 多語系字典。
 
-## 4. Non-goals (非本次目標)
+## 4. 非本次目標
 - 不變更現有資料庫結構（Database Schema）。
 - 不強制以攔截器中斷 In-App 瀏覽器之一般商品相片瀏覽（維持非阻擋式 Banner）。
 - 不啟用 Next.js 伺服器端原生圖片最佳化模組（維持 `unoptimized: true`，防範 PM2 記憶體溢位）。
 
-## 5. Acceptance Criteria (驗收標準)
+## 5. 驗收標準
 - [x] 進入 LINE / FB / IG 等 In-App 瀏覽器時，頂部顯示 Amber 提示條，點擊「複製網址」按鈕可複製當前連結並顯示「已複製！」，點擊關閉按鈕後該 Session 不再重複彈出。
 - [x] In-App 瀏覽器環境下不載入 Google One Tap，外部瀏覽器下以 `lazyOnload` 載入。
 - [x] 全站 `<head>` 正確輸出 Google、GA、Clarity 之 `preconnect` 與 `dns-prefetch` 標籤。
@@ -60,14 +60,14 @@
 - [x] `npm run typecheck` 與 `npm run lint` 0 錯誤。
 - [x] `npm run build` 成功完成全站打包編譯。
 
-## 6. Verification (驗證方式)
+## 6. 驗證方式
 - 單元測試：`npm test`（1,305 項測試通過）。
 - 型別檢查：`npm run typecheck`（0 錯誤）。
 - 語法風格：`npm run lint`（0 錯誤）。
 - 生產建置：`npm run build`（116 個路由編譯成功）。
 - 部署流程：推送至 `master` 分支，由 GitHub Actions 自動執行 FTP 部署與遠端重啟。
 
-## 7. Risks and Rollout (風險與發布)
+## 7. 風險與發布
 - **相容性風險**：極低。所有改動皆相容既有 API 與組件結構。
 - **發布方式**：合併至 master，觸發 CI/CD 部署。
 - **回滾機制**：若有問題可立即 `git revert` 並重新部署。

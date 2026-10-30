@@ -6,12 +6,12 @@ const { verifyGoogleIdTokenMock, authenticateWithGooglePayloadMock } = vi.hoiste
   authenticateWithGooglePayloadMock: vi.fn(),
 }));
 
-vi.mock("@/lib/googleAuth", () => ({
+vi.mock("@/lib/auth/googleAuth", () => ({
   verifyGoogleIdToken: verifyGoogleIdTokenMock,
   authenticateWithGooglePayload: authenticateWithGooglePayloadMock,
 }));
 
-vi.mock("@/lib/clientIp", () => ({
+vi.mock("@/lib/shared/client/clientIp", () => ({
   getClientIpFromHeaders: () => "127.0.0.1",
 }));
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/apiAuth";
+import { requireUser } from "@/lib/auth/apiAuth";
 import { purchaseListing } from "@/lib/listings";
-import { parseIdParam } from "@/lib/routeParams";
+import { parseIdParam } from "@/lib/shared/api/routeParams";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireUser();

@@ -6,7 +6,7 @@
 // nothing downstream run when one says no. Every import is mocked, same
 // style as app/api/auth/login/route.test.ts, so this never reaches the real
 // createSession (which needs a request scope for next/headers' cookies())
-// or the real lib/turnstile.ts (which would make a live siteverify call).
+// or the real lib/auth/turnstile.ts (which would make a live siteverify call).
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { findUserByEmailMock, verifyPasswordMock, createSessionMock } = vi.hoisted(() => ({
@@ -27,7 +27,7 @@ const { isLoginRateLimitedMock, recordLoginFailureMock, clearLoginFailuresMock }
   clearLoginFailuresMock: vi.fn(),
 }));
 
-vi.mock("@/lib/loginRateLimit", () => ({
+vi.mock("@/lib/auth/loginRateLimit", () => ({
   isLoginRateLimited: isLoginRateLimitedMock,
   recordLoginFailure: recordLoginFailureMock,
   clearLoginFailures: clearLoginFailuresMock,
@@ -37,11 +37,11 @@ const { verifyTotpLoginMock } = vi.hoisted(() => ({
   verifyTotpLoginMock: vi.fn(),
 }));
 
-vi.mock("@/lib/totp", () => ({
+vi.mock("@/lib/auth/totp", () => ({
   verifyTotpLogin: verifyTotpLoginMock,
 }));
 
-vi.mock("@/lib/clientIp", () => ({
+vi.mock("@/lib/shared/client/clientIp", () => ({
   getClientIpFromHeaders: () => "203.0.113.7",
 }));
 
@@ -49,7 +49,7 @@ const { verifyTurnstileTokenMock } = vi.hoisted(() => ({
   verifyTurnstileTokenMock: vi.fn(),
 }));
 
-vi.mock("@/lib/turnstile", () => ({
+vi.mock("@/lib/auth/turnstile", () => ({
   verifyTurnstileToken: verifyTurnstileTokenMock,
 }));
 
@@ -79,7 +79,7 @@ const { verifyGoogle2faChallengeMock } = vi.hoisted(() => ({
   verifyGoogle2faChallengeMock: vi.fn(),
 }));
 
-vi.mock("@/lib/googleAuth", () => ({
+vi.mock("@/lib/auth/googleAuth", () => ({
   verifyGoogle2faChallenge: verifyGoogle2faChallengeMock,
 }));
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import QRCode from "qrcode";
-import { requireUser } from "@/lib/apiAuth";
-import { startTotpSetup } from "@/lib/totp";
+import { requireUser } from "@/lib/auth/apiAuth";
+import { startTotpSetup } from "@/lib/auth/totp";
 
 // Step 1 of the TOTP setup wizard (issue #97) — mirrors
 // app/api/account/webauthn/register-options/route.ts's shape: generate a

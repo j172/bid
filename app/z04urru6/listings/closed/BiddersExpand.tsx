@@ -1,6 +1,6 @@
 "use client";
 
-import { formatAdminDateTime } from "@/lib/format";
+import { formatAdminDateTime } from "@/lib/shared/formatting/format";
 import { useLazyExpand } from "../../components/useLazyExpand";
 
 interface Bidder {

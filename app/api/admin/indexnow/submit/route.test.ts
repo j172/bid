@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextResponse } from "next/server";
 import { POST } from "./route";
-import { requireAdmin } from "@/lib/apiAuth";
-import { submitToIndexNow } from "@/lib/indexnow";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { submitToIndexNow } from "@/lib/shared/seo/indexnow";
 import type { CurrentUser } from "@/lib/auth";
 
-vi.mock("@/lib/apiAuth", () => ({
+vi.mock("@/lib/auth/apiAuth", () => ({
   requireAdmin: vi.fn(),
 }));
 
-vi.mock("@/lib/indexnow", () => ({
+vi.mock("@/lib/shared/seo/indexnow", () => ({
   submitToIndexNow: vi.fn(),
 }));
 

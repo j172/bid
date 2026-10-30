@@ -3,7 +3,7 @@ import { AdminTable, AdminTableCell, AdminTableRow } from "../components/AdminTa
 import DeleteConfirmButton from "../components/DeleteConfirmButton";
 import { SuccessBannerProvider } from "../components/SuccessBanner";
 import PigeonStationFormModal from "./PigeonStationFormModal";
-import { listPigeonStations } from "@/lib/pigeonStations";
+import { listPigeonStations } from "@/lib/pigeons/pigeonStations";
 
 export const dynamic = "force-dynamic";
 

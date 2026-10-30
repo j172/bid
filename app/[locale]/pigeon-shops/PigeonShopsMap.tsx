@@ -3,8 +3,8 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import type { MapGeolocationResult } from "@/lib/useMapGeolocation";
-import { getPigeonMapIcon } from "@/lib/pigeonMapIcon";
+import type { MapGeolocationResult } from "@/lib/shared/client/useMapGeolocation";
+import { getPigeonMapIcon } from "@/lib/pigeons/pigeonMapIcon";
 
 const SELECTED_ZOOM = 15;
 // Issue #259: the zoom "使用目前位置" flies to — close enough to distinguish
@@ -26,7 +26,7 @@ export interface PigeonShopsMapProps {
   shops: PigeonShopMapPoint[];
   selectedId: number | null;
   /** The browser's resolved position, owned by the parent explorer (issue
-   * #275 — one lib/useMapGeolocation.ts call shared by both the map center
+   * #275 — one lib/shared/client/useMapGeolocation.ts call shared by both the map center
    * and the list's distance sort, instead of this component requesting its
    * own separately). Null while that request is still pending. */
   geolocation: MapGeolocationResult | null;

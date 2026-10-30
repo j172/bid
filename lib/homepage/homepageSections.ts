@@ -1,0 +1,253 @@
+// CRUD for `homepage_sections` (see db/init.sql) — generic image+link+
+// sort_order homepage CMS blocks. Two section types use it today:
+// 'partner_loft' (合作鴿舍, issue #32/#33) and 'featured_loft' (名家專區,
+// issue #270 — a lightweight curated card, replacing that ticket's removed
+// featured_loft_posts article table), but the table/API stay generic so a
+// future block can reuse the same machinery without a new table. Business
+// rules specific to one section_type (e.g. "featured_loft requires a
+// linkedLoftId") belong in the API route layer, not here.
+// Hand-written SQL via mysql2, same style as lib/listings/index.ts (this project
+// has no ORM).
+
+import { getDb } from "@/lib/shared/data/db";
+import { isForeignKeyConstraintError } from "@/lib/shared/data/dbErrors";
+
+export interface HomepageSection {
+  id: number;
+  sectionType: string;
+  title: string;
+  imageFileName: string;
+  /** Optional 簡介／內容 shown in the admin form and the homepage card excerpt (issue #45; replaces the removed linkUrl). */
+  bio: string | null;
+  /**
+   * Optional pointer at another homepage_sections row's id (issue #270) —
+   * only 'featured_loft' rows use this (required, must reference a
+   * 'partner_loft' row); 'partner_loft' rows leave it null. No DB-level FK
+   * (see db/init.sql's comment on the linked_loft_id column); validated at
+   * the API route layer, not here — this module stays section-type-agnostic
+   * (see this file's header comment).
+   */
+  linkedLoftId: number | null;
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface NewHomepageSectionInput {
+  sectionType: string;
+  title: string;
+  imageFileName: string;
+  /** Optional — null/omit for no bio. */
+  bio?: string | null;
+  /** Optional — null/omit for no linked loft. See HomepageSection.linkedLoftId. */
+  linkedLoftId?: number | null;
+  /** Omit to default to end-of-list (MAX(sort_order) + 1 within this sectionType) — see createHomepageSection. */
+  sortOrder?: number;
+  /** Defaults to true (visible). */
+  isActive?: boolean;
+}
+
+export interface UpdateHomepageSectionInput {
+  title: string;
+  imageFileName: string;
+  bio: string | null;
+  linkedLoftId: number | null;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export type HomepageSectionOutcome = { ok: true } | { ok: false; error: string };
+
+interface HomepageSectionRow {
+  id: number;
+  section_type: string;
+  title: string;
+  image_file_name: string;
+  bio: string | null;
+  linked_loft_id: number | null;
+  sort_order: number;
+  is_active: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+function mapRow(row: HomepageSectionRow): HomepageSection {
+  return {
+    id: row.id,
+    sectionType: row.section_type,
+    title: row.title,
+    imageFileName: row.image_file_name,
+    bio: row.bio,
+    linkedLoftId: row.linked_loft_id,
+    sortOrder: row.sort_order,
+    isActive: Boolean(row.is_active),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+// Powers both the admin management list (activeOnly: false — admins still
+// need to see disabled rows to be able to re-enable them) and the public
+// homepage block (activeOnly: true, a later ticket's concern). Always
+// ordered by sort_order so callers never need to re-sort client-side; id ASC
+// breaks ties deterministically for freshly-created rows sharing a sort_order.
+export async function listHomepageSections(
+  sectionType: string,
+  options: { activeOnly?: boolean } = {},
+): Promise<HomepageSection[]> {
+  const db = await getDb();
+  const conditions = ["section_type = ?"];
+  const params: (string | number)[] = [sectionType];
+  if (options.activeOnly) {
+    conditions.push("is_active = 1");
+  }
+  const [rows] = await db.query(
+    `SELECT * FROM homepage_sections WHERE ${conditions.join(" AND ")} ORDER BY sort_order ASC, id ASC`,
+    params,
+  );
+  return (rows as HomepageSectionRow[]).map(mapRow);
+}
+
+export async function getHomepageSectionById(id: number): Promise<HomepageSection | null> {
+  const db = await getDb();
+  const [rows] = await db.query("SELECT * FROM homepage_sections WHERE id = ? LIMIT 1", [id]);
+  const row = (rows as HomepageSectionRow[])[0];
+  return row ? mapRow(row) : null;
+}
+
+// New rows default to the end of their section_type's current ordering
+// unless the caller passes an explicit sortOrder — keeps a freshly created
+// row from jumping ahead of existing ones when the admin form's sort_order
+// input is left blank.
+export async function createHomepageSection(input: NewHomepageSectionInput): Promise<number> {
+  const db = await getDb();
+
+  let sortOrder = input.sortOrder;
+  if (sortOrder === undefined) {
+    const [rows] = await db.query(
+      "SELECT COALESCE(MAX(sort_order) + 1, 0) AS nextOrder FROM homepage_sections WHERE section_type = ?",
+      [input.sectionType],
+    );
+    sortOrder = (rows as { nextOrder: number }[])[0].nextOrder;
+  }
+
+  const [result] = await db.query(
+    `INSERT INTO homepage_sections
+       (section_type, title, image_file_name, bio, linked_loft_id, sort_order, is_active, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+    [
+      input.sectionType,
+      input.title,
+      input.imageFileName,
+      input.bio ?? null,
+      input.linkedLoftId ?? null,
+      sortOrder,
+      input.isActive === false ? 0 : 1,
+    ],
+  );
+  return (result as { insertId: number }).insertId;
+}
+
+export async function updateHomepageSection(
+  id: number,
+  input: UpdateHomepageSectionInput,
+): Promise<HomepageSectionOutcome> {
+  const db = await getDb();
+  const [result] = await db.query(
+    `UPDATE homepage_sections
+     SET title = ?, image_file_name = ?, bio = ?, linked_loft_id = ?, sort_order = ?, is_active = ?, updated_at = NOW()
+     WHERE id = ?`,
+    [input.title, input.imageFileName, input.bio, input.linkedLoftId, input.sortOrder, input.isActive ? 1 : 0, id],
+  );
+  if ((result as { affectedRows: number }).affectedRows === 0) {
+    return { ok: false, error: "找不到這個首頁區塊項目" };
+  }
+  return { ok: true };
+}
+
+// Used only by the create route (issue #315, 'featured_loft' rows only): a
+// section's id has to exist before its bio's inline description images can
+// be saved under uploads/homepage-sections/<id>/description/ (see
+// lib/shared/content/uploads.ts's saveDescriptionImages), so createHomepageSection is
+// called first with a placeholder bio and this backfills the real one —
+// sanitized, with its `cid:N` image placeholders already resolved to real
+// URLs — once that's done. Same two-phase sequencing as lib/listings/index.ts's
+// updateListingDescription. The edit route doesn't need this: the section's
+// id is already known from the URL, so updateHomepageSection's regular full
+// update can carry the final bio directly.
+export async function updateHomepageSectionBio(id: number, bio: string | null): Promise<void> {
+  const db = await getDb();
+  await db.query("UPDATE homepage_sections SET bio = ? WHERE id = ?", [bio, id]);
+}
+
+export async function deleteHomepageSection(id: number): Promise<HomepageSectionOutcome> {
+  const db = await getDb();
+
+  // linked_loft_id (issue #270) points at another row in this same table
+  // but is deliberately NOT a DB-level FK (see db/init.sql's comment on the
+  // column), so MySQL can't reject this delete on its own the way it does
+  // for pigeon_showcase.loft_id below — this app-level check is this
+  // module's own equivalent of that FK's ER_ROW_IS_REFERENCED_2 guard, kept
+  // generic (any section referencing `id` via linked_loft_id, not just
+  // 'featured_loft' by name) so this module stays section-type-agnostic —
+  // see its header comment.
+  const [referencing] = await db.query(
+    "SELECT 1 FROM homepage_sections WHERE linked_loft_id = ? LIMIT 1",
+    [id],
+  );
+  if ((referencing as unknown[]).length > 0) {
+    return { ok: false, error: "這個項目仍被其他首頁區塊卡片引用中，請先解除關聯後再刪除" };
+  }
+
+  try {
+    const [result] = await db.query("DELETE FROM homepage_sections WHERE id = ?", [id]);
+    if ((result as { affectedRows: number }).affectedRows === 0) {
+      return { ok: false, error: "找不到這個首頁區塊項目" };
+    }
+    return { ok: true };
+  } catch (error) {
+    // A row elsewhere still references this section via a DB-level FK — e.g.
+    // pigeon_showcase.loft_id (issue #54) — and MySQL raised
+    // ER_ROW_IS_REFERENCED_2 (errno 1451) rather than silently cascading or
+    // nulling it out (the schema uses ON DELETE RESTRICT everywhere). Surfaced
+    // as a normal ok:false outcome instead of a 500 so the admin delete
+    // button can show a real message. Kept generic here (no
+    // pigeon_showcase-specific wording) since this module stays
+    // section-type-agnostic — see its header comment.
+    if (isForeignKeyConstraintError(error)) {
+      return { ok: false, error: "這個項目仍被其他資料引用中（例如入賞鴿／進口鴿資料），請先處理相關資料後再刪除" };
+    }
+    throw error;
+  }
+}
+
+// Bulk re-sequences every row named in orderedIds to sort_order = its index
+// in that array. There's no drag-and-drop UI (out of scope for this ticket —
+// sort_order is just a number input per row), but the admin list still needs
+// a way to apply a whole new ordering atomically once it collects the
+// desired sequence, rather than requiring one PATCH per row. Scoped to
+// sectionType and rejected as a whole (no partial writes) if any id doesn't
+// belong to it, e.g. a stale client sending an id from a different section.
+export async function reorderHomepageSections(
+  sectionType: string,
+  orderedIds: number[],
+): Promise<HomepageSectionOutcome> {
+  if (orderedIds.length === 0) {
+    return { ok: true };
+  }
+
+  const db = await getDb();
+  const [rows] = await db.query(
+    `SELECT id FROM homepage_sections WHERE section_type = ? AND id IN (${orderedIds.map(() => "?").join(",")})`,
+    [sectionType, ...orderedIds],
+  );
+  if ((rows as { id: number }[]).length !== orderedIds.length) {
+    return { ok: false, error: "排序資料不正確" };
+  }
+
+  for (let i = 0; i < orderedIds.length; i++) {
+    await db.query("UPDATE homepage_sections SET sort_order = ?, updated_at = NOW() WHERE id = ?", [i, orderedIds[i]]);
+  }
+  return { ok: true };
+}

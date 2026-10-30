@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
+import { canonicalUrl, hreflangAlternates } from "@/lib/shared/seo/seo";
 import LegalPageShell from "../components/LegalPageShell";
 
 // Q&A pairs read straight out of messages/*.json (see LegalSections.tsx for

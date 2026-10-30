@@ -4,8 +4,8 @@ import { render, screen, cleanup, fireEvent } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import zhTwMessages from "@/messages/zh-TW.json";
 import SocialMediaSection from "./SocialMediaSection";
-import type { SocialItem } from "@/lib/socialMediaConstants";
-import { SOCIAL_LINKS } from "@/lib/socialMediaConstants";
+import type { SocialItem } from "@/lib/social/socialMediaConstants";
+import { SOCIAL_LINKS } from "@/lib/social/socialMediaConstants";
 
 
 const MOCK_ITEMS: SocialItem[] = [

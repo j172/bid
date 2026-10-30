@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { LINE_ONBOARD_COOKIE, verifyLineOnboardToken } from "@/lib/lineAuth";
+import { LINE_ONBOARD_COOKIE, verifyLineOnboardToken } from "@/lib/auth/lineAuth";
 import { createLineUser, createSession, findUserByEmail } from "@/lib/auth";
-import { isValidEmail } from "@/lib/emailValidation";
-import { resolveRequestLocale } from "@/lib/requestLocale";
-import type { ErrorCode } from "@/lib/errorCodes";
+import { isValidEmail } from "@/lib/shared/validation/emailValidation";
+import { resolveRequestLocale } from "@/lib/shared/i18n/requestLocale";
+import type { ErrorCode } from "@/lib/shared/api/errorCodes";
 
 function validatePhone(phone: string): { ok: true } | { ok: false; errorCode: ErrorCode } {
   const trimmed = phone.trim();

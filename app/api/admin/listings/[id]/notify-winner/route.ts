@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
+import { requireAdmin } from "@/lib/auth/apiAuth";
 import { getWinnerNotifiedAt, getWinnerProfileForListing } from "@/lib/listings";
-import { sendWinnerEmail } from "@/lib/notifications";
-import { parseIdParam } from "@/lib/routeParams";
+import { sendWinnerEmail } from "@/lib/shared/communications/notifications";
+import { parseIdParam } from "@/lib/shared/api/routeParams";
 
 // Powers WinnerExpand's "重新寄送得標信" resend button (issue #48). Unlike the
-// lazy-triggered notifyWinner calls in lib/listings.ts, this awaits the
+// lazy-triggered notifyWinner calls in lib/listings/index.ts, this awaits the
 // actual send (via sendWinnerEmail) so the response can report success/
 // failure and the refreshed winner_notified_at for the UI to reflect
 // immediately, instead of firing and forgetting.

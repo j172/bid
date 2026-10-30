@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { getCurrentUser } from "@/lib/auth";
-import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
-import { currencyForLocale, formatDualPrice } from "@/lib/currency";
-import { getLatestStoredRate } from "@/lib/exchangeRates";
+import { canonicalUrl, hreflangAlternates } from "@/lib/shared/seo/seo";
+import { currencyForLocale, formatDualPrice } from "@/lib/shared/formatting/currency";
+import { getLatestStoredRate } from "@/lib/shared/formatting/exchangeRates";
 import { getBidHistoryForUser } from "@/lib/listings";
 import { Link, redirect } from "@/i18n/navigation";
 import StatusBadge from "../components/StatusBadge";

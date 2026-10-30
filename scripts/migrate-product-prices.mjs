@@ -34,7 +34,7 @@
 //   node scripts/migrate-product-prices.mjs --confirm      # ACTUALLY WRITES products.price, inside one transaction.
 //
 // Run this once, right after deploying the products.price/stock_quantity/
-// stock_remaining columns (this ticket's lib/db.ts ensureProductOrderColumns)
+// stock_remaining columns (this ticket's lib/shared/data/db.ts ensureProductOrderColumns)
 // and before any admin creates/edits a product through the new price/
 // call-for-price form — otherwise a product an admin has already
 // deliberately marked call-for-price under the new UI (price = NULL by
@@ -64,7 +64,7 @@ function loadEnvFile(fileName) {
 loadEnvFile(".env");
 loadEnvFile(".env.local");
 
-// Same "digits-only string" rule as lib/productPriceText.ts's
+// Same "digits-only string" rule as lib/products/productPriceText.ts's
 // formatProductPriceText — kept as an independent copy (not imported) so
 // this standalone script has no dependency on the Next.js app's module
 // graph/path aliases, same reasoning scripts/cleanup-closed-listings.mjs

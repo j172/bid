@@ -1,13 +1,13 @@
-import { listHomepageSections } from "@/lib/homepageSections";
+import { listHomepageSections } from "@/lib/homepage/homepageSections";
 import {
   PIGEON_SHOWCASE_PAGE_SIZES,
   DEFAULT_PIGEON_SHOWCASE_PAGE_SIZE,
   isPigeonShowcasePageSize,
   listPigeonShowcase,
   type PigeonShowcaseCategory,
-} from "@/lib/pigeonShowcase";
-import { isPigeonShowcaseCategory } from "@/lib/pigeonShowcaseValidation";
-import { pigeonShowcaseImageUrl } from "@/lib/uploads";
+} from "@/lib/pigeons/pigeonShowcase";
+import { isPigeonShowcaseCategory } from "@/lib/pigeons/pigeonShowcaseValidation";
+import { pigeonShowcaseImageUrl } from "@/lib/shared/content/uploads";
 import AdminPageIntro from "../AdminPageIntro";
 import AdminPagination from "../components/AdminPagination";
 import { parseFirstParam, parsePageParam, type SearchParams } from "../components/searchParams";

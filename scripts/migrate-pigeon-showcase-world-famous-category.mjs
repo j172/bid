@@ -7,7 +7,7 @@
 //     MODIFY COLUMN category ENUM('award','imported','representative','world_famous') NOT NULL;
 //
 // IMPORTANT — this ALTER is already applied automatically, on every boot:
-// lib/db.ts's ensureSchema() (called from getDb()) runs
+// lib/shared/data/db.ts's ensureSchema() (called from getDb()) runs
 // ensurePigeonShowcaseCategories(), which issues this exact statement
 // unconditionally every time the app starts, including in production. That
 // mechanism already covers this migration end-to-end — the next deploy/
@@ -80,7 +80,7 @@ function printWarning() {
   const bar = "!".repeat(70);
   console.warn(bar);
   console.warn("!! 即將對正式站執行 ALTER TABLE，加寬 pigeon_showcase.category 的 ENUM。");
-  console.warn("!! 這個操作本身應該已經由 lib/db.ts 的 ensureSchema() 在每次應用程式啟動時");
+  console.warn("!! 這個操作本身應該已經由 lib/shared/data/db.ts 的 ensureSchema() 在每次應用程式啟動時");
   console.warn("!! 自動執行過了（見本檔案開頭註解）——手動執行這支腳本只是多一次相同、");
   console.warn("!! 幂等的 ALTER，理論上不會有風險，但仍建議：");
   console.warn("!! (1) 已完成資料庫備份、(2) 已先用 --dry-run 檢視目前的 ENUM 定義。");
@@ -116,7 +116,7 @@ async function main() {
       } else {
         console.log("\n  尚未包含 world_famous。確認已備份後，再由人工執行：");
         console.log("    node scripts/migrate-pigeon-showcase-world-famous-category.mjs --confirm");
-        console.log("\n  （或者，直接部署／重啟一次應用程式——lib/db.ts 的 ensureSchema() 會自動套用同一個 ALTER。）");
+        console.log("\n  （或者，直接部署／重啟一次應用程式——lib/shared/data/db.ts 的 ensureSchema() 會自動套用同一個 ALTER。）");
       }
     } else {
       printWarning();

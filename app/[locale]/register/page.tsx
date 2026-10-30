@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
+import { canonicalUrl, hreflangAlternates } from "@/lib/shared/seo/seo";
 import RegisterForm from "./RegisterForm";
 
 export const dynamic = "force-dynamic";

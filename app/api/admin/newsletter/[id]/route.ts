@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
-import { cancelBroadcast } from "@/lib/newsletter";
-import { newsletterErrorMessage } from "@/lib/newsNewsletterSync";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { cancelBroadcast } from "@/lib/news/newsletter";
+import { newsletterErrorMessage } from "@/lib/news/newsNewsletterSync";
 
 // `id` here is Resend's own broadcast id (an opaque string), not a row id —
 // hence no parseIdParam, unlike the other [id] admin routes.

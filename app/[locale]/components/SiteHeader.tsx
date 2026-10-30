@@ -3,7 +3,7 @@ import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import LanguageSwitcher from "./LanguageSwitcher";
 import CategoryDropdown, { type PartnerLoftSummary } from "./CategoryDropdown";
-import { listHomepageSections } from "@/lib/homepageSections";
+import { listHomepageSections } from "@/lib/homepage/homepageSections";
 import { HeaderMobileAuthLinks, HeaderDesktopAuthActions, HeaderBottomAuthLinks } from "./HeaderAuthLinks";
 
 // Issue #354: this component used to call getCurrentUser() directly (a

@@ -1,18 +1,18 @@
 // The two lazy status sweeps that move listings between 'scheduled',
 // 'open' and 'closed'. There's no background worker in this deployment, so
 // instead of a schedule these run at the top of every read/write path in
-// lib/listings.ts — cheap enough (single indexed UPDATE each) to afford on
+// lib/listings/index.ts — cheap enough (single indexed UPDATE each) to afford on
 // every access.
 //
-// Split out of lib/listings.ts (issue #139: that module had grown to nine
+// Split out of lib/listings/index.ts (issue #139: that module had grown to nine
 // separate responsibilities) because this is the one part with no
 // dependency on the rest of it — it only touches status columns. lib/
 // listings.ts re-exports all three functions, so existing
 // `import { syncListingLifecycle } from "@/lib/listings"` call sites are
 // unaffected.
 
-import { getDb } from "@/lib/db";
-import { notifyWinner } from "@/lib/notifications";
+import { getDb } from "@/lib/shared/data/db";
+import { notifyWinner } from "@/lib/shared/communications/notifications";
 
 // Closes any listing whose end time has passed without being bought out
 // first. Deliberately just a status flip: current_price and leader_user_id

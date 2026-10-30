@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { listProducts } from "@/lib/products";
-import { productPhotoUrl } from "@/lib/uploads";
-import { excerptHtml } from "@/lib/htmlText";
-import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
-import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
-import { buildQuery, firstParam, type SearchParams } from "@/lib/searchParams";
-import { paginate } from "@/lib/pagination";
+import { productPhotoUrl } from "@/lib/shared/content/uploads";
+import { excerptHtml } from "@/lib/shared/content/htmlText";
+import { IMAGE_FALLBACK_SRC } from "@/lib/shared/content/imageFallback";
+import { canonicalUrl, hreflangAlternates } from "@/lib/shared/seo/seo";
+import { buildQuery, firstParam, type SearchParams } from "@/lib/shared/api/searchParams";
+import { paginate } from "@/lib/shared/data/pagination";
 import ProductGridCard from "../components/ProductGridCard";
 import PaginationFooter from "../components/PaginationFooter";
 
@@ -19,7 +19,7 @@ const EXCERPT_LENGTH = 30;
 // listProducts({ activeOnly: true }) has no DB-level pagination/search of its
 // own (it's a small admin-curated catalog, unlike listings/news), so this
 // page fetches the full active set and paginates the array in memory with
-// the same shared lib/pagination.ts's paginate() every DB-paginated public
+// the same shared lib/shared/data/pagination.ts's paginate() every DB-paginated public
 // list (news/pigeon-showcase) uses for its LIMIT/OFFSET arithmetic — same
 // clamping behavior, just applied to Array.slice instead of SQL. 12 divides
 // evenly into every grid breakpoint below (1/2/3 columns).

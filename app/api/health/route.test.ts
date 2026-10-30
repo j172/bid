@@ -1,12 +1,12 @@
 // Issue #140 M-4: /api/health is public and unauthenticated, so a failed DB
 // check must not leak the driver's own error text (which carries the DB
-// username and an internal host/IP) in production. Mocks @/lib/db's getDb
-// the same way lib/passwordReset.test.ts mocks its DB layer.
+// username and an internal host/IP) in production. Mocks @/lib/shared/data/db's getDb
+// the same way lib/auth/passwordReset.test.ts mocks its DB layer.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { getDbMock } = vi.hoisted(() => ({ getDbMock: vi.fn() }));
 
-vi.mock("@/lib/db", () => ({ getDb: getDbMock }));
+vi.mock("@/lib/shared/data/db", () => ({ getDb: getDbMock }));
 
 import { GET } from "./route";
 

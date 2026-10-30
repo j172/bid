@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { generateRegistrationOptions } from "@simplewebauthn/server";
-import { requireUser } from "@/lib/apiAuth";
-import { RP_NAME, createWebauthnChallenge, resolveWebauthnRp, setWebauthnChallengeCookie } from "@/lib/webauthn";
-import { listCredentialDescriptorsForUser } from "@/lib/webauthnCredentials";
+import { requireUser } from "@/lib/auth/apiAuth";
+import { RP_NAME, createWebauthnChallenge, resolveWebauthnRp, setWebauthnChallengeCookie } from "@/lib/auth/webauthn";
+import { listCredentialDescriptorsForUser } from "@/lib/auth/webauthnCredentials";
 
 // Step 1 of adding a passkey from USER ACCOUNT (issue #95) — mirrors
 // app/api/auth/login/route.ts's issuing side of a challenge in shape:

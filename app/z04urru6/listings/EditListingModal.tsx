@@ -9,7 +9,7 @@ import { SECONDARY_TRIGGER_CLASS } from "../components/adminButtonClasses";
 import AdminModal from "../components/AdminModal";
 import ModalFormActions from "../components/ModalFormActions";
 import { useSuccessBanner } from "../components/SuccessBanner";
-import { PRICE_MAX, TITLE_MAX } from "@/lib/listingValidation";
+import { PRICE_MAX, TITLE_MAX } from "@/lib/listings/listingValidation";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none";
 const counterClass = (current: number, max: number) => `text-xs ${current > max ? "text-ended" : "text-ink-light"}`;

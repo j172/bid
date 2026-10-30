@@ -4,7 +4,7 @@
 // through dangerouslySetInnerHTML the same way, without a legacy plain-text
 // fallback path.
 //
-// Deliberately NOT wired into lib/db.ts's automatic ensureSchema() startup
+// Deliberately NOT wired into lib/shared/data/db.ts's automatic ensureSchema() startup
 // checks (unlike its ALTER TABLE helpers) — this mutates existing row
 // *content*, not just shape, so it's meant to be run once, by hand, at a
 // time of your choosing. Defaults to a dry run; pass --apply to write.

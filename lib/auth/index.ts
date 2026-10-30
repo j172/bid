@@ -1,0 +1,666 @@
+import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "crypto";
+import { cookies } from "next/headers";
+import { getDb } from "@/lib/shared/data/db";
+import { findBlockingObligation } from "@/lib/listings";
+import { paginate } from "@/lib/shared/data/pagination";
+import type { ErrorCode } from "@/lib/shared/api/errorCodes";
+
+const SESSION_COOKIE = "session";
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+export type Role = "admin" | "user";
+
+// 'none' (default) | 'email_otp' (issue #93) | 'totp' (a later roadmap
+// ticket) — see db/init.sql's users.two_factor_method column comment for why
+// this is a single mutually-exclusive field rather than a boolean per
+// method.
+export type TwoFactorMethod = "none" | "email_otp" | "totp";
+
+export interface CurrentUser {
+  id: number;
+  email: string;
+  role: Role;
+}
+
+function scrypt(password: string, salt: string): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    scryptCallback(password, salt, 64, (error, derivedKey) => {
+      if (error) reject(error);
+      else resolve(derivedKey);
+    });
+  });
+}
+
+export async function hashPassword(password: string): Promise<{ hash: string; salt: string }> {
+  const salt = randomBytes(16).toString("hex");
+  const derivedKey = await scrypt(password, salt);
+  return { hash: derivedKey.toString("hex"), salt };
+}
+
+export async function verifyPassword(password: string, hash: string, salt: string): Promise<boolean> {
+  const derivedKey = await scrypt(password, salt);
+  const stored = Buffer.from(hash, "hex");
+  if (stored.length !== derivedKey.length) return false;
+  return timingSafeEqual(stored, derivedKey);
+}
+
+// Shared "does this account's current password match?" check — changePassword
+// and setTwoFactorMethod below, plus lib/auth/totp.ts's confirmTotpSetup, each
+// re-derived the same SELECT password_hash/password_salt + verifyPassword
+// step before allowing a sensitive change through (issue #139 M7). A fresh
+// SELECT rather than a passed-in row: none of the three callers already hold
+// one (changePassword/setTwoFactorMethod/confirmTotpSetup only receive a
+// userId), and the scrypt comparison is the expensive part anyway.
+export async function verifyCurrentPassword(userId: number, password: string): Promise<boolean> {
+  const db = await getDb();
+  const [rows] = await db.query("SELECT password_hash, password_salt FROM users WHERE id = ? LIMIT 1", [userId]);
+  const row = (rows as { password_hash: string; password_salt: string }[])[0];
+  if (!row) return false;
+  return verifyPassword(password, row.password_hash, row.password_salt);
+}
+
+function roleForEmail(email: string): Role {
+  const adminEmail = (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase();
+  return adminEmail !== "" && email.trim().toLowerCase() === adminEmail ? "admin" : "user";
+}
+
+// Issue #304: registration now also requires a LINE ID and acceptance of the
+// 拍賣規則/隱私權政策 checkbox. terms_accepted_at is stamped with the current
+// time unconditionally here (not passed in) — createUser is only ever called
+// from the point in POST /api/auth/register right after its own
+// termsAccepted request-body check has already passed (see that route), so
+// by the time this INSERT runs consent is a given; this keeps the "when was
+// consent given" timestamp exactly the moment the account row is created,
+// as the legal-proof record the issue asks for.
+export async function createUser(
+  email: string,
+  password: string,
+  profile: { displayName: string; phone: string; address: string; lineId: string },
+  locale: string,
+): Promise<CurrentUser> {
+  const db = await getDb();
+  const normalizedEmail = email.trim().toLowerCase();
+  const { hash, salt } = await hashPassword(password);
+  const role = roleForEmail(normalizedEmail);
+
+  const [result] = await db.query(
+    `INSERT INTO users (email, password_hash, password_salt, role, display_name, phone, address, line_id, locale, terms_accepted_at, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+    [
+      normalizedEmail,
+      hash,
+      salt,
+      role,
+      profile.displayName.trim(),
+      profile.phone.trim(),
+      profile.address.trim(),
+      profile.lineId.trim(),
+      locale,
+    ],
+  );
+  const insertId = (result as { insertId: number }).insertId;
+  return { id: insertId, email: normalizedEmail, role };
+}
+
+export interface UserRow {
+  id: number;
+  email: string;
+  password_hash: string | null;
+  password_salt: string | null;
+  google_id: string | null;
+  line_user_id: string | null;
+  role: Role;
+  display_name: string | null;
+  phone: string | null;
+  address: string | null;
+  suspended_at: Date | null;
+  locale: string;
+  two_factor_method: TwoFactorMethod;
+  // Registration email-ownership proof (issue #118) — see db/init.sql's
+  // users.email_verified comment. MySQL returns TINYINT(1) as a JS number
+  // (0/1), not a boolean, hence the wider type here.
+  email_verified: number | boolean;
+}
+
+export async function findUserByEmail(email: string): Promise<UserRow | null> {
+  const db = await getDb();
+  const normalizedEmail = email.trim().toLowerCase();
+  const [rows] = await db.query("SELECT * FROM users WHERE email = ? LIMIT 1", [normalizedEmail]);
+  const list = rows as UserRow[];
+  return list[0] ?? null;
+}
+
+export async function findUserByGoogleId(googleId: string): Promise<UserRow | null> {
+  const db = await getDb();
+  const [rows] = await db.query("SELECT * FROM users WHERE google_id = ? LIMIT 1", [googleId]);
+  const list = rows as UserRow[];
+  return list[0] ?? null;
+}
+
+export async function findUserByLineUserId(lineUserId: string): Promise<UserRow | null> {
+  const db = await getDb();
+  const [rows] = await db.query("SELECT * FROM users WHERE line_user_id = ? LIMIT 1", [lineUserId]);
+  const list = rows as UserRow[];
+  return list[0] ?? null;
+}
+
+export async function linkGoogleId(userId: number, googleId: string): Promise<void> {
+  const db = await getDb();
+  await db.query("UPDATE users SET google_id = ? WHERE id = ?", [googleId, userId]);
+}
+
+export async function linkLineUserId(userId: number, lineUserId: string): Promise<void> {
+  const db = await getDb();
+  await db.query("UPDATE users SET line_user_id = ? WHERE id = ?", [lineUserId, userId]);
+}
+
+export async function unlinkLineUserId(userId: number): Promise<{ ok: true } | { ok: false; errorCode: ErrorCode }> {
+  const profile = await getAccountProfile(userId);
+  if (!profile) {
+    return { ok: false, errorCode: "NOT_FOUND" };
+  }
+  if (!profile.hasPassword && !profile.googleLinked) {
+    return { ok: false, errorCode: "CANNOT_UNLINK_ONLY_LOGIN_METHOD" };
+  }
+  const db = await getDb();
+  await db.query("UPDATE users SET line_user_id = NULL WHERE id = ?", [userId]);
+  return { ok: true };
+}
+
+export async function createGoogleUser(options: {
+  email: string;
+  googleId: string;
+  displayName?: string | null;
+  locale: string;
+}): Promise<CurrentUser> {
+  const db = await getDb();
+  const normalizedEmail = options.email.trim().toLowerCase();
+  const role = roleForEmail(normalizedEmail);
+  const fallbackDigits = Math.floor(Math.random() * 90000 + 10000);
+  const displayName = options.displayName?.trim() || `user${fallbackDigits}`;
+
+  const [result] = await db.query(
+    `INSERT INTO users (email, google_id, role, display_name, email_verified, locale, created_at)
+     VALUES (?, ?, ?, ?, 1, ?, NOW())`,
+    [normalizedEmail, options.googleId, role, displayName, options.locale],
+  );
+  const insertId = (result as { insertId: number }).insertId;
+  return { id: insertId, email: normalizedEmail, role };
+}
+
+export async function createLineUser(options: {
+  email: string;
+  lineUserId: string;
+  displayName?: string | null;
+  phone?: string | null;
+  termsAccepted?: boolean;
+  locale: string;
+}): Promise<CurrentUser> {
+  const db = await getDb();
+  const normalizedEmail = options.email.trim().toLowerCase();
+  const role = roleForEmail(normalizedEmail);
+  const fallbackDigits = Math.floor(Math.random() * 90000 + 10000);
+  const displayName = options.displayName?.trim() || `user${fallbackDigits}`;
+  const termsAcceptedAt = options.termsAccepted ? new Date() : null;
+
+  const [result] = await db.query(
+    `INSERT INTO users (email, line_user_id, role, display_name, phone, terms_accepted_at, email_verified, locale, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, 1, ?, NOW())`,
+    [normalizedEmail, options.lineUserId, role, displayName, options.phone || null, termsAcceptedAt, options.locale],
+  );
+  const insertId = (result as { insertId: number }).insertId;
+  return { id: insertId, email: normalizedEmail, role };
+}
+
+export async function createSession(userId: number): Promise<string> {
+  const db = await getDb();
+  const token = randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
+  await db.query("INSERT INTO sessions (id, user_id, expires_at, created_at) VALUES (?, ?, ?, NOW())", [
+    token,
+    userId,
+    expiresAt,
+  ]);
+
+  const cookieStore = await cookies();
+  cookieStore.set(SESSION_COOKIE, token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/",
+    expires: expiresAt,
+  });
+
+  return token;
+}
+
+export async function destroySession(): Promise<void> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  if (token) {
+    const db = await getDb();
+    await db.query("DELETE FROM sessions WHERE id = ?", [token]);
+  }
+  cookieStore.delete(SESSION_COOKIE);
+}
+
+export type AccountStatus = "active" | "suspended" | "deleted";
+
+export interface UserSummary {
+  id: number;
+  email: string;
+  displayName: string | null;
+  role: Role;
+  status: AccountStatus;
+  createdAt: Date;
+  bidCount: number;
+  totalWon: number;
+}
+
+export interface ListUsersOptions {
+  search?: string;
+  role?: Role;
+  /** "all" excludes deleted accounts by default — see the admin users list's default filter. */
+  status?: "all" | AccountStatus;
+  sort?: "created_desc" | "created_asc" | "bid_count_desc" | "gmv_desc";
+  page?: number;
+}
+
+export const USERS_PAGE_SIZE = 50;
+
+const SORT_CLAUSES: Record<NonNullable<ListUsersOptions["sort"]>, string> = {
+  created_desc: "u.created_at DESC",
+  created_asc: "u.created_at ASC",
+  bid_count_desc: "bidCount DESC",
+  gmv_desc: "totalWon DESC",
+};
+
+// Powers the admin users list: search + role/status filters + sortable
+// activity aggregates (bid count, total won amount) + pagination. Bid count
+// and total-won are computed via correlated subqueries (rather than a JOIN)
+// to avoid fan-out duplicating rows across the many-bids-per-user relation
+// — same style as getOverviewStats in lib/listings/index.ts.
+export async function listUsers(options: ListUsersOptions = {}): Promise<{ users: UserSummary[]; total: number }> {
+  const db = await getDb();
+  const conditions: string[] = [];
+  const params: (string | number)[] = [];
+
+  const search = options.search?.trim();
+  if (search) {
+    conditions.push("(u.email LIKE ? OR u.display_name LIKE ? OR u.phone LIKE ?)");
+    const like = `%${search}%`;
+    params.push(like, like, like);
+  }
+  if (options.role) {
+    conditions.push("u.role = ?");
+    params.push(options.role);
+  }
+  switch (options.status) {
+    case "active":
+      conditions.push("u.deleted_at IS NULL AND u.suspended_at IS NULL");
+      break;
+    case "suspended":
+      conditions.push("u.deleted_at IS NULL AND u.suspended_at IS NOT NULL");
+      break;
+    case "deleted":
+      conditions.push("u.deleted_at IS NOT NULL");
+      break;
+    case "all":
+    default:
+      conditions.push("u.deleted_at IS NULL");
+      break;
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const orderBy = SORT_CLAUSES[options.sort ?? "created_desc"];
+  const { offset, limit } = paginate(options.page, USERS_PAGE_SIZE);
+
+  const [countRows] = await db.query(`SELECT COUNT(*) AS cnt FROM users u ${whereClause}`, params);
+  const total = (countRows as { cnt: number }[])[0].cnt;
+
+  const [rows] = await db.query(
+    `SELECT
+       u.id, u.email, u.display_name AS displayName, u.role, u.created_at AS createdAt,
+       CASE WHEN u.deleted_at IS NOT NULL THEN 'deleted'
+            WHEN u.suspended_at IS NOT NULL THEN 'suspended'
+            ELSE 'active' END AS status,
+       (SELECT COUNT(*) FROM bids WHERE user_id = u.id) AS bidCount,
+       (SELECT COALESCE(SUM(current_price), 0) FROM listings WHERE leader_user_id = u.id AND status = 'closed') AS totalWon
+     FROM users u
+     ${whereClause}
+     ORDER BY ${orderBy}
+     LIMIT ${limit} OFFSET ${offset}`,
+    params,
+  );
+  return { users: rows as UserSummary[], total };
+}
+
+export interface UserDetail {
+  id: number;
+  email: string;
+  displayName: string | null;
+  phone: string | null;
+  address: string | null;
+  role: Role;
+  status: AccountStatus;
+  createdAt: Date;
+  // Needed by app/api/admin/users/[id]/reset-password/route.ts (issue #91)
+  // to pick the right EMAIL_MESSAGES locale for sendPasswordResetEmail —
+  // otherwise unused by app/z04urru6/users/[id]/page.tsx's own rendering.
+  locale: string;
+  // Drives app/z04urru6/users/DisableTwoFactorButton.tsx's visibility
+  // (issue #93) — the admin rescue button only renders when this isn't
+  // 'none'.
+  twoFactorMethod: TwoFactorMethod;
+}
+
+export async function getUserDetail(userId: number): Promise<UserDetail | null> {
+  const db = await getDb();
+  const [rows] = await db.query(
+    `SELECT
+       id, email, display_name AS displayName, phone, address, role, locale, created_at AS createdAt,
+       two_factor_method AS twoFactorMethod,
+       CASE WHEN deleted_at IS NOT NULL THEN 'deleted'
+            WHEN suspended_at IS NOT NULL THEN 'suspended'
+            ELSE 'active' END AS status
+     FROM users WHERE id = ? LIMIT 1`,
+    [userId],
+  );
+  return (rows as UserDetail[])[0] ?? null;
+}
+
+export type RoleChangeOutcome = { ok: true } | { ok: false; error: string };
+
+// Promoting to admin has no restrictions; demoting to a plain user is
+// blocked in two cases: acting on your own account (so an admin can never
+// lock themselves out by mistake) and demoting the last remaining
+// operational admin (deleted/suspended admins don't count — they can't log
+// in anyway, so they're not "operational" for this purpose).
+export async function setUserRole(targetUserId: number, newRole: Role, actingUserId: number): Promise<RoleChangeOutcome> {
+  const db = await getDb();
+
+  if (newRole === "user") {
+    if (targetUserId === actingUserId) {
+      return { ok: false, error: "不能將自己降級" };
+    }
+    const [rows] = await db.query("SELECT role FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1", [
+      targetUserId,
+    ]);
+    const target = (rows as { role: Role }[])[0];
+    if (!target) {
+      return { ok: false, error: "找不到這個使用者" };
+    }
+    if (target.role === "admin") {
+      const [countRows] = await db.query(
+        "SELECT COUNT(*) AS cnt FROM users WHERE role = 'admin' AND deleted_at IS NULL AND suspended_at IS NULL",
+      );
+      if ((countRows as { cnt: number }[])[0].cnt <= 1) {
+        return { ok: false, error: "無法降級：這是系統中唯一的管理員" };
+      }
+    }
+  }
+
+  const [result] = await db.query("UPDATE users SET role = ? WHERE id = ? AND deleted_at IS NULL", [
+    newRole,
+    targetUserId,
+  ]);
+  if ((result as { affectedRows: number }).affectedRows === 0) {
+    return { ok: false, error: "找不到這個使用者" };
+  }
+  return { ok: true };
+}
+
+export type SuspendOutcome = { ok: true } | { ok: false; error: string };
+
+// Suspension blocks login (see findUserByEmail's caller in the login route,
+// and getCurrentUser's suspended_at check) but never blocks on a leading
+// bid/listing — unlike deleteAccount, it's meant as an instantly-reversible
+// administrative kill switch, not a permanent removal. The same self- and
+// last-admin protections as setUserRole apply, since suspending an admin is
+// operationally equivalent to demoting them (they can't use the backend
+// either way).
+export async function suspendUser(targetUserId: number, actingUserId: number): Promise<SuspendOutcome> {
+  if (targetUserId === actingUserId) {
+    return { ok: false, error: "不能停權自己" };
+  }
+  const db = await getDb();
+  const [rows] = await db.query(
+    "SELECT role, suspended_at FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1",
+    [targetUserId],
+  );
+  const target = (rows as { role: Role; suspended_at: Date | null }[])[0];
+  if (!target) {
+    return { ok: false, error: "找不到這個使用者" };
+  }
+  if (target.role === "admin" && target.suspended_at === null) {
+    const [countRows] = await db.query(
+      "SELECT COUNT(*) AS cnt FROM users WHERE role = 'admin' AND deleted_at IS NULL AND suspended_at IS NULL",
+    );
+    if ((countRows as { cnt: number }[])[0].cnt <= 1) {
+      return { ok: false, error: "無法停權：這是系統中唯一的管理員" };
+    }
+  }
+
+  await db.query("UPDATE users SET suspended_at = NOW() WHERE id = ?", [targetUserId]);
+  await db.query("DELETE FROM sessions WHERE user_id = ?", [targetUserId]);
+  return { ok: true };
+}
+
+// Mirrors suspendUser's existence check (issue #139 M5) — it used to run its
+// UPDATE unconditionally and report { ok: true } even for an id that doesn't
+// exist (or an already-deleted account), so the admin UI would happily show
+// "解除停權成功" for a row that was never touched. None of suspendUser's
+// other guards apply in reverse: un-suspending yourself is impossible
+// (a suspended admin can't be logged in to call this) and lifting a
+// suspension can never leave the system without an operational admin.
+export async function unsuspendUser(targetUserId: number): Promise<SuspendOutcome> {
+  const db = await getDb();
+  const [rows] = await db.query("SELECT id FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1", [targetUserId]);
+  if (!(rows as { id: number }[])[0]) {
+    return { ok: false, error: "找不到這個使用者" };
+  }
+
+  await db.query("UPDATE users SET suspended_at = NULL WHERE id = ?", [targetUserId]);
+  return { ok: true };
+}
+
+export interface AccountProfile {
+  email: string;
+  displayName: string;
+  phone: string;
+  address: string;
+  // LINE ID (issue #304) — nullable at the DB level so accounts created
+  // before this ticket (no line_id at registration) don't need a synthetic
+  // backfill value; app/[locale]/account/ProfileForm.tsx lets those users
+  // fill it in for the first time.
+  lineId: string | null;
+  // Feeds app/[locale]/account/page.tsx's TwoFactorSection (issue #93) so it
+  // can render the toggle's current on/off state on load.
+  twoFactorMethod: TwoFactorMethod;
+  hasPassword: boolean;
+  googleLinked: boolean;
+  lineLinked: boolean;
+}
+
+export async function getAccountProfile(userId: number): Promise<AccountProfile | null> {
+  const db = await getDb();
+  const [rows] = await db.query(
+    `SELECT email, display_name AS displayName, phone, address, line_id AS lineId, two_factor_method AS twoFactorMethod,
+            (password_hash IS NOT NULL) AS hasPassword,
+            (google_id IS NOT NULL) AS googleLinked,
+            (line_user_id IS NOT NULL) AS lineLinked
+     FROM users WHERE id = ? LIMIT 1`,
+    [userId],
+  );
+  const list = rows as (Omit<AccountProfile, "hasPassword" | "googleLinked" | "lineLinked"> & {
+    hasPassword: number | boolean;
+    googleLinked: number | boolean;
+    lineLinked: number | boolean;
+  })[];
+  const row = list[0];
+  if (!row) return null;
+  return {
+    ...row,
+    hasPassword: Boolean(row.hasPassword),
+    googleLinked: Boolean(row.googleLinked),
+    lineLinked: Boolean(row.lineLinked),
+  };
+}
+
+export async function updateProfile(
+  userId: number,
+  profile: { displayName: string; phone: string; address: string; lineId: string },
+): Promise<void> {
+  const db = await getDb();
+  await db.query("UPDATE users SET display_name = ?, phone = ?, address = ?, line_id = ? WHERE id = ?", [
+    profile.displayName.trim(),
+    profile.phone.trim(),
+    profile.address.trim(),
+    profile.lineId.trim(),
+    userId,
+  ]);
+}
+
+export type ChangePasswordOutcome = { ok: true } | { ok: false; errorCode: ErrorCode };
+
+// Same "kick every other session" treatment as suspendUser/deleteAccount and
+// the forgot-password flow's resetPassword (lib/auth/passwordReset.ts) — a
+// changed password should invalidate any session an attacker (or a stale
+// device) might still be holding. Unlike those two, this one is triggered by
+// the logged-in owner themselves from an active session, so it deliberately
+// keeps *that* session alive (read from the request's own cookie) rather
+// than logging the caller out of the request they just made.
+export async function changePassword(
+  userId: number,
+  oldPassword: string,
+  newPassword: string,
+): Promise<ChangePasswordOutcome> {
+  if (!(await verifyCurrentPassword(userId, oldPassword))) {
+    return { ok: false, errorCode: "WRONG_OLD_PASSWORD" };
+  }
+  const db = await getDb();
+  if (newPassword.length < 8) {
+    return { ok: false, errorCode: "NEW_PASSWORD_TOO_SHORT" };
+  }
+
+  const { hash, salt } = await hashPassword(newPassword);
+  await db.query("UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?", [hash, salt, userId]);
+
+  const cookieStore = await cookies();
+  const currentToken = cookieStore.get(SESSION_COOKIE)?.value;
+  if (currentToken) {
+    await db.query("DELETE FROM sessions WHERE user_id = ? AND id != ?", [userId, currentToken]);
+  } else {
+    await db.query("DELETE FROM sessions WHERE user_id = ?", [userId]);
+  }
+
+  return { ok: true };
+}
+
+// Issue #237: Allows passwordless users (registered via Google) to establish
+// their initial password directly from the account page without having to provide
+// an old password (which they don't have).
+export async function setPassword(
+  userId: number,
+  newPassword: string,
+): Promise<{ ok: true } | { ok: false; errorCode: ErrorCode }> {
+  if (newPassword.length < 8) {
+    return { ok: false, errorCode: "NEW_PASSWORD_TOO_SHORT" };
+  }
+  const db = await getDb();
+  const [rows] = await db.query("SELECT password_hash FROM users WHERE id = ? LIMIT 1", [userId]);
+  const user = (rows as { password_hash: string | null }[])[0];
+  if (!user) {
+    return { ok: false, errorCode: "NOT_FOUND" };
+  }
+  if (user.password_hash !== null) {
+    return { ok: false, errorCode: "PASSWORD_ALREADY_SET" };
+  }
+
+  const { hash, salt } = await hashPassword(newPassword);
+  await db.query("UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?", [hash, salt, userId]);
+  return { ok: true };
+}
+
+export type SetTwoFactorMethodOutcome = { ok: true } | { ok: false; errorCode: ErrorCode };
+
+// Turning Email OTP on or off both require re-entering the current password
+// (issue #93) — same rationale and same WRONG_OLD_PASSWORD errorCode as
+// changePassword's oldPassword check above: a session hijacker who doesn't
+// know the password must not be able to silently disable (or force-enable)
+// a second factor. Unlike changePassword this never invalidates other
+// sessions — toggling 2FA doesn't compromise a password, so there's nothing
+// for a stale/attacker session to be kicked out over.
+export async function setTwoFactorMethod(
+  userId: number,
+  currentPassword: string,
+  method: TwoFactorMethod,
+): Promise<SetTwoFactorMethodOutcome> {
+  if (!(await verifyCurrentPassword(userId, currentPassword))) {
+    return { ok: false, errorCode: "WRONG_OLD_PASSWORD" };
+  }
+
+  const db = await getDb();
+  await db.query("UPDATE users SET two_factor_method = ? WHERE id = ?", [method, userId]);
+  return { ok: true };
+}
+
+// Admin rescue path (issue #93) for an account locked out of its own Email
+// OTP (e.g. can't receive the code email) — mirrors #91's admin
+// reset-password operation in shape: no password confirmation (the admin
+// route itself is already admin-only), unconditionally forces the method
+// back to 'none'. Any pending email_otp_challenges rows for this user are
+// left alone; they simply become unusable next since the account no longer
+// requires them at login (findUserByEmail's caller checks
+// two_factor_method, not challenge rows) and will fall out of their own
+// 10-minute expiry.
+export async function adminDisableTwoFactor(targetUserId: number): Promise<void> {
+  const db = await getDb();
+  await db.query("UPDATE users SET two_factor_method = 'none' WHERE id = ?", [targetUserId]);
+}
+
+export type DeleteAccountOutcome = { ok: true } | { ok: false; errorCode: ErrorCode };
+
+// Anonymizes rather than hard-deletes: bids/listings still reference this
+// user_id (no FK cascade), and past auction records (who won what) need to
+// stay intact for history/audit — see listClosedListings' deleted-account
+// display handling. The email is overwritten (not just flagged) so the
+// original address frees up for re-registration.
+export async function deleteAccount(userId: number): Promise<DeleteAccountOutcome> {
+  const blockingReason = await findBlockingObligation(userId);
+  if (blockingReason) {
+    return { ok: false, errorCode: blockingReason };
+  }
+
+  const db = await getDb();
+  const unusablePassword = randomBytes(32).toString("hex");
+  await db.query(
+    `UPDATE users
+     SET email = CONCAT('deleted-', id, '@deleted.invalid'),
+         password_hash = ?, password_salt = ?,
+         display_name = NULL, phone = NULL, address = NULL,
+         deleted_at = NOW()
+     WHERE id = ?`,
+    [unusablePassword, unusablePassword, userId],
+  );
+  await db.query("DELETE FROM sessions WHERE user_id = ?", [userId]);
+  return { ok: true };
+}
+
+export async function getCurrentUser(): Promise<CurrentUser | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  if (!token) return null;
+
+  const db = await getDb();
+  const [rows] = await db.query(
+    `SELECT u.id, u.email, u.role
+     FROM sessions s
+     JOIN users u ON u.id = s.user_id
+     WHERE s.id = ? AND s.expires_at > NOW() AND u.suspended_at IS NULL
+     LIMIT 1`,
+    [token],
+  );
+  const list = rows as CurrentUser[];
+  return list[0] ?? null;
+}

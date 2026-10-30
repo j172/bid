@@ -3,13 +3,13 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getMinimumNextBid } from "@/lib/bidding/domain";
-import { currencyForLocale, formatConvertedApprox, formatNtd } from "@/lib/currency";
-import { getLatestStoredRate } from "@/lib/exchangeRates";
-import { formatRemaining } from "@/lib/format";
-import { safeJsonLdString } from "@/lib/jsonLdScript";
-import { maskDisplayName } from "@/lib/mask";
+import { currencyForLocale, formatConvertedApprox, formatNtd } from "@/lib/shared/formatting/currency";
+import { getLatestStoredRate } from "@/lib/shared/formatting/exchangeRates";
+import { formatRemaining } from "@/lib/shared/formatting/format";
+import { safeJsonLdString } from "@/lib/shared/seo/jsonLdScript";
+import { maskDisplayName } from "@/lib/shared/formatting/mask";
 import { getListingActivityFeed, getListingById, listOpenListings } from "@/lib/listings";
-import { getHomepageSectionById } from "@/lib/homepageSections";
+import { getHomepageSectionById } from "@/lib/homepage/homepageSections";
 import {
   absoluteUrl,
   buildBreadcrumbListJsonLd,
@@ -18,9 +18,9 @@ import {
   hreflangAlternates,
   stripHtmlToPlainText,
   truncateForMetaDescription,
-} from "@/lib/seo";
-import { homepageSectionImageUrl, listingPhotoUrl } from "@/lib/uploads";
-import { CALL_FOR_PRICE_PHONE_DISPLAY, CALL_FOR_PRICE_PHONE_HREF } from "@/lib/lineContact";
+} from "@/lib/shared/seo/seo";
+import { homepageSectionImageUrl, listingPhotoUrl } from "@/lib/shared/content/uploads";
+import { CALL_FOR_PRICE_PHONE_DISPLAY, CALL_FOR_PRICE_PHONE_HREF } from "@/lib/contact/lineContact";
 import { getPathname, Link } from "@/i18n/navigation";
 // Absolute imports (rather than relative "../../../components/...") because
 // this page moved into the (no-loading) route group (issue #74) — see that
@@ -214,7 +214,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
   // schema.org Product/Offer JSON-LD (issue #107 item 3) — lets Google show
   // rich-result price/availability and gives AI/GEO crawlers a structured
-  // read on the listing. See lib/seo.ts's buildListingProductJsonLd for the
+  // read on the listing. See lib/shared/seo/seo.ts's buildListingProductJsonLd for the
   // field mapping/availability rules.
   const listingPathname = getPathname({ href: `/listings/${listing.id}`, locale });
   const productJsonLd = buildListingProductJsonLd(listing, listingPathname);
@@ -228,7 +228,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
       {/* JSON-LD requires raw <script> content. productJsonLd carries admin-editable
           fields (listing.title is not sanitizeDescriptionHtml'd), so it goes through
-          safeJsonLdString rather than bare JSON.stringify — see lib/jsonLdScript.ts
+          safeJsonLdString rather than bare JSON.stringify — see lib/shared/seo/jsonLdScript.ts
           for why JSON.stringify alone lets a `</script>` in a title break out (issue
           #140 M-1). */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLdString(productJsonLd) }} />

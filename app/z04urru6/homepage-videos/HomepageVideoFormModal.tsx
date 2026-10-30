@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import AdminModal from "../components/AdminModal";
 import ModalFormActions from "../components/ModalFormActions";
 import { useSuccessBanner } from "../components/SuccessBanner";
-import { extractYouTubeId } from "@/lib/youtubeEmbed";
+import { extractYouTubeId } from "@/lib/social/youtubeEmbed";
 
 const inputClass =
   "w-full rounded-md border border-border px-3 py-2 text-sm focus:border-interactive-primary focus:outline-none";

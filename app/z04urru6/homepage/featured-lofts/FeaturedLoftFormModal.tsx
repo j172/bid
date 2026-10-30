@@ -13,7 +13,7 @@ import { useImageUploadPreview } from "../../components/useImageUploadPreview";
 const inputClass = "w-full rounded-md border border-border px-3 py-2 text-sm focus:border-interactive-primary focus:outline-none";
 const TITLE_MAX = 255;
 // Matches the FEATURED_LOFT_CONTENT_MAX cap enforced server-side by
-// lib/homepageSectionApiValidation.ts (copied from the removed
+// lib/homepage/homepageSectionApiValidation.ts (copied from the removed
 // lib/featuredLoftPostValidation.ts's CONTENT_MAX, issue #176).
 const CONTENT_MAX = 2000;
 

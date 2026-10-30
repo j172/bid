@@ -6,7 +6,7 @@ import {
   getLineConfig,
   LINE_AUTH_STATE_COOKIE,
   LINE_AUTH_STATE_TTL_MS,
-} from "@/lib/lineAuth";
+} from "@/lib/auth/lineAuth";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);

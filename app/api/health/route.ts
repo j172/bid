@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { getDb } from "@/lib/shared/data/db";
 
 // Public, unauthenticated liveness probe (scripts/remote-verify.sh polls it).
 // Because it is unauthenticated, it must not echo the raw driver error back

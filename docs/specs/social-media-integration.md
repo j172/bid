@@ -1,4 +1,4 @@
-# SPEC: 整合社群媒體 (Facebook, YouTube, TikTok) 並於首頁與頁尾露出內容
+# 規格：整合社群媒體 (Facebook、YouTube、TikTok) 並於首頁與頁尾呈現內容
 
 ## 1. 背景與目標
 整合翔水賽鴿三大官方社群媒體：

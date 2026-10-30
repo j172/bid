@@ -1,15 +1,15 @@
-# Triage Labels
+# 分類標籤
 
-The skills speak in terms of five canonical triage roles. This file maps those roles to the actual label strings used in this repo's issue tracker.
+技能以五種標準分類角色為依據。本檔案將這些角色對應至本儲存庫議題追蹤系統實際使用的標籤字串。
 
-| Label in mattpocock/skills | Label in our tracker | Meaning                                  |
+| mattpocock/skills 中的標籤 | 本追蹤系統中的標籤 | 意義                                  |
 | --------------------------- | --------------------- | ----------------------------------------- |
-| `needs-triage`              | `needs-triage`        | Maintainer needs to evaluate this issue  |
-| `needs-info`                | `needs-info`          | Waiting on reporter for more information |
-| `ready-for-agent`           | `ready-for-agent`     | Fully specified, ready for an AFK agent  |
-| `ready-for-human`           | `ready-for-human`     | Requires human implementation            |
-| `wontfix`                   | `wontfix`             | Will not be actioned                     |
+| `needs-triage`              | `needs-triage`        | 維護者需要評估此議題                  |
+| `needs-info`                | `needs-info`          | 等待回報者提供更多資訊                |
+| `ready-for-agent`           | `ready-for-agent`     | 規格完整，適合交由可非同步執行（AFK）的 agent 處理 |
+| `ready-for-human`           | `ready-for-human`     | 需要由人工實作                        |
+| `wontfix`                   | `wontfix`             | 不會採取行動                          |
 
-When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
+技能提及某個角色時（例如「套用適合非同步執行（AFK）的 agent 分類標籤」），請使用此表中對應的標籤字串。
 
-Edit the right-hand column to match whatever vocabulary you actually use.
+請依實際使用的詞彙編輯最右側欄位。

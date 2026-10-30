@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
-import { submitToIndexNow } from "@/lib/indexnow";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { submitToIndexNow } from "@/lib/shared/seo/indexnow";
 import { listOpenListings } from "@/lib/listings";
 import { listNewsForSitemap } from "@/lib/news";
-import { localizedUrls } from "@/lib/seo";
+import { localizedUrls } from "@/lib/shared/seo/seo";
 
 export const dynamic = "force-dynamic";
 

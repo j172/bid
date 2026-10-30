@@ -1,6 +1,6 @@
 // Regression coverage for scripts/cleanup-closed-listings.mjs's query logic
 // and transaction/rollback behavior, using a mocked mysql2 connection stand-
-// in — same "mock a minimal { query } object" approach as lib/db.test.ts,
+// in — same "mock a minimal { query } object" approach as lib/shared/data/db.test.ts,
 // since this repo has no live test-database harness for scripts/ (see that
 // file's own header comment). This script is destructive by nature, so it
 // must NEVER be tested against a real database, including a local/dev one —

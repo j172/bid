@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
+import { requireAdmin } from "@/lib/auth/apiAuth";
 import { getUserDetail } from "@/lib/auth";
-import { createPasswordResetToken, isPasswordResetRateLimited, resetPasswordPath } from "@/lib/passwordReset";
-import { sendPasswordResetEmail } from "@/lib/notifications";
-import { resolveOrigin } from "@/lib/newsNewsletterSync";
-import { parseIdParam } from "@/lib/routeParams";
+import { createPasswordResetToken, isPasswordResetRateLimited, resetPasswordPath } from "@/lib/auth/passwordReset";
+import { sendPasswordResetEmail } from "@/lib/shared/communications/notifications";
+import { resolveOrigin } from "@/lib/news/newsNewsletterSync";
+import { parseIdParam } from "@/lib/shared/api/routeParams";
 
 // Admin-triggered counterpart to app/api/auth/forgot-password/route.ts
 // (issue #91, building on #89). Unlike that route this is NOT anti-
@@ -22,7 +22,7 @@ import { parseIdParam } from "@/lib/routeParams";
 // Like the sibling app/api/admin/users/[id]/{role,suspend,unsuspend} routes,
 // this stays outside the ErrorCode/next-intl "errors" pattern on purpose —
 // app/z04urru6 is deliberately kept out of next-intl (see
-// app/z04urru6/layout.tsx's header comment) and lib/errorCodes.ts says
+// app/z04urru6/layout.tsx's header comment) and lib/shared/api/errorCodes.ts says
 // admin-only modules are out of scope for that pattern, so failures are
 // plain hardcoded Traditional Chinese, matching those routes.
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {

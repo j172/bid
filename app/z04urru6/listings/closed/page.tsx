@@ -5,7 +5,7 @@ import {
   listClosedListings,
   type ListClosedListingsOptions,
 } from "@/lib/listings";
-import { formatAdminDateTime } from "@/lib/format";
+import { formatAdminDateTime } from "@/lib/shared/formatting/format";
 import SettlementModal from "../../components/SettlementModal";
 import UnsettleButton from "../../components/UnsettleButton";
 import BiddersExpand from "./BiddersExpand";

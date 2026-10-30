@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
-import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
-import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/shared/content/descriptionImageLimits";
+import { resolveDescriptionImagePlaceholders } from "@/lib/shared/content/descriptionImages";
 import { createNews, deleteNews, isNewsPageSize, listNews, updateNewsContent, type NewsPostInput } from "@/lib/news";
-import { validateNewsContent, validateNewsTitle } from "@/lib/newsValidation";
-import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
+import { validateNewsContent, validateNewsTitle } from "@/lib/news/newsValidation";
+import { sanitizeDescriptionHtml } from "@/lib/shared/content/sanitizeDescriptionHtml";
 import {
   deleteNewsImageFile,
   descriptionImageUrl,
@@ -12,10 +12,10 @@ import {
   saveImageOrError,
   saveNewsImage,
   withImageRollback,
-} from "@/lib/uploads";
-import { createAndSendNewsBroadcast, resolveOrigin } from "@/lib/newsNewsletterSync";
-import { submitToIndexNow } from "@/lib/indexnow";
-import { localizedUrls } from "@/lib/seo";
+} from "@/lib/shared/content/uploads";
+import { createAndSendNewsBroadcast, resolveOrigin } from "@/lib/news/newsNewsletterSync";
+import { submitToIndexNow } from "@/lib/shared/seo/indexnow";
+import { localizedUrls } from "@/lib/shared/seo/seo";
 
 // Admin list view — matches the filters issue #56 asks for: title substring
 // search, selectable page size (30/50/100). No JOIN-only public equivalent
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
   // content is inserted empty and only backfilled (sanitized, with its
   // `cid:N` image placeholders resolved to real URLs) once the row's id
   // exists — its description images are stored under
-  // uploads/news/<id>/description/ (see lib/uploads.ts's
+  // uploads/news/<id>/description/ (see lib/shared/content/uploads.ts's
   // saveDescriptionImages), same two-phase sequencing as
   // app/api/admin/listings/route.ts (issue #315 gave news its own
   // description-image upload path).

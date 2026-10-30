@@ -1,4 +1,4 @@
-# SPEC: Google 首選來源按鈕 (Google Preferences Button)
+# 規格：Google 首選來源按鈕
 
 ## 1. 背景與目標
 使用者希望在標的詳情頁（`/listings/[id]`）以及新聞詳情頁（`/news/[id]`）加入「加入Google首選」按鈕。
@@ -11,9 +11,9 @@
 - **SVG 圖示**：標準 Google 4 色向量圖示（黃、紅、綠、藍）。
 - **樣式與動效**：
   - Class 名稱相容 `.gsButton`、`.gsBtnIcon`、`.gsBtnText`，搭配 Tailwind CSS 實作精緻膠囊圓角（Pill shape）、微邊框、陰影與懸浮 hover 動效。
-  - 氣泡 Tooltip：支援懸浮與鍵盤 focus 時淡入顯示提示文字，並帶向下指示箭頭。
+  - 氣泡提示：支援游標懸停與鍵盤 focus 時淡入顯示提示文字，並帶向下指示箭頭。
   - 同步提供 HTML `title` 與 `aria-label` 屬性，兼顧無障礙與行動端相容。
-- **多語系 (i18n)**：
+- **多語系支援**：
   - 在 `messages/zh-TW.json`、`messages/zh-CN.json`、`messages/en.json` 加入 `googlePreference` 鍵值：
     - `zh-TW`: `buttonText`: "加入Google首選", `tooltip`: "請點選打勾將響水拍賣設為首選來源，在 Google 上查看更多精彩標的與報導"
     - `zh-CN`: `buttonText`: "加入Google首选", `tooltip`: "请勾选将响水拍卖设为首选来源，在 Google 上查看更多精彩标的与报道"

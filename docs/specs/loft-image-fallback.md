@@ -1,4 +1,4 @@
-# SPEC: 修正合作鴿舍圖片上傳路徑與後備圖 Optimizer 502 破圖問題 (Loft Image Path & Fallback Optimizer Fix)
+# 規格：修正合作鴿舍圖片上傳路徑與後備圖最佳化器 502 破圖問題
 
 ## 1. 背景與問題
 
@@ -23,7 +23,7 @@
    - 在 `app/[locale]/listings/(no-loading)/[id]/page.tsx` 引入 `homepageSectionImageUrl`，將 `loft.imageFileName` 的路徑替換為 `homepageSectionImageUrl(loft.imageFileName)`。
 
 2. **防止後備圖進入 Next Optimizer**
-   - 在 `lib/imageFallback.ts` 中更新 `shouldBypassImageOptimizer`，使 `IMAGE_FALLBACK_SRC` 以及 `/images/` 前綴的靜態資產一律繞過 Next.js optimizer（`unoptimized: true`）。
+   - 在 `lib/imageFallback.ts` 中更新 `shouldBypassImageOptimizer`，使 `IMAGE_FALLBACK_SRC` 以及 `/images/` 前綴的靜態資產一律繞過 Next.js 圖片最佳化器（`unoptimized: true`）。
    - 在 `next.config.js` 中設定 `images: { unoptimized: true }`，本站所有上傳圖片早已在使用者端或後端轉為 WebP，靜態資源直接由 Web 伺服器/CDN 高速回應，全面關閉 Node 端 Image Optimizer，徹底避免 502 逾時與 OOM 記憶體飆升風險。
    - 在 `app/[locale]/components/SiteHeader.tsx` 的 `<Image>` 明確加上 `unoptimized` 屬性。
 

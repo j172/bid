@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { usePostJson } from "@/lib/usePostJson";
+import { usePostJson } from "@/lib/shared/client/usePostJson";
 
 export default function DeleteAccountButton() {
   const router = useRouter();

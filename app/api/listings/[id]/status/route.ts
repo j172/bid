@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getListingStatus } from "@/lib/listings";
-import { parseIdParam } from "@/lib/routeParams";
+import { parseIdParam } from "@/lib/shared/api/routeParams";
 
 // Plain, unauthenticated GET — browsing/watching a listing is already
 // public, so there's no reason to gate the live-status poll behind login.

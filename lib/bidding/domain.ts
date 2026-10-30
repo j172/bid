@@ -1,7 +1,7 @@
 // Pure bidding domain logic: no HTTP, no database. Callable and testable as
 // plain functions/state transitions (see domain.test.ts).
 
-import type { ErrorCode } from "@/lib/errorCodes";
+import type { ErrorCode } from "@/lib/shared/api/errorCodes";
 
 // Site-wide flat minimum bid increment, regardless of the listing's current
 // price. This is a pigeon-auction site where items are typically NT$15,000+,

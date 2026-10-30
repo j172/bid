@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
-import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
-import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/shared/content/descriptionImageLimits";
+import { resolveDescriptionImagePlaceholders } from "@/lib/shared/content/descriptionImages";
 import { addListingPhotos, deleteListing, insertListing, updateListingDescription, type NewListingInput } from "@/lib/listings";
 import {
   validateDescription,
@@ -12,13 +12,13 @@ import {
   validateStartsAt,
   validateStockQuantity,
   validateTitle,
-} from "@/lib/listingValidation";
-import { MAX_PHOTO_COUNT } from "@/lib/photoLimits";
-import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
-import { descriptionImageUrl, saveDescriptionImages, saveListingPhotos } from "@/lib/uploads";
-import { validateYoutubeUrl } from "@/lib/youtubeEmbed";
-import { submitToIndexNow } from "@/lib/indexnow";
-import { localizedUrls } from "@/lib/seo";
+} from "@/lib/listings/listingValidation";
+import { MAX_PHOTO_COUNT } from "@/lib/shared/content/photoLimits";
+import { sanitizeDescriptionHtml } from "@/lib/shared/content/sanitizeDescriptionHtml";
+import { descriptionImageUrl, saveDescriptionImages, saveListingPhotos } from "@/lib/shared/content/uploads";
+import { validateYoutubeUrl } from "@/lib/social/youtubeEmbed";
+import { submitToIndexNow } from "@/lib/shared/seo/indexnow";
+import { localizedUrls } from "@/lib/shared/seo/seo";
 
 export async function POST(request: Request) {
   const auth = await requireAdmin();

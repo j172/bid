@@ -3,7 +3,7 @@ import { Link } from "@/i18n/navigation";
 // Page-size picker + prev/next footer, shared by the 最新訊息 and
 // 入賞鴿/進口鴿 list pages (issue #139 item 8). Both built the same bar from
 // their own copy of the markup and their own `buildQuery` helper; the query
-// building now lives in lib/searchParams.ts and the callers hand the
+// building now lives in lib/shared/api/searchParams.ts and the callers hand the
 // finished hrefs down.
 export interface PaginationLabels {
   pageSizeLabel: string;

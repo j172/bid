@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
-import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
-import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/shared/content/descriptionImageLimits";
+import { resolveDescriptionImagePlaceholders } from "@/lib/shared/content/descriptionImages";
 import {
   createPigeonShowcase,
   deletePigeonShowcase,
@@ -9,13 +9,13 @@ import {
   listPigeonShowcase,
   updatePigeonShowcaseDescription,
   type PigeonShowcaseInput,
-} from "@/lib/pigeonShowcase";
+} from "@/lib/pigeons/pigeonShowcase";
 import {
   isPigeonShowcaseCategory,
   validatePigeonShowcaseDescription,
   validatePigeonShowcaseName,
-} from "@/lib/pigeonShowcaseValidation";
-import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
+} from "@/lib/pigeons/pigeonShowcaseValidation";
+import { sanitizeDescriptionHtml } from "@/lib/shared/content/sanitizeDescriptionHtml";
 import {
   deletePigeonShowcaseImageFile,
   descriptionImageUrl,
@@ -23,7 +23,7 @@ import {
   saveImageOrError,
   savePigeonShowcaseImage,
   withImageRollback,
-} from "@/lib/uploads";
+} from "@/lib/shared/content/uploads";
 
 // Admin list view — matches the filters issue #54 asks for: category
 // dropdown, name substring search, loft dropdown, selectable page size
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
   // description is inserted empty and only backfilled (sanitized, with its
   // `cid:N` image placeholders resolved to real URLs) once the row's id
   // exists — its description images are stored under
-  // uploads/pigeon-showcase/<id>/description/ (see lib/uploads.ts's
+  // uploads/pigeon-showcase/<id>/description/ (see lib/shared/content/uploads.ts's
   // saveDescriptionImages), same two-phase sequencing as
   // app/api/admin/listings/route.ts (issue #315).
   const input: PigeonShowcaseInput = {

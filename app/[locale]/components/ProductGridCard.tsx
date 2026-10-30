@@ -1,5 +1,5 @@
 import { Link } from "@/i18n/navigation";
-import { formatProductPriceText } from "@/lib/productPriceText";
+import { formatProductPriceText } from "@/lib/products/productPriceText";
 
 // Static (non-carousel) card for the /products catalog grid (issue #300) —
 // the homepage's ProductCarouselCard.tsx rendered one `products` row at a
@@ -19,9 +19,9 @@ import { formatProductPriceText } from "@/lib/productPriceText";
 export interface ProductGridItem {
   id: number;
   title: string;
-  /** Free display text (e.g. "NT$12,000"), never parsed as a number — see lib/products.ts's Product.priceText. */
+  /** Free display text (e.g. "NT$12,000"), never parsed as a number — see lib/products/index.ts's Product.priceText. */
   priceText: string;
-  /** Plain-text excerpt of the product's HTML description, pre-truncated by the caller via lib/htmlText.ts's excerptHtml (same 30-char convention as the homepage carousel, issue #295). */
+  /** Plain-text excerpt of the product's HTML description, pre-truncated by the caller via lib/shared/content/htmlText.ts's excerptHtml (same 30-char convention as the homepage carousel, issue #295). */
   excerpt?: string;
   /** Pre-resolved by the caller to the site placeholder when the product has no cover photo yet. */
   imageUrl: string;

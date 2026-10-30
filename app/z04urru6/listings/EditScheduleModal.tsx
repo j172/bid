@@ -5,7 +5,7 @@ import { useState } from "react";
 import { SECONDARY_TRIGGER_CLASS } from "../components/adminButtonClasses";
 import AdminModal from "../components/AdminModal";
 import ModalFormActions from "../components/ModalFormActions";
-import { ENDS_AT_MAX_DAYS } from "@/lib/listingValidation";
+import { ENDS_AT_MAX_DAYS } from "@/lib/listings/listingValidation";
 
 const inputClass = "w-full rounded-md border border-border px-3 py-2 focus:border-interactive-primary focus:outline-none disabled:opacity-50";
 

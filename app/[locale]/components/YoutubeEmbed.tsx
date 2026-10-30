@@ -1,4 +1,4 @@
-import { extractYouTubeId } from "@/lib/youtubeEmbed";
+import { extractYouTubeId } from "@/lib/social/youtubeEmbed";
 
 interface YoutubeEmbedProps {
   /** Raw admin-entered URL (products.youtube_url / listings.youtube_url, issue #286) — parsed here rather than trusted as-is. */

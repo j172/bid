@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { createUser, findUserByEmail } from "@/lib/auth";
-import { isValidEmail } from "@/lib/emailValidation";
-import { validateProfile } from "@/lib/profile";
-import { createEmailVerificationToken, isEmailVerificationRateLimited, verifyEmailPath } from "@/lib/emailVerification";
-import { sendVerificationEmail } from "@/lib/notifications";
-import { getClientIpFromHeaders } from "@/lib/clientIp";
-import { resolveOrigin } from "@/lib/newsNewsletterSync";
-import { resolveRequestLocale } from "@/lib/requestLocale";
+import { isValidEmail } from "@/lib/shared/validation/emailValidation";
+import { validateProfile } from "@/lib/account/profile";
+import { createEmailVerificationToken, isEmailVerificationRateLimited, verifyEmailPath } from "@/lib/auth/emailVerification";
+import { sendVerificationEmail } from "@/lib/shared/communications/notifications";
+import { getClientIpFromHeaders } from "@/lib/shared/client/clientIp";
+import { resolveOrigin } from "@/lib/news/newsNewsletterSync";
+import { resolveRequestLocale } from "@/lib/shared/i18n/requestLocale";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);

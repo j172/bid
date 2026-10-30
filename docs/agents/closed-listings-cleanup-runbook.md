@@ -1,4 +1,4 @@
-# 已結標商品一次性清理 Runbook（GitHub issue #279）
+# 已結標商品一次性清理操作手冊（GitHub 議題 #279）
 
 適用範圍：`scripts/cleanup-closed-listings.mjs` —— 永久刪除正式環境資料庫中所有
 `listings.status='closed'` 的商品，以及透過 `listing_id` 關聯的 `bids`／

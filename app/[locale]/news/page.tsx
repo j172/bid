@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { DEFAULT_NEWS_PAGE_SIZE, NEWS_PAGE_SIZES, isNewsPageSize, listNews } from "@/lib/news";
-import { newsImageUrl } from "@/lib/uploads";
-import { excerptHtml } from "@/lib/htmlText";
-import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
-import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
-import { buildQuery, firstParam, type SearchParams } from "@/lib/searchParams";
+import { newsImageUrl } from "@/lib/shared/content/uploads";
+import { excerptHtml } from "@/lib/shared/content/htmlText";
+import { IMAGE_FALLBACK_SRC } from "@/lib/shared/content/imageFallback";
+import { canonicalUrl, hreflangAlternates } from "@/lib/shared/seo/seo";
+import { buildQuery, firstParam, type SearchParams } from "@/lib/shared/api/searchParams";
 import ContentCardGrid from "../components/ContentCardGrid";
 import PaginationFooter from "../components/PaginationFooter";
 

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { getClubAwardPigeonById, listLatestClubAwardPigeonsByAlbum } from "@/lib/clubAwardPigeons";
-import { clubAwardPigeonImageUrl } from "@/lib/uploads";
-import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
+import { getClubAwardPigeonById, listLatestClubAwardPigeonsByAlbum } from "@/lib/pigeons/clubAwardPigeons";
+import { clubAwardPigeonImageUrl } from "@/lib/shared/content/uploads";
+import { IMAGE_FALLBACK_SRC } from "@/lib/shared/content/imageFallback";
 import { Link } from "@/i18n/navigation";
 import {
   absoluteUrl,
@@ -12,9 +12,9 @@ import {
   hreflangAlternates,
   stripHtmlToPlainText,
   truncateForMetaDescription,
-} from "@/lib/seo";
-import { safeJsonLdString } from "@/lib/jsonLdScript";
-import { buildLoftShowcaseUrl } from "@/lib/loftStorefront";
+} from "@/lib/shared/seo/seo";
+import { safeJsonLdString } from "@/lib/shared/seo/jsonLdScript";
+import { buildLoftShowcaseUrl } from "@/lib/lofts/loftStorefront";
 import DetailWithSidebar from "../../../components/DetailWithSidebar";
 import RichTextContent from "../../../components/RichTextContent";
 

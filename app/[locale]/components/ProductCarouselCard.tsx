@@ -3,14 +3,14 @@
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import CarouselControls from "./CarouselControls";
-import { useRotatingIndex } from "@/lib/useRotatingIndex";
-import { formatProductPriceText } from "@/lib/productPriceText";
+import { useRotatingIndex } from "@/lib/shared/client/useRotatingIndex";
+import { formatProductPriceText } from "@/lib/products/productPriceText";
 
 // Homepage Hero sidebar carousel for the admin-managed `products` CMS
 // (issue #278) — replaces the old `topPriceCards` static stacked list (the
 // highest-priced open auctions, sourced live from `listings`) with a
 // rotating showcase of `products` rows (`is_active = 1`, ordered by
-// `sort_order` — see lib/products.ts's listProducts and issue #277). This is
+// `sort_order` — see lib/products/index.ts's listProducts and issue #277). This is
 // a close copy of FeaturedLoftCarouselCard.tsx / NewsCarouselCard.tsx (same
 // visual language: white card, badge above a letterboxed image,
 // title/price/CTA below in normal flow, 5s auto-rotate via
@@ -25,11 +25,11 @@ import { formatProductPriceText } from "@/lib/productPriceText";
 export interface ProductCarouselItem {
   id: number;
   title: string;
-  /** Free display text (e.g. "NT$12,000"), never parsed as a number — see lib/products.ts's Product.priceText. */
+  /** Free display text (e.g. "NT$12,000"), never parsed as a number — see lib/products/index.ts's Product.priceText. */
   priceText: string;
   /**
    * Plain-text excerpt of the product's HTML description (issue #295),
-   * pre-truncated by the caller via lib/htmlText.ts's excerptHtml — same
+   * pre-truncated by the caller via lib/shared/content/htmlText.ts's excerptHtml — same
    * convention as FeaturedLoftCarouselCard/NewsCarouselCard/
    * PigeonShowcaseCarouselCard's `excerpt` fields. Renders nothing (no
    * empty paragraph, no stray margin) when empty, e.g. a product with no

@@ -1,0 +1,114 @@
+// Cloudflare Workers AI translation client (issue #240) — originally used by
+// the herbots.be news sync, removed in issue #280 (see that issue for the
+// full history). Deliberately generic ("translate this plain text to
+// Traditional Chinese") rather than news-specific, kept as a reusable
+// utility even though it currently has no caller — do not remove without
+// checking for new callers first.
+//
+// Requires CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_AI_API_TOKEN (see
+// .env.example) — a brand-new Cloudflare credential pair, separate from this
+// project's existing CLOUDFLARE_TURNSTILE_* keys (those only ever verify
+// anti-abuse tokens, they can't call Workers AI). Neither is set in most
+// dev/CI environments yet, so every export here is written to degrade
+// gracefully (log once, return a typed failure) rather than throw — a
+// missing/invalid credential must never crash the whole sync job (issue
+// #240's explicit requirement), it should just mean this run's articles get
+// no translation and that fact is visible in server logs.
+import { Converter } from "opencc-js";
+import { httpsRequest } from "@/lib/shared/network/httpsRequest";
+
+// m2m100-1.2b is Workers AI's general-purpose translation model — small
+// enough for near-real-time per-paragraph calls. Its target_lang enum does
+// NOT include a distinct "chinese_traditional" option (an earlier version of
+// this file assumed it did, based on a misreading of Cloudflare's docs — the
+// model rejects "chinese_traditional" outright with a 400, so every
+// translation attempt against it silently degraded to the original-language
+// fallback below); confirmed live against the real API that the only
+// Chinese option is "chinese" (bare, i.e. Simplified script — "冠军" not
+// "冠軍"). Since every locale this project ships is zh-TW (see
+// i18n/routing.ts), the model's Simplified output is run through
+// opencc-js's cn→tw converter (toTraditional below) before ever being
+// stored — this project's content must never surface Simplified characters.
+const TRANSLATE_MODEL = "@cf/meta/m2m100-1.2b";
+const SOURCE_LANG = "english";
+const TARGET_LANG = "chinese";
+
+// Built once (OpenCC's conversion tables are non-trivial to load) and reused
+// across every translateToTraditionalChinese() call — a fresh Converter()
+// per paragraph would repeat that cost needlessly for an article with many
+// paragraphs. 'tw' (not the plain 't' character-only variant) additionally
+// localizes Taiwan-specific vocabulary (e.g. idiomatic word choices), which
+// reads more naturally to this project's zh-TW audience than a bare
+// character-for-character conversion would.
+const toTraditional = Converter({ from: "cn", to: "tw" });
+
+export function isTranslationConfigured(): boolean {
+  return Boolean(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_AI_API_TOKEN);
+}
+
+export type TranslateResult = { ok: true; text: string } | { ok: false; error: string };
+
+interface WorkersAiTranslateResponse {
+  success: boolean;
+  errors?: { message: string }[];
+  result?: { translated_text?: string };
+}
+
+// Translates one plain-text string. A caller that has HTML is responsible
+// for stripping tags before calling this and re-wrapping the result
+// afterwards — Workers AI's translation models operate on plain text, they
+// don't understand or preserve markup.
+//
+// Empty/whitespace-only input short-circuits to an empty success without a
+// network call — a blank paragraph has nothing to translate, and the API
+// otherwise rejects an empty `text` field as a 400.
+export async function translateToTraditionalChinese(text: string): Promise<TranslateResult> {
+  const trimmed = text.trim();
+  if (trimmed.length === 0) {
+    return { ok: true, text: "" };
+  }
+
+  if (!isTranslationConfigured()) {
+    const error = "Cloudflare Workers AI 未設定（缺少 CLOUDFLARE_ACCOUNT_ID / CLOUDFLARE_AI_API_TOKEN），略過翻譯";
+    console.error(`[translate] ${error}`);
+    return { ok: false, error };
+  }
+
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const apiToken = process.env.CLOUDFLARE_AI_API_TOKEN;
+  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${TRANSLATE_MODEL}`;
+
+  try {
+    const { status, body } = await httpsRequest(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ text: trimmed, source_lang: SOURCE_LANG, target_lang: TARGET_LANG }),
+    });
+
+    if (status < 200 || status >= 300) {
+      const error = `Cloudflare Workers AI 回應 HTTP ${status}`;
+      console.error(`[translate] ${error}: ${body.slice(0, 500)}`);
+      return { ok: false, error };
+    }
+
+    const parsed: WorkersAiTranslateResponse = JSON.parse(body);
+    const translated = parsed.result?.translated_text;
+    if (!parsed.success || typeof translated !== "string") {
+      const error = parsed.errors?.map((e) => e.message).join("; ") || "Cloudflare Workers AI 未回傳翻譯結果";
+      console.error(`[translate] ${error}`);
+      return { ok: false, error };
+    }
+
+    // Workers AI's response is Simplified Chinese (see TARGET_LANG's comment
+    // above) — convert before returning so no caller ever has to remember to
+    // do this itself.
+    return { ok: true, text: toTraditional(translated) };
+  } catch (cause) {
+    const message = cause instanceof Error ? cause.message : String(cause);
+    console.error(`[translate] Cloudflare Workers AI 呼叫失敗: ${message}`, cause);
+    return { ok: false, error: message };
+  }
+}

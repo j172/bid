@@ -1,0 +1,342 @@
+// lib/homepage/homepageSections.ts is raw-SQL CRUD (no ORM, see its own header
+// comment) rather than pure logic like lib/listings/listingValidation.ts, so unlike
+// that file's tests, these mock @/lib/shared/data/db's getDb() and assert on the SQL/
+// params each function sends plus how it maps mysql2's raw rows/results back
+// into the module's public shapes — covering CRUD and reorder per issue #33's
+// acceptance criteria.
+
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  createHomepageSection,
+  deleteHomepageSection,
+  getHomepageSectionById,
+  listHomepageSections,
+  reorderHomepageSections,
+  updateHomepageSection,
+  updateHomepageSectionBio,
+} from "./homepageSections";
+
+// lib/homepage/homepageSections.ts is raw-SQL CRUD (no ORM, see its own header
+// comment) rather than pure logic like lib/listings/listingValidation.ts, so unlike
+// that file's tests, these mock @/lib/shared/data/db's getDb() and assert on the SQL/
+// params each function sends plus how it maps mysql2's raw rows/results back
+// into the module's public shapes — covering CRUD and reorder per issue #33's
+// acceptance criteria. queryMock is created via vi.hoisted so it exists
+// before vi.mock's factory below runs (vi.mock calls are hoisted above
+// regular imports/const declarations by Vitest's transform).
+const { queryMock } = vi.hoisted(() => ({ queryMock: vi.fn() }));
+
+vi.mock("@/lib/shared/data/db", () => ({
+  getDb: async () => ({ query: queryMock }),
+}));
+
+beforeEach(() => {
+  queryMock.mockReset();
+});
+
+describe("listHomepageSections", () => {
+  it("filters by section_type and orders by sort_order, mapping snake_case rows to the public shape", async () => {
+    const createdAt = new Date("2026-01-01T00:00:00Z");
+    const updatedAt = new Date("2026-01-02T00:00:00Z");
+    queryMock.mockResolvedValueOnce([
+      [
+        {
+          id: 1,
+          section_type: "partner_loft",
+          title: "石君鴿舍",
+          image_file_name: "a.webp",
+          bio: "深耕鴿友信賴的合作鴿舍。",
+          linked_loft_id: null,
+          sort_order: 0,
+          is_active: 1,
+          created_at: createdAt,
+          updated_at: updatedAt,
+        },
+      ],
+    ]);
+
+    const sections = await listHomepageSections("partner_loft");
+
+    expect(queryMock).toHaveBeenCalledWith(
+      expect.stringContaining("WHERE section_type = ? ORDER BY sort_order ASC, id ASC"),
+      ["partner_loft"],
+    );
+    expect(sections).toEqual([
+      {
+        id: 1,
+        sectionType: "partner_loft",
+        title: "石君鴿舍",
+        imageFileName: "a.webp",
+        bio: "深耕鴿友信賴的合作鴿舍。",
+        linkedLoftId: null,
+        sortOrder: 0,
+        isActive: true,
+        createdAt,
+        updatedAt,
+      },
+    ]);
+  });
+
+  it("adds an is_active = 1 condition when activeOnly is requested", async () => {
+    queryMock.mockResolvedValueOnce([[]]);
+    await listHomepageSections("partner_loft", { activeOnly: true });
+    expect(queryMock.mock.calls[0][0]).toContain("is_active = 1");
+  });
+
+  it("omits the is_active condition by default (admin view sees inactive rows too)", async () => {
+    queryMock.mockResolvedValueOnce([[]]);
+    await listHomepageSections("partner_loft");
+    expect(queryMock.mock.calls[0][0]).not.toContain("is_active");
+  });
+
+  it("maps a non-null linked_loft_id (a featured_loft row's linked 合作鴿舍)", async () => {
+    queryMock.mockResolvedValueOnce([
+      [
+        {
+          id: 2,
+          section_type: "featured_loft",
+          title: "石君鴿舍專訪",
+          image_file_name: "b.webp",
+          bio: "<p>深入石君鴿舍的育種理念</p>",
+          linked_loft_id: 5,
+          sort_order: 0,
+          is_active: 1,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      ],
+    ]);
+    const sections = await listHomepageSections("featured_loft");
+    expect(sections[0].linkedLoftId).toBe(5);
+  });
+});
+
+describe("getHomepageSectionById", () => {
+  it("returns null when no row matches", async () => {
+    queryMock.mockResolvedValueOnce([[]]);
+    expect(await getHomepageSectionById(999)).toBeNull();
+  });
+
+  it("maps is_active 0 to isActive: false", async () => {
+    queryMock.mockResolvedValueOnce([
+      [
+        {
+          id: 5,
+          section_type: "partner_loft",
+          title: "t",
+          image_file_name: "f.webp",
+          bio: null,
+          linked_loft_id: null,
+          sort_order: 2,
+          is_active: 0,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      ],
+    ]);
+    const section = await getHomepageSectionById(5);
+    expect(section?.isActive).toBe(false);
+  });
+});
+
+describe("createHomepageSection", () => {
+  it("uses an explicit sortOrder without a lookup query", async () => {
+    queryMock.mockResolvedValueOnce([{ insertId: 42 }]);
+
+    const id = await createHomepageSection({
+      sectionType: "partner_loft",
+      title: "t",
+      imageFileName: "f.webp",
+      bio: "b",
+      sortOrder: 3,
+    });
+
+    expect(id).toBe(42);
+    expect(queryMock).toHaveBeenCalledTimes(1);
+    expect(queryMock.mock.calls[0][1]).toEqual(["partner_loft", "t", "f.webp", "b", null, 3, 1]);
+  });
+
+  it("defaults sortOrder to MAX(sort_order) + 1 within the section_type when omitted", async () => {
+    queryMock.mockResolvedValueOnce([[{ nextOrder: 7 }]]);
+    queryMock.mockResolvedValueOnce([{ insertId: 8 }]);
+
+    const id = await createHomepageSection({
+      sectionType: "partner_loft",
+      title: "t",
+      imageFileName: "f.webp",
+      bio: "b",
+    });
+
+    expect(id).toBe(8);
+    expect(queryMock).toHaveBeenCalledTimes(2);
+    expect(queryMock.mock.calls[0][1]).toEqual(["partner_loft"]);
+    expect(queryMock.mock.calls[1][1]).toEqual(["partner_loft", "t", "f.webp", "b", null, 7, 1]);
+  });
+
+  it("defaults a missing bio to null", async () => {
+    queryMock.mockResolvedValueOnce([{ insertId: 9 }]);
+    await createHomepageSection({ sectionType: "partner_loft", title: "t", imageFileName: "f.webp", sortOrder: 0 });
+    expect(queryMock.mock.calls[0][1]).toEqual(["partner_loft", "t", "f.webp", null, null, 0, 1]);
+  });
+
+  it("stores isActive: false as 0", async () => {
+    queryMock.mockResolvedValueOnce([{ insertId: 1 }]);
+    await createHomepageSection({
+      sectionType: "partner_loft",
+      title: "t",
+      imageFileName: "f.webp",
+      bio: "b",
+      sortOrder: 0,
+      isActive: false,
+    });
+    expect(queryMock.mock.calls[0][1][6]).toBe(0);
+  });
+
+  it("stores an explicit linkedLoftId (a featured_loft row's linked 合作鴿舍)", async () => {
+    queryMock.mockResolvedValueOnce([{ insertId: 10 }]);
+    await createHomepageSection({
+      sectionType: "featured_loft",
+      title: "t",
+      imageFileName: "f.webp",
+      bio: "<p>b</p>",
+      linkedLoftId: 5,
+      sortOrder: 0,
+    });
+    expect(queryMock.mock.calls[0][1]).toEqual(["featured_loft", "t", "f.webp", "<p>b</p>", 5, 0, 1]);
+  });
+
+  it("defaults a missing linkedLoftId to null", async () => {
+    queryMock.mockResolvedValueOnce([{ insertId: 11 }]);
+    await createHomepageSection({ sectionType: "partner_loft", title: "t", imageFileName: "f.webp", sortOrder: 0 });
+    expect(queryMock.mock.calls[0][1][4]).toBeNull();
+  });
+});
+
+describe("updateHomepageSectionBio", () => {
+  it("writes the bio column for the given id, including null (no bio)", async () => {
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+    await updateHomepageSectionBio(1, "<p>已解析圖片網址</p>");
+    expect(queryMock).toHaveBeenCalledWith("UPDATE homepage_sections SET bio = ? WHERE id = ?", [
+      "<p>已解析圖片網址</p>",
+      1,
+    ]);
+
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+    await updateHomepageSectionBio(1, null);
+    expect(queryMock).toHaveBeenCalledWith("UPDATE homepage_sections SET bio = ? WHERE id = ?", [null, 1]);
+  });
+});
+
+describe("updateHomepageSection", () => {
+  it("returns ok:false when no row matched (deleted or bad id)", async () => {
+    queryMock.mockResolvedValueOnce([{ affectedRows: 0 }]);
+    const result = await updateHomepageSection(1, {
+      title: "t",
+      imageFileName: "f",
+      bio: "b",
+      linkedLoftId: null,
+      sortOrder: 0,
+      isActive: true,
+    });
+    expect(result).toEqual({ ok: false, error: "找不到這個首頁區塊項目" });
+  });
+
+  it("returns ok:true when a row is updated", async () => {
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+    const result = await updateHomepageSection(1, {
+      title: "t",
+      imageFileName: "f",
+      bio: "b",
+      linkedLoftId: null,
+      sortOrder: 0,
+      isActive: true,
+    });
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("stores a null bio as-is (clearing it)", async () => {
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+    await updateHomepageSection(1, { title: "t", imageFileName: "f", bio: null, linkedLoftId: null, sortOrder: 0, isActive: true });
+    expect(queryMock.mock.calls[0][1]).toEqual(["t", "f", null, null, 0, 1, 1]);
+  });
+
+  it("stores an updated linkedLoftId", async () => {
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+    await updateHomepageSection(1, { title: "t", imageFileName: "f", bio: "b", linkedLoftId: 9, sortOrder: 0, isActive: true });
+    expect(queryMock.mock.calls[0][1]).toEqual(["t", "f", "b", 9, 0, 1, 1]);
+  });
+});
+
+describe("deleteHomepageSection", () => {
+  it("returns ok:false when no row matched", async () => {
+    queryMock.mockResolvedValueOnce([[]]); // linked_loft_id referencing check: none
+    queryMock.mockResolvedValueOnce([{ affectedRows: 0 }]);
+    expect(await deleteHomepageSection(1)).toEqual({ ok: false, error: "找不到這個首頁區塊項目" });
+  });
+
+  it("returns ok:true when a row is deleted", async () => {
+    queryMock.mockResolvedValueOnce([[]]); // linked_loft_id referencing check: none
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+    expect(await deleteHomepageSection(1)).toEqual({ ok: true });
+  });
+
+  // issue #54: pigeon_showcase.loft_id is a real DB-level FK (ON DELETE
+  // RESTRICT) to this table — deleting a still-referenced 合作鴿舍 must
+  // surface a real error instead of a 500 or a silent no-op.
+  it("returns a friendly ok:false (not a throw) when a FK constraint blocks the delete", async () => {
+    queryMock.mockResolvedValueOnce([[]]); // linked_loft_id referencing check: none
+    const fkError = Object.assign(new Error("Cannot delete or update a parent row"), {
+      errno: 1451,
+      code: "ER_ROW_IS_REFERENCED_2",
+    });
+    queryMock.mockRejectedValueOnce(fkError);
+    const result = await deleteHomepageSection(1);
+    expect(result.ok).toBe(false);
+    expect(result).toEqual({ ok: false, error: expect.stringContaining("仍被其他資料引用") });
+  });
+
+  it("re-throws non-FK errors instead of swallowing them", async () => {
+    queryMock.mockResolvedValueOnce([[]]); // linked_loft_id referencing check: none
+    queryMock.mockRejectedValueOnce(new Error("connection lost"));
+    await expect(deleteHomepageSection(1)).rejects.toThrow("connection lost");
+  });
+
+  // issue #270: linked_loft_id has no DB-level FK (see db/init.sql's
+  // comment), so a 'featured_loft' row still pointing at this id via
+  // linked_loft_id can't rely on MySQL to reject the delete — this app-level
+  // check is this module's own equivalent of the FK guard above.
+  it("returns a friendly ok:false when another section still references this id via linked_loft_id", async () => {
+    queryMock.mockResolvedValueOnce([[{ 1: 1 }]]); // referencing check finds a row
+    const result = await deleteHomepageSection(1);
+    expect(result).toEqual({ ok: false, error: expect.stringContaining("仍被其他首頁區塊卡片引用") });
+    expect(queryMock).toHaveBeenCalledTimes(1); // no DELETE fired
+  });
+});
+
+describe("reorderHomepageSections", () => {
+  it("returns ok:true immediately for an empty list without querying", async () => {
+    const result = await reorderHomepageSections("partner_loft", []);
+    expect(result).toEqual({ ok: true });
+    expect(queryMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects the whole call when an id doesn't belong to the given section_type", async () => {
+    queryMock.mockResolvedValueOnce([[{ id: 1 }]]); // only 1 of 2 requested ids actually found
+    const result = await reorderHomepageSections("partner_loft", [1, 2]);
+    expect(result).toEqual({ ok: false, error: "排序資料不正確" });
+    expect(queryMock).toHaveBeenCalledTimes(1); // no UPDATEs fired
+  });
+
+  it("re-sequences sort_order to match each id's index in the given order", async () => {
+    queryMock.mockResolvedValueOnce([[{ id: 3 }, { id: 1 }]]); // membership check
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]); // update id 3
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]); // update id 1
+
+    const result = await reorderHomepageSections("partner_loft", [3, 1]);
+
+    expect(result).toEqual({ ok: true });
+    expect(queryMock).toHaveBeenCalledTimes(3);
+    expect(queryMock.mock.calls[1][1]).toEqual([0, 3]);
+    expect(queryMock.mock.calls[2][1]).toEqual([1, 1]);
+  });
+});

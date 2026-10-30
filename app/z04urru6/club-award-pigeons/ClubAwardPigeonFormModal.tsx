@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { DESCRIPTION_MAX, NAME_MAX, type PigeonShowcaseCategory } from "@/lib/clubAwardPigeonsValidation";
+import { DESCRIPTION_MAX, NAME_MAX, type PigeonShowcaseCategory } from "@/lib/pigeons/clubAwardPigeonsValidation";
 import { MODAL_TRIGGER_CLASS } from "../components/adminButtonClasses";
 import AdminModal from "../components/AdminModal";
 import ImageUploadField from "../components/ImageUploadField";

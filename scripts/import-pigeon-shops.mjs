@@ -6,7 +6,7 @@
 //
 // Issue #243 (part of Epic #239). Content is already Traditional Chinese —
 // no translation step, unlike the news/races sync scripts (#1/#2) sharing
-// this epic. Deliberately NOT wired into lib/scheduler.ts's daily cron (see
+// this epic. Deliberately NOT wired into lib/shared/data/scheduler.ts's daily cron (see
 // that file) — this is meant to be run once, by hand, then the data is
 // maintained through the admin CRUD page (app/z04urru6/pigeon-shops).
 // Modeled on scripts/migrate-description-html.mjs: defaults to a dry run

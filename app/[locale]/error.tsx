@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { routing } from "@/i18n/routing";
-import { useCloudflareErrorMeta } from "@/lib/useCloudflareErrorMeta";
+import { useCloudflareErrorMeta } from "@/lib/shared/client/useCloudflareErrorMeta";
 import CloudflareErrorPage from "../components/CloudflareErrorPage";
 
 // Next.js requires error.tsx (the boundary for a route segment and its

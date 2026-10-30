@@ -7,7 +7,7 @@
 //   ALTER TABLE users ADD COLUMN terms_accepted_at DATETIME NULL;
 //
 // IMPORTANT — this ALTER is already applied automatically, on every boot:
-// lib/db.ts's ensureSchema() (called from getDb()) runs
+// lib/shared/data/db.ts's ensureSchema() (called from getDb()) runs
 // ensureLineIdAndTermsColumns(), which adds both columns (if missing) every
 // time the app starts, including in production. That mechanism already
 // covers this migration end-to-end — the next deploy/restart after this
@@ -26,10 +26,10 @@
 //
 // Both new columns are added NULL-able here (not NOT NULL) even though
 // line_id is required at the application layer for every *new* registration
-// (see lib/profile.ts's validateProfile) — existing accounts have no LINE ID
+// (see lib/account/profile.ts's validateProfile) — existing accounts have no LINE ID
 // on file and are not backfilled; an admin/user fills theirs in later via
 // /account (issue #304 item 4). terms_accepted_at is stamped only at the
-// moment of registration (lib/auth.ts's createUser) and is left NULL for
+// moment of registration (lib/auth/index.ts's createUser) and is left NULL for
 // every pre-existing row — there is no real "when did they agree" timestamp
 // to invent for accounts that registered before this consent checkbox
 // existed.
@@ -110,7 +110,7 @@ function printWarning() {
   const bar = "!".repeat(70);
   console.warn(bar);
   console.warn("!! 即將對正式站 users 資料表執行 ALTER TABLE，新增 line_id / terms_accepted_at 欄位。");
-  console.warn("!! 這個操作本身應該已經由 lib/db.ts 的 ensureSchema() 在每次應用程式啟動時");
+  console.warn("!! 這個操作本身應該已經由 lib/shared/data/db.ts 的 ensureSchema() 在每次應用程式啟動時");
   console.warn("!! 自動執行過了（見本檔案開頭註解）——手動執行這支腳本只是多一次相同、");
   console.warn("!! 對已存在欄位會自動略過的操作，理論上不會有風險，但仍建議：");
   console.warn("!! (1) 已完成資料庫備份、(2) 已先用 --dry-run 檢視目前缺少哪些欄位。");
@@ -149,7 +149,7 @@ async function main() {
         console.log("\n  尚有欄位缺少。確認已備份後，再由人工執行：");
         console.log("    node scripts/migrate-users-line-id-terms.mjs --confirm");
         console.log(
-          "\n  （或者，直接部署／重啟一次應用程式——lib/db.ts 的 ensureSchema() 會自動新增缺少的欄位。）",
+          "\n  （或者，直接部署／重啟一次應用程式——lib/shared/data/db.ts 的 ensureSchema() 會自動新增缺少的欄位。）",
         );
       }
     } else {

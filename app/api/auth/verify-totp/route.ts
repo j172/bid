@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { createSession, findUserByEmail, verifyPassword } from "@/lib/auth";
-import { clearLoginFailures, isLoginRateLimited, recordLoginFailure } from "@/lib/loginRateLimit";
-import { verifyTotpLogin } from "@/lib/totp";
-import { getClientIpFromHeaders } from "@/lib/clientIp";
-import { verifyTurnstileToken } from "@/lib/turnstile";
-import { verifyGoogle2faChallenge } from "@/lib/googleAuth";
+import { clearLoginFailures, isLoginRateLimited, recordLoginFailure } from "@/lib/auth/loginRateLimit";
+import { verifyTotpLogin } from "@/lib/auth/totp";
+import { getClientIpFromHeaders } from "@/lib/shared/client/clientIp";
+import { verifyTurnstileToken } from "@/lib/auth/turnstile";
+import { verifyGoogle2faChallenge } from "@/lib/auth/googleAuth";
 
 // Second step of the TOTP login flow (issue #97, extended for Google login by #237).
 // Supports either:

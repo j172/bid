@@ -3,7 +3,7 @@
 import Script from "next/script";
 import { useEffect, useRef, useCallback, useState } from "react";
 import { usePathname, useRouter } from "@/i18n/navigation";
-import { isInAppBrowser } from "@/lib/inAppBrowser";
+import { isInAppBrowser } from "@/lib/shared/client/inAppBrowser";
 import { useCurrentUser } from "./CurrentUserProvider";
 
 interface GoogleOneTapProps {

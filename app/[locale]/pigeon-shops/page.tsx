@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
-import { listPigeonShops } from "@/lib/pigeonShops";
+import { canonicalUrl, hreflangAlternates } from "@/lib/shared/seo/seo";
+import { listPigeonShops } from "@/lib/pigeons/pigeonShops";
 import PigeonShopsExplorer from "./PigeonShopsExplorer";
 
 export const dynamic = "force-dynamic";

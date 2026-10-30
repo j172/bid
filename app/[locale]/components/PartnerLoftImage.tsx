@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useImageFallback } from "@/lib/imageFallback";
+import { useImageFallback } from "@/lib/shared/content/imageFallback";
 
 // Homepage partner-loft card image (issue #155 item 3) — the card itself is
 // a Server Component, but useImageFallback is a client hook, so just this

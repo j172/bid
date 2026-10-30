@@ -3,8 +3,8 @@
 // error text), instead of only finding out via SSH + pm2 logs after the
 // scheduled 08:10 Asia/Taipei tick has already failed silently.
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
-import { getAllLatestStoredRates, SyncExchangeRatesError, syncExchangeRates } from "@/lib/exchangeRates";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { getAllLatestStoredRates, SyncExchangeRatesError, syncExchangeRates } from "@/lib/shared/formatting/exchangeRates";
 
 export async function POST() {
   const auth = await requireAdmin();

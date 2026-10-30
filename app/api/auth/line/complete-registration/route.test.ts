@@ -48,7 +48,7 @@ describe("POST /api/auth/line/complete-registration", () => {
   });
 
   it("validates required fields (termsAccepted, phone, email)", async () => {
-    const { createLineOnboardToken } = await import("@/lib/lineAuth");
+    const { createLineOnboardToken } = await import("@/lib/auth/lineAuth");
     const validToken = createLineOnboardToken({ lineUserId: "U12345" });
     cookieGetMock.mockReturnValue({ value: validToken });
 
@@ -69,7 +69,7 @@ describe("POST /api/auth/line/complete-registration", () => {
   });
 
   it("returns 409 if email already exists, prompting linking", async () => {
-    const { createLineOnboardToken } = await import("@/lib/lineAuth");
+    const { createLineOnboardToken } = await import("@/lib/auth/lineAuth");
     const validToken = createLineOnboardToken({ lineUserId: "U12345" });
     cookieGetMock.mockReturnValue({ value: validToken });
 
@@ -95,7 +95,7 @@ describe("POST /api/auth/line/complete-registration", () => {
   });
 
   it("creates user and logs in on valid input", async () => {
-    const { createLineOnboardToken } = await import("@/lib/lineAuth");
+    const { createLineOnboardToken } = await import("@/lib/auth/lineAuth");
     const validToken = createLineOnboardToken({ lineUserId: "U12345", displayName: "Line Nickname" });
     cookieGetMock.mockReturnValue({ value: validToken });
 

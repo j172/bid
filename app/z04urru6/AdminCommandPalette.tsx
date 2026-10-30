@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LISTING_TYPE_LABEL } from "@/lib/listingTypeLabel";
+import { LISTING_TYPE_LABEL } from "@/lib/listings/listingTypeLabel";
 import { ADMIN_NAV_ITEMS } from "./adminNav";
 
 interface SearchListing {

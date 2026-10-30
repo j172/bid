@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { usePostJson } from "@/lib/usePostJson";
+import { usePostJson } from "@/lib/shared/client/usePostJson";
 
 interface LineSectionProps {
   initialLineLinked: boolean;

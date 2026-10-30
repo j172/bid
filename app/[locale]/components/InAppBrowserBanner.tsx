@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { getDevicePlatform, isInAppBrowser, type DevicePlatform } from "@/lib/inAppBrowser";
+import { getDevicePlatform, isInAppBrowser, type DevicePlatform } from "@/lib/shared/client/inAppBrowser";
 
 export const INAPP_DISMISSED_STORAGE_KEY = "dismissed_inapp_banner";
 

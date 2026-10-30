@@ -1,9 +1,9 @@
-import { resolveStatusBadgeVariant, type StatusBadgeKey } from "@/lib/statusBadge";
+import { resolveStatusBadgeVariant, type StatusBadgeKey } from "@/lib/shared/ui/statusBadge";
 
 // Untranslated badge for the admin backend (see app/z04urru6/users/[id]/
 // page.tsx), which sits outside next-intl's NextIntlClientProvider entirely.
 // Its translated twin is app/[locale]/components/StatusBadge.tsx; both share
-// the status → variant decision via lib/statusBadge.ts (issue #139 item 6)
+// the status → variant decision via lib/shared/ui/statusBadge.ts (issue #139 item 6)
 // and differ only in where the label text comes from.
 const LABELS: Record<StatusBadgeKey, string> = {
   scheduled: "尚未開標",

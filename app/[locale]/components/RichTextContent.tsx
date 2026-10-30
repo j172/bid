@@ -12,7 +12,7 @@ const RICH_TEXT_CLASS =
 
 interface RichTextContentProps {
   /**
-   * Stored pre-sanitized — lib/sanitizeDescriptionHtml.ts is applied by both
+   * Stored pre-sanitized — lib/shared/content/sanitizeDescriptionHtml.ts is applied by both
    * the create and the edit API routes, so nothing sanitizes again here.
    * Never pass visitor-supplied HTML through this component.
    */

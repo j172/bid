@@ -1,6 +1,6 @@
-# SPEC: 代理層主動自癒重試與 503 降級保護 (Proxy Auto-Heal & 502 Resilience)
+# 規格：代理層主動自癒重試與 503 降級保護
 
-## 1. 背景與目標 (Outcome)
+## 1. 背景與目標
 
 本站部署於 cPanel/LiteSpeed 虛擬主機，由 `.remote-index.php` 擔任反向代理（Reverse Proxy）轉發給本機 Node.js（PM2 `bid-web`，監聽 `127.0.0.1:3001`）。
 
@@ -9,7 +9,7 @@
 2. **生硬且被動的錯誤處理**：現有 `.remote-index.php` 遇到連線失敗時，立即回傳 `HTTP 502 Bad Gateway` 與純文字 `Proxy error: Failed to connect to 127.0.0.1:3001`，完全無任何主動重試或喚醒機制。
 3. **外部 Watchdog 存在時間差**：目前自癒僅能等待外部定時 cron 打 `/__ops/pm2-ensure-running`（通常為 1~5 分鐘間隔），在 cron 尚未探測到的空窗期，所有訪客與搜尋引擎爬蟲均會看到 502 錯誤。
 
-### 預期成果 (Outcome)
+### 預期成果
 1. **代理層即時自癒**：當代理層偵測到 `127.0.0.1:3001` 連線中斷時，立即在背景非同步觸發 PM2 極速啟動（~1秒），並設有並發互斥鎖避免大量並發進程暴增。
 2. **原地短暫重試 (In-flight Retry)**：當次請求等待 1.2 秒後自動原地重試，若 Node 已喚醒，訪客當次請求直接成功（HTTP 200），完全無感。
 3. **優雅降級與 SEO 保護**：若重試後後端仍未就緒，回傳 `HTTP 503 Service Unavailable` 與 `Retry-After: 3`（保護 Googlebot 不降權）。
@@ -18,7 +18,7 @@
 
 ---
 
-## 2. 範圍 (Scope)
+## 2. 範圍
 
 - 修改檔案：
   - `.remote-index.php`：反向代理核心邏輯。
@@ -27,7 +27,7 @@
 
 ---
 
-## 3. 非目標 (Non-goals)
+## 3. 非目標
 
 - 不更動 Node.js/Next.js 應用程式內部的業務邏輯或資料庫連線池設定。
 - 不更動 Cloudflare Edge 設定或 LiteSpeed 本身之伺服器設定檔。
@@ -35,7 +35,7 @@
 
 ---
 
-## 4. 驗收標準 (Acceptance Criteria)
+## 4. 驗收標準
 
 - [ ] **連線失敗自癒觸發**：當 `127.0.0.1:3001` 斷線時，`.remote-index.php` 能正確識別 `CURLE_COULDNT_CONNECT` 並以背景非阻塞模式觸發 `pm2 start ecosystem.config.cjs --only bid-web`。
 - [ ] **並發鎖保護**：使用 `.fast_restart.lock`（30 秒過期保護機制），多個並發請求抵達時只有第一個能發起重啟指令，其餘請求等待重試而不重複 fork 進程。
@@ -49,16 +49,16 @@
 
 ---
 
-## 5. 風險與復原 (Risks & Rollback)
+## 5. 風險與復原
 
 - **風險評估**：
   - **低風險**：改動局限於 `.remote-index.php` 的反向代理連線失敗處理分支（原本直接 exit 502 的區塊），在正常 Node.js 連線成功時完全不影響任何現有轉發效能。
-- **復原計畫 (Rollback Plan)**：
+- **復原計畫**：
   - 若正式站行為不符預期，可透過 `git revert` 還原 commit，觸發 GitHub Actions 重新發布先前版本的 `.remote-index.php`。
 
 ---
 
-## 6. 驗證計畫 (Verification Plan)
+## 6. 驗證計畫
 
 1. 本地 PHP CLI 語法檢驗：`php -l .remote-index.php`
 2. 本地 Node/Next.js 測試：`npm run lint`、`npm run typecheck`、`npm test`

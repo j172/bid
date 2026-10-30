@@ -6,8 +6,8 @@ export default defineConfig({
     // Mirrors tsconfig.json's "@/*" -> "./*" path mapping — Vite doesn't read
     // tsconfig paths on its own. Most existing lib/*.test.ts files never
     // needed this (their only "@/..." imports are `import type`, erased at
-    // compile time), but lib/homepageSections.ts imports `getDb` from
-    // "@/lib/db" as a real runtime value, so its test needs this alias to
+    // compile time), but lib/homepage/homepageSections.ts imports `getDb` from
+    // "@/lib/shared/data/db" as a real runtime value, so its test needs this alias to
     // resolve (and to mock the module via vi.mock).
     alias: {
       "@": fileURLToPath(new URL(".", import.meta.url)),

@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { verifyRegistrationResponse } from "@simplewebauthn/server";
-import { requireUser } from "@/lib/apiAuth";
+import { requireUser } from "@/lib/auth/apiAuth";
 import {
   clearWebauthnChallengeCookie,
   consumeWebauthnChallenge,
   readWebauthnChallengeCookie,
   resolveWebauthnRp,
-} from "@/lib/webauthn";
-import { saveCredential } from "@/lib/webauthnCredentials";
+} from "@/lib/auth/webauthn";
+import { saveCredential } from "@/lib/auth/webauthnCredentials";
 
 const DEVICE_NAME_MAX_LENGTH = 100;
 
@@ -15,7 +15,7 @@ const DEVICE_NAME_MAX_LENGTH = 100;
 // register-options/route.ts, called with whatever
 // @simplewebauthn/browser's startRegistration() returned. The challenge
 // token travels via an httpOnly cookie (never through request JSON — see
-// lib/webauthn.ts's header comment), so it's read/cleared here rather than
+// lib/auth/webauthn.ts's header comment), so it's read/cleared here rather than
 // taken from the request body; its stored userId is re-checked against the
 // logged-in visitor so a challenge issued to one account can't be redeemed
 // while logged in as another.

@@ -1,7 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
-import { getClientIpFromHeaders } from "@/lib/clientIp";
+import { getClientIpFromHeaders } from "@/lib/shared/client/clientIp";
 
 // app/[locale]/error.tsx and app/global-error.tsx must be Client Components
 // (Next.js App Router requirement for error boundaries), so they have no

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
+import { requireAdmin } from "@/lib/auth/apiAuth";
 import { adminDisableTwoFactor, getUserDetail } from "@/lib/auth";
-import { parseIdParam } from "@/lib/routeParams";
+import { parseIdParam } from "@/lib/shared/api/routeParams";
 
 // Admin rescue path (issue #93) for an account locked out of its own Email
 // OTP (can't receive the code email, etc.) — same shape as #91's sibling

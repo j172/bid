@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/apiAuth";
+import { requireUser } from "@/lib/auth/apiAuth";
 import { setTwoFactorMethod } from "@/lib/auth";
 
 // Toggles the logged-in user's Email OTP second factor on/off (issue #93).

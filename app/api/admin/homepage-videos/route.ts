@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
-import { createHomepageVideo, listHomepageVideos } from "@/lib/homepageVideos";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { createHomepageVideo, listHomepageVideos } from "@/lib/homepage/homepageVideos";
 
 export async function GET() {
   const auth = await requireAdmin();

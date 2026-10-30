@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { buildNewsSitemapXml, GET } from "./route";
+import { buildNewsSitemapXml } from "@/lib/news/newsSitemapXml";
+import { GET } from "./route";
 
 vi.mock("@/lib/news", () => ({
   listNewsForSitemap: vi.fn().mockResolvedValue([

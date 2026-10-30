@@ -4,7 +4,7 @@ import { startAuthentication } from "@simplewebauthn/browser";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useRouter } from "@/i18n/navigation";
-import { usePostJson } from "@/lib/usePostJson";
+import { usePostJson } from "@/lib/shared/client/usePostJson";
 import { useCurrentUser } from "../components/CurrentUserProvider";
 
 type AuthenticationOptions = Parameters<typeof startAuthentication>[0]["optionsJSON"];

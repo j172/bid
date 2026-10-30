@@ -1,36 +1,27 @@
-# Domain Docs
+# 領域文件
 
-How the engineering skills should consume this repo's domain documentation when exploring the codebase.
+工程技能在探索程式碼庫時，應如何使用本儲存庫的領域文件。
 
-## Before exploring, read these
+## 開始探索前，請先閱讀
 
-- **`CONTEXT.md`** at the repo root, or
-- **`CONTEXT-MAP.md`** at the repo root if it exists — it points at one `CONTEXT.md` per context. Read each one relevant to the topic.
-- **`docs/adr/`** — read ADRs that touch the area you're about to work in. In multi-context repos, also check `src/<context>/docs/adr/` for context-scoped decisions.
+- 儲存庫根目錄的 **`CONTEXT.md`**，或
+- 若儲存庫根目錄存在 **`CONTEXT-MAP.md`**，請先閱讀該檔案——它會指向各個情境的 `CONTEXT.md`。請閱讀與主題相關的所有檔案。
+- **`docs/adr/`**——閱讀與即將處理範圍相關的 ADR。在多情境儲存庫中，也請檢查 `src/<context>/docs/adr/` 中適用於該情境的決策。
 
-If any of these files don't exist, **proceed silently**. Don't flag their absence; don't suggest creating them upfront. The `/domain-modeling` skill (reached via `/grill-with-docs` and `/improve-codebase-architecture`) creates them lazily when terms or decisions actually get resolved.
+若上述檔案不存在，請**直接繼續處理，不必提及**。不要特別指出檔案缺失，也不要建議預先建立。當術語或決策實際確定後，`/domain-modeling` 技能（可透過 `/grill-with-docs` 和 `/improve-codebase-architecture` 使用）會視需要建立這些檔案。
 
-## File structure
+## 本儲存庫的檔案結構
 
-Single-context repo (this repo):
+本儲存庫使用單一情境，Next.js 程式碼位於根目錄的 `app/` 與 `lib/`，沒有額外的 `src/` 層。`CONTEXT.md`、`CONTEXT-MAP.md` 與 `docs/adr/` 目前不是必備檔案；若尚未建立，請照常探索，不要預先建立。
 
-```
-/
-├── CONTEXT.md
-├── docs/adr/
-│   ├── 0001-....md
-│   └── 0002-....md
-└── src/
-```
+## 使用詞彙表中的用語
 
-## Use the glossary's vocabulary
+當輸出中提及領域概念（例如議題標題、重構提案、假設或測試名稱）時，請使用 `CONTEXT.md` 所定義的術語。不要改用詞彙表明確避免的同義詞。
 
-When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name), use the term as defined in `CONTEXT.md`. Don't drift to synonyms the glossary explicitly avoids.
+如果所需概念尚未列於詞彙表，這代表需要留意：你可能正在創造專案並未使用的用語（請重新考慮），或詞彙表確實有缺漏（請記下並交由 `/domain-modeling` 處理）。
 
-If the concept you need isn't in the glossary yet, that's a signal — either you're inventing language the project doesn't use (reconsider) or there's a real gap (note it for `/domain-modeling`).
+## 標示與 ADR 的衝突
 
-## Flag ADR conflicts
+如果輸出內容與現有 ADR 相矛盾，請明確指出，不要逕自覆寫：
 
-If your output contradicts an existing ADR, surface it explicitly rather than silently overriding:
-
-> _Contradicts ADR-0007 (event-sourced orders) — but worth reopening because…_
+> _與 ADR-0007（事件溯源訂單）相矛盾——但值得重新討論，因為……_

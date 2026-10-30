@@ -32,7 +32,7 @@
 //      "疑似重複，待人工複查" list so a human can decide whether to merge or
 //      delete one of them by hand afterward via the admin CRUD page.
 //
-// Deliberately NOT wired into lib/scheduler.ts's daily cron, same as #243 —
+// Deliberately NOT wired into lib/shared/data/scheduler.ts's daily cron, same as #243 —
 // one-time run by hand, then maintained through app/z04urru6/pigeon-shops.
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";

@@ -1,4 +1,4 @@
-import { COLOR_MAP } from "@/lib/editorColorMap";
+import { COLOR_MAP } from "@/lib/shared/content/editorColorMap";
 
 // 兩個自架 TinyMCE 包裝元件（listings/DescriptionEditor.tsx 的完整版、
 // components/SimpleRichTextEditor.tsx 給最新訊息／入賞鴿-進口鴿用的精簡版）

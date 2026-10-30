@@ -1,37 +1,37 @@
-# Spec → Ticket
+# 規格 → 工作票
 
-Use this flow when a request is not yet precise enough for implementation.
+當需求尚未明確到足以開始實作時，請使用此流程。
 
-## 1. Write the spec
+## 1. 撰寫規格
 
-Capture the following before creating a ticket:
+建立工作票前，請先記錄以下資訊：
 
-- **Outcome**: the user or business result, not an implementation detail.
-- **Scope**: files, routes, data, and integrations that may change.
-- **Non-goals**: explicitly excluded behavior.
-- **Acceptance criteria**: observable, testable statements.
-- **Risks**: authentication, database, deployment, migration, or rollback concerns.
-- **Verification**: the narrowest tests plus any required build or smoke test.
+- **預期成果**：使用者或業務面所需的結果，而非實作細節。
+- **範圍**：可能變更的檔案、路由、資料及整合項目。
+- **非目標**：明確排除的行為。
+- **驗收條件**：可觀察且可測試的敘述。
+- **風險**：認證、資料庫、部署、遷移或回滾方面的考量。
+- **驗證方式**：範圍最小的測試，以及任何必要的建置或冒煙測試。
 
-Do not invent missing product decisions. Mark them as `Needs decision` and ask one focused question at a time.
+不要自行臆測尚未確定的產品決策。請標註為 `Needs decision`，並一次提出一個聚焦的問題。
 
-## 2. Create the ticket
+## 2. 建立工作票
 
-Create a GitHub Issue with `.github/ISSUE_TEMPLATE/spec.md`. Use `gh issue create` from the repository root and apply `needs-triage` first. A ticket is ready for implementation only when its acceptance criteria and verification steps are complete; then change the label to `ready-for-agent`.
+使用 `.github/ISSUE_TEMPLATE/spec.md` 建立 GitHub Issue。請在儲存庫根目錄執行 `gh issue create`，並先套用 `needs-triage`。工作票的驗收條件與驗證步驟完整後，才可開始實作；此時再將標籤改為 `ready-for-agent`。
 
-## 3. Ticket quality gate
+## 3. 工作票品質門檻
 
-The ticket must identify:
+工作票必須說明：
 
-1. the source spec or decision,
-2. the expected behavior,
-3. the affected surface,
-4. test and deployment impact,
-5. the definition of done,
-6. the owner or next decision-maker.
+1. 來源規格或決策；
+2. 預期行為；
+3. 受影響範圍；
+4. 對測試與部署的影響；
+5. 完成定義；
+6. 負責人或下一位決策者。
 
-If any item is unknown, use `needs-info` rather than assigning an agent.
+若有任何項目尚未明確，請使用 `needs-info`，不要指派給 agent。
 
-## 4. Handoff
+## 4. 交接
 
-The implementing agent receives the issue number, repository root, target worktree path, and required checks. It must not broaden scope without updating the issue first.
+實作 agent 會收到 Issue 編號、儲存庫根目錄、目標 worktree 路徑及必要檢查項目。若要擴大範圍，必須先更新 Issue。

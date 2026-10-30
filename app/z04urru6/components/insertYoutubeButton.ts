@@ -1,5 +1,5 @@
 import type { Editor as TinyMCEEditor } from "tinymce";
-import { extractYouTubeId } from "@/lib/youtubeEmbed";
+import { extractYouTubeId } from "@/lib/social/youtubeEmbed";
 
 // Shared "插入 YouTube 影片" toolbar button registration behind both
 // app/z04urru6/listings/DescriptionEditor.tsx and

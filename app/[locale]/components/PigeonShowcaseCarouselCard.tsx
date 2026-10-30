@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import CarouselControls from "./CarouselControls";
-import { useRotatingIndex } from "@/lib/useRotatingIndex";
+import { useRotatingIndex } from "@/lib/shared/client/useRotatingIndex";
 
 // Homepage carousel card (issue #54) — replaces the static "即刻入手"/"本週
 //精選" promo cards (app/[locale]/(with-loading)/page.tsx) with a rotating showcase of the

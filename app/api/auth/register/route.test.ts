@@ -2,7 +2,7 @@
 // placeholder), LINE ID is a new required field, and a single terms-acceptance
 // checkbox must be checked before an account can be created. These tests cover
 // the route's own responsibility for all three — the underlying field-shape
-// rules (length/regex) are covered by lib/profile.test.ts's validateProfile
+// rules (length/regex) are covered by lib/account/profile.test.ts's validateProfile
 // tests, not repeated here. mocks are created via vi.hoisted so they exist
 // before vi.mock's factories below run — same pattern as
 // app/api/auth/login/route.test.ts.
@@ -28,7 +28,7 @@ const {
   verifyEmailPathMock: vi.fn(),
 }));
 
-vi.mock("@/lib/emailVerification", () => ({
+vi.mock("@/lib/auth/emailVerification", () => ({
   createEmailVerificationToken: createEmailVerificationTokenMock,
   isEmailVerificationRateLimited: isEmailVerificationRateLimitedMock,
   verifyEmailPath: verifyEmailPathMock,
@@ -38,11 +38,11 @@ const { sendVerificationEmailMock } = vi.hoisted(() => ({
   sendVerificationEmailMock: vi.fn(),
 }));
 
-vi.mock("@/lib/notifications", () => ({
+vi.mock("@/lib/shared/communications/notifications", () => ({
   sendVerificationEmail: sendVerificationEmailMock,
 }));
 
-vi.mock("@/lib/clientIp", () => ({
+vi.mock("@/lib/shared/client/clientIp", () => ({
   getClientIpFromHeaders: () => "203.0.113.7",
 }));
 

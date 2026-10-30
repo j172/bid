@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
-import { inputClass } from "@/lib/formStyles";
-import { usePostJson, type ApiJsonResponse } from "@/lib/usePostJson";
+import { inputClass } from "@/lib/shared/ui/formStyles";
+import { usePostJson, type ApiJsonResponse } from "@/lib/shared/client/usePostJson";
 import { useCurrentUser } from "../../components/CurrentUserProvider";
 
 interface OnboardData {

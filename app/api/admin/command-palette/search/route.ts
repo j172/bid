@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
+import { requireAdmin } from "@/lib/auth/apiAuth";
 import { closeExpiredListings } from "@/lib/listings";
-import { getDb } from "@/lib/db";
+import { getDb } from "@/lib/shared/data/db";
 
 export async function GET(request: Request) {
   const auth = await requireAdmin();
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
 
   // Yes, a write from a read-only search endpoint (issue #139 L4). This
   // deployment has no background worker: every path that reads listings
-  // sweeps the expired ones closed first (see lib/listings.ts'
+  // sweeps the expired ones closed first (see lib/listings/index.ts'
   // syncListingLifecycle header comment), so without this the palette would
   // report a long-past auction as still 開放中 and let an admin act on a
   // stale status. Kept as-is, and kept as the narrower closeExpiredListings

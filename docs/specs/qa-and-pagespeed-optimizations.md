@@ -1,6 +1,6 @@
-# SPEC: 全站 QA 與 PageSpeed 效能優化 (QA & PageSpeed Optimizations)
+# 規格：全站 QA 與 PageSpeed 效能優化
 
-## 1. Outcome (預期成果)
+## 1. 預期成果
 針對正式營運站點（`https://xiangshuicn.cc/`）進行全面 QA 與 PageSpeed 效能優化：
 1. 解決 Google PageSpeed 主線程長時間阻塞問題（將第三方 Clarity 載入時機調整，消除約 1.89 秒 TBT 延遲）。
 2. 在客戶端圖片轉檔壓縮管線增加尺寸上限（限制寬高最大 1600px），避免巨型圖片上傳造成頻寬浪費與伺服器記憶體溢位。
@@ -8,11 +8,11 @@
 4. 修復無障礙（Accessibility）與 UIUX 缺陷：提升語系切換器之顏色對比度（符合 WCAG AA）、補齊電子報與搜尋元件之 `aria-label`、增大行動端社群按鈕點擊區域至 40px 以上。
 5. 清理全站法律與服務政策條款頁面（隱私權、退款政策、使用條款、GDPR）之示範樣板文字與未定資料佔位符，提供合規之商業服務資訊。
 
-## 2. Source and Ownership (來源與負責人)
+## 2. 來源與負責人
 - **來源**：正式站全面 QA 與 Google PageSpeed Insights 稽核報告（Issue #233）。
 - **負責人**：Jay FC / AI Agent。
 
-## 3. Scope (涵蓋範圍)
+## 3. 涵蓋範圍
 - **影響路由與頁面**：
   - `app/[locale]/cart/page.tsx`
   - `app/[locale]/login/page.tsx`
@@ -31,12 +31,12 @@
   - `messages/zh-CN.json`
   - `messages/en.json`
 
-## 4. Non-goals (非本次目標)
+## 4. 非本次目標
 - 不啟用 Next.js 伺服器端原生圖片最佳化模組（維持 `unoptimized: true`，避免 LiteSpeed/PM2 512MB-1536MB 環境 OOM 崩潰）。
 - 不變更會員認證與 Turnstile 驗證機制。
 - 不變更資料庫 Schema。
 
-## 5. Acceptance Criteria (驗收標準)
+## 5. 驗收標準
 - [ ] `/cart`、`/login`、`/register`、`/forgot-password` 輸出標準 `<title>`、`<meta name="description">`、`<meta name="robots">` 與 `<link rel="alternate" hreflang="...">`。
 - [ ] `RegisterForm` 與 `ForgotPasswordForm` 為 Client Component，而對應 `page.tsx` 為 Server Component，保持動態 `generateMetadata` 支援。
 - [ ] `SiteHeader` 頂部搜尋欄於 `/zh-CN/` 或 `/en/` 下提交時，跳轉至對應語系之 `/listings?q=...`。
@@ -47,7 +47,7 @@
 - [ ] 隱私權政策、退款政策、使用條款及 GDPR 頁面無「台北市示範路」、「公司登記名稱」或「〔　〕」符號。
 - [ ] 補齊 `pigeonShowcase.title` 與 `subtitle` 字典 key，消除生產端 `MISSING_MESSAGE` 錯誤。
 
-## 6. Verification (驗證方式)
+## 6. 驗證方式
 - **單元測試**：
   - 執行 `npm test` 877 項測試全數通過。
 - **型別檢查**：
@@ -61,10 +61,10 @@
   - 遠端健康檢查成功（HTTP 200）。
   - 對 `https://xiangshuicn.cc/` 進行 PageSpeed Insights 複測與頁面審查。
 
-## 7. Risks and Rollout (風險與發布)
+## 7. 風險與發布
 - **相容性風險**：極低。所有修改皆維持既有介面契約與路由結構。
 - **部署影響**：標準 FTPS + PM2 重啟流程。
 - **回滾計畫**：若有非預期異常，可直接 revert commit 或由 GitHub Actions 手動重新部署上一版本。
 
-## 8. Open Decisions (未決事項)
+## 8. 未決事項
 - 無。

@@ -1,7 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
-import { resolveRayId } from "@/lib/rayId";
+import { resolveRayId } from "@/lib/shared/network/rayId";
 
 // app/[locale]/error.tsx and app/global-error.tsx must be Client Components
 // (Next.js App Router requirement for error boundaries), so they have no

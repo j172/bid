@@ -1,4 +1,4 @@
-# SPEC: 整合 LINE Login v2.1 登入與兩階段註冊
+# 規格：整合 LINE Login v2.1 登入與兩階段註冊
 
 ## 1. 背景與目標
 為提升台灣及亞洲市場使用者的轉換率、降低註冊門檻，本專案依據 LINE 官方 OAuth 2.0 / OpenID Connect 規格（[Issue Access Token](https://developers.line.biz/en/reference/line-login/#issue-access-token)），為本站競標系統導入 **LINE Login** 登入與註冊整合。
@@ -8,7 +8,7 @@
 2. **兩階段註冊（Two-Step Onboarding）**：
    - 已綁定 LINE 之用戶：一鍵直接登入。
    - 首次使用 LINE 授權之全新用戶：後端驗證身分後，將 LINE 身分資料以加密/簽名的 HttpOnly Cookie 暫存（效期 15 分鐘），並導向專屬補填頁面（`/{locale}/register/line`）。
-3. **既有帳號衝突安全關聯（Account Linking Guard）**：
+3. **既有帳號衝突安全關聯（帳號連結防護）**：
    - 若使用者在補填流程輸入（或 LINE 回傳）之 Email 已存在於本站資料庫，為防範帳號劫持，系統要求輸入該既有帳號原密碼，或發送 Email OTP 驗證碼；驗證通過後才完成 LINE 綁定並登入。
 4. **精簡註冊免密碼**：
    - 預設帶入 LINE 暱稱；若 LINE 有提供 Email 視為已驗證，無提供則由使用者手動填寫並完成 Email 驗證。

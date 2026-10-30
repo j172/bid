@@ -14,8 +14,8 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useTranslations } from "next-intl";
-import type { MapGeolocationResult } from "@/lib/useMapGeolocation";
-import { getPigeonMapIcon } from "@/lib/pigeonMapIcon";
+import type { MapGeolocationResult } from "@/lib/shared/client/useMapGeolocation";
+import { getPigeonMapIcon } from "@/lib/pigeons/pigeonMapIcon";
 
 export interface PigeonStationMapPoint {
   id: number;
@@ -46,7 +46,7 @@ export default function PigeonStationsMap({
   /** Station id to fly the map to and open its popup for — set by clicking a list item. */
   selectedId: number | null;
   /** The browser's resolved position, owned by the parent explorer (issue
-   * #275 — one lib/useMapGeolocation.ts call shared by both the map center
+   * #275 — one lib/shared/client/useMapGeolocation.ts call shared by both the map center
    * and the list's distance sort, instead of this component requesting its
    * own separately). Null while that request is still pending; the map
    * isn't mounted until it resolves (below). This replaces the previous

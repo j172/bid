@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { useState } from "react";
 import Button from "@/app/components/Button";
-import { usePostJson } from "@/lib/usePostJson";
+import { usePostJson } from "@/lib/shared/client/usePostJson";
 
 export default function PurchaseForm({ listingId, stockRemaining }: { listingId: number; stockRemaining: number }) {
   const router = useRouter();

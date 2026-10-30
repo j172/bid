@@ -21,11 +21,11 @@
 //   "loft" (also a homepage_sections row), never to `listings`.
 // - `listings.loft_id` points the other way (listing -> loft), so it needs
 //   no cleanup here; it's dropped along with the listing row itself.
-// - relistClosedListing (lib/listings.ts) creates a brand-new, independent
+// - relistClosedListing (lib/listings/index.ts) creates a brand-new, independent
 //   listing row when an admin relists a closed auction with no winner — it
 //   does not link back to the original listing anywhere in the database, so
 //   there is no "relist history" table to cascade either.
-// - There is no notifications/winner-log table: lib/notifications.ts only
+// - There is no notifications/winner-log table: lib/shared/communications/notifications.ts only
 //   sends email, it never persists a row tied to listing_id.
 // If a future migration adds another listing_id-bearing table, this list
 // (and its accompanying comment) must be updated before this script is

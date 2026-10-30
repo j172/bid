@@ -3,16 +3,16 @@
 import { useMemo, useReducer, useState } from "react";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
-import { ALL_COUNTIES_VALUE, filterPigeonDirectoryEntries, listPresentCounties } from "@/lib/pigeonDirectoryFilters";
-import { selectDistanceSortOrigin, sortByDistanceFromOrigin } from "@/lib/pigeonDirectoryDistance";
-import { useMapGeolocation } from "@/lib/useMapGeolocation";
-import { paginateClientList } from "@/lib/clientPagination";
+import { ALL_COUNTIES_VALUE, filterPigeonDirectoryEntries, listPresentCounties } from "@/lib/pigeons/pigeonDirectoryFilters";
+import { selectDistanceSortOrigin, sortByDistanceFromOrigin } from "@/lib/pigeons/pigeonDirectoryDistance";
+import { useMapGeolocation } from "@/lib/shared/client/useMapGeolocation";
+import { paginateClientList } from "@/lib/shared/client/clientPagination";
 import {
   INITIAL_DIRECTORY_LIST_STATE,
   PIGEON_DIRECTORY_PAGE_SIZES,
   directoryListReducer,
   isPigeonDirectoryPageSize,
-} from "@/lib/pigeonDirectoryListState";
+} from "@/lib/pigeons/pigeonDirectoryListState";
 import ClientPaginationFooter from "../components/ClientPaginationFooter";
 import type { PigeonGroupMapPoint } from "./PigeonGroupsMap";
 
@@ -68,7 +68,7 @@ export default function PigeonGroupsExplorer({ groups, noAddressLabel, noCoordin
   );
 
   // Re-sorts the (already search/county-filtered) list nearest-first via the
-  // shared pure helper (lib/pigeonDirectoryDistance.ts), annotating each row
+  // shared pure helper (lib/pigeons/pigeonDirectoryDistance.ts), annotating each row
   // with its distance, whenever geolocation has resolved to a genuine
   // position. Falls back to `groups`' existing name order otherwise
   // (pending, denied, unsupported, or the Chiayi fallback) — entries with no

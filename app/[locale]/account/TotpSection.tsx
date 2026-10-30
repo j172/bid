@@ -3,8 +3,8 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import Button from "@/app/components/Button";
-import { inputClass } from "@/lib/formStyles";
-import { usePostJson } from "@/lib/usePostJson";
+import { inputClass } from "@/lib/shared/ui/formStyles";
+import { usePostJson } from "@/lib/shared/client/usePostJson";
 
 type Step = "idle" | "qr" | "backupCodes" | "disableConfirm";
 
@@ -12,7 +12,7 @@ type Step = "idle" | "qr" | "backupCodes" | "disableConfirm";
 // alongside TwoFactorSection (#93's Email OTP toggle) on the account page;
 // both write the same mutually-exclusive users.two_factor_method column, so
 // turning this on implicitly turns Email OTP off (and vice versa) with no
-// extra UI needed here — see lib/totp.ts's confirmTotpSetup.
+// extra UI needed here — see lib/auth/totp.ts's confirmTotpSetup.
 //
 // Unlike TwoFactorSection's single password-confirm step, enabling TOTP is a
 // multi-step round trip: request a secret (POST .../setup, no password

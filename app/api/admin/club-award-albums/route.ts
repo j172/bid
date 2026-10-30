@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
+import { requireAdmin } from "@/lib/auth/apiAuth";
 import {
   createClubAwardAlbum,
   isClubAwardPageSize,
   listClubAwardAlbums,
-} from "@/lib/clubAwardPigeons";
-import { validateClubAwardAlbumName } from "@/lib/clubAwardPigeonsValidation";
+} from "@/lib/pigeons/clubAwardPigeons";
+import { validateClubAwardAlbumName } from "@/lib/pigeons/clubAwardPigeonsValidation";
 
 async function extractAlbumName(request: Request): Promise<string | null> {
   const contentType = request.headers.get("content-type") ?? "";

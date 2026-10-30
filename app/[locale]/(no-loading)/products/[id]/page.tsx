@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getProductById } from "@/lib/products";
-import { productPhotoUrl } from "@/lib/uploads";
+import { productPhotoUrl } from "@/lib/shared/content/uploads";
 import {
   absoluteUrl,
   buildBreadcrumbListJsonLd,
@@ -11,10 +11,10 @@ import {
   hreflangAlternates,
   stripHtmlToPlainText,
   truncateForMetaDescription,
-} from "@/lib/seo";
-import { safeJsonLdString } from "@/lib/jsonLdScript";
-import { formatProductPriceText } from "@/lib/productPriceText";
-import { CALL_FOR_PRICE_PHONE_DISPLAY, CALL_FOR_PRICE_PHONE_HREF } from "@/lib/lineContact";
+} from "@/lib/shared/seo/seo";
+import { safeJsonLdString } from "@/lib/shared/seo/jsonLdScript";
+import { formatProductPriceText } from "@/lib/products/productPriceText";
+import { CALL_FOR_PRICE_PHONE_DISPLAY, CALL_FOR_PRICE_PHONE_HREF } from "@/lib/contact/lineContact";
 import { Link } from "@/i18n/navigation";
 import RichTextContent from "@/app/[locale]/components/RichTextContent";
 import YoutubeEmbed from "@/app/[locale]/components/YoutubeEmbed";
@@ -28,7 +28,7 @@ export const dynamic = "force-dynamic";
 // with the direct URL, same "unpublished means gone from every public
 // surface" rule the rest of this app follows (e.g. deleted/hidden news
 // posts). The admin edit form (app/z04urru6/products/) reads through
-// lib/products.ts's getProductById WITHOUT activeOnly, so admins can still
+// lib/products/index.ts's getProductById WITHOUT activeOnly, so admins can still
 // open and re-publish a disabled product.
 async function loadActiveProduct(id: string) {
   const productId = Number(id);

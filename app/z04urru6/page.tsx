@@ -8,8 +8,8 @@ import {
   getTopBiddersByCount,
   getTopCustomersBySpend,
   getTopListingsByGmv,
-} from "@/lib/dashboard";
-import { getAllLatestStoredRates } from "@/lib/exchangeRates";
+} from "@/lib/account/dashboard";
+import { getAllLatestStoredRates } from "@/lib/shared/formatting/exchangeRates";
 import { GmvSplitBar, GmvTrendChart, NewUserTrendChart } from "./DashboardCharts";
 import PendingActions from "./PendingActions";
 import Leaderboards from "./Leaderboards";

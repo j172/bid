@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { createSession, getUserDetail } from "@/lib/auth";
-import { verifyEmailOtpChallenge } from "@/lib/emailOtp";
+import { verifyEmailOtpChallenge } from "@/lib/auth/emailOtp";
 
 // Second step of the Email OTP login flow (issue #93) — the counterpart to
 // app/api/auth/login/route.ts's twoFactorRequired branch. Only ever called
 // with a challengeToken that route handed back; verifyEmailOtpChallenge
 // itself enforces existence/expiry/one-time-use/attempt-cap (see
-// lib/emailOtp.ts), so this route's own job is just: on a valid code, look
+// lib/auth/emailOtp.ts), so this route's own job is just: on a valid code, look
 // the account up fresh (it could have been suspended in the few minutes
 // between password entry and code entry) and call createSession — the one
 // place in the whole flow that actually logs the visitor in.

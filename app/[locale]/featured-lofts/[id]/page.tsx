@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { getHomepageSectionById } from "@/lib/homepageSections";
-import { homepageSectionImageUrl, pigeonShowcaseImageUrl } from "@/lib/uploads";
-import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
-import { excerptHtml } from "@/lib/htmlText";
+import { getHomepageSectionById } from "@/lib/homepage/homepageSections";
+import { homepageSectionImageUrl, pigeonShowcaseImageUrl } from "@/lib/shared/content/uploads";
+import { IMAGE_FALLBACK_SRC } from "@/lib/shared/content/imageFallback";
+import { excerptHtml } from "@/lib/shared/content/htmlText";
 import { listOpenListings } from "@/lib/listings";
-import { listPigeonShowcase } from "@/lib/pigeonShowcase";
-import { resolveLoftStatusScope, buildLoftShowcaseUrl } from "@/lib/loftStorefront";
-import { buildListingCardView } from "@/lib/listingCardView";
-import { currencyForLocale } from "@/lib/currency";
-import { getLatestStoredRate } from "@/lib/exchangeRates";
+import { listPigeonShowcase } from "@/lib/pigeons/pigeonShowcase";
+import { resolveLoftStatusScope, buildLoftShowcaseUrl } from "@/lib/lofts/loftStorefront";
+import { buildListingCardView } from "@/lib/listings/listingCardView";
+import { currencyForLocale } from "@/lib/shared/formatting/currency";
+import { getLatestStoredRate } from "@/lib/shared/formatting/exchangeRates";
 import {
   absoluteUrl,
   buildBreadcrumbListJsonLd,
@@ -19,8 +19,8 @@ import {
   hreflangAlternates,
   stripHtmlToPlainText,
   truncateForMetaDescription,
-} from "@/lib/seo";
-import { safeJsonLdString } from "@/lib/jsonLdScript";
+} from "@/lib/shared/seo/seo";
+import { safeJsonLdString } from "@/lib/shared/seo/jsonLdScript";
 import { Link } from "@/i18n/navigation";
 import ProductCard from "../../components/ProductCard";
 import ContentCardGrid from "../../components/ContentCardGrid";
@@ -102,7 +102,7 @@ export default async function FeaturedLoftDetailPage({ params }: { params: Promi
   // The admin form requires linkedLoftId on every featured_loft row, but this
   // page stays defensive (treats a null/missing one as "nothing to embed")
   // rather than throwing, since linked_loft_id has no DB-level FK (see
-  // lib/homepageSections.ts's header comment).
+  // lib/homepage/homepageSections.ts's header comment).
   const linkedLoftId = section.linkedLoftId;
   const loft = linkedLoftId !== null ? await getHomepageSectionById(linkedLoftId) : null;
 

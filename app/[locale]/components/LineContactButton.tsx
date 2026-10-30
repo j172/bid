@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { LINE_CONTACT_HREF } from "@/lib/lineContact";
+import { LINE_CONTACT_HREF } from "@/lib/contact/lineContact";
 import useCookieBannerVisible from "./useCookieBannerVisible";
 import {
   FLOATING_ACTION_BOTTOM,

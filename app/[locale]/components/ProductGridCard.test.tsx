@@ -39,7 +39,7 @@ describe("ProductGridCard", () => {
     expect(screen.getByText(baseItem.priceText).textContent).toBe(baseItem.priceText);
   });
 
-  it("formats an all-digits priceText with the NT$ thousand-separator convention (lib/productPriceText.ts)", () => {
+  it("formats an all-digits priceText with the NT$ thousand-separator convention (lib/products/productPriceText.ts)", () => {
     render(
       <ProductGridCard item={{ ...baseItem, priceText: "12000" }} locale="zh-TW" ctaLabel="查看詳情" />,
     );

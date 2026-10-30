@@ -4,8 +4,8 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import Button from "@/app/components/Button";
 import PasswordStrengthMeter from "@/app/components/PasswordStrengthMeter";
-import { inputClass } from "@/lib/formStyles";
-import { usePostJson } from "@/lib/usePostJson";
+import { inputClass } from "@/lib/shared/ui/formStyles";
+import { usePostJson } from "@/lib/shared/client/usePostJson";
 
 interface ChangePasswordFormProps {
   initialHasPassword?: boolean;

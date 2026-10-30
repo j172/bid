@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
+import { canonicalUrl, hreflangAlternates } from "@/lib/shared/seo/seo";
 
 export async function generateMetadata({
   params,

@@ -2,9 +2,9 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CONTENT_MAX, TITLE_MAX } from "@/lib/newsValidation";
-import { BROADCAST_STATUS_LABEL } from "@/lib/broadcastStatusLabel";
-import type { BroadcastStatus } from "@/lib/newsletter";
+import { CONTENT_MAX, TITLE_MAX } from "@/lib/news/newsValidation";
+import { BROADCAST_STATUS_LABEL } from "@/lib/homepage/broadcastStatusLabel";
+import type { BroadcastStatus } from "@/lib/news/newsletter";
 import { MODAL_TRIGGER_CLASS } from "../components/adminButtonClasses";
 import AdminModal from "../components/AdminModal";
 import ImageUploadField from "../components/ImageUploadField";

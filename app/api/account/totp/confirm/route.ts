@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/apiAuth";
-import { confirmTotpSetup } from "@/lib/totp";
+import { requireUser } from "@/lib/auth/apiAuth";
+import { confirmTotpSetup } from "@/lib/auth/totp";
 
 // Step 2 of the TOTP setup wizard (issue #97) — the counterpart to
 // app/api/account/totp/setup/route.ts, called once the visitor has scanned
@@ -10,7 +10,7 @@ import { confirmTotpSetup } from "@/lib/totp";
 // hijacker must not be able to enroll a second factor of their own choosing.
 // confirmTotpSetup does all the real work — validating both the password and
 // the code, only then promoting the secret out of the temporary challenge
-// table and minting backup codes; see its own header comment in lib/totp.ts.
+// table and minting backup codes; see its own header comment in lib/auth/totp.ts.
 export async function POST(request: Request) {
   const auth = await requireUser();
   if (auth.response) return auth.response;

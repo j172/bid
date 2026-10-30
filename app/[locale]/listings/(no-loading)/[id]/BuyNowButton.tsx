@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useState } from "react";
-import { usePostJson } from "@/lib/usePostJson";
+import { usePostJson } from "@/lib/shared/client/usePostJson";
 
 export default function BuyNowButton({ listingId, buyItNowPrice }: { listingId: number; buyItNowPrice: number }) {
   const router = useRouter();

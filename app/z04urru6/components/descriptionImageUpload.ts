@@ -1,7 +1,7 @@
 import type { RefObject } from "react";
 import type { Editor as TinyMCEEditor } from "tinymce";
-import { convertPhotoToWebp } from "@/lib/convertPhotoToWebp";
-import { DESCRIPTION_IMAGE_MAX_BYTES, DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
+import { convertPhotoToWebp } from "@/lib/shared/content/convertPhotoToWebp";
+import { DESCRIPTION_IMAGE_MAX_BYTES, DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/shared/content/descriptionImageLimits";
 
 // Shared client-side "insert an image, buffer it as a local blob: URL,
 // upload only at form-submit time" implementation behind both

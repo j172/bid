@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { createSession, findUserByEmail, verifyPassword } from "@/lib/auth";
-import { createEmailOtpChallenge, isEmailOtpRateLimited } from "@/lib/emailOtp";
-import { clearLoginFailures, isLoginRateLimited, recordLoginFailure } from "@/lib/loginRateLimit";
-import { sendEmailOtpEmail } from "@/lib/notifications";
-import { getClientIpFromHeaders } from "@/lib/clientIp";
-import { verifyTurnstileToken } from "@/lib/turnstile";
+import { createEmailOtpChallenge, isEmailOtpRateLimited } from "@/lib/auth/emailOtp";
+import { clearLoginFailures, isLoginRateLimited, recordLoginFailure } from "@/lib/auth/loginRateLimit";
+import { sendEmailOtpEmail } from "@/lib/shared/communications/notifications";
+import { getClientIpFromHeaders } from "@/lib/shared/client/clientIp";
+import { verifyTurnstileToken } from "@/lib/auth/turnstile";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   // password guess nor a lockout, it records no login failure. Same 400 +
   // TURNSTILE_VERIFICATION_FAILED shape app/api/contact/route.ts already
   // returns; verifyTurnstileToken never throws and fails closed (see
-  // lib/turnstile.ts).
+  // lib/auth/turnstile.ts).
   if (!(await verifyTurnstileToken(turnstileToken, ip))) {
     return NextResponse.json({ ok: false, errorCode: "TURNSTILE_VERIFICATION_FAILED" }, { status: 400 });
   }

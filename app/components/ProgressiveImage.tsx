@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { useImageFallback } from "@/lib/imageFallback";
+import { useImageFallback } from "@/lib/shared/content/imageFallback";
 
 interface ProgressiveImageProps {
   src: string;

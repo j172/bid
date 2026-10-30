@@ -5,8 +5,8 @@ import type { RegistrationResponseJSON } from "@simplewebauthn/browser";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import Button from "@/app/components/Button";
-import { inputClass } from "@/lib/formStyles";
-import { usePostJson } from "@/lib/usePostJson";
+import { inputClass } from "@/lib/shared/ui/formStyles";
+import { usePostJson } from "@/lib/shared/client/usePostJson";
 
 export interface PasskeyListItem {
   credentialId: string;
@@ -31,7 +31,7 @@ export interface PasskeyListItem {
 // (register-verify). Deleting one is a single confirm() round trip like
 // DeleteAccountButton's — no password re-entry, since neither adding nor
 // removing a passkey can grant an attacker anything a stolen password
-// couldn't already (see lib/webauthnCredentials.ts's deleteCredential).
+// couldn't already (see lib/auth/webauthnCredentials.ts's deleteCredential).
 export default function PasskeySection({ initialPasskeys }: { initialPasskeys: PasskeyListItem[] }) {
   const locale = useLocale();
   const t = useTranslations("passkeySection");

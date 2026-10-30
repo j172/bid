@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { buildLlmsFullTxt } from "@/lib/seo";
+import { buildLlmsFullTxt } from "@/lib/shared/seo/seo";
 
 // /llms-full.txt (issue #187) — Full documentation and markdown knowledge base
 // for AI crawlers/agents (llmstxt.org convention). Static content, safe to pre-render.

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
-import { deletePigeonGroup, getPigeonGroup, updatePigeonGroup } from "@/lib/pigeonGroups";
-import { parseIdParam } from "@/lib/routeParams";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { deletePigeonGroup, getPigeonGroup, updatePigeonGroup } from "@/lib/pigeons/pigeonGroups";
+import { parseIdParam } from "@/lib/shared/api/routeParams";
 
 interface PigeonGroupPayload {
   name?: unknown;

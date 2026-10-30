@@ -3,9 +3,9 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { GEOLOCATION_ZOOM } from "@/lib/useMapGeolocation";
-import type { MapGeolocationResult } from "@/lib/useMapGeolocation";
-import { getPigeonMapIcon } from "@/lib/pigeonMapIcon";
+import { GEOLOCATION_ZOOM } from "@/lib/shared/client/useMapGeolocation";
+import type { MapGeolocationResult } from "@/lib/shared/client/useMapGeolocation";
+import { getPigeonMapIcon } from "@/lib/pigeons/pigeonMapIcon";
 
 const SELECTED_ZOOM = 15;
 
@@ -22,7 +22,7 @@ export interface PigeonGroupsMapProps {
   groups: PigeonGroupMapPoint[];
   selectedId: number | null;
   /** The browser's resolved position, owned by the parent explorer (issue
-   * #275 — one lib/useMapGeolocation.ts call shared by both the map center
+   * #275 — one lib/shared/client/useMapGeolocation.ts call shared by both the map center
    * and the list's distance sort). Null while that request is still
    * pending. */
   geolocation: MapGeolocationResult | null;

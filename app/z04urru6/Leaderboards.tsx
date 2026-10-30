@@ -1,6 +1,6 @@
 import Link from "next/link";
-import type { TopBidder, TopCustomer, TopListing } from "@/lib/dashboard";
-import { LISTING_TYPE_LABEL } from "@/lib/listingTypeLabel";
+import type { TopBidder, TopCustomer, TopListing } from "@/lib/account/dashboard";
+import { LISTING_TYPE_LABEL } from "@/lib/listings/listingTypeLabel";
 
 const cardClass = "rounded-lg border border-border bg-surface p-4 shadow-sm";
 

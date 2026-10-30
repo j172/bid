@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getCurrentUser, listUsers, USERS_PAGE_SIZE, type ListUsersOptions } from "@/lib/auth";
-import { formatAdminDateTime } from "@/lib/format";
+import { formatAdminDateTime } from "@/lib/shared/formatting/format";
 import RoleToggleButton from "./RoleToggleButton";
 import SuspendToggleButton from "./SuspendToggleButton";
 import ResetPasswordButton from "./ResetPasswordButton";

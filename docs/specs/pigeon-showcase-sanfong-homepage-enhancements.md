@@ -1,6 +1,6 @@
-# SPEC: 鴿種介紹專區改版、三豐攝影專區與首頁社群影音調整
+# 規格：鴿種介紹專區改版、三豐攝影專區與首頁社群影音調整
 
-## 1. 背景與目標 (Outcome)
+## 1. 背景與目標
 
 為了提升平台內容策展的專業度與靈活性，本規格涵蓋首頁與後台展示系統之六項關鍵調整：
 1. **首頁精簡**：移除已過時或重複之「今日焦點鴿況」區塊，優化載入體驗與視覺動線。
@@ -14,7 +14,7 @@
 
 ---
 
-## 2. 範圍與受影響模組 (Scope)
+## 2. 範圍與受影響模組
 
 ### 資料庫與後端模組
 - `db/init.sql`：更新 `pigeon_showcase` schema 定義（`loft_id BIGINT NULL`、`photo_source VARCHAR(100) NULL`）。
@@ -39,7 +39,7 @@
 
 ---
 
-## 3. 非目標 (Non-goals)
+## 3. 非目標
 
 - 不刪除 `pigeon_showcase` 既有資料。
 - 不強制修改舊有資料之 `photo_source`，歷史資料維持 `NULL`（顯示為未指定）。
@@ -48,7 +48,7 @@
 
 ---
 
-## 4. 驗收條件 (Acceptance Criteria)
+## 4. 驗收條件
 
 - [x] 首頁不再渲染「今日焦點鴿況」區塊。
 - [x] 後台左側導覽列將「入賞鴿／進口鴿管理」正名為「鴿種介紹專區」。
@@ -62,7 +62,7 @@
 
 ---
 
-## 5. 測試與驗證 (Verification)
+## 5. 測試與驗證
 
 - 單元測試：`npm test`（特別包含 `lib/pigeonShowcase.test.ts` 與 `lib/socialMedia.test.ts`）。
 - 靜態檢查：`npm run typecheck`、`npm run lint`。
@@ -70,7 +70,7 @@
 
 ---
 
-## 6. 風險與回滾計畫 (Risks & Rollback)
+## 6. 風險與回滾計畫
 
 - **資料庫遷移**：`loft_id` 轉為 nullable 與新增 `photo_source` 為向下相容之變更（Additive change），舊版程式碼亦可正常運作；`ensurePigeonShowcasePhotoSource()` 具冪等性。
 - **回滾方案**：若需回滾，只需 revert 本次 commit，資料庫多出之欄位不影響舊版運作。

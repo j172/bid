@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { IMAGE_FALLBACK_SRC, useImageSetFallback } from "@/lib/imageFallback";
+import { IMAGE_FALLBACK_SRC, useImageSetFallback } from "@/lib/shared/content/imageFallback";
 
 interface ProductGalleryProps {
   title: string;

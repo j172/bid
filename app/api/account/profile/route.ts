@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/apiAuth";
+import { requireUser } from "@/lib/auth/apiAuth";
 import { updateProfile } from "@/lib/auth";
-import { validateProfile } from "@/lib/profile";
+import { validateProfile } from "@/lib/account/profile";
 
 export async function POST(request: Request) {
   const auth = await requireUser();

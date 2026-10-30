@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
+import { requireAdmin } from "@/lib/auth/apiAuth";
 import { getListingById } from "@/lib/listings";
-import { listingPhotoUrl } from "@/lib/uploads";
-import { parseIdParam } from "@/lib/routeParams";
+import { listingPhotoUrl } from "@/lib/shared/content/uploads";
+import { parseIdParam } from "@/lib/shared/api/routeParams";
 
 // Powers the admin edit modal (fixed_price listings — see
 // EditListingModal.tsx) and the relist modal (closed auction listings with

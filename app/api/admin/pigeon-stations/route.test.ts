@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextResponse } from "next/server";
 import { GET, POST } from "./route";
-import { requireAdmin } from "@/lib/apiAuth";
-import { createPigeonStation, listPigeonStations } from "@/lib/pigeonStations";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { createPigeonStation, listPigeonStations } from "@/lib/pigeons/pigeonStations";
 
-vi.mock("@/lib/apiAuth", () => ({
+vi.mock("@/lib/auth/apiAuth", () => ({
   requireAdmin: vi.fn(),
 }));
 
-vi.mock("@/lib/pigeonStations", () => ({
+vi.mock("@/lib/pigeons/pigeonStations", () => ({
   listPigeonStations: vi.fn(),
   createPigeonStation: vi.fn(),
 }));

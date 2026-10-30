@@ -1,8 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { formatRemainingMs } from "@/lib/format";
-import { useListingCountdown } from "@/lib/useListingCountdown";
+import { formatRemainingMs } from "@/lib/shared/formatting/format";
+import { useListingCountdown } from "@/lib/listings/useListingCountdown";
 import StatusBadge from "@/app/[locale]/components/StatusBadge";
 
 // Plain-text rendering of the three fields that can change after the page

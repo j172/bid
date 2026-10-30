@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { getNewsById, listLatestNews } from "@/lib/news";
-import { newsImageUrl } from "@/lib/uploads";
-import { IMAGE_FALLBACK_SRC } from "@/lib/imageFallback";
+import { newsImageUrl } from "@/lib/shared/content/uploads";
+import { IMAGE_FALLBACK_SRC } from "@/lib/shared/content/imageFallback";
 import { Link } from "@/i18n/navigation";
 import {
   absoluteUrl,
@@ -13,8 +13,8 @@ import {
   hreflangAlternates,
   stripHtmlToPlainText,
   truncateForMetaDescription,
-} from "@/lib/seo";
-import { safeJsonLdString } from "@/lib/jsonLdScript";
+} from "@/lib/shared/seo/seo";
+import { safeJsonLdString } from "@/lib/shared/seo/jsonLdScript";
 import DetailWithSidebar from "../../../components/DetailWithSidebar";
 import RichTextContent from "../../../components/RichTextContent";
 import GooglePreferenceButton from "../../../components/GooglePreferenceButton";

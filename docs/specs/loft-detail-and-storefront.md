@@ -1,4 +1,4 @@
-# SPEC: 拍品詳情頁鴿舍資訊展示與鴿舍專屬清單專區 (Loft Attribution & Storefront)
+# 規格：拍品詳情頁鴿舍資訊展示與鴿舍專屬清單專區
 
 ## 1. 背景與目標
 使用者希望在拍品詳情頁（`/listings/[id]`）右側主要價格卡片的最頂部標明該鴿子所屬的「合作鴿舍」，並提供跳轉至該鴿舍專屬清單頁（`/listings?loft={loftId}`，例如 `https://xiangshuicn.cc/listings?loft=1`）的完整互動流程。
@@ -36,7 +36,7 @@
 - **動態 SEO 與社群分享**：
   - 在 `generateMetadata` 中，當有 `loft` 參數時，動態帶入該鴿舍名稱與簡介至 `<title>` 與 OpenGraph（例如：`翔順鴿舍 - 拍賣與展售清單 | 香水賽鴿`）。
 
-### C. 多語系 (i18n)
+### C. 多語系支援
 - 更新 `messages/zh-TW.json`, `messages/zh-CN.json`, `messages/en.json`：
   - `partnerLoft`: 合作鴿舍 / 合作鸽舍 / Partner Loft
   - `allPigeons`: 所有鴿子 / 所有鸽子 / All Pigeons

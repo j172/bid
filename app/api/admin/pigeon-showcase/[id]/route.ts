@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/apiAuth";
-import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/descriptionImageLimits";
-import { resolveDescriptionImagePlaceholders } from "@/lib/descriptionImages";
-import { deletePigeonShowcase, getPigeonShowcaseById, updatePigeonShowcase, type PigeonShowcaseInput } from "@/lib/pigeonShowcase";
+import { requireAdmin } from "@/lib/auth/apiAuth";
+import { DESCRIPTION_IMAGE_MAX_COUNT } from "@/lib/shared/content/descriptionImageLimits";
+import { resolveDescriptionImagePlaceholders } from "@/lib/shared/content/descriptionImages";
+import { deletePigeonShowcase, getPigeonShowcaseById, updatePigeonShowcase, type PigeonShowcaseInput } from "@/lib/pigeons/pigeonShowcase";
 import {
   isPigeonShowcaseCategory,
   validatePigeonShowcaseDescription,
   validatePigeonShowcaseName,
-} from "@/lib/pigeonShowcaseValidation";
-import { sanitizeDescriptionHtml } from "@/lib/sanitizeDescriptionHtml";
+} from "@/lib/pigeons/pigeonShowcaseValidation";
+import { sanitizeDescriptionHtml } from "@/lib/shared/content/sanitizeDescriptionHtml";
 import {
   deletePigeonShowcaseImageFile,
   descriptionImageUrl,
@@ -16,8 +16,8 @@ import {
   saveImageOrError,
   savePigeonShowcaseImage,
   withImageRollback,
-} from "@/lib/uploads";
-import { parseIdParam } from "@/lib/routeParams";
+} from "@/lib/shared/content/uploads";
+import { parseIdParam } from "@/lib/shared/api/routeParams";
 
 // Submits FormData (not JSON) as of issue #70 — unlike homepage_sections'
 // PATCH route (image replacement optional, keeps the existing file when

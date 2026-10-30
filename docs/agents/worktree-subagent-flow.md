@@ -1,28 +1,28 @@
-# Worktree and Subagent Flow
+# Worktree 與 Subagent 流程
 
-Each implementation ticket is isolated from the main checkout.
+每張實作工作票都必須與主要 checkout 隔離。
 
-## Worktree naming
+## Worktree 命名
 
-Use a branch and worktree derived from the issue:
+使用依 Issue 衍生的分支與 worktree：
 
 `agent/issue-<number>-<short-kebab-title>`
 
-Keep worktrees beside the repository, for example `../bid-issue-123`. Never use a second agent in the same worktree.
+請將 worktree 放在儲存庫旁邊，例如 `../bid-issue-123`。同一個 worktree 絕不可同時交由另一個 agent 使用。
 
-## Lifecycle
+## 生命週期
 
-1. Claim the ticket with `gh issue edit <number> --add-assignee @me`.
-2. Create the branch and worktree from the current `master`.
-3. Give the subagent the issue, acceptance criteria, non-goals, worktree path, and required checks.
-4. The subagent reads applicable `AGENTS.md` files and existing tests before editing.
-5. The subagent implements only the ticket, runs the narrowest checks, and reports changed files, checks, risks, and follow-ups.
-6. The parent agent reviews the diff against the ticket and creates a PR referencing the issue.
-7. A separate reviewer checks scope, security, tests, and deployment impact before merge.
-8. Merge only after required CI checks pass and the PR is approved.
-9. Remove the worktree after merge only when no uncommitted work remains.
+1. 使用 `gh issue edit <number> --add-assignee @me` 接手工作票。
+2. 從目前的 `master` 建立分支與 worktree。
+3. 提供 subagent Issue、驗收條件、非目標、worktree 路徑及必要檢查項目。
+4. subagent 在編輯前閱讀適用的 `AGENTS.md` 檔案與現有測試。
+5. subagent 僅實作工作票範圍，執行最小必要檢查，並回報變更檔案、檢查結果、風險及後續事項。
+6. parent agent 依工作票審查 diff，並建立引用該 Issue 的 PR。
+7. 合併前由另一位 reviewer 檢查範圍、安全性、測試及部署影響。
+8. 必要的 CI 檢查通過且 PR 獲得核准後，才可合併。
+9. 只有在沒有未提交工作時，才可於合併後移除 worktree。
 
-## Handoff format
+## 交接格式
 
 ```text
 Issue: #<number>
@@ -38,16 +38,16 @@ Do not change:
 - secrets, .env, unrelated files
 ```
 
-The subagent must return:
+Subagent 必須回報：
 
-- summary of implementation,
-- files changed and why,
-- checks run and results,
-- known risks or blocked items,
-- suggested PR title and body.
+- 實作摘要；
+- 變更檔案及變更原因；
+- 執行的檢查與結果；
+- 已知風險或受阻事項；
+- 建議的 PR 標題與內文。
 
-When the ticket changes `.github/` automation or agent files, the handoff must also record workflow YAML and custom-agent frontmatter validation.
+若工作票會變更 `.github/` 自動化或 agent 檔案，交接內容也必須記錄 workflow YAML 與 custom-agent frontmatter 驗證結果。
 
-## Safety boundaries
+## 安全界線
 
-Subagents must not push directly to `master`, merge their own PR, deploy production, read `.env`, or alter GitHub secrets. Deployment is performed by the protected workflow after merge.
+Subagent 不得直接推送至 `master`、合併自己的 PR、部署至正式環境、讀取 `.env` 或修改 GitHub secrets。合併後由受保護的 workflow 執行部署。

@@ -7,8 +7,8 @@ import ProgressiveImage from "@/app/components/ProgressiveImage";
 import CarouselControls from "./CarouselControls";
 import CountdownTiles from "./CountdownTiles";
 import ProductCarouselCard, { type ProductCarouselItem } from "./ProductCarouselCard";
-import { useHeroCountdown } from "@/lib/useHeroCountdown";
-import { formatDualPrice, type CurrencyRate } from "@/lib/currency";
+import { useHeroCountdown } from "@/lib/homepage/useHeroCountdown";
+import { formatDualPrice, type CurrencyRate } from "@/lib/shared/formatting/currency";
 
 interface HeroCardItem {
   id: number;

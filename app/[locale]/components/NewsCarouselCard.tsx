@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import CarouselControls from "./CarouselControls";
-import { useRotatingIndex } from "@/lib/useRotatingIndex";
+import { useRotatingIndex } from "@/lib/shared/client/useRotatingIndex";
 
 // Homepage carousel card (issue #56) — replaces the static "現正競標/熱門
 // 競標正在進行" promo card (app/[locale]/(with-loading)/page.tsx, the lg:col-span-2 card)

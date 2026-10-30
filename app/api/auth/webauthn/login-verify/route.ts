@@ -6,8 +6,8 @@ import {
   consumeWebauthnChallenge,
   readWebauthnChallengeCookie,
   resolveWebauthnRp,
-} from "@/lib/webauthn";
-import { findCredentialById, updateCredentialAfterLogin } from "@/lib/webauthnCredentials";
+} from "@/lib/auth/webauthn";
+import { findCredentialById, updateCredentialAfterLogin } from "@/lib/auth/webauthnCredentials";
 
 // Step 2 of "使用通行密鑰登入" (issue #95) — the counterpart to
 // login-options/route.ts. Unlike app/api/auth/verify-email-otp/route.ts,

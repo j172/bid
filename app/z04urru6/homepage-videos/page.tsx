@@ -3,7 +3,7 @@ import { AdminTable, AdminTableCell, AdminTableRow } from "../components/AdminTa
 import DeleteConfirmButton from "../components/DeleteConfirmButton";
 import { SuccessBannerProvider } from "../components/SuccessBanner";
 import HomepageVideoFormModal from "./HomepageVideoFormModal";
-import { HOMEPAGE_VIDEOS_MAX, listHomepageVideos } from "@/lib/homepageVideos";
+import { HOMEPAGE_VIDEOS_MAX, listHomepageVideos } from "@/lib/homepage/homepageVideos";
 
 export const dynamic = "force-dynamic";
 

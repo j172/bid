@@ -1,5 +1,5 @@
 import { listProducts } from "@/lib/products";
-import { productPhotoUrl } from "@/lib/uploads";
+import { productPhotoUrl } from "@/lib/shared/content/uploads";
 import AdminPageIntro from "../AdminPageIntro";
 import { AdminTable, AdminTableCell, AdminTableRow } from "../components/AdminTable";
 import { SuccessBannerProvider } from "../components/SuccessBanner";

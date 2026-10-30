@@ -90,7 +90,7 @@ describe("ProductImage load timeout fallback", () => {
       fireEvent.error(img);
     });
     // Still the real photo immediately after the first onError — a single
-    // failure buys a retry (lib/imageFallback.ts's RETRY_DELAY_MS), not an
+    // failure buys a retry (lib/shared/content/imageFallback.ts's RETRY_DELAY_MS), not an
     // instant, permanent fallback.
     expect(img.src).toContain("/uploads/listings/48/example.webp");
     expect(img.src).not.toContain("logo.png");

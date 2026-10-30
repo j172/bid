@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { authenticateWithGooglePayload, verifyGoogleIdToken } from "@/lib/googleAuth";
-import { getClientIpFromHeaders } from "@/lib/clientIp";
-import { resolveRequestLocale } from "@/lib/requestLocale";
+import { authenticateWithGooglePayload, verifyGoogleIdToken } from "@/lib/auth/googleAuth";
+import { getClientIpFromHeaders } from "@/lib/shared/client/clientIp";
+import { resolveRequestLocale } from "@/lib/shared/i18n/requestLocale";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);

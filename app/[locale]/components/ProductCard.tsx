@@ -1,6 +1,6 @@
 import { Link } from "@/i18n/navigation";
 import ZoomableProductImage from "./ZoomableProductImage";
-import { listingPhotoUrl } from "@/lib/uploads";
+import { listingPhotoUrl } from "@/lib/shared/content/uploads";
 
 interface ProductCardProps {
   id: number;
