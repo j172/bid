@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ensureEmailVerificationColumns,
   ensureGoogleAuthColumns,
+  ensureClubAwardSortOrder,
   ensureHomepageVideosVideoIdIndex,
   ensureLineUserIdColumn,
   ensureYoutubeUrlColumns,
@@ -239,6 +240,219 @@ describe("ensureYoutubeUrlColumns", () => {
   });
 });
 
+describe("ensureClubAwardSortOrder", () => {
+  it("keyset-pages albums and pigeons across 500-row batches, preserves ordering, and is repeatable", async () => {
+    const calls: [string, unknown[] | undefined][] = [];
+    type LegacyRow = { id: number; album_id?: number; created_at: string; sort_order?: number };
+    const atOffset = (day: number, seconds: number) =>
+      new Date(Date.UTC(2024, 0, 1 + day, 0, 0, seconds)).toISOString().slice(0, 19).replace("T", " ");
+    const albums: LegacyRow[] = Array.from({ length: 1_003 }, (_, index) => ({
+      id: 3_000 - index,
+      created_at: atOffset(0, Math.floor(index / 3)),
+    }));
+    const pigeons: LegacyRow[] = [
+      ...Array.from({ length: 500 }, (_, index) => ({
+        id: 10_000 + index,
+        album_id: 1,
+        created_at: atOffset(0, Math.floor(index / 2)),
+      })),
+      ...Array.from({ length: 501 }, (_, index) => ({
+        id: 20_000 + index,
+        album_id: 2,
+        created_at: atOffset(1, Math.floor(index / 2)),
+      })),
+      ...Array.from({ length: 4 }, (_, index) => ({
+        id: 30_000 + index,
+        album_id: 3,
+        created_at: atOffset(2, index),
+      })),
+    ];
+    const tableRows = {
+      club_award_albums: albums,
+      club_award_pigeons: pigeons,
+    };
+    const indexesExist = new Set<string>();
+
+    const db = fakePool((sql, params) => {
+      calls.push([sql, params]);
+      if (sql.includes("information_schema.COLUMNS") && sql.includes("COUNT(*)")) {
+        return [[{ cnt: 1 }]];
+      }
+      if (sql.includes("IS_NULLABLE AS is_nullable")) {
+        return [[{ is_nullable: "YES" }]];
+      }
+      if (
+        sql.startsWith("SELECT id") &&
+        (sql.includes("FROM club_award_albums") || sql.includes("FROM club_award_pigeons"))
+      ) {
+        const perAlbum = sql.includes("SELECT id, album_id");
+        const table = perAlbum ? "club_award_pigeons" : "club_award_albums";
+        const source = tableRows[table];
+        const queryParams = params ?? [];
+        let ordered = [...source].sort((left, right) => {
+          if (perAlbum && left.album_id !== right.album_id) return left.album_id! - right.album_id!;
+          return right.created_at.localeCompare(left.created_at) || right.id - left.id;
+        });
+
+        if (perAlbum && queryParams.length === 6) {
+          const [albumId, , createdAt, , id] = queryParams as [number, number, string, string, number, number];
+          ordered = ordered.filter(
+            (row) =>
+              row.album_id! > albumId ||
+              (row.album_id === albumId &&
+                (row.created_at < createdAt || (row.created_at === createdAt && row.id < id))),
+          );
+        } else if (!perAlbum && queryParams.length === 4) {
+          const [createdAt, , id] = queryParams as [string, string, number, number];
+          ordered = ordered.filter(
+            (row) => row.created_at < createdAt || (row.created_at === createdAt && row.id < id),
+          );
+        }
+
+        const pageSize = queryParams[queryParams.length - 1] as number;
+        return [[
+          ...ordered.slice(0, pageSize).map((row) => ({
+            id: row.id,
+            ...(perAlbum ? { album_id: row.album_id } : {}),
+            cursor_created_at: row.created_at,
+          })),
+        ]];
+      }
+      if (sql.startsWith("UPDATE club_award_")) {
+        const table = sql.startsWith("UPDATE club_award_albums")
+          ? "club_award_albums"
+          : "club_award_pigeons";
+        const values = params ?? [];
+        const assignmentCount = (sql.match(/WHEN \? THEN \?/g) ?? []).length;
+        for (let index = 0; index < assignmentCount; index += 1) {
+          const id = values[index * 2] as number;
+          tableRows[table].find((row) => row.id === id)!.sort_order = values[index * 2 + 1] as number;
+        }
+        return [{}];
+      }
+      if (sql.startsWith("ALTER TABLE") && sql.includes("idx_club_award_")) {
+        if (sql.includes("idx_club_award_albums_sort_order")) {
+          indexesExist.add("idx_club_award_albums_sort_order");
+        }
+        if (sql.includes("idx_club_award_pigeons_album_sort_order")) {
+          indexesExist.add("idx_club_award_pigeons_album_sort_order");
+        }
+        return [{}];
+      }
+      if (sql.includes("information_schema.STATISTICS")) {
+        return [[{ cnt: indexesExist.has(String(params?.[1])) ? 1 : 0 }]];
+      }
+      return [{}];
+    });
+
+    await ensureClubAwardSortOrder(db);
+
+    const assertBackfilledOrder = () => {
+      const expectedAlbums = [...albums].sort(
+        (left, right) => right.created_at.localeCompare(left.created_at) || right.id - left.id,
+      );
+      expectedAlbums.forEach((row, index) => expect(row.sort_order).toBe(index));
+
+      const expectedPigeons = [...pigeons].sort(
+        (left, right) =>
+          left.album_id! - right.album_id! ||
+          right.created_at.localeCompare(left.created_at) ||
+          right.id - left.id,
+      );
+      let currentAlbum = -1;
+      let albumSortOrder = 0;
+      for (const row of expectedPigeons) {
+        if (row.album_id !== currentAlbum) {
+          currentAlbum = row.album_id!;
+          albumSortOrder = 0;
+        }
+        expect(row.sort_order).toBe(albumSortOrder);
+        albumSortOrder += 1;
+      }
+    };
+    assertBackfilledOrder();
+
+    const selects = calls.filter(([sql]) => sql.startsWith("SELECT id"));
+    const updates = calls.filter(([sql]) => sql.startsWith("UPDATE club_award_"));
+    const albumSelects = selects.filter(([sql]) => sql.includes("FROM club_award_albums"));
+    const pigeonSelects = selects.filter(([sql]) => sql.includes("FROM club_award_pigeons"));
+    const albumUpdates = updates.filter(([sql]) => sql.startsWith("UPDATE club_award_albums"));
+    const pigeonUpdates = updates.filter(([sql]) => sql.startsWith("UPDATE club_award_pigeons"));
+    expect(albumSelects.length).toBeGreaterThanOrEqual(3);
+    expect(pigeonSelects.length).toBeGreaterThanOrEqual(3);
+    expect(albumUpdates.length).toBeGreaterThanOrEqual(3);
+    expect(pigeonUpdates.length).toBeGreaterThanOrEqual(3);
+
+    for (const [sql, params] of selects) {
+      expect(sql).toContain("LIMIT ?");
+      expect(params?.at(-1)).toBe(500);
+      expect(sql).toContain("CAST(created_at AS CHAR) AS cursor_created_at");
+      expect(sql).not.toContain("ROW_NUMBER");
+    }
+    for (const [sql, params] of updates) {
+      const rowCount = (sql.match(/WHEN \? THEN \?/g) ?? []).length;
+      expect(rowCount).toBeLessThanOrEqual(500);
+      expect(params).toHaveLength(rowCount * 3);
+    }
+    expect(albumSelects[0][0]).toContain("ORDER BY created_at DESC, id DESC");
+    expect(pigeonSelects[0][0]).toContain("ORDER BY album_id ASC, created_at DESC, id DESC");
+    expect(albumSelects[1][0]).toContain("created_at = ? AND id < ?");
+    const firstAlbumPageLastRow = [...albums].sort(
+      (left, right) => right.created_at.localeCompare(left.created_at) || right.id - left.id,
+    )[499];
+    expect(albumSelects[1][1]).toEqual([
+      firstAlbumPageLastRow.created_at,
+      firstAlbumPageLastRow.created_at,
+      firstAlbumPageLastRow.id,
+      500,
+    ]);
+    // Exactly 500 rows in album 1 puts the first keyset boundary immediately
+    // before album 2; the following page must continue album 2's index at 0.
+    expect(pigeonSelects[1][1]).toEqual([1, 1, pigeons[0].created_at, pigeons[0].created_at, 10_000, 500]);
+    expect(pigeonSelects[2][0]).toContain("album_id > ? OR (album_id = ?");
+    expect(pigeonSelects[2][1]?.[0]).toBe(2);
+    expect(calls.some(([sql]) => sql.includes("ROW_NUMBER"))).toBe(false);
+    expect(calls).toContainEqual([
+      "ALTER TABLE club_award_albums MODIFY COLUMN sort_order INT NOT NULL DEFAULT 0",
+      undefined,
+    ]);
+    expect(calls).toContainEqual([
+      "ALTER TABLE club_award_pigeons MODIFY COLUMN sort_order INT NOT NULL DEFAULT 0",
+      undefined,
+    ]);
+    expect(calls.some(([sql]) => sql.includes("idx_club_award_albums_sort_order"))).toBe(true);
+    expect(calls.some(([sql]) => sql.includes("idx_club_award_pigeons_album_sort_order"))).toBe(true);
+
+    const firstRunSortOrders = {
+      albums: albums.map(({ id, sort_order }) => [id, sort_order]),
+      pigeons: pigeons.map(({ id, sort_order }) => [id, sort_order]),
+    };
+    calls.length = 0;
+    await ensureClubAwardSortOrder(db);
+    assertBackfilledOrder();
+    expect({
+      albums: albums.map(({ id, sort_order }) => [id, sort_order]),
+      pigeons: pigeons.map(({ id, sort_order }) => [id, sort_order]),
+    }).toEqual(firstRunSortOrders);
+  });
+
+  it("is idempotent when both columns are already backfilled and indexed", async () => {
+    const calls: [string, unknown[] | undefined][] = [];
+    const db = fakePool((sql, params) => {
+      calls.push([sql, params]);
+      if (sql.includes("IS_NULLABLE AS is_nullable")) {
+        return [[{ is_nullable: "NO" }]];
+      }
+      return [[{ cnt: 1 }]];
+    });
+
+    await ensureClubAwardSortOrder(db);
+
+    expect(calls.some(([sql]) => sql.startsWith("UPDATE club_award_"))).toBe(false);
+    expect(calls.some(([sql]) => sql.startsWith("ALTER TABLE"))).toBe(false);
+  });
+});
+
 // Issue #140 I-1: the connection pool no longer sets multipleStatements, so
 // SCHEMA_SQL has to reach the driver one statement at a time. These pin the
 // splitting rule the migration now depends on — if a future schema edit ever
@@ -300,5 +514,8 @@ describe("schemaStatements", () => {
       expect(joined).toContain(`CREATE TABLE IF NOT EXISTS ${table} (`);
     }
     expect(joined).toContain("UNIQUE KEY uq_homepage_videos_video_id (video_id)");
+    expect(joined).toContain("sort_order INT NOT NULL DEFAULT 0");
+    expect(joined).toContain("KEY idx_club_award_albums_sort_order (sort_order, id)");
+    expect(joined).toContain("KEY idx_club_award_pigeons_album_sort_order (album_id, sort_order, id)");
   });
 });

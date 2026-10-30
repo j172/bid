@@ -507,6 +507,7 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
               }))}
               emptyLabel={t("loftShowcaseEmpty")}
               viewDetailsLabel={t("viewShowcasePigeon")}
+              retryImageOnError
             />
           </div>
         </section>

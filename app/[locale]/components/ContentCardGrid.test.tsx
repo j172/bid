@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import type { ReactNode } from "react";
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { act, fireEvent, render, screen, cleanup } from "@testing-library/react";
 import ContentCardGrid, { type ContentCardItem } from "./ContentCardGrid";
 
 // ContentCardGrid's only routing dependency is the localized <Link> around
@@ -18,6 +18,7 @@ vi.mock("@/i18n/navigation", () => ({
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
 });
 
 const items: ContentCardItem[] = [
@@ -37,14 +38,37 @@ const items: ContentCardItem[] = [
 // for the resulting letterbox/pillarbox space, matching the fix already
 // applied to the pigeon-showcase detail page's main image in #155.
 describe("ContentCardGrid thumbnail", () => {
-  it("uses object-contain with a slate fill instead of cropping with object-cover", () => {
+  it("keeps the plain image by default for non-pigeon callers", () => {
+    vi.useFakeTimers();
     render(<ContentCardGrid items={items} emptyLabel="empty" viewDetailsLabel="view" />);
 
     const img = screen.getByAltText("example") as HTMLImageElement;
+    const originalSrc = img.getAttribute("src");
+    fireEvent.error(img);
+    act(() => vi.advanceTimersByTime(800));
+    expect(img.getAttribute("src")).toBe(originalSrc);
     expect(img.className).toContain("object-contain");
     expect(img.className).toContain("bg-slate-100");
     expect(img.className).not.toContain("object-cover");
     // Fixed-height box is unchanged — only the fit/crop behavior changed.
     expect(img.className).toContain("h-40");
+  });
+
+  it("opts pigeon callers into the retry-then-placeholder behavior", () => {
+    vi.useFakeTimers();
+    render(
+      <ContentCardGrid
+        items={items}
+        emptyLabel="empty"
+        viewDetailsLabel="view"
+        retryImageOnError
+      />,
+    );
+
+    const img = screen.getByAltText("example");
+    const originalSrc = img.getAttribute("src");
+    fireEvent.error(img);
+    act(() => vi.advanceTimersByTime(800));
+    expect(img.getAttribute("src")).toBe(`${originalSrc}?__retry=1`);
   });
 });

@@ -16,6 +16,7 @@ import { buildQuery, firstParam, type SearchParams } from "@/lib/searchParams";
 import { Link } from "@/i18n/navigation";
 import ContentCardGrid from "../components/ContentCardGrid";
 import PaginationFooter from "../components/PaginationFooter";
+import RetryableImage from "@/app/components/RetryableImage";
 
 export const dynamic = "force-dynamic";
 
@@ -97,8 +98,7 @@ export default async function ClubAwardPigeonsListPage({
                 href={`/club-award-pigeons?albumId=${album.id}`}
                 className="group flex flex-col overflow-hidden rounded-xl border border-border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <RetryableImage
                   src={album.coverImageFileName ? clubAwardPigeonImageUrl(album.coverImageFileName) : IMAGE_FALLBACK_SRC}
                   alt={album.name}
                   className="h-44 w-full bg-slate-100 object-contain"
@@ -170,6 +170,7 @@ export default async function ClubAwardPigeonsListPage({
         }))}
         emptyLabel={t("noItems")}
         viewDetailsLabel={t("viewDetails")}
+        retryImageOnError
       />
 
       <PaginationFooter
