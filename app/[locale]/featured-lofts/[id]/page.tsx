@@ -226,6 +226,7 @@ export default async function FeaturedLoftDetailPage({ params }: { params: Promi
                 }))}
                 emptyLabel={tPigeonShowcase("noItems")}
                 viewDetailsLabel={tPigeonShowcase("viewDetails")}
+                retryImageOnError
               />
             </div>
           )}

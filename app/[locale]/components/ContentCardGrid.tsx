@@ -23,6 +23,7 @@ interface ContentCardGridProps {
   items: ContentCardItem[];
   emptyLabel: string;
   viewDetailsLabel: string;
+  /** Opt in only when these cards contain pigeon primary images/covers. */
   retryImageOnError?: boolean;
 }
 

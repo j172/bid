@@ -2,7 +2,6 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import RetryableImage from "@/app/components/RetryableImage";
 import CarouselControls from "./CarouselControls";
 import { useRotatingIndex } from "@/lib/useRotatingIndex";
 import { formatProductPriceText } from "@/lib/productPriceText";
@@ -89,7 +88,8 @@ export default function ProductCarouselCard({
           </span>
         </div>
         <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-slate-100">
-          <RetryableImage
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src={current.imageUrl}
             alt={current.title}
             className="absolute inset-0 h-full w-full object-contain"

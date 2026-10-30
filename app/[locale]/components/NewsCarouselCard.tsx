@@ -2,7 +2,6 @@
 
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import RetryableImage from "@/app/components/RetryableImage";
 import CarouselControls from "./CarouselControls";
 import { useRotatingIndex } from "@/lib/useRotatingIndex";
 
@@ -101,7 +100,8 @@ export default function NewsCarouselCard({
         href={href}
         className="relative block aspect-[16/9] w-full cursor-pointer overflow-hidden rounded-xl bg-slate-100"
       >
-        <RetryableImage
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src={current.imageUrl}
           alt={current.title}
           className="absolute inset-0 h-full w-full object-contain transition-transform duration-700 ease-out group-hover:scale-105"

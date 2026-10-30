@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import type { ReactNode } from "react";
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import { act, render, screen, cleanup, fireEvent } from "@testing-library/react";
 import NewsCarouselCard from "./NewsCarouselCard";
 
 vi.mock("@/i18n/navigation", () => ({
@@ -18,6 +18,7 @@ vi.mock("next-intl", () => ({
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
 });
 
 const baseItem = {
@@ -33,6 +34,24 @@ const baseItem = {
 // lock in that clicking the image now reaches the same /news/[id] href as
 // the title/CTA, while the manual carousel controls stay untouched.
 describe("NewsCarouselCard", () => {
+  it("preserves native image failure behavior for non-pigeon news", () => {
+    vi.useFakeTimers();
+    render(
+      <NewsCarouselCard
+        items={[baseItem]}
+        activeBadge="最新消息"
+        ctaLabel="閱讀更多"
+        emptyStateTitle="尚無內容"
+        emptyStateDesc="敬請期待"
+      />,
+    );
+
+    const image = screen.getByAltText(baseItem.title);
+    fireEvent.error(image);
+    act(() => vi.advanceTimersByTime(800));
+    expect(image.getAttribute("src")).toBe(baseItem.imageUrl);
+  });
+
   it("wraps the image in a link to the same /news/[id] href as the title and CTA", () => {
     render(
       <NewsCarouselCard
