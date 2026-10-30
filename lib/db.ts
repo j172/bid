@@ -891,17 +891,17 @@ async function ensurePigeonShowcasePhotoSource(db: mysql.Pool): Promise<void> {
 
 // Issue #380: manual album ordering and per-album pigeon ordering. Add the
 // columns nullable on upgraded databases so a failed backfill can be safely
-// retried on the next boot. Each backfill is one deterministic statement;
-// after it succeeds, harden the column to match the fresh-install schema.
-// The original display order was created_at DESC, id DESC, so zero-based
-// row numbers preserve it exactly, including tied timestamps.
+// retried on the next boot. Read rows in their original display order and
+// assign zero-based values in batches; this avoids requiring window functions
+// on older MySQL-compatible servers. Once the backfill succeeds, harden the
+// column to match the fresh-install schema.
 export async function ensureClubAwardSortOrder(db: mysql.Pool): Promise<void> {
   await ensureColumn(db, "club_award_albums", "sort_order", "INT NULL");
   await ensureColumn(db, "club_award_pigeons", "sort_order", "INT NULL");
 
   const backfillIfNullable = async (
     table: "club_award_albums" | "club_award_pigeons",
-    expression: string,
+    perAlbum: boolean,
   ) => {
     const [rows] = await db.query(
       `SELECT IS_NULLABLE AS is_nullable FROM information_schema.COLUMNS
@@ -910,28 +910,48 @@ export async function ensureClubAwardSortOrder(db: mysql.Pool): Promise<void> {
     );
     if ((rows as { is_nullable: string }[])[0]?.is_nullable !== "YES") return;
 
-    await db.query(expression);
+    const [existingRows] = await db.query(
+      `SELECT id${perAlbum ? ", album_id" : ""}
+       FROM ${table}
+       ORDER BY ${perAlbum ? "album_id ASC, " : ""}created_at DESC, id DESC`,
+    );
+    const orderedRows = existingRows as { id: number | string; album_id?: number | string }[];
+    const assignments: [number | string, number][] = [];
+    let previousAlbumId: string | undefined;
+    let sortOrder = 0;
+
+    for (const row of orderedRows) {
+      if (perAlbum) {
+        const albumId = String(row.album_id);
+        if (albumId !== previousAlbumId) {
+          previousAlbumId = albumId;
+          sortOrder = 0;
+        }
+      }
+      assignments.push([row.id, sortOrder]);
+      sortOrder += 1;
+    }
+
+    // Keep each statement comfortably below common SQL parameter/packet
+    // limits while avoiding one round trip per legacy row.
+    const batchSize = 500;
+    for (let offset = 0; offset < assignments.length; offset += batchSize) {
+      const batch = assignments.slice(offset, offset + batchSize);
+      const cases = batch.map(() => "WHEN ? THEN ?").join(" ");
+      const ids = batch.map(() => "?").join(", ");
+      await db.query(
+        `UPDATE ${table}
+         SET sort_order = CASE id ${cases} END
+         WHERE id IN (${ids})`,
+        [...batch.flatMap(([id, order]) => [id, order]), ...batch.map(([id]) => id)],
+      );
+    }
+
     await db.query(`ALTER TABLE ${table} MODIFY COLUMN sort_order INT NOT NULL DEFAULT 0`);
   };
 
-  await backfillIfNullable(
-    "club_award_albums",
-    `UPDATE club_award_albums AS albums
-     JOIN (
-       SELECT id, ROW_NUMBER() OVER (ORDER BY created_at DESC, id DESC) - 1 AS new_sort_order
-       FROM club_award_albums
-     ) AS ranked ON ranked.id = albums.id
-     SET albums.sort_order = ranked.new_sort_order`,
-  );
-  await backfillIfNullable(
-    "club_award_pigeons",
-    `UPDATE club_award_pigeons AS pigeons
-     JOIN (
-       SELECT id, ROW_NUMBER() OVER (PARTITION BY album_id ORDER BY created_at DESC, id DESC) - 1 AS new_sort_order
-       FROM club_award_pigeons
-     ) AS ranked ON ranked.id = pigeons.id
-     SET pigeons.sort_order = ranked.new_sort_order`,
-  );
+  await backfillIfNullable("club_award_albums", false);
+  await backfillIfNullable("club_award_pigeons", true);
 
   await ensureIndex(
     db,
