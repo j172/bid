@@ -251,10 +251,10 @@ describe("ensureClubAwardSortOrder", () => {
       if (sql.includes("IS_NULLABLE AS is_nullable")) {
         return [[{ is_nullable: "YES" }]];
       }
-      if (sql.startsWith("SELECT id FROM club_award_albums")) {
+      if (sql.startsWith("SELECT id") && sql.includes("FROM club_award_albums")) {
         return [[{ id: 9 }, { id: 7 }, { id: 4 }]];
       }
-      if (sql.startsWith("SELECT id, album_id FROM club_award_pigeons")) {
+      if (sql.startsWith("SELECT id, album_id") && sql.includes("FROM club_award_pigeons")) {
         return [[
           { id: 31, album_id: 2 },
           { id: 29, album_id: 2 },
@@ -272,11 +272,13 @@ describe("ensureClubAwardSortOrder", () => {
 
     const updates = calls.filter(([sql]) => sql.startsWith("UPDATE club_award_"));
     expect(updates).toHaveLength(2);
-    expect(calls.find(([sql]) => sql.startsWith("SELECT id FROM club_award_albums"))?.[0]).toContain(
-      "ORDER BY created_at DESC, id DESC",
-    );
     expect(
-      calls.find(([sql]) => sql.startsWith("SELECT id, album_id FROM club_award_pigeons"))?.[0],
+      calls.find(([sql]) => sql.startsWith("SELECT id") && sql.includes("FROM club_award_albums"))?.[0],
+    ).toContain("ORDER BY created_at DESC, id DESC");
+    expect(
+      calls.find(
+        ([sql]) => sql.startsWith("SELECT id, album_id") && sql.includes("FROM club_award_pigeons"),
+      )?.[0],
     ).toContain("ORDER BY album_id ASC, created_at DESC, id DESC");
     expect(updates[0][1]).toEqual([9, 0, 7, 1, 4, 2, 9, 7, 4]);
     expect(updates[1][1]).toEqual([31, 0, 29, 1, 40, 0, 39, 1, 31, 29, 40, 39]);
