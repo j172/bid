@@ -9,10 +9,10 @@ import {
   newsImageUrl,
   productPhotoUrl,
 } from "@/lib/uploads";
-import { listLatestClubAwardAlbums } from "@/lib/clubAwardPigeons";
+import { listTopClubAwardAlbums } from "@/lib/clubAwardPigeons";
 import { listProducts } from "@/lib/products";
 import { listHomepageSections } from "@/lib/homepageSections";
-import { listLatestPigeonShowcase, listPigeonShowcaseByPhotoSource } from "@/lib/pigeonShowcase";
+import { listLatestPigeonShowcase } from "@/lib/pigeonShowcase";
 import { listHomepageNewsCarousel } from "@/lib/news";
 import { excerptHtml } from "@/lib/htmlText";
 import { canonicalUrl, hreflangAlternates } from "@/lib/seo";
@@ -34,6 +34,7 @@ import HomeProductCard from "../components/HomeProductCard";
 import PartnerLoftImage from "../components/PartnerLoftImage";
 import PigeonShowcaseCarouselCard from "../components/PigeonShowcaseCarouselCard";
 import NewsCarouselCard from "../components/NewsCarouselCard";
+import RetryableImage from "@/app/components/RetryableImage";
 
 import FeaturedLoftCarouselCard from "../components/FeaturedLoftCarouselCard";
 import ExchangeRateStrip from "../components/ExchangeRateStrip";
@@ -47,10 +48,8 @@ const EAGER_COUNTS = { balanced: 1, aggressive: 2 } as const;
 
 const ENDING_SOON_LIMIT = 5;
 const NEW_ARRIVALS_LIMIT = 8;
-const SANFONG_PIGEONS_LIMIT = 6;
 // 世界名鴿介紹專區 (issue #307, replacing the old "熱門成交排行" section) —
-// caps the homepage grid at 6 cards, same cap convention as
-// SANFONG_PIGEONS_LIMIT above.
+// caps the homepage grid at 6 cards.
 const WORLD_FAMOUS_PIGEONS_LIMIT = 6;
 const CLUB_AWARD_ALBUMS_LIMIT = 6;
 
@@ -195,7 +194,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   // copy when there are currently zero news_posts rows; see
   // NewsCarouselCard's own fallback branch).
   const clubAwardAlbums = await cachedQuery("home:clubAwardAlbums", 20, () =>
-    listLatestClubAwardAlbums(CLUB_AWARD_ALBUMS_LIMIT),
+    listTopClubAwardAlbums(CLUB_AWARD_ALBUMS_LIMIT),
   );
 
   const NEWS_CAROUSEL_EXCERPT_LENGTH = 30;
@@ -249,10 +248,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   // 依 created_at 新到舊排序 (issue #334) — listOpenListings 本身是依 ends_at
   // 排序給「即將結標」等區塊使用，這裡需要獨立的「最新上架」排序規則。
   const newArrivals = selectNewArrivals(listings, NEW_ARRIVALS_LIMIT);
-  const sanfongShowcaseItems = await cachedQuery("home:pigeonShowcase:sanfong", 20, () =>
-    listPigeonShowcaseByPhotoSource("三豐攝影", SANFONG_PIGEONS_LIMIT),
-  );
-
   // "分類瀏覽" 卡片：維持「依商品狀態／熱度」瀏覽入口的定位（不是合作鴿舍
   // 那套 CMS 分類系統），但每張卡片都改成對 listings 真實計算
   // 出來的子集合，並且連結帶對應的篩選 query，讓點進去的清單筆數跟卡片上
@@ -522,8 +517,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                 href={`/pigeon-showcase/${pigeon.id}`}
                 className="group flex flex-col overflow-hidden rounded-xl border border-border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={pigeon.imageUrl} alt={pigeon.name} className="h-40 w-full bg-slate-100 object-contain" />
+                <RetryableImage
+                  src={pigeon.imageUrl}
+                  alt={pigeon.name}
+                  className="h-40 w-full bg-slate-100 object-contain"
+                />
                 <div className="flex flex-1 flex-col p-5">
                   <h3 className="truncate text-lg font-bold text-ink">{pigeon.name}</h3>
                   <p className="mt-3 line-clamp-3 text-sm text-ink-light">{pigeon.excerpt}</p>
@@ -559,8 +557,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                 href={`/club-award-pigeons?albumId=${album.id}`}
                 className="group flex flex-col overflow-hidden rounded-xl border border-border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <RetryableImage
                   src={album.coverImageFileName ? clubAwardPigeonImageUrl(album.coverImageFileName) : IMAGE_FALLBACK_SRC}
                   alt={album.name}
                   className="h-40 w-full bg-slate-100 object-contain"
@@ -573,62 +570,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             ))}
           </div>
         )}
-      </section>
-
-      {/* 三豐攝影名鴿特輯專區 */}
-      <section className="mx-auto mt-8 max-w-7xl px-4 sm:px-6">
-        <div className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-600">{t("sanfongSectionEyebrow")}</p>
-              <h3 className="mt-1 text-xl font-black text-ink">{t("sanfongSectionTitle")}</h3>
-            </div>
-            <Link href="/pigeon-showcase" className="text-sm font-semibold text-interactive-primary hover:text-header">
-              {t("sanfongSectionCta")} →
-            </Link>
-          </div>
-
-          {sanfongShowcaseItems.length === 0 ? (
-            <div className="mt-5 flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-slate-50 p-8 text-center">
-              <p className="text-sm font-bold text-ink-light">{t("sanfongSectionEmptyTitle")}</p>
-              <p className="mt-1 max-w-md text-xs text-ink-light">{t("sanfongSectionEmptyDesc")}</p>
-            </div>
-          ) : (
-            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-              {sanfongShowcaseItems.map((item, index) => (
-                <Link
-                  key={`sanfong-${item.id}`}
-                  href={`/pigeon-showcase/${item.id}`}
-                  className="group flex items-center gap-3 rounded-xl border border-border bg-slate-50 p-3 transition hover:-translate-y-0.5 hover:border-interactive-primary/50 hover:bg-white"
-                >
-                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={item.imageFileName ? pigeonShowcaseImageUrl(item.imageFileName) : "/images/logo.png"}
-                      alt={item.name}
-                      loading={index === 0 ? "eager" : "lazy"}
-                      className="h-full w-full object-contain p-2 transition duration-300"
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="shrink-0 rounded bg-emerald-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                        三豐攝影
-                      </span>
-                      <p className="truncate text-sm font-bold text-ink">{item.name}</p>
-                    </div>
-                    <p className="mt-1 truncate text-xs text-ink-light">
-                      {item.loftTitle ? `鴿舍：${item.loftTitle}` : "世界名鴿"}
-                    </p>
-                    <div className="mt-2 flex items-center gap-1 text-xs font-semibold text-interactive-primary">
-                      <span>查看名鴿介紹 →</span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
       </section>
 
       <SocialMediaSection items={socialItems} />

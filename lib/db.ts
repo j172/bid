@@ -478,15 +478,18 @@ CREATE TABLE IF NOT EXISTS product_orders (
 CREATE TABLE IF NOT EXISTS club_award_albums (
   id BIGINT NOT NULL AUTO_INCREMENT,
   name VARCHAR(100) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
   PRIMARY KEY (id),
+  KEY idx_club_award_albums_sort_order (sort_order, id),
   KEY idx_club_award_albums_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS club_award_pigeons (
   id BIGINT NOT NULL AUTO_INCREMENT,
   album_id BIGINT NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
   category ENUM('award','imported','representative','world_famous') NOT NULL,
   name VARCHAR(100) NOT NULL,
   loft_id BIGINT NULL,
@@ -496,6 +499,7 @@ CREATE TABLE IF NOT EXISTS club_award_pigeons (
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
   PRIMARY KEY (id),
+  KEY idx_club_award_pigeons_album_sort_order (album_id, sort_order, id),
   KEY idx_club_award_pigeons_album_created (album_id, created_at),
   KEY idx_club_award_pigeons_category_created (category, created_at),
   KEY idx_club_award_pigeons_loft (loft_id),
@@ -885,6 +889,64 @@ async function ensurePigeonShowcasePhotoSource(db: mysql.Pool): Promise<void> {
   await ensureColumn(db, "pigeon_showcase", "photo_source", "VARCHAR(100) NULL");
 }
 
+// Issue #380: manual album ordering and per-album pigeon ordering. Add the
+// columns nullable on upgraded databases so a failed backfill can be safely
+// retried on the next boot. Each backfill is one deterministic statement;
+// after it succeeds, harden the column to match the fresh-install schema.
+// The original display order was created_at DESC, id DESC, so zero-based
+// row numbers preserve it exactly, including tied timestamps.
+export async function ensureClubAwardSortOrder(db: mysql.Pool): Promise<void> {
+  await ensureColumn(db, "club_award_albums", "sort_order", "INT NULL");
+  await ensureColumn(db, "club_award_pigeons", "sort_order", "INT NULL");
+
+  const backfillIfNullable = async (
+    table: "club_award_albums" | "club_award_pigeons",
+    expression: string,
+  ) => {
+    const [rows] = await db.query(
+      `SELECT IS_NULLABLE AS is_nullable FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = 'sort_order'`,
+      [table],
+    );
+    if ((rows as { is_nullable: string }[])[0]?.is_nullable !== "YES") return;
+
+    await db.query(expression);
+    await db.query(`ALTER TABLE ${table} MODIFY COLUMN sort_order INT NOT NULL DEFAULT 0`);
+  };
+
+  await backfillIfNullable(
+    "club_award_albums",
+    `UPDATE club_award_albums AS albums
+     JOIN (
+       SELECT id, ROW_NUMBER() OVER (ORDER BY created_at DESC, id DESC) - 1 AS new_sort_order
+       FROM club_award_albums
+     ) AS ranked ON ranked.id = albums.id
+     SET albums.sort_order = ranked.new_sort_order`,
+  );
+  await backfillIfNullable(
+    "club_award_pigeons",
+    `UPDATE club_award_pigeons AS pigeons
+     JOIN (
+       SELECT id, ROW_NUMBER() OVER (PARTITION BY album_id ORDER BY created_at DESC, id DESC) - 1 AS new_sort_order
+       FROM club_award_pigeons
+     ) AS ranked ON ranked.id = pigeons.id
+     SET pigeons.sort_order = ranked.new_sort_order`,
+  );
+
+  await ensureIndex(
+    db,
+    "club_award_albums",
+    "idx_club_award_albums_sort_order",
+    "KEY idx_club_award_albums_sort_order (sort_order, id)",
+  );
+  await ensureIndex(
+    db,
+    "club_award_pigeons",
+    "idx_club_award_pigeons_album_sort_order",
+    "KEY idx_club_award_pigeons_album_sort_order (album_id, sort_order, id)",
+  );
+}
+
 function createPool(): mysql.Pool {
   return mysql.createPool({
     host: process.env.MYSQL_HOST,
@@ -950,6 +1012,7 @@ async function ensureSchema(db: mysql.Pool): Promise<void> {
   await ensureLineIdAndTermsColumns(db);
   await ensurePigeonShowcasePhotoSource(db);
   await ensureLineUserIdColumn(db);
+  await ensureClubAwardSortOrder(db);
 }
 
 export async function getDb(): Promise<mysql.Pool> {

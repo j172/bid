@@ -5,19 +5,30 @@ import {
   getClubAwardAlbumById,
   updateClubAwardAlbum,
 } from "@/lib/clubAwardPigeons";
-import { validateClubAwardAlbumName } from "@/lib/clubAwardPigeonsValidation";
+import {
+  parseOptionalClubAwardSortOrder,
+  validateClubAwardAlbumName,
+} from "@/lib/clubAwardPigeonsValidation";
 import { parseIdParam } from "@/lib/routeParams";
 
-async function extractAlbumName(request: Request): Promise<string | null> {
+async function extractAlbumFields(
+  request: Request,
+): Promise<{ name: string; sortOrder: number | undefined } | null> {
   const contentType = request.headers.get("content-type") ?? "";
   if (contentType.includes("multipart/form-data") || contentType.includes("application/x-www-form-urlencoded")) {
     const form = await request.formData();
-    const raw = form.get("name");
-    return typeof raw === "string" ? raw : "";
+    const rawName = form.get("name");
+    const rawSortOrder = form.get("sortOrder");
+    const sortOrder = rawSortOrder === null ? undefined : parseOptionalClubAwardSortOrder(rawSortOrder);
+    if (sortOrder === null) return null;
+    return { name: typeof rawName === "string" ? rawName : "", sortOrder };
   }
   try {
-    const body = (await request.json()) as { name?: unknown } | null;
-    return typeof body?.name === "string" ? body.name : "";
+    const body = (await request.json()) as { name?: unknown; sortOrder?: unknown } | null;
+    if (!body || (body.name !== undefined && typeof body.name !== "string")) return null;
+    const sortOrder = parseOptionalClubAwardSortOrder(body.sortOrder);
+    if (sortOrder === null) return null;
+    return { name: typeof body.name === "string" ? body.name : "", sortOrder };
   } catch {
     return null;
   }
@@ -38,18 +49,18 @@ async function handleUpdate(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ ok: false, error: "找不到這個相簿" }, { status: 404 });
   }
 
-  const rawName = await extractAlbumName(request);
-  if (rawName === null) {
+  const fields = await extractAlbumFields(request);
+  if (fields === null) {
     return NextResponse.json({ ok: false, error: "無效的請求格式" }, { status: 400 });
   }
 
-  const name = rawName.trim();
+  const name = fields.name.trim();
   const validation = validateClubAwardAlbumName(name);
   if (!validation.ok) {
     return NextResponse.json({ ok: false, error: validation.error }, { status: 400 });
   }
 
-  const result = await updateClubAwardAlbum(albumId, name);
+  const result = await updateClubAwardAlbum(albumId, name, fields.sortOrder);
   if (!result.ok) {
     return NextResponse.json({ ok: false, error: result.error }, { status: 404 });
   }

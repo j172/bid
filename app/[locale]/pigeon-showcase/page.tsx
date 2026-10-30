@@ -143,6 +143,7 @@ export default async function PigeonShowcaseListPage({ searchParams }: { searchP
         }))}
         emptyLabel={t("noItems")}
         viewDetailsLabel={t("viewDetails")}
+        retryImageOnError
       />
 
       <PaginationFooter

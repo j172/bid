@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ensureEmailVerificationColumns,
   ensureGoogleAuthColumns,
+  ensureClubAwardSortOrder,
   ensureHomepageVideosVideoIdIndex,
   ensureLineUserIdColumn,
   ensureYoutubeUrlColumns,
@@ -239,6 +240,60 @@ describe("ensureYoutubeUrlColumns", () => {
   });
 });
 
+describe("ensureClubAwardSortOrder", () => {
+  it("backfills existing rows in their prior display order and finishes the schema migration", async () => {
+    const calls: [string, unknown[] | undefined][] = [];
+    const db = fakePool((sql, params) => {
+      calls.push([sql, params]);
+      if (sql.includes("information_schema.COLUMNS") && sql.includes("COUNT(*)")) {
+        return [[{ cnt: 0 }]];
+      }
+      if (sql.includes("IS_NULLABLE AS is_nullable")) {
+        return [[{ is_nullable: "YES" }]];
+      }
+      if (sql.includes("information_schema.STATISTICS")) {
+        return [[{ cnt: 0 }]];
+      }
+      return [{}];
+    });
+
+    await ensureClubAwardSortOrder(db);
+
+    const updates = calls.filter(([sql]) => sql.startsWith("UPDATE club_award_"));
+    expect(updates).toHaveLength(2);
+    expect(updates[0][0]).toContain("ROW_NUMBER() OVER (ORDER BY created_at DESC, id DESC) - 1");
+    expect(updates[1][0]).toContain(
+      "ROW_NUMBER() OVER (PARTITION BY album_id ORDER BY created_at DESC, id DESC) - 1",
+    );
+    expect(calls).toContainEqual([
+      "ALTER TABLE club_award_albums MODIFY COLUMN sort_order INT NOT NULL DEFAULT 0",
+      undefined,
+    ]);
+    expect(calls).toContainEqual([
+      "ALTER TABLE club_award_pigeons MODIFY COLUMN sort_order INT NOT NULL DEFAULT 0",
+      undefined,
+    ]);
+    expect(calls.some(([sql]) => sql.includes("idx_club_award_albums_sort_order"))).toBe(true);
+    expect(calls.some(([sql]) => sql.includes("idx_club_award_pigeons_album_sort_order"))).toBe(true);
+  });
+
+  it("is idempotent when both columns are already backfilled and indexed", async () => {
+    const calls: [string, unknown[] | undefined][] = [];
+    const db = fakePool((sql, params) => {
+      calls.push([sql, params]);
+      if (sql.includes("IS_NULLABLE AS is_nullable")) {
+        return [[{ is_nullable: "NO" }]];
+      }
+      return [[{ cnt: 1 }]];
+    });
+
+    await ensureClubAwardSortOrder(db);
+
+    expect(calls.some(([sql]) => sql.startsWith("UPDATE club_award_"))).toBe(false);
+    expect(calls.some(([sql]) => sql.startsWith("ALTER TABLE"))).toBe(false);
+  });
+});
+
 // Issue #140 I-1: the connection pool no longer sets multipleStatements, so
 // SCHEMA_SQL has to reach the driver one statement at a time. These pin the
 // splitting rule the migration now depends on — if a future schema edit ever
@@ -300,5 +355,8 @@ describe("schemaStatements", () => {
       expect(joined).toContain(`CREATE TABLE IF NOT EXISTS ${table} (`);
     }
     expect(joined).toContain("UNIQUE KEY uq_homepage_videos_video_id (video_id)");
+    expect(joined).toContain("sort_order INT NOT NULL DEFAULT 0");
+    expect(joined).toContain("KEY idx_club_award_albums_sort_order (sort_order, id)");
+    expect(joined).toContain("KEY idx_club_award_pigeons_album_sort_order (album_id, sort_order, id)");
   });
 });

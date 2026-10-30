@@ -12,6 +12,7 @@ import {
 } from "@/lib/clubAwardPigeons";
 import {
   isPigeonShowcaseCategory,
+  parseOptionalClubAwardSortOrder,
   validatePigeonShowcaseDescription,
   validatePigeonShowcaseName,
   validatePigeonShowcasePhotoSource,
@@ -54,6 +55,8 @@ export async function POST(request: Request) {
   const albumIdRaw = form.get("albumId");
   const albumIdNum = Number(albumIdRaw);
   const albumId = Number.isFinite(albumIdNum) && Number.isInteger(albumIdNum) && albumIdNum > 0 ? albumIdNum : null;
+  const sortOrderRaw = form.get("sortOrder");
+  const sortOrder = sortOrderRaw === null ? undefined : parseOptionalClubAwardSortOrder(sortOrderRaw);
   const category = form.get("category");
   const name = String(form.get("name") ?? "").trim();
   const description = String(form.get("description") ?? "").trim();
@@ -69,6 +72,9 @@ export async function POST(request: Request) {
 
   if (albumId === null) {
     return NextResponse.json({ ok: false, error: "請選擇相簿名稱" }, { status: 400 });
+  }
+  if (sortOrder === null) {
+    return NextResponse.json({ ok: false, error: "排序值必須是大於或等於 0 的整數" }, { status: 400 });
   }
   if (!isPigeonShowcaseCategory(category)) {
     return NextResponse.json({ ok: false, error: "請選擇鴿種" }, { status: 400 });
@@ -102,6 +108,7 @@ export async function POST(request: Request) {
 
   const input: ClubAwardPigeonInput = {
     albumId,
+    ...(sortOrder === undefined ? {} : { sortOrder }),
     category,
     name,
     loftId,

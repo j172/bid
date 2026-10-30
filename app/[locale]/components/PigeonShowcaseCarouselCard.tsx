@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import RetryableImage from "@/app/components/RetryableImage";
 import CarouselControls from "./CarouselControls";
 import { useRotatingIndex } from "@/lib/useRotatingIndex";
 
@@ -105,8 +106,7 @@ export default function PigeonShowcaseCarouselCard({
   return (
     <article className={`group relative flex h-full flex-col justify-between overflow-hidden rounded-3xl shadow-xl ${wrapperClass}`}>
       <div className="relative aspect-[4/5] w-full overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <RetryableImage
           src={current.imageUrl}
           alt={current.name}
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"

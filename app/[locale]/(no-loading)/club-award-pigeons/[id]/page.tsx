@@ -17,6 +17,7 @@ import { safeJsonLdString } from "@/lib/jsonLdScript";
 import { buildLoftShowcaseUrl } from "@/lib/loftStorefront";
 import DetailWithSidebar from "../../../components/DetailWithSidebar";
 import RichTextContent from "../../../components/RichTextContent";
+import RetryableImage from "@/app/components/RetryableImage";
 
 export const dynamic = "force-dynamic";
 
@@ -127,8 +128,7 @@ export default async function ClubAwardPigeonDetailPage({ params }: { params: Pr
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLdString(breadcrumbJsonLd) }}
       />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <RetryableImage
         src={item.imageFileName ? clubAwardPigeonImageUrl(item.imageFileName) : IMAGE_FALLBACK_SRC}
         alt={item.name}
         loading="eager"

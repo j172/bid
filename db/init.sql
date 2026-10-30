@@ -761,9 +761,11 @@ CREATE TABLE IF NOT EXISTS product_orders (
 CREATE TABLE IF NOT EXISTS club_award_albums (
   id BIGINT NOT NULL AUTO_INCREMENT,
   name VARCHAR(100) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
   PRIMARY KEY (id),
+  KEY idx_club_award_albums_sort_order (sort_order, id),
   KEY idx_club_award_albums_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -771,6 +773,7 @@ CREATE TABLE IF NOT EXISTS club_award_albums (
 CREATE TABLE IF NOT EXISTS club_award_pigeons (
   id BIGINT NOT NULL AUTO_INCREMENT,
   album_id BIGINT NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
   category ENUM('award','imported','representative','world_famous') NOT NULL,
   name VARCHAR(100) NOT NULL,
   loft_id BIGINT NULL,
@@ -780,6 +783,7 @@ CREATE TABLE IF NOT EXISTS club_award_pigeons (
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
   PRIMARY KEY (id),
+  KEY idx_club_award_pigeons_album_sort_order (album_id, sort_order, id),
   KEY idx_club_award_pigeons_album_created (album_id, created_at),
   KEY idx_club_award_pigeons_category_created (category, created_at),
   KEY idx_club_award_pigeons_loft (loft_id),
@@ -787,4 +791,3 @@ CREATE TABLE IF NOT EXISTS club_award_pigeons (
   CONSTRAINT fk_club_award_pigeons_loft FOREIGN KEY (loft_id) REFERENCES homepage_sections (id) ON DELETE RESTRICT ON UPDATE RESTRICT
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-

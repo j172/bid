@@ -1,4 +1,5 @@
 import { Link } from "@/i18n/navigation";
+import RetryableImage from "@/app/components/RetryableImage";
 
 // Card grid shared by the 最新訊息 and 入賞鴿/進口鴿 list pages (issue #139
 // item 8) — the two had the same image-on-top card, the same empty state and
@@ -22,9 +23,15 @@ interface ContentCardGridProps {
   items: ContentCardItem[];
   emptyLabel: string;
   viewDetailsLabel: string;
+  retryImageOnError?: boolean;
 }
 
-export default function ContentCardGrid({ items, emptyLabel, viewDetailsLabel }: ContentCardGridProps) {
+export default function ContentCardGrid({
+  items,
+  emptyLabel,
+  viewDetailsLabel,
+  retryImageOnError = false,
+}: ContentCardGridProps) {
   if (items.length === 0) {
     return <p className="mt-10 text-ink-light">{emptyLabel}</p>;
   }
@@ -37,8 +44,12 @@ export default function ContentCardGrid({ items, emptyLabel, viewDetailsLabel }:
           href={item.href}
           className="group flex flex-col overflow-hidden rounded-xl border border-border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={item.imageUrl} alt={item.title} className="h-40 w-full bg-slate-100 object-contain" />
+          {retryImageOnError ? (
+            <RetryableImage src={item.imageUrl} alt={item.title} className="h-40 w-full bg-slate-100 object-contain" />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={item.imageUrl} alt={item.title} className="h-40 w-full bg-slate-100 object-contain" />
+          )}
           <div className="flex flex-1 flex-col p-5">
             {item.dateLabel && <p className="text-xs font-semibold text-ink-light">{item.dateLabel}</p>}
             <h2 className={`${item.dateLabel ? "mt-1 " : ""}truncate text-lg font-bold text-ink`}>{item.title}</h2>

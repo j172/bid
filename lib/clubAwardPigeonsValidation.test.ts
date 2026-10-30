@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   ALBUM_NAME_MAX,
+  CLUB_AWARD_SORT_ORDER_MAX,
   DESCRIPTION_MAX,
   NAME_MAX,
+  isValidClubAwardSortOrder,
+  parseOptionalClubAwardSortOrder,
   isPigeonShowcaseCategory,
   validateClubAwardAlbumName,
   validatePigeonShowcaseDescription,
@@ -13,6 +16,24 @@ import {
 describe("validateClubAwardAlbumName", () => {
   it("accepts a normal album name", () => {
     expect(validateClubAwardAlbumName("2026 春季南海賽鴿協會")).toEqual({ ok: true });
+  });
+
+  describe("club award sort order validation", () => {
+    it("accepts non-negative integers and rejects fractions, negatives, and values outside the SQL INT range", () => {
+      expect(isValidClubAwardSortOrder(0)).toBe(true);
+      expect(isValidClubAwardSortOrder(CLUB_AWARD_SORT_ORDER_MAX)).toBe(true);
+      expect(isValidClubAwardSortOrder(-1)).toBe(false);
+      expect(isValidClubAwardSortOrder(1.5)).toBe(false);
+      expect(isValidClubAwardSortOrder(CLUB_AWARD_SORT_ORDER_MAX + 1)).toBe(false);
+    });
+
+    it("distinguishes omitted values from invalid numeric input", () => {
+      expect(parseOptionalClubAwardSortOrder(undefined)).toBeUndefined();
+      expect(parseOptionalClubAwardSortOrder("0")).toBe(0);
+      expect(parseOptionalClubAwardSortOrder("")).toBeNull();
+      expect(parseOptionalClubAwardSortOrder("1.2")).toBeNull();
+      expect(parseOptionalClubAwardSortOrder(-2)).toBeNull();
+    });
   });
 
   it("rejects an empty or whitespace-only album name", () => {
